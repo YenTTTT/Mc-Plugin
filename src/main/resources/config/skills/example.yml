@@ -1,0 +1,31 @@
+# 玩家技能配置範例
+# 在 config/skills/ 目錄下的所有 .yml 文件都會被加載
+
+fireball:
+  name: "&c火球術"
+  item: BLAZE_ROD
+  activation: "right_click"
+  cooldown: 5
+  effect: "fireball"
+
+heal:
+  name: "&a治療術"
+  item: GOLDEN_APPLE
+  activation: "right_click"
+  cooldown: 10
+  effect: "heal"
+
+dash:
+  name: "&b疾風步"
+  item: FEATHER
+  activation: "right_click"
+  cooldown: 3
+  effect: "dash"
+
+lightning_strike:
+  name: "&e雷擊術"
+  item: STICK
+  activation: "left_click"
+  cooldown: 15
+  effect: "lightning"
+

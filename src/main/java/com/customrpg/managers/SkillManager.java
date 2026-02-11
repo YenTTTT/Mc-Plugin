@@ -41,13 +41,13 @@ public class SkillManager {
     }
 
     /**
-     * Load all skills from configs/skills.yml
+     * Load all skills from config/skills/ folder
      */
     private void loadSkills() {
         Map<String, Map<String, Object>> allSkills = configManager.getAllSkills();
 
         if (allSkills.isEmpty()) {
-            plugin.getLogger().warning("No skills found in configs/skills.yml");
+            plugin.getLogger().warning("No skills found in config/skills/ folder");
             return;
         }
 

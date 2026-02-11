@@ -1,0 +1,24 @@
+# 武器技能配置範例
+# 這些技能可以綁定到特定武器上
+
+slash_wave:
+  name: "&e斬擊波"
+  effect: "projectile_slash"
+  cooldown: 5
+  damage: 10.0
+  range: 15.0
+
+whirlwind:
+  name: "&b旋風斬"
+  effect: "area_damage"
+  cooldown: 8
+  damage: 8.0
+  range: 5.0
+
+critical_strike:
+  name: "&c致命一擊"
+  effect: "critical_damage"
+  cooldown: 10
+  damage: 20.0
+  range: 3.0
+

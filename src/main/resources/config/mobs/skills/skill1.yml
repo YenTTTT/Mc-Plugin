@@ -1,0 +1,27 @@
+# 怪物技能配置範例
+# 這些技能可以由怪物在特定條件下觸發
+
+poison_spit:
+  name: "&2毒液噴射"
+  effect: "poison_projectile"
+  cooldown: 8
+  trigger: "on_combat"
+
+summon_minions:
+  name: "&5召喚小兵"
+  effect: "spawn_minions"
+  cooldown: 20
+  trigger: "on_low_health"
+
+earth_spike:
+  name: "&6地刺術"
+  effect: "ground_damage"
+  cooldown: 12
+  trigger: "on_player_nearby"
+
+berserker_rage:
+  name: "&c狂暴化"
+  effect: "damage_boost"
+  cooldown: 30
+  trigger: "on_low_health"
+

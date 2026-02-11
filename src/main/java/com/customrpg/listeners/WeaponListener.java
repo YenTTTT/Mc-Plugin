@@ -87,8 +87,9 @@ public class WeaponListener implements Listener {
                 applyBackstabEffect(attacker, victim, weaponData);
                 break;
 
+            case "burn":
             case "fire":
-                applyFireEffect(attacker, victim);
+                applyBurnEffect(attacker, victim);
                 break;
 
             case "lightning":
@@ -96,6 +97,7 @@ public class WeaponListener implements Listener {
                 break;
 
             default:
+                plugin.getLogger().warning("Unknown weapon effect: " + effect);
                 break;
         }
     }
@@ -118,25 +120,33 @@ public class WeaponListener implements Listener {
 
         double dotProduct = attackerDirection.dot(victimDirection);
 
+        // If attacking from behind (same direction)
         if (dotProduct > 0.5) {
             double bonusDamage = 4.0;
             livingVictim.damage(bonusDamage);
-            attacker.sendMessage(ChatColor.RED + "✦ Backstab! +" + bonusDamage + " damage!");
+            attacker.sendMessage(ChatColor.RED + "✦ 鐵鐮刀: 背刺! +" + bonusDamage + " 額外傷害!");
+            attacker.getWorld().playSound(attacker.getLocation(), "entity.player.attack.crit", 1.0f, 0.8f);
         }
     }
 
     /**
-     * Apply fire effect (burning)
+     * Apply burn/fire effect (sets target on fire)
      * @param attacker The attacking player
      * @param victim The victim entity
      */
-    private void applyFireEffect(Player attacker, org.bukkit.entity.Entity victim) {
+    private void applyBurnEffect(Player attacker, org.bukkit.entity.Entity victim) {
         if (!(victim instanceof LivingEntity)) {
             return;
         }
 
+        // Set fire for 5 seconds (100 ticks)
         victim.setFireTicks(100);
-        attacker.sendMessage(ChatColor.GOLD + "🔥 Target is burning!");
+
+        // Visual and audio feedback
+        attacker.sendMessage(ChatColor.GOLD + "🔥 烈焰之劍: 目標燃燒中!");
+
+        // Play fire sound
+        attacker.getWorld().playSound(attacker.getLocation(), "entity.blaze.shoot", 1.0f, 1.0f);
     }
 
     /**
@@ -145,10 +155,11 @@ public class WeaponListener implements Listener {
      * @param victim The victim entity
      */
     private void applyLightningEffect(Player attacker, org.bukkit.entity.Entity victim) {
+        // 30% chance to trigger lightning
         if (random.nextDouble() < 0.3) {
             Location strikeLocation = victim.getLocation();
             victim.getWorld().strikeLightning(strikeLocation);
-            attacker.sendMessage(ChatColor.AQUA + "⚡ Lightning strike!");
+            attacker.sendMessage(ChatColor.AQUA + "⚡ 雷霆戰斧: 召喚閃電!");
         }
     }
 }

@@ -44,13 +44,13 @@ public class WeaponManager {
     }
 
     /**
-     * Load all weapons from configs/weapons/ folder
+     * Load all weapons from config/weapons/types/ folder
      */
     private void loadWeapons() {
         Map<String, Map<String, Object>> allWeapons = configManager.getAllWeapons();
 
         if (allWeapons.isEmpty()) {
-            plugin.getLogger().warning("No weapons found in configs/weapons/ folder");
+            plugin.getLogger().warning("No weapons found in config/weapons/types/ folder");
             return;
         }
 
@@ -150,6 +150,14 @@ public class WeaponManager {
      */
     public int getWeaponCount() {
         return weapons.size();
+    }
+
+    /**
+     * Reload weapons, clearing the current list and reloading from config
+     */
+    public void reloadWeapons() {
+        weapons.clear();
+        loadWeapons();
     }
 
     /**

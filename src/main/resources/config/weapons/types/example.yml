@@ -1,0 +1,33 @@
+# 武器類型配置範例
+# 在 config/weapons/types/ 目錄下的所有 .yml 文件都會被加載
+
+iron_scythe:
+  name: "&c&l鐵鐮刀"
+  material: IRON_HOE
+  damage-multiplier: 1.5
+  special-effect: "backstab"
+  lore:
+    - "&7從背後攻擊造成額外傷害"
+    - "&e特殊效果: 背刺"
+    - "&6傷害倍率: 1.5x"
+
+fire_sword:
+  name: "&4&l烈焰之劍"
+  material: DIAMOND_SWORD
+  damage-multiplier: 1.3
+  special-effect: "burn"
+  lore:
+    - "&7點燃敵人，造成持續傷害"
+    - "&e特殊效果: 燃燒"
+    - "&6傷害倍率: 1.3x"
+
+thunder_axe:
+  name: "&b&l雷霆戰斧"
+  material: DIAMOND_AXE
+  damage-multiplier: 1.8
+  special-effect: "lightning"
+  lore:
+    - "&7有機率召喚雷電擊中敵人"
+    - "&e特殊效果: 雷擊"
+    - "&6傷害倍率: 1.8x"
+

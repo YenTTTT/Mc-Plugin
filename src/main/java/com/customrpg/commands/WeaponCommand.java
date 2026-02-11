@@ -52,11 +52,17 @@ public class WeaponCommand implements CommandExecutor, TabCompleter {
         if (args.length == 0) {
             sender.sendMessage(ChatColor.RED + "Usage: /weapon <weapon_name> [player]");
             sender.sendMessage(ChatColor.RED + "Usage: /weapon list");
+            sender.sendMessage(ChatColor.RED + "Usage: /weapon reload");
             return true;
         }
 
         if (args[0].equalsIgnoreCase("list")) {
             listWeapons(sender);
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("reload")) {
+            reloadConfigs(sender);
             return true;
         }
 
@@ -99,6 +105,18 @@ public class WeaponCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private void reloadConfigs(CommandSender sender) {
+        if (!sender.hasPermission("customrpg.admin")) {
+            sender.sendMessage(ChatColor.RED + "You don't have permission to reload configs!");
+            return;
+        }
+
+        plugin.getConfigManager().reloadAllConfigs();
+        plugin.getWeaponManager().reloadWeapons();
+
+        sender.sendMessage(ChatColor.GREEN + "Configs reloaded! Weapons refreshed.");
+    }
+
     /**
      * List all available weapons
      * @param sender Command sender
@@ -135,6 +153,7 @@ public class WeaponCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             completions.add("list");
+            completions.add("reload");
             completions.addAll(weaponManager.getWeaponKeys());
 
             String input = args[0].toLowerCase();

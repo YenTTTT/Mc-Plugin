@@ -5,9 +5,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,54 +26,113 @@ public class ConfigManager {
     }
 
     /**
-     * Load all configuration files from configs/ directory
+     * Load all configuration files from config/ directory
      */
     private void loadAllConfigs() {
-        // Create configs directory structure
-        File configsDir = new File(plugin.getDataFolder(), "configs");
-        File weaponsDir = new File(configsDir, "weapons");
+        // Create config directory structure
+        File configDir = new File(plugin.getDataFolder(), "config");
+        File weaponsDir = new File(configDir, "weapons");
+        File weaponTypesDir = new File(weaponsDir, "types");
+        File weaponSkillsDir = new File(weaponsDir, "skills");
+        File mobsDir = new File(configDir, "mobs");
+        File mobTypesDir = new File(mobsDir, "types");
+        File mobSkillsDir = new File(mobsDir, "skills");
+        File skillsDir = new File(configDir, "skills");
 
         // Ensure directories exist
-        if (!weaponsDir.exists()) {
-            weaponsDir.mkdirs();
-        }
+        weaponTypesDir.mkdirs();
+        weaponSkillsDir.mkdirs();
+        mobTypesDir.mkdirs();
+        mobSkillsDir.mkdirs();
+        skillsDir.mkdirs();
 
-        // Load weapon configs
-        loadConfig("configs/weapons/scythes.yml");
-        loadConfig("configs/weapons/swords.yml");
-        loadConfig("configs/weapons/axes.yml");
+        // Ensure default example configs exist on disk (so directory scans can find them)
+        ensureDefaultConfigExists("config/config.yml");
+        ensureDefaultConfigExists("config/weapons/types/example.yml");
+        ensureDefaultConfigExists("config/weapons/skills/skill1.yml");
+        ensureDefaultConfigExists("config/mobs/types/example.yml");
+        ensureDefaultConfigExists("config/mobs/skills/skill1.yml");
+        ensureDefaultConfigExists("config/skills/example.yml");
 
-        // Load skill config
-        loadConfig("configs/skills.yml");
+        // Load main config
+        loadConfig("config/config.yml");
 
-        // Load mob config
-        loadConfig("configs/mobs.yml");
+        // Load weapon type configs from config/weapons/types/
+        loadConfigsFromDirectory("config/weapons/types");
+
+        // Load weapon skill configs from config/weapons/skills/
+        loadConfigsFromDirectory("config/weapons/skills");
+
+        // Load mob type configs from config/mobs/types/
+        loadConfigsFromDirectory("config/mobs/types");
+
+        // Load mob skill configs from config/mobs/skills/
+        loadConfigsFromDirectory("config/mobs/skills");
+
+        // Load skill configs from config/skills/
+        loadConfigsFromDirectory("config/skills");
 
         plugin.getLogger().info("Loaded " + configs.size() + " configuration file(s)");
     }
 
+    private void ensureDefaultConfigExists(String relativePath) {
+        File configFile = new File(plugin.getDataFolder(), relativePath);
+        if (configFile.exists()) {
+            return;
+        }
+
+        configFile.getParentFile().mkdirs();
+
+        try {
+            plugin.saveResource(relativePath, false);
+            plugin.getLogger().info("Created default config: " + relativePath);
+        } catch (IllegalArgumentException ex) {
+            // Not bundled in jar; ignore
+        } catch (Exception ex) {
+            plugin.getLogger().warning("Failed to create default config: " + relativePath + " - " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Load all yml files from a directory
+     * @param relativePath Path relative to plugin data folder
+     */
+    private void loadConfigsFromDirectory(String relativePath) {
+        File dir = new File(plugin.getDataFolder(), relativePath);
+        if (!dir.exists() || !dir.isDirectory()) {
+            return;
+        }
+
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".yml"));
+        if (files != null) {
+            for (File file : files) {
+                loadConfig(relativePath + "/" + file.getName());
+            }
+        }
+    }
+
     /**
      * Load a specific configuration file
-     * @param relativePath Path relative to plugin data folder (e.g., "configs/weapons/swords.yml")
+     * @param relativePath Path relative to plugin data folder (e.g., "config/weapons/types/example.yml")
      */
     private void loadConfig(String relativePath) {
         File configFile = new File(plugin.getDataFolder(), relativePath);
 
         // Save default file from resources if it doesn't exist
         if (!configFile.exists()) {
+            configFile.getParentFile().mkdirs();
+
             try {
-                configFile.getParentFile().mkdirs();
-                InputStream inputStream = plugin.getResource(relativePath);
-                if (inputStream != null) {
-                    Files.copy(inputStream, configFile.toPath());
-                    plugin.getLogger().info("Created default config: " + relativePath);
-                } else {
-                    plugin.getLogger().warning("Could not find default config in resources: " + relativePath);
-                    return;
-                }
-            } catch (IOException e) {
+                // JavaPlugin#saveResource 支援帶子資料夾的路徑（例如 config/weapons/types/example.yml）
+                plugin.saveResource(relativePath, false);
+                plugin.getLogger().info("Created default config: " + relativePath);
+            } catch (IllegalArgumentException ex) {
+                // resource 不存在於 jar 內
+                plugin.getLogger().warning("Could not find default config in resources: " + relativePath);
+                return;
+            } catch (Exception ex) {
                 plugin.getLogger().severe("Failed to create config file: " + relativePath);
-                e.printStackTrace();
+                plugin.getLogger().severe(ex.getMessage());
                 return;
             }
         }
@@ -103,9 +159,9 @@ public class ConfigManager {
     public Map<String, Map<String, Object>> getAllWeapons() {
         Map<String, Map<String, Object>> allWeapons = new HashMap<>();
 
-        // Load from all weapon config files
+        // Load from all weapon type config files in config/weapons/types/
         for (String configPath : configs.keySet()) {
-            if (configPath.startsWith("configs/weapons/")) {
+            if (configPath.startsWith("config/weapons/types/")) {
                 FileConfiguration config = configs.get(configPath);
                 for (String key : config.getKeys(false)) {
                     Map<String, Object> weaponData = new HashMap<>();
@@ -128,17 +184,20 @@ public class ConfigManager {
      */
     public Map<String, Map<String, Object>> getAllSkills() {
         Map<String, Map<String, Object>> allSkills = new HashMap<>();
-        FileConfiguration config = configs.get("configs/skills.yml");
 
-        if (config != null) {
-            for (String key : config.getKeys(false)) {
-                Map<String, Object> skillData = new HashMap<>();
-                skillData.put("name", config.getString(key + ".name"));
-                skillData.put("item", config.getString(key + ".item"));
-                skillData.put("activation", config.getString(key + ".activation"));
-                skillData.put("cooldown", config.getInt(key + ".cooldown"));
-                skillData.put("effect", config.getString(key + ".effect"));
-                allSkills.put(key, skillData);
+        // Load from all skill config files in config/skills/
+        for (String configPath : configs.keySet()) {
+            if (configPath.startsWith("config/skills/")) {
+                FileConfiguration config = configs.get(configPath);
+                for (String key : config.getKeys(false)) {
+                    Map<String, Object> skillData = new HashMap<>();
+                    skillData.put("name", config.getString(key + ".name"));
+                    skillData.put("item", config.getString(key + ".item"));
+                    skillData.put("activation", config.getString(key + ".activation"));
+                    skillData.put("cooldown", config.getInt(key + ".cooldown"));
+                    skillData.put("effect", config.getString(key + ".effect"));
+                    allSkills.put(key, skillData);
+                }
             }
         }
 
@@ -151,21 +210,75 @@ public class ConfigManager {
      */
     public Map<String, Map<String, Object>> getAllMobs() {
         Map<String, Map<String, Object>> allMobs = new HashMap<>();
-        FileConfiguration config = configs.get("configs/mobs.yml");
 
-        if (config != null) {
-            for (String key : config.getKeys(false)) {
-                Map<String, Object> mobData = new HashMap<>();
-                mobData.put("name", config.getString(key + ".name"));
-                mobData.put("type", config.getString(key + ".type"));
-                mobData.put("health", config.getDouble(key + ".health"));
-                mobData.put("damage", config.getDouble(key + ".damage"));
-                mobData.put("special-behavior", config.getString(key + ".special-behavior"));
-                allMobs.put(key, mobData);
+        // Load from all mob type config files in config/mobs/types/
+        for (String configPath : configs.keySet()) {
+            if (configPath.startsWith("config/mobs/types/")) {
+                FileConfiguration config = configs.get(configPath);
+                for (String key : config.getKeys(false)) {
+                    Map<String, Object> mobData = new HashMap<>();
+                    mobData.put("name", config.getString(key + ".name"));
+                    mobData.put("type", config.getString(key + ".type"));
+                    mobData.put("health", config.getDouble(key + ".health"));
+                    mobData.put("damage", config.getDouble(key + ".damage"));
+                    mobData.put("special-behavior", config.getString(key + ".special-behavior"));
+                    allMobs.put(key, mobData);
+                }
             }
         }
 
         return allMobs;
+    }
+
+    /**
+     * Get all weapon skill configurations
+     * @return Map of weapon skill key to configuration section data
+     */
+    public Map<String, Map<String, Object>> getAllWeaponSkills() {
+        Map<String, Map<String, Object>> allWeaponSkills = new HashMap<>();
+
+        // Load from all weapon skill config files in config/weapons/skills/
+        for (String configPath : configs.keySet()) {
+            if (configPath.startsWith("config/weapons/skills/")) {
+                FileConfiguration config = configs.get(configPath);
+                for (String key : config.getKeys(false)) {
+                    Map<String, Object> skillData = new HashMap<>();
+                    skillData.put("name", config.getString(key + ".name"));
+                    skillData.put("effect", config.getString(key + ".effect"));
+                    skillData.put("cooldown", config.getInt(key + ".cooldown"));
+                    skillData.put("damage", config.getDouble(key + ".damage"));
+                    skillData.put("range", config.getDouble(key + ".range"));
+                    allWeaponSkills.put(key, skillData);
+                }
+            }
+        }
+
+        return allWeaponSkills;
+    }
+
+    /**
+     * Get all mob skill configurations
+     * @return Map of mob skill key to configuration section data
+     */
+    public Map<String, Map<String, Object>> getAllMobSkills() {
+        Map<String, Map<String, Object>> allMobSkills = new HashMap<>();
+
+        // Load from all mob skill config files in config/mobs/skills/
+        for (String configPath : configs.keySet()) {
+            if (configPath.startsWith("config/mobs/skills/")) {
+                FileConfiguration config = configs.get(configPath);
+                for (String key : config.getKeys(false)) {
+                    Map<String, Object> skillData = new HashMap<>();
+                    skillData.put("name", config.getString(key + ".name"));
+                    skillData.put("effect", config.getString(key + ".effect"));
+                    skillData.put("cooldown", config.getInt(key + ".cooldown"));
+                    skillData.put("trigger", config.getString(key + ".trigger"));
+                    allMobSkills.put(key, skillData);
+                }
+            }
+        }
+
+        return allMobSkills;
     }
 
     /**
@@ -177,4 +290,3 @@ public class ConfigManager {
         plugin.getLogger().info("Reloaded all configuration files");
     }
 }
-
