@@ -3,10 +3,14 @@ package com.customrpg.managers;
 import com.customrpg.CustomRPG;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +34,9 @@ public class WeaponManager {
     private final CustomRPG plugin;
     private final Map<String, WeaponData> weapons;
     private final ConfigManager configManager;
+    private final NamespacedKey weaponKeyData;
+    private final NamespacedKey attackSpeedModifierKey;
+    private final NamespacedKey knockbackModifierKey;
 
     /**
      * Constructor for WeaponManager
@@ -40,6 +47,9 @@ public class WeaponManager {
         this.plugin = plugin;
         this.configManager = configManager;
         this.weapons = new HashMap<>();
+        this.weaponKeyData = new NamespacedKey(plugin, "custom_weapon_key");
+        this.attackSpeedModifierKey = new NamespacedKey(plugin, "customrpg_attack_speed");
+        this.knockbackModifierKey = new NamespacedKey(plugin, "customrpg_attack_knockback");
         loadWeapons();
     }
 
@@ -58,13 +68,47 @@ public class WeaponManager {
             String weaponKey = entry.getKey();
             Map<String, Object> weaponConfig = entry.getValue();
 
+            String name = (String) weaponConfig.get("name");
+            String displayName = (String) weaponConfig.get("display-name");
+            if (displayName == null || displayName.isEmpty()) {
+                displayName = name;
+            }
+
+            int customModelData = 0;
+            Object cmdObj = weaponConfig.get("custom-model-data");
+            if (cmdObj instanceof Integer) {
+                customModelData = (Integer) cmdObj;
+            }
+
+            boolean enchantedGlow = false;
+            Object glowObj = weaponConfig.get("enchanted-glow");
+            if (glowObj instanceof Boolean) {
+                enchantedGlow = (Boolean) glowObj;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> extra = weaponConfig.get("extra") instanceof Map
+                    ? (Map<String, Object>) weaponConfig.get("extra")
+                    : new HashMap<>();
+
+            // stats (新格式) 會放在 extra 裡
+            extra.putIfAbsent("base-damage", weaponConfig.getOrDefault("base-damage", 0.0));
+            extra.putIfAbsent("attack-speed", weaponConfig.getOrDefault("attack-speed", 0.0));
+            extra.putIfAbsent("crit-chance", weaponConfig.getOrDefault("crit-chance", 0.0));
+            extra.putIfAbsent("crit-damage-multiplier", weaponConfig.getOrDefault("crit-damage-multiplier", 0.0));
+            extra.putIfAbsent("knockback", weaponConfig.getOrDefault("knockback", 0.0));
+            extra.putIfAbsent("durability-cost-multiplier", weaponConfig.getOrDefault("durability-cost-multiplier", 1.0));
+
             WeaponData weaponData = new WeaponData(
-                weaponKey,
-                (String) weaponConfig.get("name"),
-                Material.valueOf((String) weaponConfig.get("material")),
-                (Double) weaponConfig.get("damage-multiplier"),
-                (String) weaponConfig.get("special-effect"),
-                (List<String>) weaponConfig.get("lore")
+                    weaponKey,
+                    displayName,
+                    Material.valueOf((String) weaponConfig.get("material")),
+                    weaponConfig.get("damage-multiplier") instanceof Double ? (Double) weaponConfig.get("damage-multiplier") : 1.0,
+                    (String) weaponConfig.get("special-effect"),
+                    (List<String>) weaponConfig.get("lore"),
+                    customModelData,
+                    enchantedGlow,
+                    extra
             );
 
             weapons.put(weaponKey, weaponData);
@@ -94,7 +138,42 @@ public class WeaponManager {
             }
             meta.setLore(lore);
 
-            meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+            if (weaponData.getCustomModelData() > 0) {
+                meta.setCustomModelData(weaponData.getCustomModelData());
+            }
+
+            if (weaponData.isEnchantedGlow()) {
+                meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+            }
+
+            // 標記武器 key，讓 listener 不用靠 displayName
+            meta.getPersistentDataContainer().set(weaponKeyData, PersistentDataType.STRING, weaponKey);
+
+            // 套用攻擊速度（AttributeModifier）。
+            // 注意：這是對「物品」的屬性，不是玩家永久屬性。
+            double attackSpeed = weaponData.getDoubleExtra("attack-speed", 0.0);
+            if (attackSpeed != 0.0) {
+                AttributeModifier mod = new AttributeModifier(
+                        attackSpeedModifierKey,
+                        attackSpeed,
+                        AttributeModifier.Operation.ADD_NUMBER,
+                        EquipmentSlotGroup.HAND
+                );
+                meta.addAttributeModifier(Attribute.ATTACK_SPEED, mod);
+            }
+
+            // 擊退強度（Knockback Resistance 不是擊退，這裡採用 attack knockback add）
+            double knockback = weaponData.getDoubleExtra("knockback", 0.0);
+            if (knockback != 0.0) {
+                AttributeModifier mod = new AttributeModifier(
+                        knockbackModifierKey,
+                        knockback,
+                        AttributeModifier.Operation.ADD_NUMBER,
+                        EquipmentSlotGroup.HAND
+                );
+                meta.addAttributeModifier(Attribute.ATTACK_KNOCKBACK, mod);
+            }
+
             weapon.setItemMeta(meta);
         }
 
@@ -112,7 +191,18 @@ public class WeaponManager {
         }
 
         ItemMeta meta = item.getItemMeta();
-        if (meta == null || !meta.hasDisplayName()) {
+        if (meta == null) {
+            return null;
+        }
+
+        // 優先讀 PDC
+        String keyFromPdc = meta.getPersistentDataContainer().get(weaponKeyData, PersistentDataType.STRING);
+        if (keyFromPdc != null && weapons.containsKey(keyFromPdc)) {
+            return keyFromPdc;
+        }
+
+        // fallback：舊物品用 displayName 比對
+        if (!meta.hasDisplayName()) {
             return null;
         }
 
@@ -170,15 +260,28 @@ public class WeaponManager {
         private final double damageMultiplier;
         private final String specialEffect;
         private final List<String> lore;
+        private final int customModelData;
+        private final boolean enchantedGlow;
+        private final Map<String, Object> extra;
 
-        public WeaponData(String key, String displayName, Material material, double damageMultiplier,
-                         String specialEffect, List<String> lore) {
+        public WeaponData(String key,
+                          String displayName,
+                          Material material,
+                          double damageMultiplier,
+                          String specialEffect,
+                          List<String> lore,
+                          int customModelData,
+                          boolean enchantedGlow,
+                          Map<String, Object> extra) {
             this.key = key;
             this.displayName = displayName;
             this.material = material;
             this.damageMultiplier = damageMultiplier;
-            this.specialEffect = specialEffect;
+            this.specialEffect = specialEffect != null ? specialEffect : "none";
             this.lore = lore != null ? lore : new ArrayList<>();
+            this.customModelData = customModelData;
+            this.enchantedGlow = enchantedGlow;
+            this.extra = extra != null ? extra : new HashMap<>();
         }
 
         public String getKey() { return key; }
@@ -187,5 +290,23 @@ public class WeaponManager {
         public double getDamageMultiplier() { return damageMultiplier; }
         public String getSpecialEffect() { return specialEffect; }
         public List<String> getLore() { return lore; }
+        public int getCustomModelData() { return customModelData; }
+        public boolean isEnchantedGlow() { return enchantedGlow; }
+        public Map<String, Object> getExtra() { return extra; }
+
+        public boolean getBooleanExtra(String key, boolean def) {
+            Object v = extra.get(key);
+            return v instanceof Boolean ? (Boolean) v : def;
+        }
+
+        public double getDoubleExtra(String key, double def) {
+            Object v = extra.get(key);
+            return v instanceof Number ? ((Number) v).doubleValue() : def;
+        }
+
+        public int getIntExtra(String key, int def) {
+            Object v = extra.get(key);
+            return v instanceof Number ? ((Number) v).intValue() : def;
+        }
     }
 }

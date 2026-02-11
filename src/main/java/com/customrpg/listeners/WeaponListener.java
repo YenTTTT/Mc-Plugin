@@ -7,8 +7,10 @@ import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -47,7 +49,7 @@ public class WeaponListener implements Listener {
      * Handle entity damage events for custom weapon effects
      * @param event EntityDamageByEntityEvent
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) {
             return;
@@ -66,11 +68,68 @@ public class WeaponListener implements Listener {
             return;
         }
 
+        // 1) Base damage
         double baseDamage = event.getDamage();
-        double newDamage = baseDamage * weaponData.getDamageMultiplier();
-        event.setDamage(newDamage);
+        double baseDamageOverride = weaponData.getDoubleExtra("base-damage", 0.0);
+        if (baseDamageOverride > 0.0) {
+            baseDamage = baseDamageOverride;
+        }
+
+        // 2) damage multiplier
+        double damageAfterMultiplier = baseDamage * weaponData.getDamageMultiplier();
+
+        // 3) crit
+        double critChancePercent = weaponData.getDoubleExtra("crit-chance", 0.0);
+        double critDamageMultiplier = weaponData.getDoubleExtra("crit-damage-multiplier", 0.0);
+        boolean isCrit = false;
+
+        if (critChancePercent > 0.0 && critDamageMultiplier > 1.0) {
+            double roll = random.nextDouble() * 100.0;
+            if (roll < critChancePercent) {
+                damageAfterMultiplier *= critDamageMultiplier;
+                isCrit = true;
+            }
+        }
+
+        event.setDamage(damageAfterMultiplier);
+
+        if (isCrit) {
+            player.sendMessage(ChatColor.YELLOW + "✨ 暴擊！x" + critDamageMultiplier);
+        }
+
+        // 4) 額外擊退推力（yml 的 knockback）
+        double extraKnockback = weaponData.getDoubleExtra("knockback", 0.0);
+        if (extraKnockback > 0 && event.getEntity() instanceof LivingEntity) {
+            Vector dir = event.getEntity().getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
+            Vector kb = dir.multiply(extraKnockback * 0.2); // 0.2: 避免太誇張
+            kb.setY(Math.min(0.4, kb.getY() + 0.1));
+            event.getEntity().setVelocity(event.getEntity().getVelocity().add(kb));
+        }
 
         applySpecialEffect(player, event.getEntity(), weaponData);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onItemDamage(PlayerItemDamageEvent event) {
+        ItemStack item = event.getItem();
+        String weaponKey = weaponManager.getWeaponKey(item);
+        if (weaponKey == null) {
+            return;
+        }
+
+        WeaponManager.WeaponData weaponData = weaponManager.getWeaponData(weaponKey);
+        if (weaponData == null) {
+            return;
+        }
+
+        double mult = weaponData.getDoubleExtra("durability-cost-multiplier", 1.0);
+        if (mult <= 0) {
+            event.setCancelled(true);
+            return;
+        }
+
+        int newDamage = (int) Math.round(event.getDamage() * mult);
+        event.setDamage(Math.max(0, newDamage));
     }
 
     /**
@@ -81,6 +140,9 @@ public class WeaponListener implements Listener {
      */
     private void applySpecialEffect(Player attacker, org.bukkit.entity.Entity victim, WeaponManager.WeaponData weaponData) {
         String effect = weaponData.getSpecialEffect();
+        if (effect == null) {
+            return;
+        }
 
         switch (effect.toLowerCase()) {
             case "backstab":
@@ -89,15 +151,15 @@ public class WeaponListener implements Listener {
 
             case "burn":
             case "fire":
-                applyBurnEffect(attacker, victim);
+                applyBurnEffect(attacker, victim, weaponData);
                 break;
 
             case "lightning":
-                applyLightningEffect(attacker, victim);
+                applyLightningEffect(attacker, victim, weaponData);
                 break;
 
             default:
-                plugin.getLogger().warning("Unknown weapon effect: " + effect);
+                // effect=none or unknown
                 break;
         }
     }
@@ -113,6 +175,12 @@ public class WeaponListener implements Listener {
             return;
         }
 
+        // 新格式：必須啟用背刺才生效；舊格式沒有這個欄位時，預設啟用
+        boolean backstabEnabled = weaponData.getBooleanExtra("backstab-enabled", true);
+        if (!backstabEnabled) {
+            return;
+        }
+
         LivingEntity livingVictim = (LivingEntity) victim;
 
         Vector attackerDirection = attacker.getLocation().getDirection().normalize();
@@ -120,11 +188,12 @@ public class WeaponListener implements Listener {
 
         double dotProduct = attackerDirection.dot(victimDirection);
 
-        // If attacking from behind (same direction)
         if (dotProduct > 0.5) {
-            double bonusDamage = 4.0;
+            // 以倍率做為附加傷害（基礎：原本固定 4.0）
+            double multiplier = weaponData.getDoubleExtra("backstab-multiplier", 1.0);
+            double bonusDamage = 4.0 * Math.max(0.0, multiplier);
             livingVictim.damage(bonusDamage);
-            attacker.sendMessage(ChatColor.RED + "✦ 鐵鐮刀: 背刺! +" + bonusDamage + " 額外傷害!");
+            attacker.sendMessage(ChatColor.RED + "✦ 背刺! +" + bonusDamage + " 額外傷害!");
             attacker.getWorld().playSound(attacker.getLocation(), "entity.player.attack.crit", 1.0f, 0.8f);
         }
     }
@@ -133,19 +202,17 @@ public class WeaponListener implements Listener {
      * Apply burn/fire effect (sets target on fire)
      * @param attacker The attacking player
      * @param victim The victim entity
+     * @param weaponData The weapon data
      */
-    private void applyBurnEffect(Player attacker, org.bukkit.entity.Entity victim) {
+    private void applyBurnEffect(Player attacker, org.bukkit.entity.Entity victim, WeaponManager.WeaponData weaponData) {
         if (!(victim instanceof LivingEntity)) {
             return;
         }
 
-        // Set fire for 5 seconds (100 ticks)
-        victim.setFireTicks(100);
+        int durationTicks = weaponData.getIntExtra("burn-duration-ticks", 100);
+        victim.setFireTicks(Math.max(0, durationTicks));
 
-        // Visual and audio feedback
-        attacker.sendMessage(ChatColor.GOLD + "🔥 烈焰之劍: 目標燃燒中!");
-
-        // Play fire sound
+        attacker.sendMessage(ChatColor.GOLD + "🔥 目標燃燒中! (" + durationTicks + " ticks)\n");
         attacker.getWorld().playSound(attacker.getLocation(), "entity.blaze.shoot", 1.0f, 1.0f);
     }
 
@@ -153,13 +220,14 @@ public class WeaponListener implements Listener {
      * Apply lightning effect (random lightning strike)
      * @param attacker The attacking player
      * @param victim The victim entity
+     * @param weaponData The weapon data
      */
-    private void applyLightningEffect(Player attacker, org.bukkit.entity.Entity victim) {
-        // 30% chance to trigger lightning
-        if (random.nextDouble() < 0.3) {
+    private void applyLightningEffect(Player attacker, org.bukkit.entity.Entity victim, WeaponManager.WeaponData weaponData) {
+        double chance = weaponData.getDoubleExtra("lightning-chance", 0.3);
+        if (random.nextDouble() < chance) {
             Location strikeLocation = victim.getLocation();
             victim.getWorld().strikeLightning(strikeLocation);
-            attacker.sendMessage(ChatColor.AQUA + "⚡ 雷霆戰斧: 召喚閃電!");
+            attacker.sendMessage(ChatColor.AQUA + "⚡ 召喚閃電! (" + (int) (chance * 100) + "%)");
         }
     }
 }

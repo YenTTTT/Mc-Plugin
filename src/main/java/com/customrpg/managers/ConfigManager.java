@@ -159,23 +159,115 @@ public class ConfigManager {
     public Map<String, Map<String, Object>> getAllWeapons() {
         Map<String, Map<String, Object>> allWeapons = new HashMap<>();
 
-        // Load from all weapon type config files in config/weapons/types/
         for (String configPath : configs.keySet()) {
-            if (configPath.startsWith("config/weapons/types/")) {
-                FileConfiguration config = configs.get(configPath);
-                for (String key : config.getKeys(false)) {
-                    Map<String, Object> weaponData = new HashMap<>();
+            if (!configPath.startsWith("config/weapons/types/")) {
+                continue;
+            }
+
+            FileConfiguration config = configs.get(configPath);
+            for (String key : config.getKeys(false)) {
+                // 支援兩種格式：
+                // 1) 舊格式：name/material/lore/damage-multiplier/special-effect
+                // 2) 新格式：basic/appearance/stats/special/...
+                boolean isNewFormat = config.isConfigurationSection(key + ".basic")
+                        || config.isConfigurationSection(key + ".appearance")
+                        || config.isConfigurationSection(key + ".stats")
+                        || config.isConfigurationSection(key + ".special");
+
+                Map<String, Object> weaponData = new HashMap<>();
+
+                if (isNewFormat) {
+                    // 【武器基本資料】
+                    weaponData.put("name", config.getString(key + ".basic.name"));
+                    weaponData.put("material", config.getString(key + ".basic.material"));
+
+                    // 【外觀設定】
+                    weaponData.put("display-name", config.getString(key + ".appearance.display-name"));
+                    weaponData.put("lore", config.getStringList(key + ".appearance.lore"));
+                    weaponData.put("custom-model-data", config.getInt(key + ".appearance.custom-model-data", 0));
+                    weaponData.put("enchanted-glow", config.getBoolean(key + ".appearance.enchanted-glow", false));
+
+                    // 【基礎戰鬥屬性】
+                    // 若沒填 damage-multiplier，就用 (base-damage) 去推一個倍率；沒辦法推就回到 1.0
+                    double damageMultiplier = config.getDouble(key + ".stats.damage-multiplier", 0.0);
+                    if (damageMultiplier <= 0) {
+                        damageMultiplier = 1.0;
+                    }
+                    weaponData.put("damage-multiplier", damageMultiplier);
+
+                    // 其餘 stats 欄位（先提供給戰鬥計算使用）
+                    weaponData.put("base-damage", config.getDouble(key + ".stats.base-damage", 0.0));
+                    weaponData.put("attack-speed", config.getDouble(key + ".stats.attack-speed", 0.0));
+                    weaponData.put("crit-chance", config.getDouble(key + ".stats.crit-chance", 0.0));
+                    weaponData.put("crit-damage-multiplier", config.getDouble(key + ".stats.crit-damage-multiplier", 0.0));
+                    weaponData.put("knockback", config.getDouble(key + ".stats.knockback", 0.0));
+                    weaponData.put("durability-cost-multiplier", config.getDouble(key + ".stats.durability-cost-multiplier", 1.0));
+
+                    // 【特殊機制】(先以舊的 special-effect string 相容 WeaponListener)
+                    // 處理元素屬性（火/冰/雷/毒/無）→ 對應成 burn/lightning/...（目前 listener 只支援這三種）
+                    String element = config.getString(key + ".element.element", "");
+                    String specialEffect = config.getString(key + ".special.effect", "");
+
+                    String resolvedEffect = resolveWeaponEffect(element, specialEffect);
+                    weaponData.put("special-effect", resolvedEffect);
+
+                    // 額外資料（之後 listener 參數化會用到）
+                    Map<String, Object> extra = new HashMap<>();
+                    extra.put("backstab-enabled", config.getBoolean(key + ".special.backstab-enabled", false));
+                    extra.put("backstab-multiplier", config.getDouble(key + ".special.backstab-multiplier", 1.0));
+                    extra.put("burn-duration-ticks", config.getInt(key + ".element.duration-ticks", 100));
+                    extra.put("lightning-chance", config.getDouble(key + ".element.lightning-chance", 0.3));
+                    weaponData.put("extra", extra);
+                } else {
+                    // 舊格式讀取（向下相容）
                     weaponData.put("name", config.getString(key + ".name"));
                     weaponData.put("material", config.getString(key + ".material"));
                     weaponData.put("damage-multiplier", config.getDouble(key + ".damage-multiplier"));
                     weaponData.put("special-effect", config.getString(key + ".special-effect"));
                     weaponData.put("lore", config.getStringList(key + ".lore"));
-                    allWeapons.put(key, weaponData);
                 }
+
+                allWeapons.put(key, weaponData);
             }
         }
 
         return allWeapons;
+    }
+
+    private String resolveWeaponEffect(String element, String specialEffect) {
+        String se = specialEffect == null ? "" : specialEffect.trim().toLowerCase();
+        String elRaw = element == null ? "" : element.trim();
+        String el = elRaw.toLowerCase();
+
+        // 先以 special.effect 優先
+        if (!se.isEmpty() && !se.equals("none")) {
+            if (se.equals("fire")) {
+                return "burn";
+            }
+            if (se.equals("thunder")) {
+                return "lightning";
+            }
+            return se;
+        }
+
+        // 再用元素屬性推導（支援中英）
+        if (el.equals("fire") || elRaw.equals("火")) {
+            return "burn";
+        }
+        if (el.equals("ice") || elRaw.equals("冰")) {
+            return "none";
+        }
+        if (el.equals("lightning") || el.equals("thunder") || elRaw.equals("雷")) {
+            return "lightning";
+        }
+        if (el.equals("poison") || elRaw.equals("毒")) {
+            return "none";
+        }
+        if (el.equals("none") || elRaw.equals("無")) {
+            return "none";
+        }
+
+        return "none";
     }
 
     /**
