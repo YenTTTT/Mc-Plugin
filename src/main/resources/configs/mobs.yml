@@ -1,0 +1,31 @@
+# ===========================================
+# CUSTOM MOBS
+# ===========================================
+# Define custom mob types with special behaviors
+# Available special behaviors:
+#   - snowball_thrower: Periodically throws snowballs
+#   - fire_arrows: Shoots fire arrows
+#   - split_on_death: Splits into smaller versions on death
+# ===========================================
+
+snow_zombie:
+  name: "&f&lSnow Zombie"
+  type: ZOMBIE
+  health: 25.0
+  damage: 6.0
+  special-behavior: snowball_thrower
+
+fire_skeleton:
+  name: "&6&lFire Skeleton"
+  type: SKELETON
+  health: 20.0
+  damage: 7.0
+  special-behavior: fire_arrows
+
+giant_slime:
+  name: "&a&lGiant Slime"
+  type: SLIME
+  health: 50.0
+  damage: 10.0
+  special-behavior: split_on_death
+

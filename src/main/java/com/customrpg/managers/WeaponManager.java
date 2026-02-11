@@ -29,38 +29,42 @@ public class WeaponManager {
 
     private final CustomRPG plugin;
     private final Map<String, WeaponData> weapons;
+    private final ConfigManager configManager;
 
     /**
      * Constructor for WeaponManager
      * @param plugin Main plugin instance
+     * @param configManager Config manager for loading weapon configs
      */
-    public WeaponManager(CustomRPG plugin) {
+    public WeaponManager(CustomRPG plugin, ConfigManager configManager) {
         this.plugin = plugin;
+        this.configManager = configManager;
         this.weapons = new HashMap<>();
         loadWeapons();
     }
 
     /**
-     * Load all weapons from config.yml
+     * Load all weapons from configs/weapons/ folder
      */
     private void loadWeapons() {
-        ConfigurationSection weaponsSection = plugin.getConfig().getConfigurationSection("weapons");
-        if (weaponsSection == null) {
-            plugin.getLogger().warning("No weapons section found in config.yml");
+        Map<String, Map<String, Object>> allWeapons = configManager.getAllWeapons();
+
+        if (allWeapons.isEmpty()) {
+            plugin.getLogger().warning("No weapons found in configs/weapons/ folder");
             return;
         }
 
-        for (String weaponKey : weaponsSection.getKeys(false)) {
-            ConfigurationSection weaponConfig = weaponsSection.getConfigurationSection(weaponKey);
-            if (weaponConfig == null) continue;
+        for (Map.Entry<String, Map<String, Object>> entry : allWeapons.entrySet()) {
+            String weaponKey = entry.getKey();
+            Map<String, Object> weaponConfig = entry.getValue();
 
             WeaponData weaponData = new WeaponData(
                 weaponKey,
-                weaponConfig.getString("name", weaponKey),
-                Material.valueOf(weaponConfig.getString("material", "IRON_SWORD")),
-                weaponConfig.getDouble("damage-multiplier", 1.0),
-                weaponConfig.getString("special-effect", "none"),
-                weaponConfig.getStringList("lore")
+                (String) weaponConfig.get("name"),
+                Material.valueOf((String) weaponConfig.get("material")),
+                (Double) weaponConfig.get("damage-multiplier"),
+                (String) weaponConfig.get("special-effect"),
+                (List<String>) weaponConfig.get("lore")
             );
 
             weapons.put(weaponKey, weaponData);

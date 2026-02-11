@@ -2,7 +2,6 @@ package com.customrpg.managers;
 
 import com.customrpg.CustomRPG;
 import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -29,39 +28,43 @@ public class MobManager {
     private final CustomRPG plugin;
     private final Map<String, MobData> mobTypes;
     private final NamespacedKey customMobKey;
+    private final ConfigManager configManager;
 
     /**
      * Constructor for MobManager
      * @param plugin Main plugin instance
+     * @param configManager Config manager for loading mob configs
      */
-    public MobManager(CustomRPG plugin) {
+    public MobManager(CustomRPG plugin, ConfigManager configManager) {
         this.plugin = plugin;
+        this.configManager = configManager;
         this.mobTypes = new HashMap<>();
         this.customMobKey = new NamespacedKey(plugin, "custom_mob_type");
         loadMobTypes();
     }
 
     /**
-     * Load all custom mob types from config.yml
+     * Load all custom mob types from configs/mobs.yml
      */
     private void loadMobTypes() {
-        ConfigurationSection mobsSection = plugin.getConfig().getConfigurationSection("mobs");
-        if (mobsSection == null) {
-            plugin.getLogger().warning("No mobs section found in config.yml");
+        Map<String, Map<String, Object>> allMobs = configManager.getAllMobs();
+
+        if (allMobs.isEmpty()) {
+            plugin.getLogger().warning("No mobs found in configs/mobs.yml");
             return;
         }
 
-        for (String mobKey : mobsSection.getKeys(false)) {
-            ConfigurationSection mobConfig = mobsSection.getConfigurationSection(mobKey);
-            if (mobConfig == null) continue;
+        for (Map.Entry<String, Map<String, Object>> entry : allMobs.entrySet()) {
+            String mobKey = entry.getKey();
+            Map<String, Object> mobConfig = entry.getValue();
 
             MobData mobData = new MobData(
                 mobKey,
-                mobConfig.getString("name", mobKey),
-                EntityType.valueOf(mobConfig.getString("type", "ZOMBIE")),
-                mobConfig.getDouble("health", 20.0),
-                mobConfig.getDouble("damage", 5.0),
-                mobConfig.getString("special-behavior", "none")
+                (String) mobConfig.get("name"),
+                EntityType.valueOf((String) mobConfig.get("type")),
+                (Double) mobConfig.get("health"),
+                (Double) mobConfig.get("damage"),
+                (String) mobConfig.get("special-behavior")
             );
 
             mobTypes.put(mobKey, mobData);

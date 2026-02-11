@@ -10,4 +10,5 @@ com\customrpg\listeners\WeaponListener.class
 com\customrpg\CustomRPG.class
 com\customrpg\listeners\SkillListener.class
 com\customrpg\managers\SkillManager$SkillData.class
+com\customrpg\managers\ConfigManager.class
 com\customrpg\commands\WeaponCommand.class

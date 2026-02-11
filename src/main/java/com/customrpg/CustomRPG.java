@@ -4,6 +4,7 @@ import com.customrpg.commands.WeaponCommand;
 import com.customrpg.listeners.MobListener;
 import com.customrpg.listeners.SkillListener;
 import com.customrpg.listeners.WeaponListener;
+import com.customrpg.managers.ConfigManager;
 import com.customrpg.managers.MobManager;
 import com.customrpg.managers.SkillManager;
 import com.customrpg.managers.WeaponManager;
@@ -26,6 +27,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class CustomRPG extends JavaPlugin {
 
+    private ConfigManager configManager;
     private WeaponManager weaponManager;
     private SkillManager skillManager;
     private MobManager mobManager;
@@ -39,10 +41,6 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("=================================");
         getLogger().info("   CustomRPG Plugin Starting");
         getLogger().info("=================================");
-
-        // Save default config if it doesn't exist
-        saveDefaultConfig();
-        getLogger().info("Configuration loaded successfully");
 
         // Initialize managers
         initializeManagers();
@@ -75,6 +73,7 @@ public class CustomRPG extends JavaPlugin {
         }
 
         // Cleanup managers
+        configManager = null;
         weaponManager = null;
         skillManager = null;
         mobManager = null;
@@ -89,13 +88,16 @@ public class CustomRPG extends JavaPlugin {
     private void initializeManagers() {
         getLogger().info("Initializing managers...");
 
-        weaponManager = new WeaponManager(this);
+        configManager = new ConfigManager(this);
+        getLogger().info("- ConfigManager initialized");
+
+        weaponManager = new WeaponManager(this, configManager);
         getLogger().info("- WeaponManager initialized with " + weaponManager.getWeaponCount() + " weapons");
 
-        skillManager = new SkillManager(this);
+        skillManager = new SkillManager(this, configManager);
         getLogger().info("- SkillManager initialized with " + skillManager.getSkillCount() + " skills");
 
-        mobManager = new MobManager(this);
+        mobManager = new MobManager(this, configManager);
         getLogger().info("- MobManager initialized with " + mobManager.getMobTypeCount() + " custom mob types");
     }
 
@@ -123,6 +125,14 @@ public class CustomRPG extends JavaPlugin {
 
         getCommand("weapon").setExecutor(new WeaponCommand(this, weaponManager));
         getLogger().info("- /weapon command registered");
+    }
+
+    /**
+     * Get the ConfigManager instance
+     * @return ConfigManager instance
+     */
+    public ConfigManager getConfigManager() {
+        return configManager;
     }
 
     /**

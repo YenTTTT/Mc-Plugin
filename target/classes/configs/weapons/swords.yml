@@ -1,0 +1,18 @@
+# ===========================================
+# SWORDS
+# ===========================================
+# Swords are balanced weapons with various elemental effects
+# ===========================================
+
+fire_sword:
+  name: "&6&lFire Sword"
+  material: GOLDEN_SWORD
+  damage-multiplier: 1.2
+  special-effect: fire
+  lore:
+    - "&7A blazing sword forged in flames"
+    - "&7that burns all who oppose you"
+    - ""
+    - "&6🔥 Fire Damage"
+    - "&8Special: Sets enemies on fire"
+

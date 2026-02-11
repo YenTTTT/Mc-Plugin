@@ -3,12 +3,10 @@ package com.customrpg.managers;
 import com.customrpg.CustomRPG;
 import com.customrpg.utils.CooldownUtil;
 import org.bukkit.Material;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * SkillManager - Manages all player skills and cooldowns
@@ -27,39 +25,43 @@ public class SkillManager {
     private final CustomRPG plugin;
     private final Map<String, SkillData> skills;
     private final CooldownUtil cooldownUtil;
+    private final ConfigManager configManager;
 
     /**
      * Constructor for SkillManager
      * @param plugin Main plugin instance
+     * @param configManager Config manager for loading skill configs
      */
-    public SkillManager(CustomRPG plugin) {
+    public SkillManager(CustomRPG plugin, ConfigManager configManager) {
         this.plugin = plugin;
+        this.configManager = configManager;
         this.skills = new HashMap<>();
         this.cooldownUtil = new CooldownUtil();
         loadSkills();
     }
 
     /**
-     * Load all skills from config.yml
+     * Load all skills from configs/skills.yml
      */
     private void loadSkills() {
-        ConfigurationSection skillsSection = plugin.getConfig().getConfigurationSection("skills");
-        if (skillsSection == null) {
-            plugin.getLogger().warning("No skills section found in config.yml");
+        Map<String, Map<String, Object>> allSkills = configManager.getAllSkills();
+
+        if (allSkills.isEmpty()) {
+            plugin.getLogger().warning("No skills found in configs/skills.yml");
             return;
         }
 
-        for (String skillKey : skillsSection.getKeys(false)) {
-            ConfigurationSection skillConfig = skillsSection.getConfigurationSection(skillKey);
-            if (skillConfig == null) continue;
+        for (Map.Entry<String, Map<String, Object>> entry : allSkills.entrySet()) {
+            String skillKey = entry.getKey();
+            Map<String, Object> skillConfig = entry.getValue();
 
             SkillData skillData = new SkillData(
                 skillKey,
-                skillConfig.getString("name", skillKey),
-                Material.valueOf(skillConfig.getString("item", "STICK")),
-                skillConfig.getString("activation", "RIGHT_CLICK"),
-                skillConfig.getInt("cooldown", 10),
-                skillConfig.getString("effect", "none")
+                (String) skillConfig.get("name"),
+                Material.valueOf((String) skillConfig.get("item")),
+                (String) skillConfig.get("activation"),
+                (Integer) skillConfig.get("cooldown"),
+                (String) skillConfig.get("effect")
             );
 
             skills.put(skillKey, skillData);
