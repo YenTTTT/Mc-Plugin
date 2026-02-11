@@ -1,0 +1,32 @@
+name: CustomRPG
+version: '1.0'
+main: com.customrpg.CustomRPG
+api-version: '1.21'
+description: A professional RPG plugin with custom weapons, skills, and mobs
+author: CustomRPG Team
+website: https://github.com/customrpg
+
+commands:
+  weapon:
+    description: Give custom weapons to players
+    usage: /weapon <weapon_name> [player] OR /weapon list
+    permission: customrpg.weapon
+    permission-message: You don't have permission to use this command!
+    aliases: [weapons, customweapon, cweapon]
+
+permissions:
+  customrpg.*:
+    description: Gives access to all CustomRPG features
+    children:
+      customrpg.weapon: true
+      customrpg.weapon.others: true
+      customrpg.admin: true
+  customrpg.weapon:
+    description: Allows using the /weapon command for yourself
+    default: op
+  customrpg.weapon.others:
+    description: Allows giving weapons to other players
+    default: op
+  customrpg.admin:
+    description: Administrative access to all features
+    default: op
