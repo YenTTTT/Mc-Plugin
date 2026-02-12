@@ -44,9 +44,14 @@ iron_scythe:
 
   # 【被動效果】
   passive:
-    description: ""
-    condition: ""
-    chance: 0
+    name: "殺戮激勵"
+    description: "擊殺生物後，10秒內暴擊率+50%"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 50.0
+    duration-ticks: 200
+    cooldown-ticks: 100
 
   # 【元素/狀態效果】
   element:
@@ -105,9 +110,12 @@ fire_sword:
     description: ""
 
   passive:
-    description: ""
-    condition: ""
-    chance: 0
+    description: "擊殺生物後，10秒內暴擊率+50%"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 50.0
+    duration-ticks: 200
 
   element:
     element: "火"
@@ -162,9 +170,12 @@ thunder_axe:
     description: ""
 
   passive:
-    description: ""
-    condition: ""
-    chance: 0
+    description: "擊殺生物後，10秒內暴擊率+50%"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 50.0
+    duration-ticks: 200
 
   element:
     element: "雷"

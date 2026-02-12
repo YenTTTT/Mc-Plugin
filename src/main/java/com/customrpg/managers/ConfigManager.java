@@ -217,6 +217,19 @@ public class ConfigManager {
                     extra.put("backstab-multiplier", config.getDouble(key + ".special.backstab-multiplier", 1.0));
                     extra.put("burn-duration-ticks", config.getInt(key + ".element.duration-ticks", 100));
                     extra.put("lightning-chance", config.getDouble(key + ".element.lightning-chance", 0.3));
+
+                    // 【被動效果】（測試版）
+                    // passive.effect: 例如 "kill_crit_boost"
+                    // passive.value: 例如 50.0（代表 +50% crit chance）
+                    // passive.duration-ticks: 持續時間（ticks），0 代表只對下一擊/一次生效（由 listener 決定）
+                    // passive.chance: 觸發機率（0~1 或 0~100 都支援）
+                    extra.put("passive-effect", config.getString(key + ".passive.effect", ""));
+                    extra.put("passive-name", config.getString(key + ".passive.name", ""));
+                    extra.put("passive-value", config.getDouble(key + ".passive.value", 0.0));
+                    extra.put("passive-duration-ticks", config.getInt(key + ".passive.duration-ticks", 200));
+                    extra.put("passive-chance", config.getDouble(key + ".passive.chance", 1.0));
+                    extra.put("passive-cooldown-ticks", config.getInt(key + ".passive.cooldown-ticks", 0));
+
                     weaponData.put("extra", extra);
                 } else {
                     // 舊格式讀取（向下相容）

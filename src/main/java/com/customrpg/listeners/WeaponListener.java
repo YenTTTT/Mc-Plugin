@@ -1,6 +1,7 @@
 package com.customrpg.listeners;
 
 import com.customrpg.CustomRPG;
+import com.customrpg.managers.PassiveEffectManager;
 import com.customrpg.managers.WeaponManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -10,11 +11,16 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
+import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * WeaponListener - Handles custom weapon attack events
@@ -33,6 +39,12 @@ public class WeaponListener implements Listener {
     private final CustomRPG plugin;
     private final WeaponManager weaponManager;
     private final Random random;
+    private final PassiveEffectManager passiveEffectManager;
+
+    private final Map<UUID, Map<String, Long>> passiveCooldownNotify = new ConcurrentHashMap<>();
+
+    // 這個用來判斷「最後一下是否為玩家造成」
+    // （EntityDeathEvent 的 getKiller 在某些情況會是 null，例如環境傷害）
 
     /**
      * Constructor for WeaponListener
@@ -43,6 +55,7 @@ public class WeaponListener implements Listener {
         this.plugin = plugin;
         this.weaponManager = weaponManager;
         this.random = new Random();
+        this.passiveEffectManager = new PassiveEffectManager();
     }
 
     /**
@@ -81,8 +94,17 @@ public class WeaponListener implements Listener {
         // 3) crit
         double critChancePercent = weaponData.getDoubleExtra("crit-chance", 0.0);
         double critDamageMultiplier = weaponData.getDoubleExtra("crit-damage-multiplier", 0.0);
-        boolean isCrit = false;
 
+        // 套用「被動增益」的暴擊率加成
+        double bonusCrit = passiveEffectManager.getBonusCritChancePercent(player);
+        if (bonusCrit > 0.0) {
+            critChancePercent += bonusCrit;
+        }
+
+        // 防呆：暴擊率上限 100%
+        critChancePercent = Math.max(0.0, Math.min(100.0, critChancePercent));
+
+        boolean isCrit = false;
         if (critChancePercent > 0.0 && critDamageMultiplier > 1.0) {
             double roll = random.nextDouble() * 100.0;
             if (roll < critChancePercent) {
@@ -229,5 +251,108 @@ public class WeaponListener implements Listener {
             victim.getWorld().strikeLightning(strikeLocation);
             attacker.sendMessage(ChatColor.AQUA + "⚡ 召喚閃電! (" + (int) (chance * 100) + "%)");
         }
+    }
+
+    /**
+     * 被動效果（測試）：用自訂武器擊殺生物時，獲得暴擊率 +50%
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityDeath(EntityDeathEvent event) {
+        Player killer = event.getEntity().getKiller();
+        if (killer == null) {
+            return;
+        }
+
+        // 避免 PVP（玩家死亡）干擾；你要支援 PVP 再加 PlayerDeathEvent
+        if (event.getEntity() instanceof Player) {
+            return;
+        }
+
+        ItemStack weapon = killer.getInventory().getItemInMainHand();
+        String weaponKey = weaponManager.getWeaponKey(weapon);
+        if (weaponKey == null) {
+            return;
+        }
+
+        WeaponManager.WeaponData weaponData = weaponManager.getWeaponData(weaponKey);
+        if (weaponData == null) {
+            return;
+        }
+
+        // 讀取被動設定
+        String passiveEffect = String.valueOf(weaponData.getExtra().getOrDefault("passive-effect", ""));
+        if (passiveEffect == null || passiveEffect.isBlank()) {
+            return;
+        }
+
+        String passiveName = String.valueOf(weaponData.getExtra().getOrDefault("passive-name", ""));
+        if (passiveName == null || passiveName.isBlank()) {
+            passiveName = passiveEffect;
+        }
+
+        // 只先做這個測試效果
+        if (!passiveEffect.equalsIgnoreCase("kill_crit_boost")) {
+            return;
+        }
+
+        // 不同武器/不同被動各自獨立冷卻
+        String cooldownKey = buildPassiveCooldownKey(weaponKey, passiveEffect);
+
+        // 冷卻（ticks）
+        int cooldownTicks = weaponData.getIntExtra("passive-cooldown-ticks", 0);
+        if (cooldownTicks > 0 && passiveEffectManager.isOnCooldown(killer, cooldownKey)) {
+            if (shouldNotifyCooldown(killer, cooldownKey)) {
+                int remainingTicks = passiveEffectManager.getRemainingCooldownTicks(killer, cooldownKey);
+                double remainingSeconds = remainingTicks / 20.0;
+                killer.sendMessage(ChatColor.RED + "【" + passiveName + "】 冷卻中：剩餘 " + String.format(Locale.ROOT, "%.1f", remainingSeconds) + " 秒");
+            }
+            return;
+        }
+
+        double value = weaponData.getDoubleExtra("passive-value", 0.0);
+        int durationTicks = weaponData.getIntExtra("passive-duration-ticks", 200);
+
+        // chance：支援 0~1 或 0~100
+        double chance = weaponData.getDoubleExtra("passive-chance", 1.0);
+        if (chance > 1.0) {
+            chance = chance / 100.0;
+        }
+        chance = Math.max(0.0, Math.min(1.0, chance));
+
+        if (random.nextDouble() > chance) {
+            return;
+        }
+
+        // 套用 buff
+        passiveEffectManager.applyKillCritBoost(killer, value, durationTicks);
+        if (cooldownTicks > 0) {
+            passiveEffectManager.startCooldown(killer, cooldownKey, cooldownTicks);
+        }
+
+        killer.sendMessage(ChatColor.GREEN + "[" + passiveName + "] 觸發：暴擊率 +" + value + "% (" + durationTicks + "ticks)" + (cooldownTicks > 0 ? (" CD " + cooldownTicks + "ticks") : ""));
+    }
+
+    private String buildPassiveCooldownKey(String weaponKey, String passiveEffect) {
+        String w = weaponKey == null ? "" : weaponKey.trim().toLowerCase();
+        String p = passiveEffect == null ? "" : passiveEffect.trim().toLowerCase();
+        if (w.isEmpty()) {
+            return p;
+        }
+        if (p.isEmpty()) {
+            return w;
+        }
+        return w + ":" + p;
+    }
+
+    private boolean shouldNotifyCooldown(Player player, String passiveKey) {
+        long now = System.currentTimeMillis();
+        java.util.Map<String, Long> perPlayer = passiveCooldownNotify.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.ConcurrentHashMap<>());
+        String key = passiveKey == null ? "" : passiveKey.trim().toLowerCase();
+        long last = perPlayer.getOrDefault(key, 0L);
+        if (now - last < 1000L) {
+            return false;
+        }
+        perPlayer.put(key, now);
+        return true;
     }
 }
