@@ -5,6 +5,7 @@ import com.customrpg.managers.PassiveEffectManager;
 import com.customrpg.managers.WeaponManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -197,7 +198,6 @@ public class WeaponListener implements Listener {
             return;
         }
 
-        // 新格式：必須啟用背刺才生效；舊格式沒有這個欄位時，預設啟用
         boolean backstabEnabled = weaponData.getBooleanExtra("backstab-enabled", true);
         if (!backstabEnabled) {
             return;
@@ -211,14 +211,28 @@ public class WeaponListener implements Listener {
         double dotProduct = attackerDirection.dot(victimDirection);
 
         if (dotProduct > 0.5) {
-            // 以倍率做為附加傷害（基礎：原本固定 4.0）
             double multiplier = weaponData.getDoubleExtra("backstab-multiplier", 1.0);
             double bonusDamage = 4.0 * Math.max(0.0, multiplier);
             livingVictim.damage(bonusDamage);
+
+            // 視覺：直接依 yml 內容決定（目前只做 enchanted_hit）
+            String particleName = String.valueOf(weaponData.getExtra().getOrDefault("backstab-particle", ""));
+            if (particleName != null && particleName.equalsIgnoreCase("enchanted_hit")) {
+                victim.getWorld().spawnParticle(Particle.ENCHANT, victim.getLocation().add(0, 1.0, 0), 20, 0.3, 0.6, 0.3, 0.0);
+            }
+
+            // 音效：直接用 yml 提供的 sound key 字串播放
+            String soundKey = String.valueOf(weaponData.getExtra().getOrDefault("backstab-sound", ""));
+            if (soundKey != null && !soundKey.isBlank()) {
+                attacker.getWorld().playSound(victim.getLocation(), soundKey, 1.0f, 1.0f);
+            } else {
+                attacker.getWorld().playSound(victim.getLocation(), "entity.player.attack.crit", 1.0f, 0.8f);
+            }
+
             attacker.sendMessage(ChatColor.RED + "✦ 背刺! +" + bonusDamage + " 額外傷害!");
-            attacker.getWorld().playSound(attacker.getLocation(), "entity.player.attack.crit", 1.0f, 0.8f);
         }
     }
+
 
     /**
      * Apply burn/fire effect (sets target on fire)

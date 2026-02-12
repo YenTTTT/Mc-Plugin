@@ -215,6 +215,13 @@ public class ConfigManager {
                     Map<String, Object> extra = new HashMap<>();
                     extra.put("backstab-enabled", config.getBoolean(key + ".special.backstab-enabled", false));
                     extra.put("backstab-multiplier", config.getDouble(key + ".special.backstab-multiplier", 1.0));
+
+                    // 視覺/音效（支援新位置：special.effects.*，並向下相容舊的 effects.*）
+                    extra.put("backstab-sound", config.getString(key + ".special.effects.backstab-sound",
+                            config.getString(key + ".effects.backstab-sound", "")));
+                    extra.put("backstab-particle", config.getString(key + ".special.effects.backstab-particle",
+                            config.getString(key + ".effects.backstab-particle", "")));
+
                     extra.put("burn-duration-ticks", config.getInt(key + ".element.duration-ticks", 100));
                     extra.put("lightning-chance", config.getDouble(key + ".element.lightning-chance", 0.3));
 
