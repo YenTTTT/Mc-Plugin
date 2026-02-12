@@ -237,6 +237,17 @@ public class ConfigManager {
                     extra.put("passive-chance", config.getDouble(key + ".passive.chance", 1.0));
                     extra.put("passive-cooldown-ticks", config.getInt(key + ".passive.cooldown-ticks", 0));
 
+                    // 【主動技能】（武器內建 active-skill）
+                    extra.put("active-skill-name", config.getString(key + ".active-skill.name", ""));
+                    extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger", ""));
+                    extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", 0));
+                    extra.put("active-skill-description", config.getString(key + ".active-skill.description", ""));
+                    extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", 0.0));
+                    extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", 0.0));
+                    extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", 0.0));
+                    extra.put("active-skill-particle", config.getString(key + ".active-skill.particle", ""));
+                    extra.put("active-skill-sound", config.getString(key + ".active-skill.sound", ""));
+
                     weaponData.put("extra", extra);
                 } else {
                     // 舊格式讀取（向下相容）

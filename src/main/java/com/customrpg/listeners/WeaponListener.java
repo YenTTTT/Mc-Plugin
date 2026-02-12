@@ -6,6 +6,9 @@ import com.customrpg.managers.WeaponManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,6 +17,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -203,6 +208,7 @@ public class WeaponListener implements Listener {
             return;
         }
 
+        // 計算玩家跟敵對玩家的面對方向
         LivingEntity livingVictim = (LivingEntity) victim;
 
         Vector attackerDirection = attacker.getLocation().getDirection().normalize();
@@ -210,7 +216,8 @@ public class WeaponListener implements Listener {
 
         double dotProduct = attackerDirection.dot(victimDirection);
 
-        if (dotProduct > 0.5) {
+        // dotProduct > 0.5 是完全背對，改成0.3讓背刺比較好觸發
+        if (dotProduct > 0.3) {
             double multiplier = weaponData.getDoubleExtra("backstab-multiplier", 1.0);
             double bonusDamage = 4.0 * Math.max(0.0, multiplier);
             livingVictim.damage(bonusDamage);

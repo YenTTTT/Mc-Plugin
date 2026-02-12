@@ -34,13 +34,21 @@ iron_scythe:
     backstab-enabled: true
     backstab-multiplier: 1.0
     effect: "backstab"   # 可用：backstab / burn / lightning / none
+    effects:
+      backstab-particle: "enchanted_hit"
+      backstab-sound: "entity.guardian.ambient_land"
 
   # 【主動技能】
   active-skill:
-    name: ""
-    trigger: ""
-    cooldown: 0
-    description: ""
+    name: "thorn_spike"
+    trigger: RIGHT_CLICK
+    cooldown: 3
+    description: "藤莿 - 召喚藤莿造成傷害"
+    damage: 5
+    range: 3
+    aoe-width: 3
+    particle: SCULK_CHARGE
+    sound: ENTITY_DOLPHIN_HURT
 
   # 【被動效果】
   passive:
@@ -61,10 +69,7 @@ iron_scythe:
     lightning-chance: 0.3
 
   # 【音效與視覺】
-  effects:
-    attack-sound: ""
-    skill-sound: ""
-    particles: ""
+  effects: {}
 
   # 【限制條件】
   limits:
