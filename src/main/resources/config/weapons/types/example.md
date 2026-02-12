@@ -28,7 +28,7 @@
   special:
     backstabEnabled: false              # 背刺加成：true/false
     backstabMultiplier: 1.5             # 背刺倍率
-    armorPierce: false                  # 穿透傷害：是否無視部分護甲（先做布林最簡單）
+    armorPierce: false                  # 穿透傷害：以百分比計算，MinMax(0,100)，0代表0%穿透 100代表100%穿透
     aoeRadius: 0.0                      # 範圍攻擊半徑（0=無）
     lifeStealPercent: 0.0               # 吸血比例（%）
 

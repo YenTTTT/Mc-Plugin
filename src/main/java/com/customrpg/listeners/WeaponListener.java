@@ -49,7 +49,8 @@ public class WeaponListener implements Listener {
 
     /**
      * Constructor for WeaponListener
-     * @param plugin Main plugin instance
+     * 
+     * @param plugin        Main plugin instance
      * @param weaponManager WeaponManager instance
      */
     public WeaponListener(CustomRPG plugin, WeaponManager weaponManager) {
@@ -61,8 +62,10 @@ public class WeaponListener implements Listener {
 
     /**
      * Handle entity damage events for custom weapon effects
+     * 
      * @param event EntityDamageByEntityEvent
      */
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) {
@@ -123,13 +126,14 @@ public class WeaponListener implements Listener {
         // 4) 額外擊退推力（yml 的 knockback）
         double extraKnockback = weaponData.getDoubleExtra("knockback", 0.0);
         if (extraKnockback > 0 && event.getEntity() instanceof LivingEntity) {
-            Vector dir = event.getEntity().getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
+            Vector dir = event.getEntity().getLocation().toVector().subtract(player.getLocation().toVector())
+                    .normalize();
             Vector kb = dir.multiply(extraKnockback * 0.2); // 0.2: 避免太誇張
             kb.setY(Math.min(0.4, kb.getY() + 0.1));
             event.getEntity().setVelocity(event.getEntity().getVelocity().add(kb));
         }
 
-        applySpecialEffect(player, event.getEntity(), weaponData);
+        applySpecialEffect(player, event.getEntity(), weaponData, event);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -157,43 +161,96 @@ public class WeaponListener implements Listener {
 
     /**
      * Apply special weapon effects based on weapon type
-     * @param attacker The attacking player
-     * @param victim The victim entity
+     * 
+     * @param attacker   The attacking player
+     * @param victim     The victim entity
      * @param weaponData The weapon data
+     * @param event      The damage event (needed for Armor Pierce)
      */
-    private void applySpecialEffect(Player attacker, org.bukkit.entity.Entity victim, WeaponManager.WeaponData weaponData) {
-        String effect = weaponData.getSpecialEffect();
-        if (effect == null) {
-            return;
+    private void applySpecialEffect(Player attacker, org.bukkit.entity.Entity victim,
+            WeaponManager.WeaponData weaponData, EntityDamageByEntityEvent event) {
+        // 1. Mechanics
+        // Backstab
+        if (weaponData.getBooleanExtra("backstab-enabled", false)) {
+            applyBackstabEffect(attacker, victim, weaponData);
         }
 
-        switch (effect.toLowerCase()) {
-            case "backstab":
-                applyBackstabEffect(attacker, victim, weaponData);
-                break;
+        // Armor Pierce
+        double pierce = weaponData.getDoubleExtra("armor-pierce", 0.0);
+        if (pierce > 0.0 && event != null) {
+            applyArmorPierce(attacker, victim, pierce, event);
+        }
 
-            case "burn":
-            case "fire":
+        // Life Steal
+        double lifeSteal = weaponData.getDoubleExtra("life-steal", 0.0);
+        if (lifeSteal > 0.0) {
+            applyLifeSteal(attacker, lifeSteal, event.getFinalDamage());
+        }
+
+        // AOE (Not fully implemented in plan, but good to have placeholder or simple
+        // logic)
+        // double aoe = weaponData.getDoubleExtra("aoe-radius", 0.0);
+
+        // 2. Elements
+        String elementType = String.valueOf(weaponData.getExtra().getOrDefault("element-type", "NONE")).toUpperCase();
+        if (!elementType.equals("NONE")) {
+            applyElementEffect(attacker, victim, elementType, weaponData);
+        }
+    }
+
+    private void applyArmorPierce(Player attacker, org.bukkit.entity.Entity victim, double piercePercent,
+            EntityDamageByEntityEvent event) {
+        if (piercePercent > 100.0)
+            piercePercent = 100.0;
+        if (piercePercent <= 0.0)
+            return;
+
+        // Try to reduce the armor reduction
+        if (event.isApplicable(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.ARMOR)) {
+            double armorReduction = event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.ARMOR); // Usually
+                                                                                                                     // negative
+            // If armor reduction is -10, and pierce is 20% (0.2), we want new reduction to
+            // be -8.
+            // new = old * (1 - 0.2) = -10 * 0.8 = -8.
+            double newReduction = armorReduction * (1.0 - (piercePercent / 100.0));
+            event.setDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.ARMOR, newReduction);
+        }
+    }
+
+    private void applyLifeSteal(Player attacker, double percent, double damageDealt) {
+        if (damageDealt <= 0)
+            return;
+        double heal = damageDealt * (percent / 100.0);
+        double maxHealth = attacker.getMaxHealth();
+        attacker.setHealth(Math.min(maxHealth, attacker.getHealth() + heal));
+    }
+
+    private void applyElementEffect(Player attacker, org.bukkit.entity.Entity victim, String elementType,
+            WeaponManager.WeaponData weaponData) {
+        switch (elementType) {
+            case "FIRE":
+            case "BURN":
                 applyBurnEffect(attacker, victim, weaponData);
                 break;
-
-            case "lightning":
+            case "LIGHTNING":
+            case "THUNDER":
                 applyLightningEffect(attacker, victim, weaponData);
                 break;
-
+            // Add ICE, POISON later
             default:
-                // effect=none or unknown
                 break;
         }
     }
 
     /**
      * Apply backstab effect (extra damage from behind)
-     * @param attacker The attacking player
-     * @param victim The victim entity
+     * 
+     * @param attacker   The attacking player
+     * @param victim     The victim entity
      * @param weaponData The weapon data
      */
-    private void applyBackstabEffect(Player attacker, org.bukkit.entity.Entity victim, WeaponManager.WeaponData weaponData) {
+    private void applyBackstabEffect(Player attacker, org.bukkit.entity.Entity victim,
+            WeaponManager.WeaponData weaponData) {
         if (!(victim instanceof LivingEntity)) {
             return;
         }
@@ -218,7 +275,8 @@ public class WeaponListener implements Listener {
             // 視覺：直接依 yml 內容決定（目前只做 enchanted_hit）
             String particleName = String.valueOf(weaponData.getExtra().getOrDefault("backstab-particle", ""));
             if (particleName != null && particleName.equalsIgnoreCase("enchanted_hit")) {
-                victim.getWorld().spawnParticle(Particle.ENCHANT, victim.getLocation().add(0, 1.0, 0), 20, 0.3, 0.6, 0.3, 0.0);
+                victim.getWorld().spawnParticle(Particle.ENCHANT, victim.getLocation().add(0, 1.0, 0), 20, 0.3, 0.6,
+                        0.3, 0.0);
             }
 
             // 音效：直接用 yml 提供的 sound key 字串播放
@@ -233,14 +291,15 @@ public class WeaponListener implements Listener {
         }
     }
 
-
     /**
      * Apply burn/fire effect (sets target on fire)
-     * @param attacker The attacking player
-     * @param victim The victim entity
+     * 
+     * @param attacker   The attacking player
+     * @param victim     The victim entity
      * @param weaponData The weapon data
      */
-    private void applyBurnEffect(Player attacker, org.bukkit.entity.Entity victim, WeaponManager.WeaponData weaponData) {
+    private void applyBurnEffect(Player attacker, org.bukkit.entity.Entity victim,
+            WeaponManager.WeaponData weaponData) {
         if (!(victim instanceof LivingEntity)) {
             return;
         }
@@ -254,11 +313,13 @@ public class WeaponListener implements Listener {
 
     /**
      * Apply lightning effect (random lightning strike)
-     * @param attacker The attacking player
-     * @param victim The victim entity
+     * 
+     * @param attacker   The attacking player
+     * @param victim     The victim entity
      * @param weaponData The weapon data
      */
-    private void applyLightningEffect(Player attacker, org.bukkit.entity.Entity victim, WeaponManager.WeaponData weaponData) {
+    private void applyLightningEffect(Player attacker, org.bukkit.entity.Entity victim,
+            WeaponManager.WeaponData weaponData) {
         double chance = weaponData.getDoubleExtra("lightning-chance", 0.3);
         if (random.nextDouble() < chance) {
             Location strikeLocation = victim.getLocation();
@@ -318,7 +379,8 @@ public class WeaponListener implements Listener {
             if (shouldNotifyCooldown(killer, cooldownKey)) {
                 int remainingTicks = passiveEffectManager.getRemainingCooldownTicks(killer, cooldownKey);
                 double remainingSeconds = remainingTicks / 20.0;
-                killer.sendMessage(ChatColor.RED + "【" + passiveName + "】 冷卻中：剩餘 " + String.format(Locale.ROOT, "%.1f", remainingSeconds) + " 秒");
+                killer.sendMessage(ChatColor.RED + "【" + passiveName + "】 冷卻中：剩餘 "
+                        + String.format(Locale.ROOT, "%.1f", remainingSeconds) + " 秒");
             }
             return;
         }
@@ -343,7 +405,8 @@ public class WeaponListener implements Listener {
             passiveEffectManager.startCooldown(killer, cooldownKey, cooldownTicks);
         }
 
-        killer.sendMessage(ChatColor.GREEN + "[" + passiveName + "] 觸發：暴擊率 +" + value + "% (" + durationTicks + "ticks)" + (cooldownTicks > 0 ? (" CD " + cooldownTicks + "ticks") : ""));
+        killer.sendMessage(ChatColor.GREEN + "[" + passiveName + "] 觸發：暴擊率 +" + value + "% (" + durationTicks + "ticks)"
+                + (cooldownTicks > 0 ? (" CD " + cooldownTicks + "ticks") : ""));
     }
 
     private String buildPassiveCooldownKey(String weaponKey, String passiveEffect) {
@@ -360,7 +423,8 @@ public class WeaponListener implements Listener {
 
     private boolean shouldNotifyCooldown(Player player, String passiveKey) {
         long now = System.currentTimeMillis();
-        java.util.Map<String, Long> perPlayer = passiveCooldownNotify.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.ConcurrentHashMap<>());
+        java.util.Map<String, Long> perPlayer = passiveCooldownNotify.computeIfAbsent(player.getUniqueId(),
+                k -> new java.util.concurrent.ConcurrentHashMap<>());
         String key = passiveKey == null ? "" : passiveKey.trim().toLowerCase();
         long last = perPlayer.getOrDefault(key, 0L);
         if (now - last < 1000L) {
