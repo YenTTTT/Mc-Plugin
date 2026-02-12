@@ -9,7 +9,7 @@ website: https://github.com/customrpg
 commands:
   weapon:
     description: Give custom weapons to players
-    usage: /weapon <weapon_name> [player] OR /weapon list
+    usage: /weapon <weapon_name> [player] OR /weapon list OR /weapon reload
     permission: customrpg.weapon
     permission-message: You don't have permission to use this command!
     aliases: [weapons, customweapon, cweapon]

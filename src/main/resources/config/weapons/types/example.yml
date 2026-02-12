@@ -1,0 +1,195 @@
+# 武器類型配置範例（新格式）
+# 在 config/weapons/types/ 目錄下的所有 .yml 文件都會被加載
+# 每把武器的最外層 key 仍是「內部ID / weaponKey」（英文/無空格）
+
+iron_scythe:
+  # 【武器基本資料】
+  basic:
+    name: "鐵鐮刀"
+    material: IRON_HOE
+    rarity: "普通"
+    bind-type: "無"   # 無 / 綁定玩家 / 掉落消失
+
+  # 【外觀設定】
+  appearance:
+    display-name: "&c&l鐵鐮刀"
+    lore:
+      - "&7從背後攻擊造成額外傷害"
+      - "&e特殊效果: 背刺"
+    custom-model-data: 0
+    enchanted-glow: false
+
+  # 【基礎戰鬥屬性】
+  stats:
+    damage-multiplier: 1.5
+    base-damage: 10
+    attack-speed: 50.0
+    crit-chance: 50.0
+    crit-damage-multiplier: 2.0
+    knockback: 0
+    durability-cost-multiplier: 1.0
+
+  # 【特殊機制】
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.0
+    effect: "backstab"   # 可用：backstab / burn / lightning / none
+
+  # 【主動技能】
+  active-skill:
+    name: ""
+    trigger: ""
+    cooldown: 0
+    description: ""
+
+  # 【被動效果】
+  passive:
+    name: "殺戮激勵"
+    description: "擊殺生物後，10秒內暴擊率+50%"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 50.0
+    duration-ticks: 200
+    cooldown-ticks: 100
+
+  # 【元素/狀態效果】
+  element:
+    element: "無"       # 火 / 冰 / 雷 / 毒 / 無
+    status: ""
+    duration-ticks: 0
+    lightning-chance: 0.3
+
+  # 【音效與視覺】
+  effects:
+    attack-sound: ""
+    skill-sound: ""
+    particles: ""
+
+  # 【限制條件】
+  limits:
+    droppable: true
+
+  # 【平衡與備註】
+  notes:
+    design-note: ""
+
+fire_sword:
+  basic:
+    name: "烈焰之劍"
+    material: DIAMOND_SWORD
+    rarity: "稀有"
+    bind-type: "無"
+
+  appearance:
+    display-name: "&4&l烈焰之劍"
+    lore:
+      - "&7點燃敵人，造成持續傷害"
+      - "&e特殊效果: 燃燒"
+    custom-model-data: 0
+    enchanted-glow: true
+
+  stats:
+    damage-multiplier: 1.3
+    base-damage: 0
+    attack-speed: 0
+    crit-chance: 0
+    crit-damage-multiplier: 0
+    knockback: 0
+    durability-cost-multiplier: 1.0
+
+  special:
+    backstab-enabled: false
+    backstab-multiplier: 1.0
+    effect: "burn"
+
+  active-skill:
+    name: ""
+    trigger: ""
+    cooldown: 0
+    description: ""
+
+  passive:
+    description: "擊殺生物後，10秒內暴擊率+50%"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 50.0
+    duration-ticks: 200
+
+  element:
+    element: "火"
+    status: "燃燒"
+    duration-ticks: 100
+    lightning-chance: 0.3
+
+  effects:
+    attack-sound: "entity.blaze.shoot"
+    skill-sound: ""
+    particles: ""
+
+  limits:
+    droppable: true
+
+  notes:
+    design-note: ""
+
+thunder_axe:
+  basic:
+    name: "雷霆戰斧"
+    material: DIAMOND_AXE
+    rarity: "傳說"
+    bind-type: "無"
+
+  appearance:
+    display-name: "&b&l雷霆戰斧"
+    lore:
+      - "&7有機率召喚雷電擊中敵人"
+      - "&e特殊效果: 雷擊"
+    custom-model-data: 0
+    enchanted-glow: true
+
+  stats:
+    damage-multiplier: 1.8
+    base-damage: 0
+    attack-speed: 0
+    crit-chance: 0
+    crit-damage-multiplier: 0
+    knockback: 0
+    durability-cost-multiplier: 1.0
+
+  special:
+    backstab-enabled: false
+    backstab-multiplier: 1.0
+    effect: "lightning"
+
+  active-skill:
+    name: ""
+    trigger: ""
+    cooldown: 0
+    description: ""
+
+  passive:
+    description: "擊殺生物後，10秒內暴擊率+50%"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 50.0
+    duration-ticks: 200
+
+  element:
+    element: "雷"
+    status: ""
+    duration-ticks: 0
+    lightning-chance: 0.3
+
+  effects:
+    attack-sound: "entity.lightning_bolt.thunder"
+    skill-sound: ""
+    particles: ""
+
+  limits:
+    droppable: true
+
+  notes:
+    design-note: ""

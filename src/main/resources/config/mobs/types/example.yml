@@ -1,0 +1,31 @@
+# 怪物類型配置範例
+# 在 config/mobs/types/ 目錄下的所有 .yml 文件都會被加載
+
+snow_zombie:
+  name: "&b&l雪地殭屍"
+  type: ZOMBIE
+  health: 40.0
+  damage: 6.0
+  special-behavior: "throw_snowball"
+
+fire_skeleton:
+  name: "&c&l烈焰骷髏"
+  type: SKELETON
+  health: 30.0
+  damage: 8.0
+  special-behavior: "fire_arrow"
+
+giant_slime:
+  name: "&a&l巨型史萊姆"
+  type: SLIME
+  health: 80.0
+  damage: 5.0
+  special-behavior: "split_on_death"
+
+shadow_creeper:
+  name: "&8&l暗影苦力怕"
+  type: CREEPER
+  health: 25.0
+  damage: 15.0
+  special-behavior: "teleport_before_explode"
+

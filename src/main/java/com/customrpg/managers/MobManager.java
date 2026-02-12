@@ -44,13 +44,13 @@ public class MobManager {
     }
 
     /**
-     * Load all custom mob types from configs/mobs.yml
+     * Load all custom mob types from config/mobs/types/ folder
      */
     private void loadMobTypes() {
         Map<String, Map<String, Object>> allMobs = configManager.getAllMobs();
 
         if (allMobs.isEmpty()) {
-            plugin.getLogger().warning("No mobs found in configs/mobs.yml");
+            plugin.getLogger().warning("No mobs found in config/mobs/types/ folder");
             return;
         }
 
