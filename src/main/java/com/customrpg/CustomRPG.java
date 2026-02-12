@@ -104,8 +104,9 @@ public class CustomRPG extends JavaPlugin {
         com.customrpg.weaponSkills.managers.DamageManager damageManager = new com.customrpg.weaponSkills.managers.DamageManager();
         com.customrpg.weaponSkills.util.AoEUtil aoeUtil = new com.customrpg.weaponSkills.util.AoEUtil();
         com.customrpg.weaponSkills.util.ParticleUtil particleUtil = new com.customrpg.weaponSkills.util.ParticleUtil();
+        com.customrpg.weaponSkills.util.SoundUtil soundUtil = new com.customrpg.weaponSkills.util.SoundUtil();
 
-        newSkillManager = new SkillManager(weaponManager, cooldownManager, damageManager, buffManager, aoeUtil, particleUtil);
+        newSkillManager = new SkillManager(weaponManager, cooldownManager, damageManager, buffManager, aoeUtil, particleUtil, soundUtil);
 
         // register example skills
         newSkillManager.registerSkill(new DashSkill());

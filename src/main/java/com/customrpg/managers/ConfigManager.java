@@ -237,17 +237,55 @@ public class ConfigManager {
                     extra.put("passive-chance", config.getDouble(key + ".passive.chance", 1.0));
                     extra.put("passive-cooldown-ticks", config.getInt(key + ".passive.cooldown-ticks", 0));
 
-                    // 【主動技能】（武器內建 active-skill）
-                    extra.put("active-skill-name", config.getString(key + ".active-skill.name", ""));
-                    extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger", ""));
-                    extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", 0));
-                    extra.put("active-skill-description", config.getString(key + ".active-skill.description", ""));
-                    extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", 0.0));
-                    extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", 0.0));
-                    extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", 0.0));
-                    extra.put("active-skill-particle", config.getString(key + ".active-skill.particle", ""));
-                    extra.put("active-skill-sound", config.getString(key + ".active-skill.sound", ""));
+                    // 【主動技能】- 支援引用 skills 配置
+                    String skillName = config.getString(key + ".active-skill.name", "");
+                    extra.put("active-skill-name", skillName);
 
+                    // 如果技能名稱存在，嘗試從技能配置加載預設值
+                    if (!skillName.isEmpty()) {
+                        Map<String, Map<String, Object>> weaponSkills = getAllWeaponSkills();
+                        if (weaponSkills.containsKey(skillName)) {
+                            Map<String, Object> skillTemplate = weaponSkills.get(skillName);
+
+                            // 從技能模板讀取預設值，如果武器配置有指定則覆蓋
+                            extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger",
+                                    (String) skillTemplate.getOrDefault("trigger", "RIGHT_CLICK")));
+                            extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown",
+                                    ((Number) skillTemplate.getOrDefault("cooldown", 0)).intValue()));
+                            extra.put("active-skill-description", config.getString(key + ".active-skill.description",
+                                    (String) skillTemplate.getOrDefault("description", "")));
+                            extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage",
+                                    ((Number) skillTemplate.getOrDefault("damage", 0.0)).doubleValue()));
+                            extra.put("active-skill-range", config.getDouble(key + ".active-skill.range",
+                                    ((Number) skillTemplate.getOrDefault("range", 0.0)).doubleValue()));
+                            extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width",
+                                    ((Number) skillTemplate.getOrDefault("aoe-width", 0.0)).doubleValue()));
+                            extra.put("active-skill-particle", config.getString(key + ".active-skill.particle",
+                                    (String) skillTemplate.getOrDefault("particle", "")));
+                            extra.put("active-skill-sound", config.getString(key + ".active-skill.sound",
+                                    (String) skillTemplate.getOrDefault("sound", "")));
+                        } else {
+                            // 技能不存在，使用武器配置或預設值
+                            extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger", ""));
+                            extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", 0));
+                            extra.put("active-skill-description", config.getString(key + ".active-skill.description", ""));
+                            extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", 0.0));
+                            extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", 0.0));
+                            extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", 0.0));
+                            extra.put("active-skill-particle", config.getString(key + ".active-skill.particle", ""));
+                            extra.put("active-skill-sound", config.getString(key + ".active-skill.sound", ""));
+                        }
+                    } else {
+                        // 沒有指定技能名稱，使用武器配置或預設值
+                        extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger", ""));
+                        extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", 0));
+                        extra.put("active-skill-description", config.getString(key + ".active-skill.description", ""));
+                        extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", 0.0));
+                        extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", 0.0));
+                        extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", 0.0));
+                        extra.put("active-skill-particle", config.getString(key + ".active-skill.particle", ""));
+                        extra.put("active-skill-sound", config.getString(key + ".active-skill.sound", ""));
+                    }
                     weaponData.put("extra", extra);
                 } else {
                     // 舊格式讀取（向下相容）
@@ -366,11 +404,22 @@ public class ConfigManager {
                 FileConfiguration config = configs.get(configPath);
                 for (String key : config.getKeys(false)) {
                     Map<String, Object> skillData = new HashMap<>();
-                    skillData.put("name", config.getString(key + ".name"));
-                    skillData.put("effect", config.getString(key + ".effect"));
-                    skillData.put("cooldown", config.getInt(key + ".cooldown"));
-                    skillData.put("damage", config.getDouble(key + ".damage"));
-                    skillData.put("range", config.getDouble(key + ".range"));
+
+                    // 新版格式（支援所有屬性）
+                    skillData.put("display-name", config.getString(key + ".display-name", config.getString(key + ".name", key)));
+                    skillData.put("description", config.getString(key + ".description", ""));
+                    skillData.put("trigger", config.getString(key + ".trigger", "RIGHT_CLICK"));
+                    skillData.put("cooldown", config.getInt(key + ".cooldown", 0));
+                    skillData.put("damage", config.getDouble(key + ".damage", 0.0));
+                    skillData.put("range", config.getDouble(key + ".range", 0.0));
+                    skillData.put("aoe-width", config.getDouble(key + ".aoe-width", 0.0));
+                    skillData.put("particle", config.getString(key + ".particle", ""));
+                    skillData.put("sound", config.getString(key + ".sound", ""));
+
+                    // 舊版格式相容
+                    skillData.put("name", config.getString(key + ".name", key));
+                    skillData.put("effect", config.getString(key + ".effect", ""));
+
                     allWeaponSkills.put(key, skillData);
                 }
             }

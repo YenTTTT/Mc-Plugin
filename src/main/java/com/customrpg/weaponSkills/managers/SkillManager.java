@@ -25,6 +25,7 @@ public class SkillManager {
     private final BuffManager buffs;
     private final com.customrpg.weaponSkills.util.AoEUtil aoe;
     private final com.customrpg.weaponSkills.util.ParticleUtil particles;
+    private final com.customrpg.weaponSkills.util.SoundUtil sounds;
 
     private final Map<String, Skill> registry = new HashMap<>();
 
@@ -36,13 +37,15 @@ public class SkillManager {
                         DamageManager damage,
                         BuffManager buffs,
                         com.customrpg.weaponSkills.util.AoEUtil aoe,
-                        com.customrpg.weaponSkills.util.ParticleUtil particles) {
+                        com.customrpg.weaponSkills.util.ParticleUtil particles,
+                        com.customrpg.weaponSkills.util.SoundUtil sounds) {
         this.weaponManager = weaponManager;
         this.cooldowns = cooldowns;
         this.damage = damage;
         this.buffs = buffs;
         this.aoe = aoe;
         this.particles = particles;
+        this.sounds = sounds;
     }
 
     public void registerSkill(Skill skill) {
@@ -85,7 +88,7 @@ public class SkillManager {
 
         WeaponManager.WeaponData weaponData = weaponManager.getWeaponData(weaponKey);
 
-        SkillServices services = new SkillServices(cooldowns, damage, buffs, aoe, particles);
+        SkillServices services = new SkillServices(cooldowns, damage, buffs, aoe, particles, sounds);
         SkillContext ctx = new SkillContext(player, triggerType, itemInHand, weaponKey, weaponData, null, services);
 
         String cooldownKey = "skill:" + skill.getId() + ":" + player.getUniqueId();

@@ -1,5 +1,51 @@
-# 武器技能配置範例
-# 這些技能可以綁定到特定武器上
+# 武器主動技能配置
+# 在 config/weapons/skills/ 目錄下的所有 .yml 文件都會被加載
+# 武器可以通過 active-skill.name 引用這裡定義的技能
+
+# ===== 新版技能系統 =====
+
+thorn_spike:
+  # 顯示名稱
+  display-name: "&a藤莿"
+  # 技能描述
+  description: "召喚藤莿造成傷害"
+  # 觸發方式：RIGHT_CLICK / LEFT_CLICK / WEAPON_USE
+  trigger: RIGHT_CLICK
+  # 冷卻時間（秒）
+  cooldown: 3
+  # 傷害值
+  damage: 5.0
+  # 範圍
+  range: 3.0
+  # AoE 寬度
+  aoe-width: 3.0
+  # 粒子效果（大寫 Particle enum）
+  particle: SCULK_CHARGE
+  # 音效（小寫 sound identifier）
+  sound: entity.dolphin.hurt
+
+dash:
+  display-name: "&b疾跑"
+  description: "快速向前衝刺"
+  trigger: RIGHT_CLICK
+  cooldown: 3
+  damage: 0.0
+  range: 0.0
+  particle: CLOUD
+  sound: entity.player.attack.sweep
+
+fire_nova:
+  display-name: "&c烈焰新星"
+  description: "釋放範圍火焰傷害"
+  trigger: RIGHT_CLICK
+  cooldown: 8
+  damage: 6.0
+  range: 3.5
+  aoe-width: 3.5
+  particle: EXPLOSION
+  sound: entity.generic.explode
+
+# ===== 舊版技能示例（保留作為參考） =====
 
 slash_wave:
   name: "&e斬擊波"

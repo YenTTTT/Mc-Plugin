@@ -18,22 +18,39 @@ public class FireNovaSkill extends BaseSkill {
 
     @Override
     public long getCooldownMillis(SkillContext context) {
-        return 8000; // 8s default
+        if (context.weaponData() == null) {
+            return 8000L;
+        }
+        int sec = context.weaponData().getIntExtra("active-skill-cooldown", 8);
+        return Math.max(0L, sec) * 1000L;
     }
 
     @Override
     public boolean cast(SkillContext context) {
+        if (context.weaponData() == null) {
+            return false;
+        }
+
+        double damage = context.weaponData().getDoubleExtra("active-skill-damage", 6.0);
+        double range = context.weaponData().getDoubleExtra("active-skill-range", 3.5);
+
+        String particle = String.valueOf(context.weaponData().getExtra().getOrDefault("active-skill-particle", "EXPLOSION"));
+        String sound = String.valueOf(context.weaponData().getExtra().getOrDefault("active-skill-sound", "entity.generic.explode"));
+
         Location center = context.caster().getLocation();
 
         // visuals
-        context.services().particles().burst(center, "EXPLOSION", 40, 0.8, 0.5, 0.8, 0.02);
-        center.getWorld().playSound(center, "entity.generic.explode", 1.0f, 1.0f);
+        context.services().particles().burst(center, particle, 40, 0.8, 0.5, 0.8, 0.02);
+
+        if (sound != null && !sound.isBlank()) {
+            context.services().sounds().playSound(center, sound, 1.0f, 1.0f);
+        }
 
         // targets
-        List<LivingEntity> targets = context.services().aoe().getRadiusTargets(context.caster(), center, 3.5);
+        List<LivingEntity> targets = context.services().aoe().getRadiusTargets(context.caster(), center, range);
 
         for (LivingEntity t : targets) {
-            context.services().damage().dealSkillDamage(context.caster(), t, 6.0);
+            context.services().damage().dealSkillDamage(context.caster(), t, Math.max(0.0, damage));
             // burn debuff example (placeholder): apply to player targets only for now
             if (t instanceof org.bukkit.entity.Player p) {
                 context.services().buffs().apply(p, com.customrpg.weaponSkills.managers.BuffManager.BuffType.BURN, 3000);

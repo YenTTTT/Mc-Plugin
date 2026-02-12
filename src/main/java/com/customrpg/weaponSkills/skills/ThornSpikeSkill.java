@@ -4,7 +4,6 @@ import com.customrpg.weaponSkills.BaseSkill;
 import com.customrpg.weaponSkills.SkillContext;
 import com.customrpg.weaponSkills.SkillTriggerType;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
@@ -42,7 +41,7 @@ public class ThornSpikeSkill extends BaseSkill {
         double width = context.weaponData().getDoubleExtra("active-skill-aoe-width", 3.0);
 
         String particle = String.valueOf(context.weaponData().getExtra().getOrDefault("active-skill-particle", "SCULK_CHARGE"));
-        String sound = String.valueOf(context.weaponData().getExtra().getOrDefault("active-skill-sound", "ENTITY_DOLPHIN_HURT"));
+        String sound = String.valueOf(context.weaponData().getExtra().getOrDefault("active-skill-sound", "entity.dolphin.hurt"));
 
         // visuals center in front
         Location origin = context.caster().getLocation();
@@ -51,9 +50,8 @@ public class ThornSpikeSkill extends BaseSkill {
 
         context.services().particles().burst(center, particle, 80, width / 2.0, 0.8, width / 2.0, 0.02);
 
-        World world = origin.getWorld();
-        if (world != null && sound != null && !sound.isBlank()) {
-            world.playSound(origin, sound.trim(), 1.0f, 1.0f);
+        if (sound != null && !sound.isBlank()) {
+            context.services().sounds().playSound(origin, sound, 1.0f, 1.0f);
         }
 
         // targets: box around center

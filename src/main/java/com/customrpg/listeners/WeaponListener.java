@@ -231,7 +231,7 @@ public class WeaponListener implements Listener {
             // 音效：直接用 yml 提供的 sound key 字串播放
             String soundKey = String.valueOf(weaponData.getExtra().getOrDefault("backstab-sound", ""));
             if (soundKey != null && !soundKey.isBlank()) {
-                attacker.getWorld().playSound(victim.getLocation(), soundKey, 1.0f, 1.0f);
+                attacker.getWorld().playSound(victim.getLocation(), soundKey.trim().toLowerCase(), 1.0f, 1.0f);
             } else {
                 attacker.getWorld().playSound(victim.getLocation(), "entity.player.attack.crit", 1.0f, 0.8f);
             }

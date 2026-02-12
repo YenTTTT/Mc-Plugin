@@ -39,16 +39,12 @@ iron_scythe:
       backstab-sound: "entity.guardian.ambient_land"
 
   # 【主動技能】
+  # 引用 config/weapons/skills/ 中定義的技能
   active-skill:
-    name: "thorn_spike"
-    trigger: RIGHT_CLICK
-    cooldown: 3
-    description: "藤莿 - 召喚藤莿造成傷害"
-    damage: 5
-    range: 3
-    aoe-width: 3
-    particle: SCULK_CHARGE
-    sound: ENTITY_DOLPHIN_HURT
+    name: "thorn_spike"   # 技能 ID（引用 skills 配置）
+    # 可選：覆蓋技能的預設值
+    # cooldown: 5
+    # damage: 10
 
   # 【被動效果】
   passive:
@@ -109,10 +105,7 @@ fire_sword:
     effect: "burn"
 
   active-skill:
-    name: ""
-    trigger: ""
-    cooldown: 0
-    description: ""
+    name: "fire_nova"
 
   passive:
     description: "擊殺生物後，10秒內暴擊率+50%"

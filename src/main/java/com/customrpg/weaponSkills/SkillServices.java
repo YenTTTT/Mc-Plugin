@@ -5,6 +5,7 @@ import com.customrpg.weaponSkills.managers.CooldownManager;
 import com.customrpg.weaponSkills.managers.DamageManager;
 import com.customrpg.weaponSkills.util.AoEUtil;
 import com.customrpg.weaponSkills.util.ParticleUtil;
+import com.customrpg.weaponSkills.util.SoundUtil;
 
 /**
  * SkillServices
@@ -17,5 +18,6 @@ public record SkillServices(
         DamageManager damage,
         BuffManager buffs,
         AoEUtil aoe,
-        ParticleUtil particles
+        ParticleUtil particles,
+        SoundUtil sounds
 ) {}
