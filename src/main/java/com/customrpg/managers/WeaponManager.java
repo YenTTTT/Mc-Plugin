@@ -122,6 +122,7 @@ public class WeaponManager {
      * @param weaponKey The weapon identifier
      * @return ItemStack of the custom weapon, or null if not found
      */
+    @SuppressWarnings("deprecation")
     public ItemStack createWeapon(String weaponKey) {
         WeaponData weaponData = weapons.get(weaponKey);
         if (weaponData == null) {
@@ -187,6 +188,7 @@ public class WeaponManager {
      * @param item ItemStack to check
      * @return Weapon key if it's a custom weapon, null otherwise
      */
+    @SuppressWarnings("deprecation")
     public String getWeaponKey(ItemStack item) {
         if (item == null || !item.hasItemMeta()) {
             return null;
