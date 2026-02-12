@@ -11,8 +11,7 @@ import java.util.Map;
 /**
  * ConfigManager - Manages multiple configuration files
  *
- * This class handles loading and accessing configuration files from the
- * configs/ directory.
+ * This class handles loading and accessing configuration files from the configs/ directory.
  * It supports nested folder structures like configs/weapons/swords.yml
  */
 public class ConfigManager {
@@ -47,8 +46,7 @@ public class ConfigManager {
         mobSkillsDir.mkdirs();
         skillsDir.mkdirs();
 
-        // Ensure default example configs exist on disk (so directory scans can find
-        // them)
+        // Ensure default example configs exist on disk (so directory scans can find them)
         ensureDefaultConfigExists("config/config.yml");
         ensureDefaultConfigExists("config/weapons/types/example.yml");
         ensureDefaultConfigExists("config/weapons/skills/skill1.yml");
@@ -97,7 +95,6 @@ public class ConfigManager {
 
     /**
      * Load all yml files from a directory
-     * 
      * @param relativePath Path relative to plugin data folder
      */
     private void loadConfigsFromDirectory(String relativePath) {
@@ -116,9 +113,7 @@ public class ConfigManager {
 
     /**
      * Load a specific configuration file
-     * 
-     * @param relativePath Path relative to plugin data folder (e.g.,
-     *                     "config/weapons/types/example.yml")
+     * @param relativePath Path relative to plugin data folder (e.g., "config/weapons/types/example.yml")
      */
     private void loadConfig(String relativePath) {
         File configFile = new File(plugin.getDataFolder(), relativePath);
@@ -150,7 +145,6 @@ public class ConfigManager {
 
     /**
      * Get a configuration file
-     * 
      * @param relativePath Path relative to plugin data folder
      * @return FileConfiguration, or null if not found
      */
@@ -160,7 +154,6 @@ public class ConfigManager {
 
     /**
      * Get all weapon configurations merged into one map
-     * 
      * @return Map of weapon key to configuration section data
      */
     public Map<String, Map<String, Object>> getAllWeapons() {
@@ -173,89 +166,135 @@ public class ConfigManager {
 
             FileConfiguration config = configs.get(configPath);
             for (String key : config.getKeys(false)) {
+                // 支援兩種格式：
+                // 1) 舊格式：name/material/lore/damage-multiplier/special-effect
+                // 2) 新格式：basic/appearance/stats/special/...
+                boolean isNewFormat = config.isConfigurationSection(key + ".basic")
+                        || config.isConfigurationSection(key + ".appearance")
+                        || config.isConfigurationSection(key + ".stats")
+                        || config.isConfigurationSection(key + ".special");
+
                 Map<String, Object> weaponData = new HashMap<>();
 
-                // Supports new format (matches example.md)
-                // camelCase keys
+                if (isNewFormat) {
+                    // 【武器基本資料】
+                    weaponData.put("name", config.getString(key + ".basic.name"));
+                    weaponData.put("material", config.getString(key + ".basic.material"));
 
-                // 【武器基本資料】
-                weaponData.put("name", config.getString(key + ".basic.name"));
-                weaponData.put("material", config.getString(key + ".basic.material"));
+                    // 【外觀設定】
+                    weaponData.put("display-name", config.getString(key + ".appearance.display-name"));
+                    weaponData.put("lore", config.getStringList(key + ".appearance.lore"));
+                    weaponData.put("custom-model-data", config.getInt(key + ".appearance.custom-model-data", 0));
+                    weaponData.put("enchanted-glow", config.getBoolean(key + ".appearance.enchanted-glow", false));
 
-                // 【外觀設定】
-                weaponData.put("display-name", config.getString(key + ".appearance.display.name"));
-                weaponData.put("lore", config.getStringList(key + ".appearance.display.lore"));
-                weaponData.put("custom-model-data", config.getInt(key + ".appearance.display.customModelData", 0));
-                weaponData.put("enchanted-glow", config.getBoolean(key + ".appearance.display.enchantGlint", false));
-
-                // 【基礎戰鬥屬性】
-                // Use baseDamage as primary
-                double baseDamage = config.getDouble(key + ".stats.baseDamage", 0.0);
-                weaponData.put("base-damage", baseDamage);
-
-                // For backward compatibility with WeaponManager constructor, we provide a
-                // default multiplier of 1.0
-                // or if we want to support old 'damageMultiplier' we could read it too?
-                // But let's stick to the new plan: baseDamage is key.
-                weaponData.put("damage-multiplier", 1.0);
-
-                weaponData.put("attack-speed", config.getDouble(key + ".stats.attackSpeed", 1.6));
-                weaponData.put("crit-chance", config.getDouble(key + ".stats.critChancePercent", 0.0));
-                weaponData.put("crit-damage-multiplier", config.getDouble(key + ".stats.critDamageMultiplier", 1.5));
-                weaponData.put("knockback", config.getDouble(key + ".stats.knockbackStrength", 0.0));
-                weaponData.put("durability-cost-multiplier",
-                        config.getDouble(key + ".stats.durabilityCostMultiplier", 1.0));
-
-                // 【特殊機制】 & 【元素/狀態效果】
-                // Store in 'extra' map
-                Map<String, Object> extra = new HashMap<>();
-
-                // Special Mechanics (camelCase)
-                extra.put("backstab-enabled", config.getBoolean(key + ".special.backstabEnabled", false));
-                extra.put("backstab-multiplier", config.getDouble(key + ".special.backstabMultiplier", 1.5));
-                extra.put("armor-pierce", config.getDouble(key + ".special.armorPierce", 0.0));
-                extra.put("aoe-radius", config.getDouble(key + ".special.aoeRadius", 0.0));
-                extra.put("life-steal", config.getDouble(key + ".special.lifeStealPercent", 0.0));
-
-                // Element (camelCase)
-                extra.put("element-type", config.getString(key + ".element.type", "NONE"));
-                extra.put("element-status", config.getString(key + ".element.state", ""));
-                extra.put("element-duration", config.getDouble(key + ".element.durationSeconds", 0.0));
-
-                // Visual / Sound (camelCase)
-                extra.put("attack-sound", config.getString(key + ".fx.attackSound", ""));
-                extra.put("skill-sound", config.getString(key + ".fx.skillSound", ""));
-                extra.put("particle", config.getString(key + ".fx.particle", ""));
-
-                // Passives - Read the first one for now to maintain single-passive logic
-                // compatibility
-                if (config.contains(key + ".passives")) {
-                    java.util.List<Map<?, ?>> passiveList = config.getMapList(key + ".passives");
-                    if (passiveList != null && !passiveList.isEmpty()) {
-                        Map<?, ?> p1 = passiveList.get(0);
-                        extra.put("passive-effect", p1.get("passiveKey"));
-                        extra.put("passive-condition", p1.get("condition"));
-                        extra.put("passive-name", p1.get("description"));
-
-                        // Params
-                        if (p1.get("params") instanceof Map) {
-                            Map<?, ?> params = (Map<?, ?>) p1.get("params");
-                            if (params.containsKey("value"))
-                                extra.put("passive-value", params.get("value"));
-                            if (params.containsKey("durationTicks"))
-                                extra.put("passive-duration-ticks", params.get("durationTicks"));
-                            if (params.containsKey("cooldownTicks"))
-                                extra.put("passive-cooldown-ticks", params.get("cooldownTicks"));
-                        }
-                        extra.put("passive-chance", p1.get("chancePercent"));
+                    // 【基礎戰鬥屬性】
+                    // 若沒填 damage-multiplier，就用 (base-damage) 去推一個倍率；沒辦法推就回到 1.0
+                    double damageMultiplier = config.getDouble(key + ".stats.damage-multiplier", 0.0);
+                    if (damageMultiplier <= 0) {
+                        damageMultiplier = 1.0;
                     }
+                    weaponData.put("damage-multiplier", damageMultiplier);
+
+                    // 其餘 stats 欄位（先提供給戰鬥計算使用）
+                    weaponData.put("base-damage", config.getDouble(key + ".stats.base-damage", 0.0));
+                    weaponData.put("attack-speed", config.getDouble(key + ".stats.attack-speed", 0.0));
+                    weaponData.put("crit-chance", config.getDouble(key + ".stats.crit-chance", 0.0));
+                    weaponData.put("crit-damage-multiplier", config.getDouble(key + ".stats.crit-damage-multiplier", 0.0));
+                    weaponData.put("knockback", config.getDouble(key + ".stats.knockback", 0.0));
+                    weaponData.put("durability-cost-multiplier", config.getDouble(key + ".stats.durability-cost-multiplier", 1.0));
+
+                    // 【特殊機制】(先以舊的 special-effect string 相容 WeaponListener)
+                    // 處理元素屬性（火/冰/雷/毒/無）→ 對應成 burn/lightning/...（目前 listener 只支援這三種）
+                    String element = config.getString(key + ".element.element", "");
+                    String specialEffect = config.getString(key + ".special.effect", "");
+
+                    String resolvedEffect = resolveWeaponEffect(element, specialEffect);
+                    weaponData.put("special-effect", resolvedEffect);
+
+                    // 額外資料（之後 listener 參數化會用到）
+                    Map<String, Object> extra = new HashMap<>();
+                    extra.put("backstab-enabled", config.getBoolean(key + ".special.backstab-enabled", false));
+                    extra.put("backstab-multiplier", config.getDouble(key + ".special.backstab-multiplier", 1.0));
+
+                    // 視覺/音效（支援新位置：special.effects.*，並向下相容舊的 effects.*）
+                    extra.put("backstab-sound", config.getString(key + ".special.effects.backstab-sound",
+                            config.getString(key + ".effects.backstab-sound", "")));
+                    extra.put("backstab-particle", config.getString(key + ".special.effects.backstab-particle",
+                            config.getString(key + ".effects.backstab-particle", "")));
+
+                    extra.put("burn-duration-ticks", config.getInt(key + ".element.duration-ticks", 100));
+                    extra.put("lightning-chance", config.getDouble(key + ".element.lightning-chance", 0.3));
+
+                    // 【被動效果】（測試版）
+                    // passive.effect: 例如 "kill_crit_boost"
+                    // passive.value: 例如 50.0（代表 +50% crit chance）
+                    // passive.duration-ticks: 持續時間（ticks），0 代表只對下一擊/一次生效（由 listener 決定）
+                    // passive.chance: 觸發機率（0~1 或 0~100 都支援）
+                    extra.put("passive-effect", config.getString(key + ".passive.effect", ""));
+                    extra.put("passive-name", config.getString(key + ".passive.name", ""));
+                    extra.put("passive-value", config.getDouble(key + ".passive.value", 0.0));
+                    extra.put("passive-duration-ticks", config.getInt(key + ".passive.duration-ticks", 200));
+                    extra.put("passive-chance", config.getDouble(key + ".passive.chance", 1.0));
+                    extra.put("passive-cooldown-ticks", config.getInt(key + ".passive.cooldown-ticks", 0));
+
+                    // 【主動技能】- 支援引用 skills 配置
+                    String skillName = config.getString(key + ".active-skill.name", "");
+                    extra.put("active-skill-name", skillName);
+
+                    // 如果技能名稱存在，嘗試從技能配置加載預設值
+                    if (!skillName.isEmpty()) {
+                        Map<String, Map<String, Object>> weaponSkills = getAllWeaponSkills();
+                        if (weaponSkills.containsKey(skillName)) {
+                            Map<String, Object> skillTemplate = weaponSkills.get(skillName);
+
+                            // 從技能模板讀取預設值，如果武器配置有指定則覆蓋
+                            extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger",
+                                    (String) skillTemplate.getOrDefault("trigger", "RIGHT_CLICK")));
+                            extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown",
+                                    ((Number) skillTemplate.getOrDefault("cooldown", 0)).intValue()));
+                            extra.put("active-skill-description", config.getString(key + ".active-skill.description",
+                                    (String) skillTemplate.getOrDefault("description", "")));
+                            extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage",
+                                    ((Number) skillTemplate.getOrDefault("damage", 0.0)).doubleValue()));
+                            extra.put("active-skill-range", config.getDouble(key + ".active-skill.range",
+                                    ((Number) skillTemplate.getOrDefault("range", 0.0)).doubleValue()));
+                            extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width",
+                                    ((Number) skillTemplate.getOrDefault("aoe-width", 0.0)).doubleValue()));
+                            extra.put("active-skill-particle", config.getString(key + ".active-skill.particle",
+                                    (String) skillTemplate.getOrDefault("particle", "")));
+                            extra.put("active-skill-sound", config.getString(key + ".active-skill.sound",
+                                    (String) skillTemplate.getOrDefault("sound", "")));
+                        } else {
+                            // 技能不存在，使用武器配置或預設值
+                            extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger", ""));
+                            extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", 0));
+                            extra.put("active-skill-description", config.getString(key + ".active-skill.description", ""));
+                            extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", 0.0));
+                            extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", 0.0));
+                            extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", 0.0));
+                            extra.put("active-skill-particle", config.getString(key + ".active-skill.particle", ""));
+                            extra.put("active-skill-sound", config.getString(key + ".active-skill.sound", ""));
+                        }
+                    } else {
+                        // 沒有指定技能名稱，使用武器配置或預設值
+                        extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger", ""));
+                        extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", 0));
+                        extra.put("active-skill-description", config.getString(key + ".active-skill.description", ""));
+                        extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", 0.0));
+                        extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", 0.0));
+                        extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", 0.0));
+                        extra.put("active-skill-particle", config.getString(key + ".active-skill.particle", ""));
+                        extra.put("active-skill-sound", config.getString(key + ".active-skill.sound", ""));
+                    }
+                    weaponData.put("extra", extra);
+                } else {
+                    // 舊格式讀取（向下相容）
+                    weaponData.put("name", config.getString(key + ".name"));
+                    weaponData.put("material", config.getString(key + ".material"));
+                    weaponData.put("damage-multiplier", config.getDouble(key + ".damage-multiplier"));
+                    weaponData.put("special-effect", config.getString(key + ".special-effect"));
+                    weaponData.put("lore", config.getStringList(key + ".lore"));
                 }
-
-                weaponData.put("extra", extra);
-
-                // Legacy support for special-effect string is removed.
-                // We set it to "none" because WeaponManager still expects a string there.
-                weaponData.put("special-effect", "none");
 
                 allWeapons.put(key, weaponData);
             }
@@ -264,9 +303,44 @@ public class ConfigManager {
         return allWeapons;
     }
 
+    private String resolveWeaponEffect(String element, String specialEffect) {
+        String se = specialEffect == null ? "" : specialEffect.trim().toLowerCase();
+        String elRaw = element == null ? "" : element.trim();
+        String el = elRaw.toLowerCase();
+
+        // 先以 special.effect 優先
+        if (!se.isEmpty() && !se.equals("none")) {
+            if (se.equals("fire")) {
+                return "burn";
+            }
+            if (se.equals("thunder")) {
+                return "lightning";
+            }
+            return se;
+        }
+
+        // 再用元素屬性推導（支援中英）
+        if (el.equals("fire") || elRaw.equals("火")) {
+            return "burn";
+        }
+        if (el.equals("ice") || elRaw.equals("冰")) {
+            return "none";
+        }
+        if (el.equals("lightning") || el.equals("thunder") || elRaw.equals("雷")) {
+            return "lightning";
+        }
+        if (el.equals("poison") || elRaw.equals("毒")) {
+            return "none";
+        }
+        if (el.equals("none") || elRaw.equals("無")) {
+            return "none";
+        }
+
+        return "none";
+    }
+
     /**
      * Get all skill configurations
-     * 
      * @return Map of skill key to configuration section data
      */
     public Map<String, Map<String, Object>> getAllSkills() {
@@ -293,7 +367,6 @@ public class ConfigManager {
 
     /**
      * Get all mob configurations
-     * 
      * @return Map of mob key to configuration section data
      */
     public Map<String, Map<String, Object>> getAllMobs() {
@@ -320,7 +393,6 @@ public class ConfigManager {
 
     /**
      * Get all weapon skill configurations
-     * 
      * @return Map of weapon skill key to configuration section data
      */
     public Map<String, Map<String, Object>> getAllWeaponSkills() {
@@ -332,11 +404,22 @@ public class ConfigManager {
                 FileConfiguration config = configs.get(configPath);
                 for (String key : config.getKeys(false)) {
                     Map<String, Object> skillData = new HashMap<>();
-                    skillData.put("name", config.getString(key + ".name"));
-                    skillData.put("effect", config.getString(key + ".effect"));
-                    skillData.put("cooldown", config.getInt(key + ".cooldown"));
-                    skillData.put("damage", config.getDouble(key + ".damage"));
-                    skillData.put("range", config.getDouble(key + ".range"));
+
+                    // 新版格式（支援所有屬性）
+                    skillData.put("display-name", config.getString(key + ".display-name", config.getString(key + ".name", key)));
+                    skillData.put("description", config.getString(key + ".description", ""));
+                    skillData.put("trigger", config.getString(key + ".trigger", "RIGHT_CLICK"));
+                    skillData.put("cooldown", config.getInt(key + ".cooldown", 0));
+                    skillData.put("damage", config.getDouble(key + ".damage", 0.0));
+                    skillData.put("range", config.getDouble(key + ".range", 0.0));
+                    skillData.put("aoe-width", config.getDouble(key + ".aoe-width", 0.0));
+                    skillData.put("particle", config.getString(key + ".particle", ""));
+                    skillData.put("sound", config.getString(key + ".sound", ""));
+
+                    // 舊版格式相容
+                    skillData.put("name", config.getString(key + ".name", key));
+                    skillData.put("effect", config.getString(key + ".effect", ""));
+
                     allWeaponSkills.put(key, skillData);
                 }
             }
@@ -347,7 +430,6 @@ public class ConfigManager {
 
     /**
      * Get all mob skill configurations
-     * 
      * @return Map of mob skill key to configuration section data
      */
     public Map<String, Map<String, Object>> getAllMobSkills() {
