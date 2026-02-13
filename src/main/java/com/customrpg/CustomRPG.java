@@ -1,7 +1,9 @@
 package com.customrpg;
 
 import com.customrpg.commands.StatsCommand;
+import com.customrpg.commands.StatsShortcutCommand;
 import com.customrpg.commands.WeaponCommand;
+import com.customrpg.gui.StatsGUI;
 import com.customrpg.listeners.MobListener;
 import com.customrpg.listeners.StatsListener;
 import com.customrpg.listeners.WeaponListener;
@@ -34,6 +36,7 @@ public class CustomRPG extends JavaPlugin {
     private WeaponManager weaponManager;
     private MobManager mobManager;
     private PlayerStatsManager statsManager;
+    private StatsGUI statsGUI;
 
     // New skill system
     private SkillManager newSkillManager;
@@ -109,6 +112,9 @@ public class CustomRPG extends JavaPlugin {
         statsManager = new PlayerStatsManager(this);
         getLogger().info("- PlayerStatsManager initialized");
 
+        statsGUI = new StatsGUI(statsManager);
+        getLogger().info("- StatsGUI initialized");
+
         // ===== New skill system (manager/service pattern) =====
         com.customrpg.weaponSkills.managers.CooldownManager cooldownManager = new com.customrpg.weaponSkills.managers.CooldownManager();
         com.customrpg.weaponSkills.managers.BuffManager buffManager = new com.customrpg.weaponSkills.managers.BuffManager();
@@ -148,6 +154,9 @@ public class CustomRPG extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new StatsListener(this, statsManager), this);
         getLogger().info("- StatsListener registered");
+
+        getServer().getPluginManager().registerEvents(statsGUI, this);
+        getLogger().info("- StatsGUI registered");
     }
 
     /**
@@ -166,10 +175,19 @@ public class CustomRPG extends JavaPlugin {
 
         org.bukkit.command.PluginCommand rpgCommand = getCommand("rpg");
         if (rpgCommand != null) {
-            StatsCommand statsCommand = new StatsCommand(this, statsManager);
+            StatsCommand statsCommand = new StatsCommand(this, statsManager, statsGUI);
             rpgCommand.setExecutor(statsCommand);
             rpgCommand.setTabCompleter(statsCommand);
             getLogger().info("- /rpg command registered");
+
+            // 註冊 /stats 快捷指令
+            org.bukkit.command.PluginCommand statsShortcut = getCommand("stats");
+            if (statsShortcut != null) {
+                StatsShortcutCommand shortcutCommand = new StatsShortcutCommand(statsCommand, statsGUI);
+                statsShortcut.setExecutor(shortcutCommand);
+                statsShortcut.setTabCompleter(shortcutCommand);
+                getLogger().info("- /stats command registered");
+            }
         } else {
             getLogger().warning("- Failed to register /rpg command: command not defined in plugin.yml");
         }

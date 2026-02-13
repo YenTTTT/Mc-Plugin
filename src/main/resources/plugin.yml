@@ -15,10 +15,15 @@ commands:
     aliases: [weapons, customweapon, cweapon]
   rpg:
     description: Manage player stats and RPG features
-    usage: /rpg <stats|setstat|reload> [args]
+    usage: /rpg <gui|stats|setstat|reload> [args]
     permission: customrpg.rpg
     permission-message: You don't have permission to use this command!
-    aliases: [stats, playerstats]
+  stats:
+    description: View and manage player stats
+    usage: /stats [gui|player]
+    permission: customrpg.rpg
+    permission-message: You don't have permission to use this command!
+    aliases: [playerstats]
 
 permissions:
   customrpg.*:

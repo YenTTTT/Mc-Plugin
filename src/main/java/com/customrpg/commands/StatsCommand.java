@@ -1,6 +1,7 @@
 package com.customrpg.commands;
 
 import com.customrpg.CustomRPG;
+import com.customrpg.gui.StatsGUI;
 import com.customrpg.managers.PlayerStatsManager;
 import com.customrpg.players.PlayerStats;
 import org.bukkit.Bukkit;
@@ -30,10 +31,12 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
 
     private final CustomRPG plugin;
     private final PlayerStatsManager statsManager;
+    private final StatsGUI statsGUI;
 
-    public StatsCommand(CustomRPG plugin, PlayerStatsManager statsManager) {
+    public StatsCommand(CustomRPG plugin, PlayerStatsManager statsManager, StatsGUI statsGUI) {
         this.plugin = plugin;
         this.statsManager = statsManager;
+        this.statsGUI = statsGUI;
     }
 
     @Override
@@ -46,6 +49,9 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         String subCommand = args[0].toLowerCase();
 
         switch (subCommand) {
+            case "gui" -> {
+                return handleGUI(sender);
+            }
             case "stats" -> {
                 return handleStats(sender, args);
             }
@@ -60,6 +66,20 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
         }
+    }
+
+    /**
+     * 開啟屬性 GUI
+     * 用法: /rpg gui
+     */
+    private boolean handleGUI(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(ChatColor.RED + "只有玩家可以使用 GUI！");
+            return true;
+        }
+
+        statsGUI.openStatsGUI(player);
+        return true;
     }
 
     /**
@@ -190,6 +210,7 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
 
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(ChatColor.GOLD + "========== CustomRPG 指令 ==========");
+        sender.sendMessage(ChatColor.YELLOW + "/rpg gui" + ChatColor.GRAY + " - 開啟屬性介面");
         sender.sendMessage(ChatColor.YELLOW + "/rpg stats [玩家]" + ChatColor.GRAY + " - 查看玩家數據");
         sender.sendMessage(ChatColor.YELLOW + "/rpg setstat <玩家> <屬性> <數值>" + ChatColor.GRAY + " - 設定玩家數據");
         sender.sendMessage(ChatColor.YELLOW + "/rpg reload [玩家]" + ChatColor.GRAY + " - 重新載入玩家數據");
@@ -202,7 +223,7 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(Arrays.asList("stats", "setstat", "reload"));
+            completions.addAll(Arrays.asList("gui", "stats", "setstat", "reload"));
         } else if (args.length == 2) {
             // 玩家名稱補全
             for (Player player : Bukkit.getOnlinePlayers()) {

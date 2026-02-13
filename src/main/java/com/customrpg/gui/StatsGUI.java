@@ -1,0 +1,254 @@
+package com.customrpg.gui;
+
+import com.customrpg.managers.PlayerStatsManager;
+import com.customrpg.players.PlayerStats;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * StatsGUI - 屬性介面系統
+ *
+ * 5x5 箱子介面：
+ * Row 1: 屬性顯示（鐵劍、附魔之瓶、弓、花、鑽石胸甲）
+ * Row 2: 灰色玻璃板
+ * Row 3: 增加 1 點按鈕（鑽石）
+ * Row 4: 灰色玻璃板
+ * Row 5: 增加 5 點按鈕（鑽石）
+ */
+public class StatsGUI implements Listener {
+
+    private final PlayerStatsManager statsManager;
+    private static final String GUI_TITLE = ChatColor.DARK_PURPLE + "屬性介面";
+
+    // 槽位定義
+    private static final int[] STAT_DISPLAY_SLOTS = {0, 1, 2, 3, 4}; // Row 1
+    private static final int[] GLASS_ROW_2 = {9, 10, 11, 12, 13}; // Row 2
+    private static final int[] ADD_1_SLOTS = {18, 19, 20, 21, 22}; // Row 3
+    private static final int[] GLASS_ROW_4 = {27, 28, 29, 30, 31}; // Row 4
+    private static final int[] ADD_5_SLOTS = {36, 37, 38, 39, 40}; // Row 5
+
+    public StatsGUI(PlayerStatsManager statsManager) {
+        this.statsManager = statsManager;
+    }
+
+    /**
+     * 開啟屬性 GUI
+     */
+    public void openStatsGUI(Player player) {
+        Inventory gui = Bukkit.createInventory(null, 45, GUI_TITLE); // 5 rows * 9 slots = 45
+
+        PlayerStats stats = statsManager.getStats(player);
+
+        // Row 1: 屬性顯示
+        gui.setItem(0, createStatDisplay(Material.IRON_SWORD, "物理攻擊 (Strength)", stats.getStrength(),
+                "每點增加 0.5 近戰傷害"));
+        gui.setItem(1, createStatDisplay(Material.EXPERIENCE_BOTTLE, "魔法攻擊 (Magic)", stats.getMagic(),
+                "每點增加 0.3 技能傷害"));
+        gui.setItem(2, createStatDisplay(Material.BOW, "敏捷 (Agility)", stats.getAgility(),
+                "每點增加 0.2% 暴擊率", "每點增加 0.1 弓箭傷害"));
+        gui.setItem(3, createStatDisplay(Material.POPPY, "生命力 (Vitality)", stats.getVitality(),
+                "每點增加 2.0 最大血量"));
+        gui.setItem(4, createStatDisplay(Material.DIAMOND_CHESTPLATE, "防禦 (Defense)", stats.getDefense(),
+                "每點減免 0.5% 傷害"));
+
+        // Row 2: 灰色玻璃板
+        ItemStack glassPane = createGlassPane();
+        for (int slot : GLASS_ROW_2) {
+            gui.setItem(slot, glassPane);
+        }
+
+        // Row 3: 增加 1 點按鈕
+        gui.setItem(18, createAddButton(Material.DIAMOND, "增加 1 點 Strength", 1));
+        gui.setItem(19, createAddButton(Material.DIAMOND, "增加 1 點 Magic", 1));
+        gui.setItem(20, createAddButton(Material.DIAMOND, "增加 1 點 Agility", 1));
+        gui.setItem(21, createAddButton(Material.DIAMOND, "增加 1 點 Vitality", 1));
+        gui.setItem(22, createAddButton(Material.DIAMOND, "增加 1 點 Defense", 1));
+
+        // Row 4: 灰色玻璃板
+        for (int slot : GLASS_ROW_4) {
+            gui.setItem(slot, glassPane);
+        }
+
+        // Row 5: 增加 5 點按鈕
+        gui.setItem(36, createAddButton(Material.DIAMOND, "增加 5 點 Strength", 5));
+        gui.setItem(37, createAddButton(Material.DIAMOND, "增加 5 點 Magic", 5));
+        gui.setItem(38, createAddButton(Material.DIAMOND, "增加 5 點 Agility", 5));
+        gui.setItem(39, createAddButton(Material.DIAMOND, "增加 5 點 Vitality", 5));
+        gui.setItem(40, createAddButton(Material.DIAMOND, "增加 5 點 Defense", 5));
+
+        player.openInventory(gui);
+    }
+
+    /**
+     * 創建屬性顯示物品
+     */
+    private ItemStack createStatDisplay(Material material, String name, int currentValue, String... descriptions) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.GOLD + name);
+
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.YELLOW + "目前數值: " + ChatColor.WHITE + currentValue);
+            lore.add("");
+            for (String desc : descriptions) {
+                lore.add(ChatColor.GRAY + desc);
+            }
+
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+
+        return item;
+    }
+
+    /**
+     * 創建灰色玻璃板
+     */
+    private ItemStack createGlassPane() {
+        ItemStack item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = item.getItemMeta();
+
+        if (meta != null) {
+            meta.setDisplayName(" ");
+            item.setItemMeta(meta);
+        }
+
+        return item;
+    }
+
+    /**
+     * 創建增加按鈕
+     */
+    private ItemStack createAddButton(Material material, String name, int amount) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.GREEN + name);
+
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "點擊增加 " + amount + " 點");
+            lore.add(ChatColor.RED + "消耗: " + amount + " 屬性點數");
+
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+
+        return item;
+    }
+
+    /**
+     * 處理 GUI 點擊事件
+     */
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+
+        // 檢查是否為屬性 GUI
+        if (!event.getView().getTitle().equals(GUI_TITLE)) {
+            return;
+        }
+
+        event.setCancelled(true); // 防止拿取物品
+
+        int slot = event.getRawSlot();
+        if (slot < 0 || slot >= 45) {
+            return;
+        }
+
+        // 處理增加 1 點按鈕
+        if (isInArray(slot, ADD_1_SLOTS)) {
+            handleStatIncrease(player, slot, 1, ADD_1_SLOTS);
+        }
+        // 處理增加 5 點按鈕
+        else if (isInArray(slot, ADD_5_SLOTS)) {
+            handleStatIncrease(player, slot, 5, ADD_5_SLOTS);
+        }
+    }
+
+    /**
+     * 處理屬性增加
+     */
+    private void handleStatIncrease(Player player, int slot, int amount, int[] slotArray) {
+        // 找出是哪個屬性（0=STR, 1=MAG, 2=AGI, 3=VIT, 4=DEF）
+        int statIndex = -1;
+        for (int i = 0; i < slotArray.length; i++) {
+            if (slotArray[i] == slot) {
+                statIndex = i;
+                break;
+            }
+        }
+
+        if (statIndex == -1) {
+            return;
+        }
+
+        // TODO: 檢查玩家是否有足夠的屬性點數（之後加上等級系統）
+        // 目前先直接增加
+
+        PlayerStats stats = statsManager.getStats(player);
+        String statName = "";
+
+        switch (statIndex) {
+            case 0 -> {
+                stats.setStrength(stats.getStrength() + amount);
+                statName = "Strength";
+            }
+            case 1 -> {
+                stats.setMagic(stats.getMagic() + amount);
+                statName = "Magic";
+            }
+            case 2 -> {
+                stats.setAgility(stats.getAgility() + amount);
+                statName = "Agility";
+            }
+            case 3 -> {
+                stats.setVitality(stats.getVitality() + amount);
+                statName = "Vitality";
+                // 更新最大血量
+                statsManager.updateMaxHealth(player);
+            }
+            case 4 -> {
+                stats.setDefense(stats.getDefense() + amount);
+                statName = "Defense";
+            }
+        }
+
+        // 儲存數據
+        statsManager.saveStats(player);
+
+        // 發送訊息
+        player.sendMessage(ChatColor.GREEN + "✓ " + statName + " +" + amount + "！");
+
+        // 刷新 GUI
+        openStatsGUI(player);
+    }
+
+    /**
+     * 檢查值是否在陣列中
+     */
+    private boolean isInArray(int value, int[] array) {
+        for (int i : array) {
+            if (i == value) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
