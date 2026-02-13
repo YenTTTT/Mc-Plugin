@@ -13,6 +13,12 @@ commands:
     permission: customrpg.weapon
     permission-message: You don't have permission to use this command!
     aliases: [weapons, customweapon, cweapon]
+  custommob:
+    description: Spawn and manage custom mobs
+    usage: /custommob <spawn|list|info> [mob_key]
+    permission: customrpg.mob
+    permission-message: You don't have permission to use this command!
+    aliases: [cmob, custommobs, spawncmob]
   rpg:
     description: Manage player stats and RPG features
     usage: /rpg <gui|stats|setstat|reload> [args]

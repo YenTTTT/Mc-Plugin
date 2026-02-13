@@ -1,5 +1,6 @@
 package com.customrpg;
 
+import com.customrpg.commands.MobCommand;
 import com.customrpg.commands.StatsCommand;
 import com.customrpg.commands.StatsShortcutCommand;
 import com.customrpg.commands.WeaponCommand;
@@ -146,7 +147,7 @@ public class CustomRPG extends JavaPlugin {
 
         // SkillListener (legacy) 已由 SkillTriggerListener 接管
 
-        getServer().getPluginManager().registerEvents(new MobListener(this, mobManager, statsManager), this);
+        getServer().getPluginManager().registerEvents(new MobListener(this, mobManager, statsManager, weaponManager), this);
         getLogger().info("- MobListener registered");
 
         getServer().getPluginManager().registerEvents(new SkillTriggerListener(newSkillManager), this);
@@ -167,10 +168,22 @@ public class CustomRPG extends JavaPlugin {
 
         org.bukkit.command.PluginCommand weaponCommand = getCommand("weapon");
         if (weaponCommand != null) {
-            weaponCommand.setExecutor(new WeaponCommand(this, weaponManager));
+            WeaponCommand weaponCommandExecutor = new WeaponCommand(this, weaponManager);
+            weaponCommand.setExecutor(weaponCommandExecutor);
+            weaponCommand.setTabCompleter(weaponCommandExecutor);
             getLogger().info("- /weapon command registered");
         } else {
             getLogger().warning("- Failed to register /weapon command: command not defined in plugin.yml");
+        }
+
+        org.bukkit.command.PluginCommand mobCommand = getCommand("custommob");
+        if (mobCommand != null) {
+            MobCommand mobCommandExecutor = new MobCommand(this, mobManager);
+            mobCommand.setExecutor(mobCommandExecutor);
+            mobCommand.setTabCompleter(mobCommandExecutor);
+            getLogger().info("- /custommob command registered");
+        } else {
+            getLogger().warning("- Failed to register /custommob command: command not defined in plugin.yml");
         }
 
         org.bukkit.command.PluginCommand rpgCommand = getCommand("rpg");

@@ -3,14 +3,17 @@ package com.customrpg.listeners;
 import com.customrpg.CustomRPG;
 import com.customrpg.managers.MobManager;
 import com.customrpg.managers.PlayerStatsManager;
+import com.customrpg.managers.WeaponManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -33,6 +36,7 @@ public class MobListener implements Listener {
     private final CustomRPG plugin;
     private final MobManager mobManager;
     private final PlayerStatsManager statsManager;
+    private final WeaponManager weaponManager;
     private final Random random;
 
     /**
@@ -40,10 +44,11 @@ public class MobListener implements Listener {
      * @param plugin Main plugin instance
      * @param mobManager MobManager instance
      */
-    public MobListener(CustomRPG plugin, MobManager mobManager, PlayerStatsManager statsManager) {
+    public MobListener(CustomRPG plugin, MobManager mobManager, PlayerStatsManager statsManager, WeaponManager weaponManager) {
         this.plugin = plugin;
         this.mobManager = mobManager;
         this.statsManager = statsManager;
+        this.weaponManager = weaponManager;
         this.random = new Random();
         startCustomMobBehaviors();
     }
@@ -114,21 +119,101 @@ public class MobListener implements Listener {
                 return;
             }
 
+            int mobLevel = mobManager.getMobLevel(event.getEntity());
+
             // Handle custom mob drops or effects
             // For example, splitting slimes
             if (mobData.getSpecialBehavior().equalsIgnoreCase("split_on_death")) {
                 splitSlime(event.getEntity(), mobData);
             }
 
-            // 給予自製怪物的經驗值
-            if (mobData.getExp() > 0) {
-                statsManager.addExp(killer, mobData.getExp());
-                killer.sendMessage(ChatColor.YELLOW + "獲得 " + mobData.getExp() + " 經驗值");
+            // 清除預設掉落物（如果有自定義掉落物）
+            if (!mobData.getVanillaDrops().isEmpty() || !mobData.getWeaponDrops().isEmpty()) {
+                event.getDrops().clear();
+
+                // 掉落原版物品
+                for (MobManager.DropItem dropItem : mobData.getVanillaDrops()) {
+                    if (random.nextDouble() < dropItem.getChance()) {
+                        int amount = dropItem.getMinAmount();
+                        if (dropItem.getMaxAmount() > dropItem.getMinAmount()) {
+                            amount = random.nextInt(dropItem.getMaxAmount() - dropItem.getMinAmount() + 1) + dropItem.getMinAmount();
+                        }
+                        event.getDrops().add(new ItemStack(dropItem.getMaterial(), amount));
+                    }
+                }
+
+                // 掉落自定義武器
+                for (MobManager.WeaponDrop weaponDrop : mobData.getWeaponDrops()) {
+                    if (random.nextDouble() < weaponDrop.getChance()) {
+                        ItemStack weapon = weaponManager.createWeapon(weaponDrop.getWeaponKey());
+                        if (weapon != null) {
+                            event.getDrops().add(weapon);
+                            killer.sendMessage(ChatColor.GOLD + "★ 獲得稀有物品: " + weapon.getItemMeta().getDisplayName());
+                        }
+                    }
+                }
             }
+
+            // 給予經驗值（基於等級）
+            int expReward = mobData.calculateExp(mobLevel);
+            if (expReward > 0) {
+                statsManager.addExp(killer, expReward);
+                killer.sendMessage(ChatColor.YELLOW + "擊敗 [Lv." + mobLevel + "] " +
+                    ChatColor.stripColor(mobData.getName()) + " 獲得 " + expReward + " 經驗值");
+            }
+
+            // 清理偽裝實體（如果有）
+            cleanupDisguise(event.getEntity());
         } else {
             // 如果是普通怪物，給予 2 點經驗值
             statsManager.addExp(killer, 2);
             killer.sendMessage(ChatColor.YELLOW + "獲得 2 經驗值");
+        }
+    }
+
+    /**
+     * Handle custom mob damage events (level-scaled damage)
+     * @param event EntityDamageByEntityEvent
+     */
+    @EventHandler
+    public void onMobAttack(EntityDamageByEntityEvent event) {
+        // 檢查是否為自定義生物攻擊玩家
+        if (!(event.getDamager() instanceof LivingEntity)) {
+            return;
+        }
+
+        if (!(event.getEntity() instanceof Player)) {
+            return;
+        }
+
+        LivingEntity attacker = (LivingEntity) event.getDamager();
+        String mobKey = mobManager.getCustomMobKey(attacker);
+
+        if (mobKey == null) {
+            return;
+        }
+
+        MobManager.MobData mobData = mobManager.getMobData(mobKey);
+        if (mobData == null) {
+            return;
+        }
+
+        // 獲取生物等級並計算傷害
+        int mobLevel = mobManager.getMobLevel(attacker);
+        double scaledDamage = mobData.calculateDamage(mobLevel);
+
+        // 設置等級化傷害
+        event.setDamage(scaledDamage);
+    }
+
+    /**
+     * Clean up disguise passenger when host dies
+     */
+    private void cleanupDisguise(LivingEntity host) {
+        for (Entity passenger : host.getPassengers()) {
+            if (passenger instanceof LivingEntity) {
+                passenger.remove();
+            }
         }
     }
 

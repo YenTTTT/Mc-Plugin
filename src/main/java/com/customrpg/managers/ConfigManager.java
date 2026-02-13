@@ -60,7 +60,8 @@ public class ConfigManager {
         ensureDefaultConfigExists("config/config.yml");
         ensureDefaultConfigExists("config/weapons/types/example.yml");
         ensureDefaultConfigExists("config/weapons/skills/skill1.yml");
-        ensureDefaultConfigExists("config/mobs/types/example.yml");
+        // ensureDefaultConfigExists("config/mobs/types/example.yml");  // 舊格式範例（已棄用）
+        ensureDefaultConfigExists("config/mobs/types/enhanced_example.yml");  // 新格式範例（推薦）
         ensureDefaultConfigExists("config/mobs/skills/skill1.yml");
         ensureDefaultConfigExists("config/skills/example.yml");
 
@@ -539,13 +540,12 @@ public class ConfigManager {
             if (configPath.startsWith("config/mobs/types/")) {
                 FileConfiguration config = configs.get(configPath);
                 for (String key : config.getKeys(false)) {
-                    Map<String, Object> mobData = new HashMap<>();
-                    mobData.put("name", config.getString(key + ".name"));
-                    mobData.put("type", config.getString(key + ".type"));
-                    mobData.put("health", config.getDouble(key + ".health"));
-                    mobData.put("damage", config.getDouble(key + ".damage"));
-                    mobData.put("special-behavior", config.getString(key + ".special-behavior"));
-                    allMobs.put(key, mobData);
+                    // 獲取完整的配置區段（支援新舊格式）
+                    org.bukkit.configuration.ConfigurationSection section = config.getConfigurationSection(key);
+                    if (section != null) {
+                        Map<String, Object> mobData = safeSectionToMap(section);
+                        allMobs.put(key, mobData);
+                    }
                 }
             }
         }
@@ -667,7 +667,12 @@ public class ConfigManager {
         Map<String, Object> map = new HashMap<>();
         for (String k : section.getKeys(false)) {
             Object v = section.get(k);
-            map.put(k, v);
+            // 遞迴處理嵌套的 ConfigurationSection
+            if (v instanceof org.bukkit.configuration.ConfigurationSection) {
+                map.put(k, safeSectionToMap((org.bukkit.configuration.ConfigurationSection) v));
+            } else {
+                map.put(k, v);
+            }
         }
         return map;
     }

@@ -1,0 +1,56 @@
+# 測試配置 - 簡化版
+test_zombie:
+  name: "&7測試殭屍"
+  type: ZOMBIE
+
+  level-range:
+    min: 1
+    max: 5
+
+  base-stats:
+    health: 20.0
+    damage: 5.0
+
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 1.0
+
+  exp:
+    base: 10
+    per-level: 5
+
+  special-behavior: "aggressive"
+  show-level-in-name: true
+
+test_skeleton:
+  name: "&c測試骷髏"
+  type: SKELETON
+
+  level-range:
+    min: 1
+    max: 10
+
+  base-stats:
+    health: 25.0
+    damage: 6.0
+
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 0.5
+
+  exp:
+    base: 15
+    per-level: 8
+
+  special-behavior: "none"
+  show-level-in-name: true
+
+# 舊格式（向後兼容）
+simple_zombie:
+  name: "&8簡易殭屍"
+  type: ZOMBIE
+  health: 40.0
+  damage: 6.0
+  special-behavior: "aggressive"
+  exp: 5
+

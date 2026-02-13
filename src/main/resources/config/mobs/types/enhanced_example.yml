@@ -1,0 +1,224 @@
+# ========================================
+# 增強型自定義生物配置範例
+# ========================================
+# 支援功能：
+# - 動態等級系統 (level-range)
+# - 屬性線性成長 (stat-scaling)
+# - 自定義裝備 (equipment)
+# - 視覺偽裝 (disguise)
+# - 分離的掉落物系統 (drops: vanilla-items + custom-weapons)
+# ========================================
+
+# 範例 1: 等級化殭屍 - 基礎範例
+leveled_zombie:
+  name: "&7菁英殭屍"
+  type: ZOMBIE
+
+  # 等級範圍：生成時隨機 1-10 級
+  level-range:
+    min: 1
+    max: 10
+
+  # 基礎屬性
+  base-stats:
+    health: 20.0
+    damage: 5.0
+
+  # 屬性成長：每級增加
+  stat-scaling:
+    health-per-level: 5.0    # 每級 +5 HP (Lv.10 時為 20 + 9*5 = 65 HP)
+    damage-per-level: 1.0    # 每級 +1 傷害 (Lv.10 時為 5 + 9*1 = 14 傷害)
+
+  # 經驗值：基礎 + (等級 * 倍率)
+  exp:
+    base: 10
+    per-level: 5             # Lv.10 給予 10 + 10*5 = 60 經驗值
+
+  # 掉落物
+  drops:
+    # 原版物品
+    vanilla-items:
+      - material: DIAMOND
+        amount: 1-3           # 隨機 1-3 個
+        chance: 0.3           # 30% 機率
+      - material: GOLDEN_APPLE
+        amount: 1
+        chance: 0.1           # 10% 機率
+
+    # 自定義武器（引用 config/weapons/types/ 中的武器）
+    custom-weapons:
+      - weapon-key: "iron_scythe"
+        chance: 0.05          # 5% 機率
+      - weapon-key: "fire_sword"
+        chance: 0.02          # 2% 機率
+
+  # 特殊行為（保留原系統）
+  special-behavior: "aggressive"
+
+  # 是否在名稱前顯示等級
+  show-level-in-name: true   # 顯示為 "[Lv.5] &7菁英殭屍"
+
+# 範例 2: 裝備化骷髏
+armored_skeleton:
+  name: "&c鐵甲弓箭手"
+  type: SKELETON
+
+  level-range:
+    min: 5
+    max: 15
+
+  base-stats:
+    health: 25.0
+    damage: 6.0
+
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 0.5
+
+  # 裝備配置
+  equipment:
+    helmet:
+      material: IRON_HELMET
+      enchantments:
+        - type: PROTECTION_ENVIRONMENTAL
+          level: 2
+    chestplate:
+      material: IRON_CHESTPLATE
+    leggings:
+      material: IRON_LEGGINGS
+    boots:
+      material: IRON_BOOTS
+    main-hand:
+      material: BOW
+      enchantments:
+        - type: ARROW_DAMAGE
+          level: 3
+        - type: ARROW_FIRE
+          level: 1
+    off-hand:
+      material: SHIELD
+
+  exp:
+    base: 20
+    per-level: 8
+
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 5-10
+        chance: 0.8
+      - material: BOW
+        amount: 1
+        chance: 0.2
+    custom-weapons:
+      - weapon-key: "thunder_axe"
+        chance: 0.01
+
+  special-behavior: "fire_arrows"
+  show-level-in-name: true
+
+# 範例 3: 偽裝型生物 - 攻擊型豬
+aggressive_pig:
+  name: "&d&l狂暴豬"
+  type: ZOMBIE              # 實際生成的實體（宿主）
+
+  level-range:
+    min: 3
+    max: 12
+
+  base-stats:
+    health: 30.0
+    damage: 8.0
+
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 1.5
+
+  # 偽裝配置
+  disguise:
+    enabled: true
+    type: PIG               # 視覺上顯示為豬
+    baby-chance: 0.3        # 30% 機率生成為幼年
+    rider-invisible: true   # 隱藏宿主實體
+    rider-silent: true      # 宿主實體靜音
+    rider-invulnerable: false  # 宿主是否無敵（false = 可被傷害）
+
+  exp:
+    base: 15
+    per-level: 6
+
+  drops:
+    vanilla-items:
+      - material: PORKCHOP
+        amount: 2-4
+        chance: 0.9
+      - material: LEATHER
+        amount: 1-2
+        chance: 0.5
+    custom-weapons:
+      - weapon-key: "vampire_staff"
+        chance: 0.03
+
+  special-behavior: "fast_movement"
+  show-level-in-name: true
+
+# 範例 4: 史萊姆王
+slime_king:
+  name: "&a&l史萊姆之王"
+  type: SLIME
+
+  level-range:
+    min: 10
+    max: 20
+
+  base-stats:
+    health: 100.0
+    damage: 10.0
+
+  stat-scaling:
+    health-per-level: 10.0
+    damage-per-level: 2.0
+
+  equipment:
+    helmet:
+      material: GOLDEN_HELMET
+      enchantments:
+        - type: PROTECTION_ENVIRONMENTAL
+          level: 4
+        - type: THORNS
+          level: 2
+
+  exp:
+    base: 50
+    per-level: 15
+
+  drops:
+    vanilla-items:
+      - material: SLIME_BALL
+        amount: 10-20
+        chance: 1.0
+      - material: EMERALD
+        amount: 3-5
+        chance: 0.5
+      - material: DIAMOND
+        amount: 1-2
+        chance: 0.2
+    custom-weapons:
+      - weapon-key: "ice_sword"
+        chance: 0.08
+      - weapon-key: "thunder_axe"
+        chance: 0.05
+
+  special-behavior: "split_on_death"
+  show-level-in-name: true
+
+# 範例 5: 簡易配置（向後兼容）
+simple_zombie:
+  name: "&8簡易殭屍"
+  type: ZOMBIE
+  health: 40.0
+  damage: 6.0
+  special-behavior: "aggressive"
+  exp: 5
+
+
