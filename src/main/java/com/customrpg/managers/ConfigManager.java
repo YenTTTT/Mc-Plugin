@@ -228,6 +228,10 @@ public class ConfigManager {
 
                     // 額外資料（之後 listener 參數化會用到）
                     Map<String, Object> extra = new HashMap<>();
+
+                    // 將解析後的元素類型放入 extra，供 WeaponListener 使用
+                    extra.put("element-type", resolvedEffect.toUpperCase());
+
                     extra.put("backstab-enabled", config.getBoolean(key + ".special.backstab-enabled", false));
                     extra.put("backstab-multiplier", config.getDouble(key + ".special.backstab-multiplier", 1.0));
 
@@ -237,8 +241,22 @@ public class ConfigManager {
                     extra.put("backstab-particle", config.getString(key + ".special.effects.backstab-particle",
                             config.getString(key + ".effects.backstab-particle", "")));
 
+                    // 元素效果參數
                     extra.put("burn-duration-ticks", config.getInt(key + ".element.duration-ticks", 100));
                     extra.put("lightning-chance", config.getDouble(key + ".element.lightning-chance", 0.3));
+
+                    // 冰霜元素參數
+                    extra.put("ice-chance", config.getDouble(key + ".element.ice-chance", 0.3));
+                    extra.put("ice-duration-ticks", config.getInt(key + ".element.ice-duration-ticks", 40));
+
+                    // 水流元素參數
+                    extra.put("water-duration-ticks", config.getInt(key + ".element.water-duration-ticks", 60));
+                    extra.put("water-slowness-level", config.getInt(key + ".element.water-slowness-level", 1));
+
+                    // 毒素元素參數
+                    extra.put("poison-duration-ticks", config.getInt(key + ".element.poison-duration-ticks", 100));
+                    extra.put("poison-level", config.getInt(key + ".element.poison-level", 1));
+                    extra.put("poison-armor-reduction-level", config.getInt(key + ".element.poison-armor-reduction-level", 1));
 
                     // 【被動效果】（測試版）
                     // passive.effect: 例如 "kill_crit_boost"
@@ -416,7 +434,15 @@ public class ConfigManager {
                     weaponData.put("name", config.getString(key + ".name"));
                     weaponData.put("material", config.getString(key + ".material"));
                     weaponData.put("damage-multiplier", config.getDouble(key + ".damage-multiplier"));
-                    weaponData.put("special-effect", config.getString(key + ".special-effect"));
+
+                    String oldSpecialEffect = config.getString(key + ".special-effect", "none");
+                    weaponData.put("special-effect", oldSpecialEffect);
+
+                    // 為舊格式也添加 element-type 到 extra
+                    Map<String, Object> extra = new HashMap<>();
+                    extra.put("element-type", oldSpecialEffect.toUpperCase());
+                    weaponData.put("extra", extra);
+
                     weaponData.put("lore", config.getStringList(key + ".lore"));
                 }
 
@@ -440,6 +466,15 @@ public class ConfigManager {
             if (se.equals("thunder")) {
                 return "lightning";
             }
+            if (se.equals("ice") || se.equals("freeze")) {
+                return "ice";
+            }
+            if (se.equals("water")) {
+                return "water";
+            }
+            if (se.equals("poison")) {
+                return "poison";
+            }
             return se;
         }
 
@@ -447,14 +482,17 @@ public class ConfigManager {
         if (el.equals("fire") || elRaw.equals("火")) {
             return "burn";
         }
-        if (el.equals("ice") || elRaw.equals("冰")) {
-            return "none";
+        if (el.equals("ice") || el.equals("freeze") || elRaw.equals("冰")) {
+            return "ice";
+        }
+        if (el.equals("water") || elRaw.equals("水")) {
+            return "water";
         }
         if (el.equals("lightning") || el.equals("thunder") || elRaw.equals("雷")) {
             return "lightning";
         }
         if (el.equals("poison") || elRaw.equals("毒")) {
-            return "none";
+            return "poison";
         }
         if (el.equals("none") || elRaw.equals("無")) {
             return "none";

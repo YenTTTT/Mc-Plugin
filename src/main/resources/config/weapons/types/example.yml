@@ -62,11 +62,34 @@ iron_scythe:
     cooldown-ticks: 100      # 冷卻時間（ticks，100 ticks = 5秒）
 
   # 【元素/狀態效果】
+  # 支援的元素類型：
+  # - 火 (FIRE): 點燃目標，造成持續燃燒傷害
+  # - 冰 (ICE): 機率凍結目標，使其無法移動
+  # - 水 (WATER): 緩速目標
+  # - 雷 (LIGHTNING): 召喚閃電擊中目標
+  # - 毒 (POISON): 中毒並降低目標防禦
+  # - 無 (NONE): 無元素效果
   element:
-    element: "無"       # 火 / 冰 / 雷 / 毒 / 無
-    status: ""
-    duration-ticks: 0
-    lightning-chance: 0.3
+    element: "無"              # 元素類型（火/冰/水/雷/毒/無）
+
+    # 火元素參數
+    duration-ticks: 100       # 燃燒持續時間（ticks，100 = 5秒）
+
+    # 雷元素參數
+    lightning-chance: 0.3     # 閃電觸發機率（0.3 = 30%）
+
+    # 冰元素參數
+    ice-chance: 0.3           # 凍結觸發機率（0.3 = 30%）
+    ice-duration-ticks: 40    # 凍結持續時間（ticks，40 = 2秒）
+
+    # 水元素參數
+    water-duration-ticks: 60     # 緩速持續時間（ticks，60 = 3秒）
+    water-slowness-level: 1      # 緩速等級（1 = 緩速II）
+
+    # 毒元素參數
+    poison-duration-ticks: 100   # 中毒持續時間（ticks，100 = 5秒）
+    poison-level: 1              # 中毒等級（1 = 中毒II）
+    poison-armor-reduction-level: 1  # 裝甲減少等級（凋零效果）
 
   # 【音效與視覺】
   effects: {}
@@ -121,9 +144,7 @@ fire_sword:
 
   element:
     element: "火"
-    status: "燃燒"
-    duration-ticks: 100
-    lightning-chance: 0.3
+    duration-ticks: 100       # 燃燒 5 秒
 
   effects:
     attack-sound: "entity.blaze.shoot"
@@ -181,9 +202,7 @@ thunder_axe:
 
   element:
     element: "雷"
-    status: ""
-    duration-ticks: 0
-    lightning-chance: 0.3
+    lightning-chance: 0.3     # 30% 機率召喚閃電
 
   effects:
     attack-sound: "entity.lightning_bolt.thunder"
@@ -246,3 +265,182 @@ vampire_staff:
 
   passive:
     effect: ""
+
+  element:
+    element: "無"
+
+  effects: {}
+
+  limits:
+    droppable: true
+
+  notes:
+    design-note: ""
+
+# ========== 新元素武器範例 ==========
+
+ice_sword:
+  basic:
+    name: "冰霜之劍"
+    material: DIAMOND_SWORD
+    rarity: "稀有"
+    bind-type: "無"
+
+  appearance:
+    display-name: "&b&l❄ 冰霜之劍"
+    lore:
+      - "&7被寒冰之力附魔的劍"
+      - "&7有機率凍結敵人"
+      - ""
+      - "&b元素: 冰"
+      - "&7凍結機率: &f30%"
+      - "&7凍結時間: &f2秒"
+    custom-model-data: 0
+    enchanted-glow: true
+
+  stats:
+    damage-multiplier: 1.4
+    base-damage: 0
+    attack-speed: 0
+    crit-chance: 15.0
+    crit-damage-multiplier: 1.8
+    knockback: 0
+    durability-cost-multiplier: 1.0
+
+  special:
+    backstab-enabled: false
+    effect: "ice"
+
+  active-skill:
+    name: ""
+
+  passive:
+    description: ""
+    effect: ""
+
+  element:
+    element: "冰"
+    ice-chance: 0.3           # 30% 機率觸發凍結
+    ice-duration-ticks: 40    # 凍結 2 秒
+
+  effects:
+    attack-sound: "block.glass.break"
+
+  limits:
+    droppable: true
+
+  notes:
+    design-note: "控場型武器，適合搭配高攻速"
+
+water_trident:
+  basic:
+    name: "水流三叉戟"
+    material: TRIDENT
+    rarity: "稀有"
+    bind-type: "無"
+
+  appearance:
+    display-name: "&9&l💧 水流三叉戟"
+    lore:
+      - "&7操控水流之力的三叉戟"
+      - "&7攻擊會減緩敵人速度"
+      - ""
+      - "&9元素: 水"
+      - "&7緩速等級: &fII"
+      - "&7持續時間: &f3秒"
+    custom-model-data: 0
+    enchanted-glow: true
+
+  stats:
+    damage-multiplier: 1.3
+    base-damage: 0
+    attack-speed: 0
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.5
+    knockback: 1.0
+    durability-cost-multiplier: 1.0
+
+  special:
+    backstab-enabled: false
+    effect: "water"
+
+  active-skill:
+    name: ""
+
+  passive:
+    description: ""
+    effect: ""
+
+  element:
+    element: "水"
+    water-duration-ticks: 60     # 緩速 3 秒
+    water-slowness-level: 1      # 緩速 II
+
+  effects:
+    attack-sound: "entity.generic.splash"
+
+  limits:
+    droppable: true
+
+  notes:
+    design-note: "風箏戰術專用，搭配擊退效果更佳"
+
+poison_dagger:
+  basic:
+    name: "毒蛇之刃"
+    material: IRON_SWORD
+    rarity: "稀有"
+    bind-type: "無"
+
+  appearance:
+    display-name: "&2&l☠ 毒蛇之刃"
+    lore:
+      - "&7塗抹劇毒的匕首"
+      - "&7可削弱敵人的防禦"
+      - ""
+      - "&2元素: 毒"
+      - "&7中毒等級: &fII"
+      - "&7持續時間: &f5秒"
+      - "&7裝甲削弱: &f凋零I"
+    custom-model-data: 0
+    enchanted-glow: true
+
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 0
+    attack-speed: 50.0
+    crit-chance: 20.0
+    crit-damage-multiplier: 1.6
+    knockback: 0
+    durability-cost-multiplier: 1.0
+
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.5
+    effect: "poison"
+    effects:
+      backstab-particle: "enchanted_hit"
+      backstab-sound: "entity.guardian.ambient_land"
+
+  active-skill:
+    name: ""
+
+  passive:
+    description: ""
+    effect: ""
+
+  element:
+    element: "毒"
+    poison-duration-ticks: 100   # 中毒 5 秒
+    poison-level: 1              # 中毒 II
+    poison-armor-reduction-level: 1  # 凋零 I
+
+  effects:
+    attack-sound: "entity.spider.hurt"
+
+  limits:
+    droppable: true
+
+  notes:
+    design-note: "持久戰型武器，適合搭配背刺和高攻速"
+

@@ -291,7 +291,16 @@ public class WeaponListener implements Listener {
             case "THUNDER":
                 applyLightningEffect(attacker, victim, weaponData);
                 break;
-            // Add ICE, POISON later
+            case "ICE":
+            case "FREEZE":
+                applyIceEffect(attacker, victim, weaponData);
+                break;
+            case "WATER":
+                applyWaterEffect(attacker, victim, weaponData);
+                break;
+            case "POISON":
+                applyPoisonEffect(attacker, victim, weaponData);
+                break;
             default:
                 break;
         }
@@ -383,6 +392,118 @@ public class WeaponListener implements Listener {
             victim.getWorld().strikeLightning(strikeLocation);
             attacker.sendMessage(ChatColor.AQUA + "⚡ 召喚閃電! (" + (int) (chance * 100) + "%)");
         }
+    }
+
+    /**
+     * Apply ice effect (freeze enemy for a duration with chance)
+     *
+     * @param attacker   The attacking player
+     * @param victim     The victim entity
+     * @param weaponData The weapon data
+     */
+    private void applyIceEffect(Player attacker, org.bukkit.entity.Entity victim,
+            WeaponManager.WeaponData weaponData) {
+        if (!(victim instanceof LivingEntity)) {
+            return;
+        }
+
+        double chance = weaponData.getDoubleExtra("ice-chance", 0.3);
+        if (random.nextDouble() >= chance) {
+            return;
+        }
+
+        LivingEntity livingVictim = (LivingEntity) victim;
+        int durationTicks = weaponData.getIntExtra("ice-duration-ticks", 40); // 預設 2 秒 (40 ticks)
+
+        // 凍結效果：使用緩速 10 級 + 挖掘疲勞來模擬凍結
+        livingVictim.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                org.bukkit.potion.PotionEffectType.SLOWNESS, durationTicks, 10, false, true));
+        livingVictim.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                org.bukkit.potion.PotionEffectType.MINING_FATIGUE, durationTicks, 2, false, true));
+        livingVictim.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                org.bukkit.potion.PotionEffectType.JUMP_BOOST, durationTicks, 128, false, false)); // 負值跳躍阻止跳躍
+
+        // 視覺效果：冰雪粒子
+        victim.getWorld().spawnParticle(Particle.CLOUD, victim.getLocation().add(0, 1.0, 0), 30, 0.3, 0.6, 0.3);
+        victim.getWorld().spawnParticle(Particle.ENCHANTED_HIT, victim.getLocation().add(0, 1.0, 0), 15, 0.3, 0.6, 0.3);
+
+        // 音效
+        attacker.getWorld().playSound(victim.getLocation(), org.bukkit.Sound.BLOCK_GLASS_BREAK, 1.0f, 1.2f);
+
+        double seconds = durationTicks / 20.0;
+        attacker.sendMessage(ChatColor.AQUA + "❄ 凍結目標! (" + String.format("%.1f", seconds) + " 秒, " + (int) (chance * 100) + "% 機率)");
+    }
+
+    /**
+     * Apply water effect (slowness on enemy)
+     *
+     * @param attacker   The attacking player
+     * @param victim     The victim entity
+     * @param weaponData The weapon data
+     */
+    private void applyWaterEffect(Player attacker, org.bukkit.entity.Entity victim,
+            WeaponManager.WeaponData weaponData) {
+        if (!(victim instanceof LivingEntity)) {
+            return;
+        }
+
+        LivingEntity livingVictim = (LivingEntity) victim;
+        int durationTicks = weaponData.getIntExtra("water-duration-ticks", 60); // 預設 3 秒
+        int amplifier = weaponData.getIntExtra("water-slowness-level", 1); // 預設緩速 II (amplifier 1 = level 2)
+
+        // 套用緩速效果
+        livingVictim.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                org.bukkit.potion.PotionEffectType.SLOWNESS, durationTicks, amplifier, false, true));
+
+        // 視覺效果：水滴粒子
+        victim.getWorld().spawnParticle(Particle.SPLASH, victim.getLocation().add(0, 1.0, 0), 25, 0.3, 0.6, 0.3);
+        victim.getWorld().spawnParticle(Particle.CLOUD, victim.getLocation().add(0, 0.5, 0), 15, 0.4, 0.4, 0.4);
+
+        // 音效
+        attacker.getWorld().playSound(victim.getLocation(), org.bukkit.Sound.ENTITY_GENERIC_SPLASH, 1.0f, 1.0f);
+
+        double seconds = durationTicks / 20.0;
+        attacker.sendMessage(ChatColor.BLUE + "💧 水流緩速! (緩速 " + (amplifier + 1) + ", " + String.format("%.1f", seconds) + " 秒)");
+    }
+
+    /**
+     * Apply poison effect (reduce enemy armor)
+     *
+     * @param attacker   The attacking player
+     * @param victim     The victim entity
+     * @param weaponData The weapon data
+     */
+    private void applyPoisonEffect(Player attacker, org.bukkit.entity.Entity victim,
+            WeaponManager.WeaponData weaponData) {
+        if (!(victim instanceof LivingEntity)) {
+            return;
+        }
+
+        LivingEntity livingVictim = (LivingEntity) victim;
+        int durationTicks = weaponData.getIntExtra("poison-duration-ticks", 100); // 預設 5 秒
+        int amplifier = weaponData.getIntExtra("poison-level", 1); // 預設中毒 II
+
+        // 套用中毒效果（造成持續傷害）
+        livingVictim.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                org.bukkit.potion.PotionEffectType.POISON, durationTicks, amplifier, false, true));
+
+        // 套用虛弱效果來模擬裝甲減少（減少傷害輸出，但主要是中毒本身）
+        // 或者使用凋零效果來穿透裝甲造成傷害
+        int armorReductionLevel = weaponData.getIntExtra("poison-armor-reduction-level", 0);
+        if (armorReductionLevel > 0) {
+            livingVictim.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                    org.bukkit.potion.PotionEffectType.WITHER, durationTicks, armorReductionLevel - 1, false, true));
+        }
+
+        // 視覺效果：毒性粒子
+        victim.getWorld().spawnParticle(Particle.SMOKE, victim.getLocation().add(0, 1.0, 0), 20, 0.3, 0.6, 0.3);
+        victim.getWorld().spawnParticle(Particle.CRIT, victim.getLocation().add(0, 1.0, 0), 10, 0.3, 0.6, 0.3);
+
+        // 音效
+        attacker.getWorld().playSound(victim.getLocation(), org.bukkit.Sound.ENTITY_SPIDER_HURT, 1.0f, 0.8f);
+
+        double seconds = durationTicks / 20.0;
+        attacker.sendMessage(ChatColor.GREEN + "☠ 中毒效果! (中毒 " + (amplifier + 1) + ", " + String.format("%.1f", seconds) + " 秒)");
     }
 
     /**
