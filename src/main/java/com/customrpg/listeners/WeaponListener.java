@@ -198,6 +198,7 @@ public class WeaponListener implements Listener {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void applyArmorPierce(Player attacker, org.bukkit.entity.Entity victim, double piercePercent,
             EntityDamageByEntityEvent event) {
         if (piercePercent > 100.0)
