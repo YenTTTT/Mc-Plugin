@@ -21,6 +21,10 @@ public class PlayerStats {
     private int vitality;    // 生命力 (影響最大血量)
     private int defense;     // 防禦 (減免傷害)
 
+    private int level;
+    private long exp;
+    private int statPoints;
+
     /**
      * 預設建構子，初始屬性皆為 0
      */
@@ -30,17 +34,25 @@ public class PlayerStats {
         this.agility = 0;
         this.vitality = 0;
         this.defense = 0;
+
+        this.level = 1;
+        this.exp = 0;
+        this.statPoints = 0;
     }
 
     /**
      * 完整建構子
      */
-    public PlayerStats(int strength, int magic, int agility, int vitality, int defense) {
+    public PlayerStats(int strength, int magic, int agility, int vitality, int defense, int level, long exp, int statPoints) {
         this.strength = strength;
         this.magic = magic;
         this.agility = agility;
         this.vitality = vitality;
         this.defense = defense;
+
+        this.level = level;
+        this.exp = exp;
+        this.statPoints = statPoints;
     }
 
     // ===== Getters & Setters =====
@@ -85,6 +97,30 @@ public class PlayerStats {
         this.defense = Math.max(0, defense);
     }
 
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = Math.max(1, level);
+    }
+
+    public long getExp() {
+        return exp;
+    }
+
+    public void setExp(long exp) {
+        this.exp = Math.max(0, exp);
+    }
+
+    public int getStatPoints() {
+        return statPoints;
+    }
+
+    public void setStatPoints(int statPoints) {
+        this.statPoints = Math.max(0, statPoints);
+    }
+
     // ===== 序列化/反序列化 =====
 
     /**
@@ -97,6 +133,10 @@ public class PlayerStats {
         data.put("agility", agility);
         data.put("vitality", vitality);
         data.put("defense", defense);
+
+        data.put("level", level);
+        data.put("exp", exp);
+        data.put("statPoints", statPoints);
         return data;
     }
 
@@ -109,7 +149,12 @@ public class PlayerStats {
         int agi = getInt(data, "agility");
         int vit = getInt(data, "vitality");
         int def = getInt(data, "defense");
-        return new PlayerStats(str, mag, agi, vit, def);
+
+        int lvl = data.containsKey("level") ? getInt(data, "level") : 1;
+        long xp = data.containsKey("exp") ? ((Number) data.get("exp")).longValue() : 0;
+        int pts = data.containsKey("statPoints") ? getInt(data, "statPoints") : 0;
+
+        return new PlayerStats(str, mag, agi, vit, def, lvl, xp, pts);
     }
 
     private static int getInt(Map<String, Object> map, String key) {
@@ -128,7 +173,9 @@ public class PlayerStats {
                 ", Agility=" + agility +
                 ", Vitality=" + vitality +
                 ", Defense=" + defense +
+                ", Level=" + level +
+                ", Exp=" + exp +
+                ", StatPoints=" + statPoints +
                 '}';
     }
 }
-

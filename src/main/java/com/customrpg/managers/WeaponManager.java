@@ -100,6 +100,8 @@ public class WeaponManager {
             extra.putIfAbsent("knockback", weaponConfig.getOrDefault("knockback", 0.0));
             extra.putIfAbsent("durability-cost-multiplier", weaponConfig.getOrDefault("durability-cost-multiplier", 1.0));
 
+            int minLevel = weaponConfig.containsKey("min-level") ? (Integer) weaponConfig.get("min-level") : 0;
+
             // 安全的取得 lore（避免 ClassCastException）
             List<String> lore = new ArrayList<>();
             Object loreObj = weaponConfig.get("lore");
@@ -120,7 +122,8 @@ public class WeaponManager {
                     lore,
                     customModelData,
                     enchantedGlow,
-                    extra
+                    extra,
+                    minLevel
             );
 
             weapons.put(weaponKey, weaponData);
@@ -148,6 +151,10 @@ public class WeaponManager {
             List<String> lore = new ArrayList<>();
             for (String line : weaponData.getLore()) {
                 lore.add(ChatColor.translateAlternateColorCodes('&', line));
+            }
+            if (weaponData.getMinLevel() > 0) {
+                lore.add(ChatColor.DARK_GRAY + "------------------");
+                lore.add(ChatColor.RED + "等級需求: " + weaponData.getMinLevel());
             }
             meta.setLore(lore);
 
@@ -278,25 +285,27 @@ public class WeaponManager {
         private final int customModelData;
         private final boolean enchantedGlow;
         private final Map<String, Object> extra;
+        private final int minLevel;
 
-        public WeaponData(String key,
-                          String displayName,
-                          Material material,
-                          double damageMultiplier,
-                          String specialEffect,
-                          List<String> lore,
-                          int customModelData,
-                          boolean enchantedGlow,
+        public WeaponData(String key, String displayName, Material material, double damageMultiplier,
+                          String specialEffect, List<String> lore, int customModelData, boolean enchantedGlow,
                           Map<String, Object> extra) {
+            this(key, displayName, material, damageMultiplier, specialEffect, lore, customModelData, enchantedGlow, extra, 0);
+        }
+
+        public WeaponData(String key, String displayName, Material material, double damageMultiplier,
+                          String specialEffect, List<String> lore, int customModelData, boolean enchantedGlow,
+                          Map<String, Object> extra, int minLevel) {
             this.key = key;
             this.displayName = displayName;
             this.material = material;
             this.damageMultiplier = damageMultiplier;
-            this.specialEffect = specialEffect != null ? specialEffect : "none";
-            this.lore = lore != null ? lore : new ArrayList<>();
+            this.specialEffect = specialEffect;
+            this.lore = lore;
             this.customModelData = customModelData;
             this.enchantedGlow = enchantedGlow;
-            this.extra = extra != null ? extra : new HashMap<>();
+            this.extra = extra;
+            this.minLevel = minLevel;
         }
 
         public String getKey() { return key; }
@@ -308,20 +317,30 @@ public class WeaponManager {
         public int getCustomModelData() { return customModelData; }
         public boolean isEnchantedGlow() { return enchantedGlow; }
         public Map<String, Object> getExtra() { return extra; }
+        public int getMinLevel() { return minLevel; }
 
-        public boolean getBooleanExtra(String key, boolean def) {
-            Object v = extra.get(key);
-            return v instanceof Boolean ? (Boolean) v : def;
+        public double getDoubleExtra(String key, double defaultValue) {
+            Object val = extra.get(key);
+            if (val instanceof Number) {
+                return ((Number) val).doubleValue();
+            }
+            return defaultValue;
         }
 
-        public double getDoubleExtra(String key, double def) {
-            Object v = extra.get(key);
-            return v instanceof Number ? ((Number) v).doubleValue() : def;
+        public boolean getBooleanExtra(String key, boolean defaultValue) {
+            Object val = extra.get(key);
+            if (val instanceof Boolean) {
+                return (Boolean) val;
+            }
+            return defaultValue;
         }
 
-        public int getIntExtra(String key, int def) {
-            Object v = extra.get(key);
-            return v instanceof Number ? ((Number) v).intValue() : def;
+        public int getIntExtra(String key, int defaultValue) {
+            Object val = extra.get(key);
+            if (val instanceof Number) {
+                return ((Number) val).intValue();
+            }
+            return defaultValue;
         }
     }
 }

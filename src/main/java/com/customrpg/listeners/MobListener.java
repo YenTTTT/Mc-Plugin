@@ -2,6 +2,8 @@ package com.customrpg.listeners;
 
 import com.customrpg.CustomRPG;
 import com.customrpg.managers.MobManager;
+import com.customrpg.managers.PlayerStatsManager;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -30,6 +32,7 @@ public class MobListener implements Listener {
 
     private final CustomRPG plugin;
     private final MobManager mobManager;
+    private final PlayerStatsManager statsManager;
     private final Random random;
 
     /**
@@ -37,9 +40,10 @@ public class MobListener implements Listener {
      * @param plugin Main plugin instance
      * @param mobManager MobManager instance
      */
-    public MobListener(CustomRPG plugin, MobManager mobManager) {
+    public MobListener(CustomRPG plugin, MobManager mobManager, PlayerStatsManager statsManager) {
         this.plugin = plugin;
         this.mobManager = mobManager;
+        this.statsManager = statsManager;
         this.random = new Random();
         startCustomMobBehaviors();
     }
@@ -91,27 +95,61 @@ public class MobListener implements Listener {
      */
     @EventHandler
     public void onMobDeath(EntityDeathEvent event) {
+        // 排除玩家死亡
+        if (event.getEntity() instanceof Player) {
+            return;
+        }
+
+        Player killer = event.getEntity().getKiller();
+        if (killer == null) {
+            return;
+        }
+
         String mobKey = mobManager.getCustomMobKey(event.getEntity());
-        if (mobKey == null) {
-            return;
-        }
 
-        MobManager.MobData mobData = mobManager.getMobData(mobKey);
-        if (mobData == null) {
-            return;
-        }
+        // 如果是自製怪物
+        if (mobKey != null) {
+            MobManager.MobData mobData = mobManager.getMobData(mobKey);
+            if (mobData == null) {
+                return;
+            }
 
-        applyDeathBehavior(event.getEntity(), mobData);
+            // Handle custom mob drops or effects
+            // For example, splitting slimes
+            if (mobData.getSpecialBehavior().equalsIgnoreCase("split_on_death")) {
+                splitSlime(event.getEntity(), mobData);
+            }
+
+            // 給予自製怪物的經驗值
+            if (mobData.getExp() > 0) {
+                statsManager.addExp(killer, mobData.getExp());
+                killer.sendMessage(ChatColor.YELLOW + "獲得 " + mobData.getExp() + " 經驗值");
+            }
+        } else {
+            // 如果是普通怪物，給予 2 點經驗值
+            statsManager.addExp(killer, 2);
+            killer.sendMessage(ChatColor.YELLOW + "獲得 2 經驗值");
+        }
     }
 
     /**
-     * Apply death behaviors to custom mobs
-     * @param mob The dying mob
+     * Split a giant slime into smaller ones
+     * @param entity The dying entity
      * @param mobData The mob data
      */
-    private void applyDeathBehavior(LivingEntity mob, MobManager.MobData mobData) {
-        if (mobData.getSpecialBehavior().equalsIgnoreCase("split_on_death")) {
-            splitSlime(mob);
+    private void splitSlime(LivingEntity entity, MobManager.MobData mobData) {
+        Location location = entity.getLocation();
+
+        for (int i = 0; i < 4; i++) {
+            Slime smallSlime = (Slime) location.getWorld().spawnEntity(location, EntityType.SLIME);
+            smallSlime.setSize(1);
+
+            Vector velocity = new Vector(
+                random.nextDouble() - 0.5,
+                0.5,
+                random.nextDouble() - 0.5
+            ).normalize().multiply(0.5);
+            smallSlime.setVelocity(velocity);
         }
     }
 
@@ -163,26 +201,6 @@ public class MobListener implements Listener {
         Snowball snowball = (Snowball) mob.getWorld().spawnEntity(mobLocation, EntityType.SNOWBALL);
         snowball.setVelocity(direction.multiply(1.5));
         snowball.setShooter(mob);
-    }
-
-    /**
-     * Split a slime into smaller slimes
-     * @param slime The slime entity
-     */
-    private void splitSlime(LivingEntity slime) {
-        Location location = slime.getLocation();
-
-        for (int i = 0; i < 4; i++) {
-            Slime smallSlime = (Slime) location.getWorld().spawnEntity(location, EntityType.SLIME);
-            smallSlime.setSize(1);
-
-            Vector velocity = new Vector(
-                random.nextDouble() - 0.5,
-                0.5,
-                random.nextDouble() - 0.5
-            ).normalize().multiply(0.5);
-            smallSlime.setVelocity(velocity);
-        }
     }
 
     /**

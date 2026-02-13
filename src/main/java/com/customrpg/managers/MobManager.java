@@ -64,7 +64,8 @@ public class MobManager {
                 EntityType.valueOf((String) mobConfig.get("type")),
                 (Double) mobConfig.get("health"),
                 (Double) mobConfig.get("damage"),
-                (String) mobConfig.get("special-behavior")
+                (String) mobConfig.get("special-behavior"),
+                mobConfig.containsKey("exp") ? (Integer) mobConfig.get("exp") : 0
             );
 
             mobTypes.put(mobKey, mobData);
@@ -144,14 +145,20 @@ public class MobManager {
         private final double health;
         private final double damage;
         private final String specialBehavior;
+        private final int exp;
 
         public MobData(String key, String name, EntityType entityType, double health, double damage, String specialBehavior) {
+            this(key, name, entityType, health, damage, specialBehavior, 0);
+        }
+
+        public MobData(String key, String name, EntityType entityType, double health, double damage, String specialBehavior, int exp) {
             this.key = key;
             this.name = name;
             this.entityType = entityType;
             this.health = health;
             this.damage = damage;
             this.specialBehavior = specialBehavior;
+            this.exp = exp;
         }
 
         public String getKey() { return key; }
@@ -160,5 +167,6 @@ public class MobManager {
         public double getHealth() { return health; }
         public double getDamage() { return damage; }
         public String getSpecialBehavior() { return specialBehavior; }
+        public int getExp() { return exp; }
     }
 }

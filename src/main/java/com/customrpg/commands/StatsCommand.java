@@ -61,6 +61,12 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
             case "reload" -> {
                 return handleReload(sender, args);
             }
+            case "addexp" -> {
+                return handleAddExp(sender, args);
+            }
+            case "setlevel" -> {
+                return handleSetLevel(sender, args);
+            }
             default -> {
                 sendHelp(sender);
                 return true;
@@ -106,12 +112,104 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         PlayerStats stats = statsManager.getStats(target);
 
         sender.sendMessage(ChatColor.GOLD + "========== " + target.getName() + " 的數據 ==========");
+        sender.sendMessage(ChatColor.YELLOW + "等級 Level: " + ChatColor.WHITE + stats.getLevel());
+        sender.sendMessage(ChatColor.YELLOW + "經驗 Exp: " + ChatColor.WHITE + stats.getExp() + " / " + statsManager.getRequiredExp(stats.getLevel()));
+        sender.sendMessage(ChatColor.YELLOW + "屬性點數 Points: " + ChatColor.WHITE + stats.getStatPoints());
+        sender.sendMessage(ChatColor.GRAY + "-------------------------------------");
         sender.sendMessage(ChatColor.YELLOW + "物理攻擊 (Strength): " + ChatColor.WHITE + stats.getStrength());
         sender.sendMessage(ChatColor.AQUA + "魔法攻擊 (Magic): " + ChatColor.WHITE + stats.getMagic());
         sender.sendMessage(ChatColor.GREEN + "敏捷 (Agility): " + ChatColor.WHITE + stats.getAgility());
         sender.sendMessage(ChatColor.RED + "生命力 (Vitality): " + ChatColor.WHITE + stats.getVitality());
         sender.sendMessage(ChatColor.GRAY + "防禦 (Defense): " + ChatColor.WHITE + stats.getDefense());
         sender.sendMessage(ChatColor.GOLD + "=====================================");
+
+        return true;
+    }
+
+    /**
+     * 給予玩家經驗
+     * 用法: /rpg addexp <玩家> <數值>
+     */
+    private boolean handleAddExp(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("customrpg.admin")) {
+            sender.sendMessage(ChatColor.RED + "你沒有權限使用此指令！");
+            return true;
+        }
+
+        if (args.length < 3) {
+            sender.sendMessage(ChatColor.RED + "用法: /rpg addexp <玩家> <數值>");
+            return true;
+        }
+
+        Player target = Bukkit.getPlayer(args[1]);
+        if (target == null) {
+            sender.sendMessage(ChatColor.RED + "找不到玩家: " + args[1]);
+            return true;
+        }
+
+        long value;
+        try {
+            value = Long.parseLong(args[2]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(ChatColor.RED + "無效的數值: " + args[2]);
+            return true;
+        }
+
+        if (value <= 0) {
+            sender.sendMessage(ChatColor.RED + "數值必須大於 0！");
+            return true;
+        }
+
+        statsManager.addExp(target, value);
+        sender.sendMessage(ChatColor.GREEN + "✓ 已給予 " + target.getName() + " " + value + " 經驗值");
+
+        return true;
+    }
+
+    /**
+     * 設定玩家等級
+     * 用法: /rpg setlevel <玩家> <等級>
+     */
+    private boolean handleSetLevel(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("customrpg.admin")) {
+            sender.sendMessage(ChatColor.RED + "你沒有權限使用此指令！");
+            return true;
+        }
+
+        if (args.length < 3) {
+            sender.sendMessage(ChatColor.RED + "用法: /rpg setlevel <玩家> <等級>");
+            return true;
+        }
+
+        Player target = Bukkit.getPlayer(args[1]);
+        if (target == null) {
+            sender.sendMessage(ChatColor.RED + "找不到玩家: " + args[1]);
+            return true;
+        }
+
+        int level;
+        try {
+            level = Integer.parseInt(args[2]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(ChatColor.RED + "無效的等級: " + args[2]);
+            return true;
+        }
+
+        if (level < 1) {
+            sender.sendMessage(ChatColor.RED + "等級必須大於 0！");
+            return true;
+        }
+
+        PlayerStats stats = statsManager.getStats(target);
+        stats.setLevel(level);
+        stats.setExp(0); // Reset exp when manually setting level
+
+        // Update max health
+        statsManager.updateMaxHealth(target);
+        statsManager.saveStats(target);
+
+        sender.sendMessage(ChatColor.GREEN + "✓ 已將 " + target.getName() + " 的等級設定為 " + level);
+        target.sendMessage(ChatColor.GREEN + "你的等級已被設定為 " + level);
 
         return true;
     }
@@ -213,8 +311,10 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.YELLOW + "/rpg gui" + ChatColor.GRAY + " - 開啟屬性介面");
         sender.sendMessage(ChatColor.YELLOW + "/rpg stats [玩家]" + ChatColor.GRAY + " - 查看玩家數據");
         sender.sendMessage(ChatColor.YELLOW + "/rpg setstat <玩家> <屬性> <數值>" + ChatColor.GRAY + " - 設定玩家數據");
+        sender.sendMessage(ChatColor.YELLOW + "/rpg addexp <玩家> <數值>" + ChatColor.GRAY + " - 給予玩家經驗");
+        sender.sendMessage(ChatColor.YELLOW + "/rpg setlevel <玩家> <等級>" + ChatColor.GRAY + " - 設定玩家等級");
         sender.sendMessage(ChatColor.YELLOW + "/rpg reload [玩家]" + ChatColor.GRAY + " - 重新載入玩家數據");
-        sender.sendMessage(ChatColor.GRAY + "屬性: strength, magic, agility, vitality, defense");
+        sender.sendMessage(ChatColor.GRAY + "屬性: strength, magic, agility, vitality, defense, level, exp, points");
         sender.sendMessage(ChatColor.GOLD + "====================================");
     }
 
@@ -223,7 +323,7 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(Arrays.asList("gui", "stats", "setstat", "reload"));
+            completions.addAll(Arrays.asList("gui", "stats", "setstat", "reload", "addexp", "setlevel"));
         } else if (args.length == 2) {
             // 玩家名稱補全
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -231,10 +331,16 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
             }
         } else if (args.length == 3 && args[0].equalsIgnoreCase("setstat")) {
             // 屬性補全
-            completions.addAll(Arrays.asList("strength", "magic", "agility", "vitality", "defense"));
+            completions.addAll(Arrays.asList("strength", "magic", "agility", "vitality", "defense", "level", "exp", "points"));
         } else if (args.length == 4 && args[0].equalsIgnoreCase("setstat")) {
             // 數值範例
             completions.addAll(Arrays.asList("0", "10", "20", "50", "100"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("addexp")) {
+            // 經驗值範例
+            completions.addAll(Arrays.asList("10", "50", "100", "500", "1000"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("setlevel")) {
+            // 等級範例
+            completions.addAll(Arrays.asList("1", "5", "10", "20", "50"));
         }
 
         return completions;

@@ -146,7 +146,7 @@ public class CustomRPG extends JavaPlugin {
 
         // SkillListener (legacy) 已由 SkillTriggerListener 接管
 
-        getServer().getPluginManager().registerEvents(new MobListener(this, mobManager), this);
+        getServer().getPluginManager().registerEvents(new MobListener(this, mobManager, statsManager), this);
         getLogger().info("- MobListener registered");
 
         getServer().getPluginManager().registerEvents(new SkillTriggerListener(newSkillManager), this);

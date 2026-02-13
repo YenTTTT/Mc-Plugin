@@ -62,6 +62,9 @@ public class StatsGUI implements Listener {
         gui.setItem(4, createStatDisplay(Material.DIAMOND_CHESTPLATE, "防禦 (Defense)", stats.getDefense(),
                 "每點減免 0.5% 傷害"));
 
+        // Center slot: Stat Points Display
+        gui.setItem(8, createStatPointsDisplay(stats.getStatPoints(), stats.getLevel(), stats.getExp(), statsManager.getRequiredExp(stats.getLevel())));
+
         // Row 2: 灰色玻璃板
         ItemStack glassPane = createGlassPane();
         for (int slot : GLASS_ROW_2) {
@@ -106,6 +109,32 @@ public class StatsGUI implements Listener {
             for (String desc : descriptions) {
                 lore.add(ChatColor.GRAY + desc);
             }
+
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+
+        return item;
+    }
+
+    /**
+     * 創建屬性點數顯示物品
+     */
+    private ItemStack createStatPointsDisplay(int statPoints, int level, long exp, long requiredExp) {
+        ItemStack item = new ItemStack(Material.NETHER_STAR);
+        ItemMeta meta = item.getItemMeta();
+
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.LIGHT_PURPLE + "▣ 玩家資訊 ▣");
+
+            List<String> lore = new ArrayList<>();
+            lore.add("");
+            lore.add(ChatColor.GOLD + "等級: " + ChatColor.WHITE + level);
+            lore.add(ChatColor.AQUA + "經驗: " + ChatColor.WHITE + exp + " / " + requiredExp);
+            lore.add("");
+            lore.add(ChatColor.GREEN + "可用屬性點數: " + ChatColor.YELLOW + statPoints);
+            lore.add("");
+            lore.add(ChatColor.GRAY + "點擊下方按鈕來分配屬性點數");
 
             meta.setLore(lore);
             item.setItemMeta(meta);
@@ -198,10 +227,15 @@ public class StatsGUI implements Listener {
             return;
         }
 
-        // TODO: 檢查玩家是否有足夠的屬性點數（之後加上等級系統）
-        // 目前先直接增加
-
+        // 檢查玩家是否有足夠的屬性點數
         PlayerStats stats = statsManager.getStats(player);
+
+        if (stats.getStatPoints() < amount) {
+            player.sendMessage(ChatColor.RED + "❌ 屬性點數不足！需要 " + amount + " 點，你只有 " + stats.getStatPoints() + " 點");
+            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+            return;
+        }
+
         String statName = "";
 
         switch (statIndex) {
@@ -229,11 +263,15 @@ public class StatsGUI implements Listener {
             }
         }
 
+        // 扣除屬性點數
+        stats.setStatPoints(stats.getStatPoints() - amount);
+
         // 儲存數據
         statsManager.saveStats(player);
 
         // 發送訊息
-        player.sendMessage(ChatColor.GREEN + "✓ " + statName + " +" + amount + "！");
+        player.sendMessage(ChatColor.GREEN + "✓ " + statName + " +" + amount + "！ (剩餘點數: " + stats.getStatPoints() + ")");
+        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
 
         // 刷新 GUI
         openStatsGUI(player);

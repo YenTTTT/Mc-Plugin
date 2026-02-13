@@ -6,6 +6,8 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.ChatColor;
+import org.bukkit.Sound;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,6 +82,10 @@ public class PlayerStatsManager {
         data.put("vitality", config.getInt("stats.vitality", 0));
         data.put("defense", config.getInt("stats.defense", 0));
 
+        data.put("level", config.getInt("stats.level", 1));
+        data.put("exp", config.getInt("stats.exp", 0));
+        data.put("statPoints", config.getInt("stats.statPoints", 0));
+
         return PlayerStats.deserialize(data);
     }
 
@@ -108,6 +114,10 @@ public class PlayerStatsManager {
         config.set("stats.agility", data.get("agility"));
         config.set("stats.vitality", data.get("vitality"));
         config.set("stats.defense", data.get("defense"));
+
+        config.set("stats.level", data.get("level"));
+        config.set("stats.exp", data.get("exp"));
+        config.set("stats.statPoints", data.get("statPoints"));
 
         try {
             config.save(file);
@@ -151,6 +161,9 @@ public class PlayerStatsManager {
             case "agility", "agi" -> stats.setAgility(value);
             case "vitality", "vit" -> stats.setVitality(value);
             case "defense", "def" -> stats.setDefense(value);
+            case "level", "lvl" -> stats.setLevel(value);
+            case "exp" -> stats.setExp(value);
+            case "points", "pts" -> stats.setStatPoints(value);
             default -> {
                 plugin.getLogger().warning("未知的數據名稱: " + statName);
                 return;
@@ -176,5 +189,81 @@ public class PlayerStatsManager {
             saveStats(uuid);
         }
     }
-}
 
+    /**
+     * 給予玩家經驗值
+     */
+    public void addExp(Player player, long amount) {
+        PlayerStats stats = getStats(player);
+        long currentExp = stats.getExp();
+        long newExp = currentExp + amount;
+
+        stats.setExp(newExp);
+
+        checkLevelUp(player);
+        saveStats(player);
+    }
+
+    /**
+     * 檢查是否升級
+     */
+    private void checkLevelUp(Player player) {
+        PlayerStats stats = getStats(player);
+        int level = stats.getLevel();
+        long exp = stats.getExp();
+        long requiredExp = getRequiredExp(level);
+
+        if (exp >= requiredExp) {
+            levelUp(player);
+        }
+    }
+
+    /**
+     * 玩家升級邏輯
+     */
+    public void levelUp(Player player) {
+        PlayerStats stats = getStats(player);
+        int currentLevel = stats.getLevel();
+        long currentExp = stats.getExp();
+        long requiredExp = getRequiredExp(currentLevel);
+
+        // 扣除經驗並升級
+        stats.setExp(currentExp - requiredExp);
+        stats.setLevel(currentLevel + 1);
+
+        // 增加屬性點數 (10 點)
+        stats.setStatPoints(stats.getStatPoints() + 10);
+
+        // 自動提升整體屬性 (每升一等全屬性 +1)
+        stats.setStrength(stats.getStrength() + 1);
+        stats.setMagic(stats.getMagic() + 1);
+        stats.setAgility(stats.getAgility() + 1);
+        stats.setVitality(stats.getVitality() + 1);
+        stats.setDefense(stats.getDefense() + 1);
+
+        // 更新最大血量
+        updateMaxHealth(player);
+
+        // 特效與訊息
+        player.sendMessage(ChatColor.GOLD + "========================================");
+        player.sendMessage(ChatColor.YELLOW + "  🎉 恭喜升級！你現在是等級 " + ChatColor.AQUA + (currentLevel + 1));
+        player.sendMessage(ChatColor.GREEN + "  獲得 10 點屬性點數！");
+        player.sendMessage(ChatColor.GREEN + "  全屬性自動 +1！");
+        player.sendMessage(ChatColor.GOLD + "========================================");
+
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+        player.getWorld().spawnParticle(org.bukkit.Particle.TOTEM_OF_UNDYING, player.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5, 0.1);
+
+        // 如果還有剩餘經驗值大於下一級需求，繼續升級
+        checkLevelUp(player);
+
+        saveStats(player);
+    }
+
+    /**
+     * 取得升級所需經驗值 (等級 * 100)
+     */
+    public long getRequiredExp(int level) {
+        return level * 100L;
+    }
+}

@@ -79,34 +79,57 @@ public class WeaponListener implements Listener {
         Player player = (Player) event.getDamager();
         ItemStack weapon = player.getInventory().getItemInMainHand();
 
-        String weaponKey = weaponManager.getWeaponKey(weapon);
-        if (weaponKey == null) {
-            return;
-        }
-
-        WeaponManager.WeaponData weaponData = weaponManager.getWeaponData(weaponKey);
-        if (weaponData == null) {
-            return;
-        }
-
-        // 1) Base damage
-        double baseDamage = event.getDamage();
-        double baseDamageOverride = weaponData.getDoubleExtra("base-damage", 0.0);
-        if (baseDamageOverride > 0.0) {
-            baseDamage = baseDamageOverride;
-        }
-
-        // 1.5) 加入 Strength (物理攻擊) 加成
+        // 取得玩家屬性（無論是否使用自訂武器都需要）
         com.customrpg.players.PlayerStats playerStats = statsManager.getStats(player);
-        double strengthBonus = playerStats.getStrength() * 0.5; // 每點 Strength +0.5 傷害
+
+        // 檢查是否為自訂武器
+        String weaponKey = weaponManager.getWeaponKey(weapon);
+        WeaponManager.WeaponData weaponData = null;
+
+        if (weaponKey != null) {
+            weaponData = weaponManager.getWeaponData(weaponKey);
+        }
+
+        // === 處理自訂武器的等級需求 ===
+        if (weaponData != null && playerStats.getLevel() < weaponData.getMinLevel()) {
+            player.sendMessage(ChatColor.RED + "你必須達到等級 " + weaponData.getMinLevel() + " 才能使用此武器！");
+            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+            event.setCancelled(true);
+            return;
+        }
+
+        // === 1) Base damage ===
+        double baseDamage = event.getDamage();
+
+        // 如果有自訂武器且設定了基礎傷害，則覆蓋
+        if (weaponData != null) {
+            double baseDamageOverride = weaponData.getDoubleExtra("base-damage", 0.0);
+            if (baseDamageOverride > 0.0) {
+                baseDamage = baseDamageOverride;
+            }
+        }
+
+        // === 1.5) 加入 Strength (物理攻擊) 加成 ===
+        // 無論是否使用自訂武器，都套用物理攻擊加成
+        double strengthBonus = playerStats.getStrength() * 0.2; // 每點 Strength +0.5 傷害
         baseDamage += strengthBonus;
 
-        // 2) damage multiplier
-        double damageAfterMultiplier = baseDamage * weaponData.getDamageMultiplier();
+        // === 2) Damage multiplier ===
+        double damageMultiplier = 1.0;
+        if (weaponData != null) {
+            damageMultiplier = weaponData.getDamageMultiplier();
+        }
+        double damageAfterMultiplier = baseDamage * damageMultiplier;
 
-        // 3) crit
-        double critChancePercent = weaponData.getDoubleExtra("crit-chance", 0.0);
-        double critDamageMultiplier = weaponData.getDoubleExtra("crit-damage-multiplier", 0.0);
+        // === 3) Crit ===
+        double critChancePercent = 0.0;
+        double critDamageMultiplier = 1.0;
+
+        // 從自訂武器取得暴擊屬性
+        if (weaponData != null) {
+            critChancePercent = weaponData.getDoubleExtra("crit-chance", 0.0);
+            critDamageMultiplier = weaponData.getDoubleExtra("crit-damage-multiplier", 0.0);
+        }
 
         // 套用「被動增益」的暴擊率加成
         double bonusCrit = passiveEffectManager.getBonusCritChancePercent(player);
@@ -114,7 +137,8 @@ public class WeaponListener implements Listener {
             critChancePercent += bonusCrit;
         }
 
-        // 3.5) 加入 Agility (敏捷) 暴擊率加成
+        // === 3.5) 加入 Agility (敏捷) 暴擊率加成 ===
+        // 無論是否使用自訂武器，都套用敏捷暴擊加成
         double agilityBonus = playerStats.getAgility() * 0.2; // 每點 Agility +0.2% 暴擊率
         critChancePercent += agilityBonus;
 
@@ -136,17 +160,20 @@ public class WeaponListener implements Listener {
             player.sendMessage(ChatColor.YELLOW + "✨ 暴擊！x" + critDamageMultiplier);
         }
 
-        // 4) 額外擊退推力（yml 的 knockback）
-        double extraKnockback = weaponData.getDoubleExtra("knockback", 0.0);
-        if (extraKnockback > 0 && event.getEntity() instanceof LivingEntity) {
-            Vector dir = event.getEntity().getLocation().toVector().subtract(player.getLocation().toVector())
-                    .normalize();
-            Vector kb = dir.multiply(extraKnockback * 0.2); // 0.2: 避免太誇張
-            kb.setY(Math.min(0.4, kb.getY() + 0.1));
-            event.getEntity().setVelocity(event.getEntity().getVelocity().add(kb));
-        }
+        // === 4) 額外擊退推力（僅限自訂武器） ===
+        if (weaponData != null) {
+            double extraKnockback = weaponData.getDoubleExtra("knockback", 0.0);
+            if (extraKnockback > 0 && event.getEntity() instanceof LivingEntity) {
+                Vector dir = event.getEntity().getLocation().toVector().subtract(player.getLocation().toVector())
+                        .normalize();
+                Vector kb = dir.multiply(extraKnockback * 0.2); // 0.2: 避免太誇張
+                kb.setY(Math.min(0.4, kb.getY() + 0.1));
+                event.getEntity().setVelocity(event.getEntity().getVelocity().add(kb));
+            }
 
-        applySpecialEffect(player, event.getEntity(), weaponData, event);
+            // === 5) 特殊效果（僅限自訂武器） ===
+            applySpecialEffect(player, event.getEntity(), weaponData, event);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -300,7 +327,7 @@ public class WeaponListener implements Listener {
             // 視覺：直接依 yml 內容決定（目前只做 enchanted_hit）
             String particleName = String.valueOf(weaponData.getExtra().getOrDefault("backstab-particle", ""));
             if (particleName != null && particleName.equalsIgnoreCase("enchanted_hit")) {
-                victim.getWorld().spawnParticle(Particle.ENCHANT, victim.getLocation().add(0, 1.0, 0), 20, 0.3, 0.6,
+                victim.getWorld().spawnParticle(Particle.ENCHANTED_HIT, victim.getLocation().add(0, 1.0, 0), 20, 0.3, 0.6,
                         0.3, 0.0);
             }
 
