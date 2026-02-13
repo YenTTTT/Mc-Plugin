@@ -119,6 +119,7 @@ public class PlayerStatsManager {
 
     /**
      * 更新玩家的最大血量 (根據 Vitality)
+     * 使用 Health Scale 讓血條固定顯示為 10 顆愛心
      */
     public void updateMaxHealth(Player player) {
         PlayerStats stats = getStats(player);
@@ -128,6 +129,10 @@ public class PlayerStatsManager {
         AttributeInstance maxHealthAttr = player.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealthAttr != null) {
             maxHealthAttr.setBaseValue(Math.max(1.0, newMaxHealth));
+
+            // 使用 Health Scale 固定血條顯示為 10 顆愛心 (20.0 血量)
+            player.setHealthScaled(true);
+            player.setHealthScale(20.0);
 
             // 治療玩家至滿血 (可選)
             player.setHealth(maxHealthAttr.getValue());
