@@ -13,6 +13,17 @@ commands:
     permission: customrpg.weapon
     permission-message: You don't have permission to use this command!
     aliases: [weapons, customweapon, cweapon]
+  rpg:
+    description: Manage player stats and RPG features
+    usage: /rpg <gui|stats|setstat|reload> [args]
+    permission: customrpg.rpg
+    permission-message: You don't have permission to use this command!
+  stats:
+    description: View and manage player stats
+    usage: /stats [gui|player]
+    permission: customrpg.rpg
+    permission-message: You don't have permission to use this command!
+    aliases: [playerstats]
 
 permissions:
   customrpg.*:
@@ -20,6 +31,7 @@ permissions:
     children:
       customrpg.weapon: true
       customrpg.weapon.others: true
+      customrpg.rpg: true
       customrpg.admin: true
   customrpg.weapon:
     description: Allows using the /weapon command for yourself
@@ -27,6 +39,9 @@ permissions:
   customrpg.weapon.others:
     description: Allows giving weapons to other players
     default: op
+  customrpg.rpg:
+    description: Allows viewing own stats
+    default: true
   customrpg.admin:
     description: Administrative access to all features
     default: op
