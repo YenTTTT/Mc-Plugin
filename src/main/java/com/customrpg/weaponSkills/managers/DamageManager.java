@@ -14,6 +14,14 @@ import java.util.Random;
 public class DamageManager {
 
     private final Random random = new Random();
+    private com.customrpg.managers.PlayerStatsManager statsManager;
+
+    /**
+     * 設定 PlayerStatsManager (由 CustomRPG 在初始化後呼叫)
+     */
+    public void setStatsManager(com.customrpg.managers.PlayerStatsManager statsManager) {
+        this.statsManager = statsManager;
+    }
 
     /**
      * Deal skill damage without weapon stat bonuses (legacy behavior)
@@ -49,6 +57,13 @@ public class DamageManager {
         }
 
         double finalDamage = baseDamage;
+
+        // Apply Magic stat bonus
+        if (statsManager != null) {
+            com.customrpg.players.PlayerStats playerStats = statsManager.getStats(caster);
+            double magicBonus = playerStats.getMagic() * 0.3; // 每點 Magic +0.3 技能傷害
+            finalDamage += magicBonus;
+        }
 
         // Apply weapon damage multiplier
         if (applyWeaponMultiplier && weaponData != null) {

@@ -41,6 +41,7 @@ public class WeaponListener implements Listener {
     private final WeaponManager weaponManager;
     private final Random random;
     private final PassiveEffectManager passiveEffectManager;
+    private final com.customrpg.managers.PlayerStatsManager statsManager;
 
     private final Map<UUID, Map<String, Long>> passiveCooldownNotify = new ConcurrentHashMap<>();
 
@@ -52,10 +53,13 @@ public class WeaponListener implements Listener {
      * 
      * @param plugin        Main plugin instance
      * @param weaponManager WeaponManager instance
+     * @param statsManager  PlayerStatsManager instance
      */
-    public WeaponListener(CustomRPG plugin, WeaponManager weaponManager) {
+    public WeaponListener(CustomRPG plugin, WeaponManager weaponManager,
+                         com.customrpg.managers.PlayerStatsManager statsManager) {
         this.plugin = plugin;
         this.weaponManager = weaponManager;
+        this.statsManager = statsManager;
         this.random = new Random();
         this.passiveEffectManager = new PassiveEffectManager();
     }
@@ -92,6 +96,11 @@ public class WeaponListener implements Listener {
             baseDamage = baseDamageOverride;
         }
 
+        // 1.5) 加入 Strength (物理攻擊) 加成
+        com.customrpg.players.PlayerStats playerStats = statsManager.getStats(player);
+        double strengthBonus = playerStats.getStrength() * 0.5; // 每點 Strength +0.5 傷害
+        baseDamage += strengthBonus;
+
         // 2) damage multiplier
         double damageAfterMultiplier = baseDamage * weaponData.getDamageMultiplier();
 
@@ -104,6 +113,10 @@ public class WeaponListener implements Listener {
         if (bonusCrit > 0.0) {
             critChancePercent += bonusCrit;
         }
+
+        // 3.5) 加入 Agility (敏捷) 暴擊率加成
+        double agilityBonus = playerStats.getAgility() * 0.2; // 每點 Agility +0.2% 暴擊率
+        critChancePercent += agilityBonus;
 
         // 防呆：暴擊率上限 100%
         critChancePercent = Math.max(0.0, Math.min(100.0, critChancePercent));

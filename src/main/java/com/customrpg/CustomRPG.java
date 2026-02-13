@@ -1,11 +1,14 @@
 package com.customrpg;
 
+import com.customrpg.commands.StatsCommand;
 import com.customrpg.commands.WeaponCommand;
 import com.customrpg.listeners.MobListener;
+import com.customrpg.listeners.StatsListener;
 import com.customrpg.listeners.WeaponListener;
 import com.customrpg.listeners.SkillTriggerListener;
 import com.customrpg.managers.ConfigManager;
 import com.customrpg.managers.MobManager;
+import com.customrpg.managers.PlayerStatsManager;
 import com.customrpg.managers.WeaponManager;
 import com.customrpg.weaponSkills.managers.SkillManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -30,6 +33,7 @@ public class CustomRPG extends JavaPlugin {
     private ConfigManager configManager;
     private WeaponManager weaponManager;
     private MobManager mobManager;
+    private PlayerStatsManager statsManager;
 
     // New skill system
     private SkillManager newSkillManager;
@@ -68,12 +72,19 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("   CustomRPG Plugin Stopping");
         getLogger().info("=================================");
 
+        // 儲存所有玩家數據
+        if (statsManager != null) {
+            statsManager.saveAllStats();
+            getLogger().info("- All player stats saved");
+        }
+
         // New skill system cooldowns are in-memory; stopping the plugin clears them.
 
         // Cleanup managers
         configManager = null;
         weaponManager = null;
         mobManager = null;
+        statsManager = null;
         newSkillManager = null;
 
         getLogger().info("CustomRPG has been disabled successfully!");
@@ -95,10 +106,17 @@ public class CustomRPG extends JavaPlugin {
         mobManager = new MobManager(this, configManager);
         getLogger().info("- MobManager initialized with " + mobManager.getMobTypeCount() + " custom mob types");
 
+        statsManager = new PlayerStatsManager(this);
+        getLogger().info("- PlayerStatsManager initialized");
+
         // ===== New skill system (manager/service pattern) =====
         com.customrpg.weaponSkills.managers.CooldownManager cooldownManager = new com.customrpg.weaponSkills.managers.CooldownManager();
         com.customrpg.weaponSkills.managers.BuffManager buffManager = new com.customrpg.weaponSkills.managers.BuffManager();
         com.customrpg.weaponSkills.managers.DamageManager damageManager = new com.customrpg.weaponSkills.managers.DamageManager();
+
+        // 注入 PlayerStatsManager 到 DamageManager
+        damageManager.setStatsManager(statsManager);
+
         com.customrpg.weaponSkills.util.AoEUtil aoeUtil = new com.customrpg.weaponSkills.util.AoEUtil();
         com.customrpg.weaponSkills.util.ParticleUtil particleUtil = new com.customrpg.weaponSkills.util.ParticleUtil();
         com.customrpg.weaponSkills.util.SoundUtil soundUtil = new com.customrpg.weaponSkills.util.SoundUtil();
@@ -117,7 +135,7 @@ public class CustomRPG extends JavaPlugin {
     private void registerListeners() {
         getLogger().info("Registering event listeners...");
 
-        getServer().getPluginManager().registerEvents(new WeaponListener(this, weaponManager), this);
+        getServer().getPluginManager().registerEvents(new WeaponListener(this, weaponManager, statsManager), this);
         getLogger().info("- WeaponListener registered");
 
         // SkillListener (legacy) 已由 SkillTriggerListener 接管
@@ -127,6 +145,9 @@ public class CustomRPG extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new SkillTriggerListener(newSkillManager), this);
         getLogger().info("- SkillTriggerListener registered");
+
+        getServer().getPluginManager().registerEvents(new StatsListener(this, statsManager), this);
+        getLogger().info("- StatsListener registered");
     }
 
     /**
@@ -141,6 +162,16 @@ public class CustomRPG extends JavaPlugin {
             getLogger().info("- /weapon command registered");
         } else {
             getLogger().warning("- Failed to register /weapon command: command not defined in plugin.yml");
+        }
+
+        org.bukkit.command.PluginCommand rpgCommand = getCommand("rpg");
+        if (rpgCommand != null) {
+            StatsCommand statsCommand = new StatsCommand(this, statsManager);
+            rpgCommand.setExecutor(statsCommand);
+            rpgCommand.setTabCompleter(statsCommand);
+            getLogger().info("- /rpg command registered");
+        } else {
+            getLogger().warning("- Failed to register /rpg command: command not defined in plugin.yml");
         }
     }
 
