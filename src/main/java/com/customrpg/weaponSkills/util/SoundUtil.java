@@ -3,7 +3,9 @@ package com.customrpg.weaponSkills.util;
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * SoundUtil
@@ -47,5 +49,51 @@ public class SoundUtil {
             }
         }
     }
-}
 
+    /**
+     * Play a list of sounds configured as maps, e.g.
+     * - {id: entity.dolphin.hurt, volume: 1.0, pitch: 1.0}
+     */
+    public void playSounds(Location location, List<Map<String, Object>> sounds) {
+        if (location == null || sounds == null || sounds.isEmpty()) {
+            return;
+        }
+        for (Map<String, Object> s : sounds) {
+            if (s == null) {
+                continue;
+            }
+            String id = String.valueOf(s.getOrDefault("id", "")).trim();
+            if (id.isBlank()) {
+                continue;
+            }
+            float volume = toFloat(s.getOrDefault("volume", 1.0));
+
+            float pitch;
+            if (s.containsKey("pitch-min") || s.containsKey("pitch-max")) {
+                float min = toFloat(s.getOrDefault("pitch-min", 1.0));
+                float max = toFloat(s.getOrDefault("pitch-max", min));
+                if (max < min) {
+                    float tmp = min;
+                    min = max;
+                    max = tmp;
+                }
+                pitch = (float) (min + (Math.random() * (max - min)));
+            } else {
+                pitch = toFloat(s.getOrDefault("pitch", 1.0));
+            }
+
+            playSound(location, id, volume, pitch);
+        }
+    }
+
+    private float toFloat(Object v) {
+        if (v instanceof Number n) {
+            return n.floatValue();
+        }
+        try {
+            return Float.parseFloat(String.valueOf(v));
+        } catch (Exception ignored) {
+            return 1.0f;
+        }
+    }
+}

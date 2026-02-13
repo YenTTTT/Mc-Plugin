@@ -1,70 +1,111 @@
-# 武器主動技能配置
-# 在 config/weapons/skills/ 目錄下的所有 .yml 文件都會被加載
-# 武器可以通過 active-skill.name 引用這裡定義的技能
-
-# ===== 新版技能系統 =====
+# weapon skills config (templates)
+# each top-level key is a skill-id
+#
+# 單位說明：
+# - cooldown: 冷卻時間（秒）
+# - duration: 持續時間如果有的話通常用 ticks（20 ticks = 1 秒）
 
 thorn_spike:
-  # 顯示名稱
-  display-name: "&a藤莿"
-  # 技能描述
-  description: "召喚藤莿造成傷害"
-  # 觸發方式：RIGHT_CLICK / LEFT_CLICK / WEAPON_USE
+  display-name: "藤莿"
+  type: "line_damage"
   trigger: RIGHT_CLICK
-  # 冷卻時間（秒）
-  cooldown: 3
-  # 傷害值
-  damage: 5.0
-  # 範圍
-  range: 3.0
-  # AoE 寬度
-  aoe-width: 3.0
-  # 粒子效果（大寫 Particle enum）
+  cooldown: 3  # 冷卻時間（秒）
+  description: "Summon thorn spikes in front of the player"
+
+  damage: 5
+  range: 3
+  aoe-width: 3
+
   particle: SCULK_CHARGE
-  # 音效（小寫 sound identifier）
   sound: entity.dolphin.hurt
 
-dash:
-  display-name: "&b疾跑"
-  description: "快速向前衝刺"
-  trigger: RIGHT_CLICK
-  cooldown: 3
-  damage: 0.0
-  range: 0.0
-  particle: CLOUD
-  sound: entity.player.attack.sweep
+  # new (optional) complex nodes
+  target:
+    shape: BOX
+    height: 3
+    filter:
+      exclude-self: true
+
+  visuals:
+    particles:
+      - id: SCULK_CHARGE
+        count: 80
+        offset-x: 1.5
+        offset-y: 0.8
+        offset-z: 1.5
+        extra: 0.02
+        animation:
+          style: NONE
+    sounds:
+      - id: entity.dolphin.hurt
+        volume: 1.0
+        pitch: 1.0
 
 fire_nova:
-  display-name: "&c烈焰新星"
-  description: "釋放範圍火焰傷害"
+  display-name: "Fire Nova"
+  type: "radius_damage"
   trigger: RIGHT_CLICK
-  cooldown: 8
-  damage: 6.0
+  cooldown: 8  # 冷卻時間（秒）
+  description: "Explode fire around the player"
+
+  damage: 6
   range: 3.5
-  aoe-width: 3.5
+
   particle: EXPLOSION
   sound: entity.generic.explode
 
-# ===== 舊版技能示例（保留作為參考） =====
+  visuals:
+    particles:
+      - id: EXPLOSION
+        count: 40
+        offset-x: 0.8
+        offset-y: 0.5
+        offset-z: 0.8
+        extra: 0.02
 
-slash_wave:
-  name: "&e斬擊波"
-  effect: "projectile_slash"
-  cooldown: 5
-  damage: 10.0
-  range: 15.0
 
-whirlwind:
-  name: "&b旋風斬"
-  effect: "area_damage"
-  cooldown: 8
-  damage: 8.0
-  range: 5.0
+dash:
+  display-name: "Dash"
+  type: "dash"
+  trigger: RIGHT_CLICK
+  cooldown: 3  # 冷卻時間（秒）
+  description: "Quick burst forward"
 
-critical_strike:
-  name: "&c致命一擊"
-  effect: "critical_damage"
-  cooldown: 10
-  damage: 20.0
-  range: 3.0
+  particle: CLOUD
+  sound: entity.player.attack.sweep
 
+vampire_drain:
+  display-name: "吸血"
+  type: "target_damage"
+  trigger: RIGHT_CLICK
+  cooldown: 2  # 冷卻時間（秒）
+  description: "Drain life from a targeted enemy"
+
+  damage: 4
+  range: 20
+  heal-player: 2
+
+  # fallback
+  particle: DUST
+  sound: entity.generic.eat
+
+  target:
+    shape: TARGET
+
+  visuals:
+    particles:
+      - id: DUST
+        count: 8
+        offset-x: 0.02
+        offset-y: 0.02
+        offset-z: 0.02
+        extra: 0.0
+        animation:
+          style: LINE_STEPS
+          steps: 18
+          step-size: auto
+    sounds:
+      - id: entity.generic.eat
+        volume: 1.0
+        pitch-min: 0.8
+        pitch-max: 1.2

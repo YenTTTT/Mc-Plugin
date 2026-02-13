@@ -8,9 +8,6 @@ import com.customrpg.managers.ConfigManager;
 import com.customrpg.managers.MobManager;
 import com.customrpg.managers.WeaponManager;
 import com.customrpg.weaponSkills.managers.SkillManager;
-import com.customrpg.weaponSkills.skills.DashSkill;
-import com.customrpg.weaponSkills.skills.FireNovaSkill;
-import com.customrpg.weaponSkills.skills.ThornSpikeSkill;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -108,13 +105,8 @@ public class CustomRPG extends JavaPlugin {
 
         newSkillManager = new SkillManager(weaponManager, cooldownManager, damageManager, buffManager, aoeUtil, particleUtil, soundUtil);
 
-        // register example skills
-        newSkillManager.registerSkill(new DashSkill());
-        newSkillManager.registerSkill(new FireNovaSkill());
-        newSkillManager.registerSkill(new ThornSpikeSkill());
-
-        // example weapon-to-skill binding (replace this with config-driven binding later)
-        newSkillManager.bindWeaponSkill("iron_scythe", "thorn_spike");
+        // auto-register weapon skills from config/weapons/skills/*.yml
+        newSkillManager.registerSkillsFromConfig(configManager.getAllWeaponSkills());
 
         getLogger().info("- New SkillManager initialized with " + newSkillManager.getRegisteredSkillIds().size() + " skills");
     }
@@ -143,8 +135,13 @@ public class CustomRPG extends JavaPlugin {
     private void registerCommands() {
         getLogger().info("Registering commands...");
 
-        getCommand("weapon").setExecutor(new WeaponCommand(this, weaponManager));
-        getLogger().info("- /weapon command registered");
+        org.bukkit.command.PluginCommand weaponCommand = getCommand("weapon");
+        if (weaponCommand != null) {
+            weaponCommand.setExecutor(new WeaponCommand(this, weaponManager));
+            getLogger().info("- /weapon command registered");
+        } else {
+            getLogger().warning("- Failed to register /weapon command: command not defined in plugin.yml");
+        }
     }
 
     /**

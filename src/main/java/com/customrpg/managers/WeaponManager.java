@@ -100,13 +100,24 @@ public class WeaponManager {
             extra.putIfAbsent("knockback", weaponConfig.getOrDefault("knockback", 0.0));
             extra.putIfAbsent("durability-cost-multiplier", weaponConfig.getOrDefault("durability-cost-multiplier", 1.0));
 
+            // 安全的取得 lore（避免 ClassCastException）
+            List<String> lore = new ArrayList<>();
+            Object loreObj = weaponConfig.get("lore");
+            if (loreObj instanceof List<?>) {
+                for (Object item : (List<?>) loreObj) {
+                    if (item instanceof String) {
+                        lore.add((String) item);
+                    }
+                }
+            }
+
             WeaponData weaponData = new WeaponData(
                     weaponKey,
                     displayName,
                     Material.valueOf((String) weaponConfig.get("material")),
                     weaponConfig.get("damage-multiplier") instanceof Double ? (Double) weaponConfig.get("damage-multiplier") : 1.0,
                     (String) weaponConfig.get("special-effect"),
-                    (List<String>) weaponConfig.get("lore"),
+                    lore,
                     customModelData,
                     enchantedGlow,
                     extra

@@ -64,7 +64,10 @@ public class ThornSpikeSkill extends BaseSkill {
         );
 
         for (LivingEntity t : targets) {
-            context.services().damage().dealSkillDamage(context.caster(), t, Math.max(0.0, damage));
+            // Apply weapon stats to skill damage (multiplier + crit)
+            context.services().damage().dealSkillDamageWithWeaponStats(
+                    context.caster(), t, Math.max(0.0, damage),
+                    context.weaponData(), true, true);
         }
 
         return true;

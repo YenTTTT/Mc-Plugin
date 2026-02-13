@@ -40,11 +40,21 @@ public class ConfigManager {
         File skillsDir = new File(configDir, "skills");
 
         // Ensure directories exist
-        weaponTypesDir.mkdirs();
-        weaponSkillsDir.mkdirs();
-        mobTypesDir.mkdirs();
-        mobSkillsDir.mkdirs();
-        skillsDir.mkdirs();
+        if (!weaponTypesDir.exists() && !weaponTypesDir.mkdirs()) {
+            plugin.getLogger().warning("Failed to create directory: " + weaponTypesDir.getPath());
+        }
+        if (!weaponSkillsDir.exists() && !weaponSkillsDir.mkdirs()) {
+            plugin.getLogger().warning("Failed to create directory: " + weaponSkillsDir.getPath());
+        }
+        if (!mobTypesDir.exists() && !mobTypesDir.mkdirs()) {
+            plugin.getLogger().warning("Failed to create directory: " + mobTypesDir.getPath());
+        }
+        if (!mobSkillsDir.exists() && !mobSkillsDir.mkdirs()) {
+            plugin.getLogger().warning("Failed to create directory: " + mobSkillsDir.getPath());
+        }
+        if (!skillsDir.exists() && !skillsDir.mkdirs()) {
+            plugin.getLogger().warning("Failed to create directory: " + skillsDir.getPath());
+        }
 
         // Ensure default example configs exist on disk (so directory scans can find them)
         ensureDefaultConfigExists("config/config.yml");
@@ -81,7 +91,10 @@ public class ConfigManager {
             return;
         }
 
-        configFile.getParentFile().mkdirs();
+        if (!configFile.getParentFile().exists() && !configFile.getParentFile().mkdirs()) {
+            plugin.getLogger().warning("Failed to create parent directory for: " + relativePath);
+            return;
+        }
 
         try {
             plugin.saveResource(relativePath, false);
@@ -120,7 +133,9 @@ public class ConfigManager {
 
         // Save default file from resources if it doesn't exist
         if (!configFile.exists()) {
-            configFile.getParentFile().mkdirs();
+            if (!configFile.getParentFile().exists() && !configFile.getParentFile().mkdirs()) {
+                plugin.getLogger().warning("Failed to create parent directory for config: " + relativePath);
+            }
 
             try {
                 // JavaPlugin#saveResource 支援帶子資料夾的路徑（例如 config/weapons/types/example.yml）
@@ -241,51 +256,160 @@ public class ConfigManager {
                     String skillName = config.getString(key + ".active-skill.name", "");
                     extra.put("active-skill-name", skillName);
 
-                    // 如果技能名稱存在，嘗試從技能配置加載預設值
+                    // helper: 判斷武器是否有覆寫某個 active-skill.*（字串用非空白、數字用 isSet）
+                    java.util.function.Function<String, String> getNonBlank = (path) -> {
+                        String v = config.getString(path, "");
+                        return v.trim();
+                    };
+
                     if (!skillName.isEmpty()) {
                         Map<String, Map<String, Object>> weaponSkills = getAllWeaponSkills();
                         if (weaponSkills.containsKey(skillName)) {
                             Map<String, Object> skillTemplate = weaponSkills.get(skillName);
 
-                            // 從技能模板讀取預設值，如果武器配置有指定則覆蓋
-                            extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger",
-                                    (String) skillTemplate.getOrDefault("trigger", "RIGHT_CLICK")));
-                            extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown",
-                                    ((Number) skillTemplate.getOrDefault("cooldown", 0)).intValue()));
-                            extra.put("active-skill-description", config.getString(key + ".active-skill.description",
-                                    (String) skillTemplate.getOrDefault("description", "")));
-                            extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage",
-                                    ((Number) skillTemplate.getOrDefault("damage", 0.0)).doubleValue()));
-                            extra.put("active-skill-range", config.getDouble(key + ".active-skill.range",
-                                    ((Number) skillTemplate.getOrDefault("range", 0.0)).doubleValue()));
-                            extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width",
-                                    ((Number) skillTemplate.getOrDefault("aoe-width", 0.0)).doubleValue()));
-                            extra.put("active-skill-particle", config.getString(key + ".active-skill.particle",
-                                    (String) skillTemplate.getOrDefault("particle", "")));
-                            extra.put("active-skill-sound", config.getString(key + ".active-skill.sound",
-                                    (String) skillTemplate.getOrDefault("sound", "")));
+                            // 1) 先放模板預設值
+                            String templateTrigger = String.valueOf(skillTemplate.getOrDefault("trigger", "RIGHT_CLICK"));
+                            int templateCooldown = ((Number) skillTemplate.getOrDefault("cooldown", 0)).intValue();
+                            String templateDesc = String.valueOf(skillTemplate.getOrDefault("description", ""));
+                            double templateDamage = ((Number) skillTemplate.getOrDefault("damage", 0.0)).doubleValue();
+                            double templateRange = ((Number) skillTemplate.getOrDefault("range", 0.0)).doubleValue();
+                            double templateWidth = ((Number) skillTemplate.getOrDefault("aoe-width", 0.0)).doubleValue();
+                            double templateHealPlayer = ((Number) skillTemplate.getOrDefault("heal-player", 0.0)).doubleValue();
+                            String templateParticle = String.valueOf(skillTemplate.getOrDefault("particle", ""));
+                            String templateSound = String.valueOf(skillTemplate.getOrDefault("sound", ""));
+                            String templateType = String.valueOf(skillTemplate.getOrDefault("type", ""));
+
+                            extra.put("active-skill-trigger", templateTrigger);
+                            extra.put("active-skill-cooldown", templateCooldown);
+                            extra.put("active-skill-description", templateDesc);
+                            extra.put("active-skill-damage", templateDamage);
+                            extra.put("active-skill-range", templateRange);
+                            extra.put("active-skill-aoe-width", templateWidth);
+                            extra.put("active-skill-heal-player", templateHealPlayer);
+                            extra.put("active-skill-particle", templateParticle);
+                            extra.put("active-skill-sound", templateSound);
+                            extra.put("active-skill-type", templateType);
+
+                            // complex nodes from template (target/visuals) are stored as maps
+                            Object templateTargetObj = skillTemplate.get("target");
+                            Object templateVisualsObj = skillTemplate.get("visuals");
+                            if (templateTargetObj instanceof Map) {
+                                extra.put("active-skill-target", templateTargetObj);
+                            }
+                            if (templateVisualsObj instanceof Map) {
+                                extra.put("active-skill-visuals", templateVisualsObj);
+                            }
+
+                            // 2) 再用武器 active-skill.* 覆寫（指定技能）
+                            String triggerOverride = getNonBlank.apply(key + ".active-skill.trigger");
+                            if (!triggerOverride.isEmpty()) {
+                                extra.put("active-skill-trigger", triggerOverride);
+                            }
+
+                            if (config.isSet(key + ".active-skill.cooldown")) {
+                                extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", templateCooldown));
+                            }
+
+                            String descOverride = getNonBlank.apply(key + ".active-skill.description");
+                            if (!descOverride.isEmpty()) {
+                                extra.put("active-skill-description", descOverride);
+                            }
+
+                            if (config.isSet(key + ".active-skill.damage")) {
+                                extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", templateDamage));
+                            }
+                            if (config.isSet(key + ".active-skill.range")) {
+                                extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", templateRange));
+                            }
+                            if (config.isSet(key + ".active-skill.aoe-width")) {
+                                extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", templateWidth));
+                            }
+                            if (config.isSet(key + ".active-skill.heal-player")) {
+                                extra.put("active-skill-heal-player", config.getDouble(key + ".active-skill.heal-player", templateHealPlayer));
+                            }
+
+                            String particleOverride = getNonBlank.apply(key + ".active-skill.particle");
+                            if (!particleOverride.isEmpty()) {
+                                extra.put("active-skill-particle", particleOverride);
+                            }
+                            String soundOverride = getNonBlank.apply(key + ".active-skill.sound");
+                            if (!soundOverride.isEmpty()) {
+                                extra.put("active-skill-sound", soundOverride);
+                            }
+
+                            // deep merge target/visuals overrides (if present in weapon yml)
+                            org.bukkit.configuration.ConfigurationSection targetSection = config.getConfigurationSection(key + ".active-skill.target");
+                            org.bukkit.configuration.ConfigurationSection visualsSection = config.getConfigurationSection(key + ".active-skill.visuals");
+
+                            if (targetSection != null) {
+                                Map<String, Object> overrideTarget = safeSectionToMap(targetSection);
+                                Map<String, Object> baseTarget = null;
+                                Object bt = extra.get("active-skill-target");
+                                if (bt instanceof Map) {
+                                    //noinspection unchecked
+                                    baseTarget = (Map<String, Object>) bt;
+                                }
+                                extra.put("active-skill-target", deepMerge(baseTarget, overrideTarget));
+                            }
+
+                            if (visualsSection != null) {
+                                Map<String, Object> overrideVisuals = safeSectionToMap(visualsSection);
+                                Map<String, Object> baseVisuals = null;
+                                Object bv = extra.get("active-skill-visuals");
+                                if (bv instanceof Map) {
+                                    //noinspection unchecked
+                                    baseVisuals = (Map<String, Object>) bv;
+                                }
+                                extra.put("active-skill-visuals", deepMerge(baseVisuals, overrideVisuals));
+                            }
                         } else {
-                            // 技能不存在，使用武器配置或預設值
+                            // 技能不存在：只能使用武器自己的配置
+                            plugin.getLogger().warning("Weapon '" + key + "' references skill '" + skillName + "' which does not exist in config/weapons/skills/");
+                            plugin.getLogger().warning("  Using weapon's own active-skill configuration instead.");
+
                             extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger", ""));
                             extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", 0));
                             extra.put("active-skill-description", config.getString(key + ".active-skill.description", ""));
                             extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", 0.0));
                             extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", 0.0));
                             extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", 0.0));
+                            extra.put("active-skill-heal-player", config.getDouble(key + ".active-skill.heal-player", 0.0));
                             extra.put("active-skill-particle", config.getString(key + ".active-skill.particle", ""));
                             extra.put("active-skill-sound", config.getString(key + ".active-skill.sound", ""));
+                            extra.put("active-skill-type", config.getString(key + ".active-skill.type", ""));
+
+                            org.bukkit.configuration.ConfigurationSection targetSection = config.getConfigurationSection(key + ".active-skill.target");
+                            if (targetSection != null) {
+                                extra.put("active-skill-target", safeSectionToMap(targetSection));
+                            }
+                            org.bukkit.configuration.ConfigurationSection visualsSection = config.getConfigurationSection(key + ".active-skill.visuals");
+                            if (visualsSection != null) {
+                                extra.put("active-skill-visuals", safeSectionToMap(visualsSection));
+                            }
                         }
                     } else {
-                        // 沒有指定技能名稱，使用武器配置或預設值
+                        // 沒有指定技能名稱：使用武器配置
                         extra.put("active-skill-trigger", config.getString(key + ".active-skill.trigger", ""));
                         extra.put("active-skill-cooldown", config.getInt(key + ".active-skill.cooldown", 0));
                         extra.put("active-skill-description", config.getString(key + ".active-skill.description", ""));
                         extra.put("active-skill-damage", config.getDouble(key + ".active-skill.damage", 0.0));
                         extra.put("active-skill-range", config.getDouble(key + ".active-skill.range", 0.0));
                         extra.put("active-skill-aoe-width", config.getDouble(key + ".active-skill.aoe-width", 0.0));
+                        extra.put("active-skill-heal-player", config.getDouble(key + ".active-skill.heal-player", 0.0));
                         extra.put("active-skill-particle", config.getString(key + ".active-skill.particle", ""));
                         extra.put("active-skill-sound", config.getString(key + ".active-skill.sound", ""));
+                        extra.put("active-skill-type", config.getString(key + ".active-skill.type", ""));
+
+                        org.bukkit.configuration.ConfigurationSection targetSection = config.getConfigurationSection(key + ".active-skill.target");
+                        if (targetSection != null) {
+                            extra.put("active-skill-target", safeSectionToMap(targetSection));
+                        }
+                        org.bukkit.configuration.ConfigurationSection visualsSection = config.getConfigurationSection(key + ".active-skill.visuals");
+                        if (visualsSection != null) {
+                            extra.put("active-skill-visuals", safeSectionToMap(visualsSection));
+                        }
                     }
+
                     weaponData.put("extra", extra);
                 } else {
                     // 舊格式讀取（向下相容）
@@ -408,6 +532,7 @@ public class ConfigManager {
                     // 新版格式（支援所有屬性）
                     skillData.put("display-name", config.getString(key + ".display-name", config.getString(key + ".name", key)));
                     skillData.put("description", config.getString(key + ".description", ""));
+                    skillData.put("type", config.getString(key + ".type", ""));
                     skillData.put("trigger", config.getString(key + ".trigger", "RIGHT_CLICK"));
                     skillData.put("cooldown", config.getInt(key + ".cooldown", 0));
                     skillData.put("damage", config.getDouble(key + ".damage", 0.0));
@@ -415,6 +540,17 @@ public class ConfigManager {
                     skillData.put("aoe-width", config.getDouble(key + ".aoe-width", 0.0));
                     skillData.put("particle", config.getString(key + ".particle", ""));
                     skillData.put("sound", config.getString(key + ".sound", ""));
+                    skillData.put("heal-player", config.getDouble(key + ".heal-player", 0.0));
+
+                    // complex config nodes
+                    org.bukkit.configuration.ConfigurationSection targetSection = config.getConfigurationSection(key + ".target");
+                    if (targetSection != null) {
+                        skillData.put("target", safeSectionToMap(targetSection));
+                    }
+                    org.bukkit.configuration.ConfigurationSection visualsSection = config.getConfigurationSection(key + ".visuals");
+                    if (visualsSection != null) {
+                        skillData.put("visuals", safeSectionToMap(visualsSection));
+                    }
 
                     // 舊版格式相容
                     skillData.put("name", config.getString(key + ".name", key));
@@ -460,5 +596,41 @@ public class ConfigManager {
         configs.clear();
         loadAllConfigs();
         plugin.getLogger().info("Reloaded all configuration files");
+    }
+
+    private static Map<String, Object> deepMerge(Map<String, Object> base, Map<String, Object> override) {
+        if (base == null) {
+            base = new HashMap<>();
+        }
+        Map<String, Object> out = new HashMap<>(base);
+        if (override == null) {
+            return out;
+        }
+
+        for (Map.Entry<String, Object> e : override.entrySet()) {
+            String k = e.getKey();
+            Object overrideVal = e.getValue();
+            Object baseVal = out.get(k);
+
+            if (baseVal instanceof Map && overrideVal instanceof Map) {
+                //noinspection unchecked
+                out.put(k, deepMerge((Map<String, Object>) baseVal, (Map<String, Object>) overrideVal));
+            } else {
+                out.put(k, overrideVal);
+            }
+        }
+        return out;
+    }
+
+    private static Map<String, Object> safeSectionToMap(org.bukkit.configuration.ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        Map<String, Object> map = new HashMap<>();
+        for (String k : section.getKeys(false)) {
+            Object v = section.get(k);
+            map.put(k, v);
+        }
+        return map;
     }
 }

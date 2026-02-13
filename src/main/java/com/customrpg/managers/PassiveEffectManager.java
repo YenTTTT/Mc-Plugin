@@ -9,8 +9,17 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * PassiveEffectManager
  *
- * 測試版：只做一個效果
- * - 擊殺生物後，獲得「暫時暴擊率 +X%」加成
+ * 管理武器的被動效果
+ *
+ * 目前支援的效果：
+ * - kill_crit_boost: 擊殺生物後獲得暫時暴擊率加成
+ *
+ * 擴展新效果的步驟：
+ * 1. 在此類中添加新的狀態追蹤（類似 CritBoostState）
+ * 2. 添加 apply 方法（類似 applyKillCritBoost）
+ * 3. 添加 get 方法來獲取當前效果值
+ * 4. 在 WeaponListener 中根據觸發條件調用對應的 apply 方法
+ * 5. 在戰鬥計算中使用 get 方法來應用效果
  */
 public class PassiveEffectManager {
 

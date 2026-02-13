@@ -1,6 +1,10 @@
 # 武器類型配置範例（新格式）
 # 在 config/weapons/types/ 目錄下的所有 .yml 文件都會被加載
 # 每把武器的最外層 key 仍是「內部ID / weaponKey」（英文/無空格）
+#
+# 單位說明：
+# - cooldown: 冷卻時間（秒）
+# - duration-ticks / cooldown-ticks: 持續時間/冷卻（ticks，20 ticks = 1 秒）
 
 iron_scythe:
   # 【武器基本資料】
@@ -54,8 +58,8 @@ iron_scythe:
     chance: 1.0
     effect: "kill_crit_boost"
     value: 50.0
-    duration-ticks: 200
-    cooldown-ticks: 100
+    duration-ticks: 200      # 持續時間（ticks，200 ticks = 10秒）
+    cooldown-ticks: 100      # 冷卻時間（ticks，100 ticks = 5秒）
 
   # 【元素/狀態效果】
   element:
@@ -191,3 +195,54 @@ thunder_axe:
 
   notes:
     design-note: ""
+
+vampire_staff:
+  basic:
+    name: "吸血權杖"
+    material: BLAZE_ROD
+    rarity: "稀有"
+    bind-type: "無"
+
+  appearance:
+    display-name: "&5&l吸血權杖"
+    lore:
+      - "&7對準敵人釋放吸血光束"
+      - "&e主動技能: 吸血"
+    custom-model-data: 0
+    enchanted-glow: true
+
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 0
+    attack-speed: 0
+    crit-chance: 0
+    crit-damage-multiplier: 0
+    knockback: 0
+    durability-cost-multiplier: 1.0
+
+  special:
+    effect: "none"
+
+  active-skill:
+    name: "vampire_drain"
+    heal-player: 2
+    visuals:
+      particles:
+        - id: DUST
+          count: 10
+          offset-x: 0.02
+          offset-y: 0.02
+          offset-z: 0.02
+          extra: 0.0
+          animation:
+            style: LINE_STEPS
+            steps: 22
+            step-size: 0.5
+      sounds:
+        - id: entity.generic.eat
+          volume: 1.0
+          pitch-min: 0.8
+          pitch-max: 1.2
+
+  passive:
+    effect: ""

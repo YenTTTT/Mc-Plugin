@@ -50,7 +50,10 @@ public class FireNovaSkill extends BaseSkill {
         List<LivingEntity> targets = context.services().aoe().getRadiusTargets(context.caster(), center, range);
 
         for (LivingEntity t : targets) {
-            context.services().damage().dealSkillDamage(context.caster(), t, Math.max(0.0, damage));
+            // Apply weapon stats to skill damage (multiplier + crit)
+            context.services().damage().dealSkillDamageWithWeaponStats(
+                    context.caster(), t, Math.max(0.0, damage),
+                    context.weaponData(), true, true);
             // burn debuff example (placeholder): apply to player targets only for now
             if (t instanceof org.bukkit.entity.Player p) {
                 context.services().buffs().apply(p, com.customrpg.weaponSkills.managers.BuffManager.BuffType.BURN, 3000);
