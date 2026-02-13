@@ -6,6 +6,9 @@ import com.customrpg.managers.WeaponManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,6 +17,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -183,7 +188,7 @@ public class WeaponListener implements Listener {
 
         // Life Steal
         double lifeSteal = weaponData.getDoubleExtra("life-steal", 0.0);
-        if (lifeSteal > 0.0 && event != null) {
+        if (lifeSteal > 0.0) {
             applyLifeSteal(attacker, lifeSteal, event.getFinalDamage());
         }
 
