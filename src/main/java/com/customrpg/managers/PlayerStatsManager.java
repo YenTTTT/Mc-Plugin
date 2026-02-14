@@ -86,6 +86,10 @@ public class PlayerStatsManager {
         data.put("exp", config.getInt("stats.exp", 0));
         data.put("statPoints", config.getInt("stats.statPoints", 0));
 
+        data.put("maxMana", config.getDouble("stats.maxMana", 100.0));
+        data.put("currentMana", config.getDouble("stats.currentMana", 100.0));
+        data.put("manaRegen", config.getDouble("stats.manaRegen", 1.0));
+
         return PlayerStats.deserialize(data);
     }
 
@@ -118,6 +122,10 @@ public class PlayerStatsManager {
         config.set("stats.level", data.get("level"));
         config.set("stats.exp", data.get("exp"));
         config.set("stats.statPoints", data.get("statPoints"));
+
+        config.set("stats.maxMana", data.get("maxMana"));
+        config.set("stats.currentMana", data.get("currentMana"));
+        config.set("stats.manaRegen", data.get("manaRegen"));
 
         try {
             config.save(file);

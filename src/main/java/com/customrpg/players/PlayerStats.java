@@ -25,6 +25,11 @@ public class PlayerStats {
     private long exp;
     private int statPoints;
 
+    // Mana 系統
+    private double currentMana;     // 當前魔力值
+    private double maxMana;         // 最大魔力值
+    private double manaRegen;       // 魔力回復速度 (每秒回復量)
+
     /**
      * 預設建構子，初始屬性皆為 0
      */
@@ -38,6 +43,10 @@ public class PlayerStats {
         this.level = 1;
         this.exp = 0;
         this.statPoints = 0;
+
+        this.maxMana = 100.0;
+        this.currentMana = 100.0;
+        this.manaRegen = 1.0; // 預設每秒回復 1 點
     }
 
     /**
@@ -53,6 +62,31 @@ public class PlayerStats {
         this.level = level;
         this.exp = exp;
         this.statPoints = statPoints;
+
+        this.maxMana = 100.0;
+        this.currentMana = 100.0;
+        this.manaRegen = 1.0;
+    }
+
+    /**
+     * 完整建構子（含 Mana）
+     */
+    public PlayerStats(int strength, int magic, int agility, int vitality, int defense,
+                      int level, long exp, int statPoints,
+                      double maxMana, double currentMana, double manaRegen) {
+        this.strength = strength;
+        this.magic = magic;
+        this.agility = agility;
+        this.vitality = vitality;
+        this.defense = defense;
+
+        this.level = level;
+        this.exp = exp;
+        this.statPoints = statPoints;
+
+        this.maxMana = maxMana;
+        this.currentMana = currentMana;
+        this.manaRegen = manaRegen;
     }
 
     // ===== Getters & Setters =====
@@ -121,6 +155,57 @@ public class PlayerStats {
         this.statPoints = Math.max(0, statPoints);
     }
 
+    // ===== Mana Getters & Setters =====
+
+    public double getCurrentMana() {
+        return currentMana;
+    }
+
+    public void setCurrentMana(double currentMana) {
+        this.currentMana = Math.max(0, Math.min(currentMana, maxMana));
+    }
+
+    public double getMaxMana() {
+        return maxMana;
+    }
+
+    public void setMaxMana(double maxMana) {
+        this.maxMana = Math.max(0, maxMana);
+        // 確保當前魔力不超過新的最大值
+        if (this.currentMana > this.maxMana) {
+            this.currentMana = this.maxMana;
+        }
+    }
+
+    public double getManaRegen() {
+        return manaRegen;
+    }
+
+    public void setManaRegen(double manaRegen) {
+        this.manaRegen = Math.max(0, manaRegen);
+    }
+
+    /**
+     * 消耗魔力
+     * @param amount 消耗量
+     * @return 是否成功消耗（魔力是否足夠）
+     */
+    public boolean consumeMana(double amount) {
+        if (currentMana >= amount) {
+            currentMana -= amount;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 恢復魔力
+     * @param amount 恢復量
+     */
+    public void restoreMana(double amount) {
+        currentMana = Math.min(currentMana + amount, maxMana);
+    }
+
     // ===== 序列化/反序列化 =====
 
     /**
@@ -137,6 +222,11 @@ public class PlayerStats {
         data.put("level", level);
         data.put("exp", exp);
         data.put("statPoints", statPoints);
+
+        data.put("maxMana", maxMana);
+        data.put("currentMana", currentMana);
+        data.put("manaRegen", manaRegen);
+
         return data;
     }
 
@@ -154,7 +244,11 @@ public class PlayerStats {
         long xp = data.containsKey("exp") ? ((Number) data.get("exp")).longValue() : 0;
         int pts = data.containsKey("statPoints") ? getInt(data, "statPoints") : 0;
 
-        return new PlayerStats(str, mag, agi, vit, def, lvl, xp, pts);
+        double maxMana = data.containsKey("maxMana") ? getDouble(data, "maxMana") : 100.0;
+        double currentMana = data.containsKey("currentMana") ? getDouble(data, "currentMana") : maxMana;
+        double manaRegen = data.containsKey("manaRegen") ? getDouble(data, "manaRegen") : 1.0;
+
+        return new PlayerStats(str, mag, agi, vit, def, lvl, xp, pts, maxMana, currentMana, manaRegen);
     }
 
     private static int getInt(Map<String, Object> map, String key) {
@@ -163,6 +257,14 @@ public class PlayerStats {
             return ((Number) value).intValue();
         }
         return 0;
+    }
+
+    private static double getDouble(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        return 0.0;
     }
 
     @Override
@@ -176,6 +278,9 @@ public class PlayerStats {
                 ", Level=" + level +
                 ", Exp=" + exp +
                 ", StatPoints=" + statPoints +
+                ", MaxMana=" + maxMana +
+                ", CurrentMana=" + currentMana +
+                ", ManaRegen=" + manaRegen +
                 '}';
     }
 }

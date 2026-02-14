@@ -12,7 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable;
  * HealthDisplayManager - 管理玩家和怪物的血量顯示
  *
  * 功能：
- * - 玩家血量顯示在 ActionBar（生命值愛心上方）
+ * - 玩家血量顯示在 ActionBar（生命值愛心上方）- 已由 ManaDisplayManager 接管
  * - 怪物血量顯示在名稱旁邊
  *
  * 注意：當顯示傷害數字時，會暫時不更新玩家血量顯示
@@ -21,9 +21,9 @@ public class HealthDisplayManager {
 
     private final CustomRPG plugin;
     private final MobManager mobManager;
-    private BukkitRunnable playerHealthTask;
     private BukkitRunnable mobHealthTask;
     private DamageDisplayManager damageDisplayManager;
+    private ManaDisplayManager manaDisplayManager;
 
     /**
      * Constructor for HealthDisplayManager
@@ -45,19 +45,18 @@ public class HealthDisplayManager {
     }
 
     /**
+     * 設置 ManaDisplayManager（用於協調顯示）
+     * @param manaDisplayManager ManaDisplayManager instance
+     */
+    public void setManaDisplayManager(ManaDisplayManager manaDisplayManager) {
+        this.manaDisplayManager = manaDisplayManager;
+    }
+
+    /**
      * 啟動血量顯示任務
      */
     private void startHealthDisplayTasks() {
-        // 玩家血量顯示任務（每 10 ticks = 0.5 秒更新一次）
-        playerHealthTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Player player : plugin.getServer().getOnlinePlayers()) {
-                    updatePlayerHealthDisplay(player);
-                }
-            }
-        };
-        playerHealthTask.runTaskTimer(plugin, 0L, 10L);
+        // 玩家血量顯示已由 ManaDisplayManager 接管（同時顯示血量和魔力）
 
         // 怪物血量顯示任務（每 20 ticks = 1 秒更新一次）
         mobHealthTask = new BukkitRunnable() {
@@ -75,27 +74,6 @@ public class HealthDisplayManager {
         mobHealthTask.runTaskTimer(plugin, 0L, 20L);
     }
 
-    /**
-     * 更新玩家血量顯示（ActionBar）
-     * @param player 玩家
-     */
-    private void updatePlayerHealthDisplay(Player player) {
-        // 如果正在顯示傷害數字，則跳過血量更新
-        if (damageDisplayManager != null && damageDisplayManager.isDisplaying(player.getUniqueId())) {
-            return;
-        }
-
-        double health = player.getHealth();
-        double maxHealth = player.getMaxHealth();
-
-        // 只顯示數字，添加顏色
-        String color = getHealthColor(health / maxHealth);
-        String healthText = String.format("%s❤ %.1f§7/§c%.1f", color, health, maxHealth);
-
-        // 使用 ActionBar 顯示（在愛心上方）
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
-            TextComponent.fromLegacyText(healthText));
-    }
 
     /**
      * 更新怪物血量顯示（名稱）
@@ -159,19 +137,20 @@ public class HealthDisplayManager {
 
     /**
      * 立即更新特定玩家的血量顯示
+     * 注意：現在由 ManaDisplayManager 統一處理血量和魔力顯示
      * @param player 玩家
      */
     public void updatePlayerHealthImmediately(Player player) {
-        updatePlayerHealthDisplay(player);
+        // 委派給 ManaDisplayManager 處理
+        if (manaDisplayManager != null) {
+            manaDisplayManager.updatePlayerManaImmediately(player);
+        }
     }
 
     /**
      * 停止所有血量顯示任務
      */
     public void shutdown() {
-        if (playerHealthTask != null) {
-            playerHealthTask.cancel();
-        }
         if (mobHealthTask != null) {
             mobHealthTask.cancel();
         }

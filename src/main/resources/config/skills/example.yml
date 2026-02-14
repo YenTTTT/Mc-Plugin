@@ -1,5 +1,6 @@
 # 玩家技能配置範例
 # 在 config/skills/ 目錄下的所有 .yml 文件都會被加載
+# 天賦技能會消耗魔力，武器技能不消耗魔力
 
 fireball:
   name: "&c火球術"
@@ -7,6 +8,7 @@ fireball:
   activation: "right_click"
   cooldown: 5
   effect: "fireball"
+  mana-cost: 20.0  # 魔力消耗
 
 heal:
   name: "&a治療術"
@@ -14,6 +16,7 @@ heal:
   activation: "right_click"
   cooldown: 10
   effect: "heal"
+  mana-cost: 30.0  # 魔力消耗
 
 dash:
   name: "&b疾風步"
@@ -21,6 +24,7 @@ dash:
   activation: "right_click"
   cooldown: 3
   effect: "dash"
+  mana-cost: 15.0  # 魔力消耗
 
 lightning_strike:
   name: "&e雷擊術"
@@ -28,4 +32,6 @@ lightning_strike:
   activation: "left_click"
   cooldown: 15
   effect: "lightning"
+  mana-cost: 50.0  # 魔力消耗
+
 

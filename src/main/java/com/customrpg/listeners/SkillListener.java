@@ -1,6 +1,7 @@
 package com.customrpg.listeners;
 
 import com.customrpg.CustomRPG;
+import com.customrpg.managers.ManaManager;
 import com.customrpg.managers.SkillManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -30,15 +31,18 @@ public class SkillListener implements Listener {
 
     private final CustomRPG plugin;
     private final SkillManager skillManager;
+    private final ManaManager manaManager;
 
     /**
      * Constructor for SkillListener
      * @param plugin Main plugin instance
      * @param skillManager SkillManager instance
+     * @param manaManager ManaManager instance
      */
-    public SkillListener(CustomRPG plugin, SkillManager skillManager) {
+    public SkillListener(CustomRPG plugin, SkillManager skillManager, ManaManager manaManager) {
         this.plugin = plugin;
         this.skillManager = skillManager;
+        this.manaManager = manaManager;
     }
 
     /**
@@ -84,7 +88,22 @@ public class SkillListener implements Listener {
             return;
         }
 
+        // 檢查魔力是否足夠（天賦技能需要消耗魔力）
+        double manaCost = skillData.getManaCost();
+        if (manaCost > 0) {
+            if (!manaManager.hasMana(player, manaCost)) {
+                player.sendMessage(ChatColor.RED + "✖ 魔力不足！需要 " + String.format("%.1f", manaCost) + " 魔力");
+                event.setCancelled(true);
+                return;
+            }
+        }
+
         if (skillManager.useSkill(player, skillKey)) {
+            // 消耗魔力
+            if (manaCost > 0) {
+                manaManager.consumeMana(player, manaCost);
+            }
+
             activateSkill(player, skillData);
             player.sendMessage(ChatColor.GREEN + "✓ " + skillData.getName() + " activated!");
             event.setCancelled(true);

@@ -14,6 +14,8 @@ import com.customrpg.listeners.SkillTriggerListener;
 import com.customrpg.managers.ConfigManager;
 import com.customrpg.managers.DamageDisplayManager;
 import com.customrpg.managers.HealthDisplayManager;
+import com.customrpg.managers.ManaManager;
+import com.customrpg.managers.ManaDisplayManager;
 import com.customrpg.managers.MobManager;
 import com.customrpg.managers.PlayerStatsManager;
 import com.customrpg.managers.WeaponManager;
@@ -44,8 +46,13 @@ public class CustomRPG extends JavaPlugin {
     private StatsGUI statsGUI;
     private HealthDisplayManager healthDisplayManager;
     private DamageDisplayManager damageDisplayManager;
+    private ManaManager manaManager;
+    private ManaDisplayManager manaDisplayManager;
 
-    // New skill system
+    // Talent skill system (legacy)
+    private com.customrpg.managers.SkillManager talentSkillManager;
+
+    // New skill system (weapon skills)
     private SkillManager newSkillManager;
 
     /**
@@ -100,6 +107,18 @@ public class CustomRPG extends JavaPlugin {
             getLogger().info("- DamageDisplayManager shutdown");
         }
 
+        // 停止魔力回復任務
+        if (manaManager != null) {
+            manaManager.stopRegenTask();
+            getLogger().info("- ManaManager shutdown");
+        }
+
+        // 停止魔力顯示任務
+        if (manaDisplayManager != null) {
+            manaDisplayManager.shutdown();
+            getLogger().info("- ManaDisplayManager shutdown");
+        }
+
         // New skill system cooldowns are in-memory; stopping the plugin clears them.
 
         // Cleanup managers
@@ -107,9 +126,12 @@ public class CustomRPG extends JavaPlugin {
         weaponManager = null;
         mobManager = null;
         statsManager = null;
+        talentSkillManager = null;
         newSkillManager = null;
         healthDisplayManager = null;
         damageDisplayManager = null;
+        manaManager = null;
+        manaDisplayManager = null;
 
         getLogger().info("CustomRPG has been disabled successfully!");
         getLogger().info("=================================");
@@ -135,6 +157,14 @@ public class CustomRPG extends JavaPlugin {
 
         statsGUI = new StatsGUI(statsManager);
         getLogger().info("- StatsGUI initialized");
+
+        // Initialize ManaManager
+        manaManager = new ManaManager(this, statsManager);
+        getLogger().info("- ManaManager initialized");
+
+        // Initialize TalentSkillManager (legacy skill system for talent skills)
+        talentSkillManager = new com.customrpg.managers.SkillManager(this, configManager);
+        getLogger().info("- TalentSkillManager initialized with " + talentSkillManager.getSkillCount() + " talent skills");
 
         // ===== New skill system (manager/service pattern) =====
         com.customrpg.weaponSkills.managers.CooldownManager cooldownManager = new com.customrpg.weaponSkills.managers.CooldownManager();
@@ -163,8 +193,15 @@ public class CustomRPG extends JavaPlugin {
         damageDisplayManager = new DamageDisplayManager(this);
         getLogger().info("- DamageDisplayManager initialized");
 
-        // 設置兩個管理器之間的關聯，避免顯示衝突
+        // Initialize ManaDisplayManager
+        manaDisplayManager = new ManaDisplayManager(this, statsManager);
+        getLogger().info("- ManaDisplayManager initialized");
+
+        // 設置管理器之間的關聯，避免顯示衝突
         healthDisplayManager.setDamageDisplayManager(damageDisplayManager);
+        healthDisplayManager.setManaDisplayManager(manaDisplayManager);
+        manaDisplayManager.setDamageDisplayManager(damageDisplayManager);
+        manaDisplayManager.setHealthDisplayManager(healthDisplayManager);
     }
 
     /**
@@ -176,7 +213,9 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WeaponListener(this, weaponManager, statsManager), this);
         getLogger().info("- WeaponListener registered");
 
-        // SkillListener (legacy) 已由 SkillTriggerListener 接管
+        // SkillListener for talent skills (uses mana)
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SkillListener(this, talentSkillManager, manaManager), this);
+        getLogger().info("- SkillListener (talent skills) registered");
 
         getServer().getPluginManager().registerEvents(new MobListener(this, mobManager, statsManager, weaponManager), this);
         getLogger().info("- MobListener registered");
@@ -192,6 +231,12 @@ public class CustomRPG extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new HealthDisplayListener(healthDisplayManager), this);
         getLogger().info("- HealthDisplayListener registered");
+
+        getServer().getPluginManager().registerEvents(new DamageDisplayListener(damageDisplayManager), this);
+        getLogger().info("- DamageDisplayListener registered");
+
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ManaListener(), this);
+        getLogger().info("- ManaListener registered");
     }
 
     /**

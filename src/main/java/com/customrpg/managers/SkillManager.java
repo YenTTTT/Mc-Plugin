@@ -55,13 +55,22 @@ public class SkillManager {
             String skillKey = entry.getKey();
             Map<String, Object> skillConfig = entry.getValue();
 
+            double manaCost = 0.0;
+            if (skillConfig.containsKey("mana-cost")) {
+                Object manaCostObj = skillConfig.get("mana-cost");
+                if (manaCostObj instanceof Number) {
+                    manaCost = ((Number) manaCostObj).doubleValue();
+                }
+            }
+
             SkillData skillData = new SkillData(
                 skillKey,
                 (String) skillConfig.get("name"),
                 Material.valueOf((String) skillConfig.get("item")),
                 (String) skillConfig.get("activation"),
                 (Integer) skillConfig.get("cooldown"),
-                (String) skillConfig.get("effect")
+                (String) skillConfig.get("effect"),
+                manaCost
             );
 
             skills.put(skillKey, skillData);
@@ -164,14 +173,20 @@ public class SkillManager {
         private final String activation;
         private final int cooldown;
         private final String effect;
+        private final double manaCost;
 
         public SkillData(String key, String name, Material item, String activation, int cooldown, String effect) {
+            this(key, name, item, activation, cooldown, effect, 0.0);
+        }
+
+        public SkillData(String key, String name, Material item, String activation, int cooldown, String effect, double manaCost) {
             this.key = key;
             this.name = name;
             this.item = item;
             this.activation = activation;
             this.cooldown = cooldown;
             this.effect = effect;
+            this.manaCost = manaCost;
         }
 
         public String getKey() { return key; }
@@ -180,5 +195,6 @@ public class SkillManager {
         public String getActivation() { return activation; }
         public int getCooldown() { return cooldown; }
         public String getEffect() { return effect; }
+        public double getManaCost() { return manaCost; }
     }
 }
