@@ -1,17 +1,22 @@
 package com.customrpg.managers;
 
 import com.customrpg.CustomRPG;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.NamespacedKey;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.EulerAngle;
+import org.bukkit.util.Vector;
+import org.bukkit.util.Transformation;
+import org.joml.AxisAngle4f;
+import org.joml.Vector3f;
 
 import java.util.*;
 
@@ -308,11 +313,8 @@ public class MobManager {
 
         EntityType disguiseType = EntityType.valueOf((String) disguiseConfig.getOrDefault("type", "PIG"));
         double babyChance = getDouble(disguiseConfig, "baby-chance", 0);
-        boolean riderInvisible = (boolean) disguiseConfig.getOrDefault("rider-invisible", true);
-        boolean riderSilent = (boolean) disguiseConfig.getOrDefault("rider-silent", true);
-        boolean riderInvulnerable = (boolean) disguiseConfig.getOrDefault("rider-invulnerable", false);
 
-        return new DisguiseConfig(enabled, disguiseType, babyChance, riderInvisible, riderSilent, riderInvulnerable);
+        return new DisguiseConfig(enabled, disguiseType, babyChance);
     }
 
     // 輔助方法
@@ -402,80 +404,418 @@ public class MobManager {
     }
 
     /**
-     * Spawn a disguised mob (invisible host + visible passenger)
+     * Spawn a disguised mob (directly spawn as disguise type with custom behavior)
+     * 直接生成偽裝類型的生物，根據類型決定實現方式
      */
     private LivingEntity spawnDisguisedMob(MobData mobData, Location location, int level) {
         DisguiseConfig disguise = mobData.getDisguise();
 
-        // 生成宿主（實際戰鬥實體）
-        Entity hostEntity = location.getWorld().spawnEntity(location, mobData.getEntityType());
-        if (!(hostEntity instanceof LivingEntity)) {
-            hostEntity.remove();
-            return null;
+        // 特殊處理：盔甲架偽裝（用於創建純視覺效果，如行走的仙人掌方塊）
+        if (disguise.getDisguiseType() == EntityType.ARMOR_STAND) {
+            return spawnArmorStandDisguise(mobData, location, level);
         }
 
-        LivingEntity host = (LivingEntity) hostEntity;
+        // 特殊處理：檢查是否配置了方塊材質的 helmet（用於創建行走的方塊）
+        // 當裝備中的 helmet 是方塊類型時，使用 BlockDisplay 方式顯示
+        if (mobData.getEquipment().containsKey("helmet")) {
+            ItemStack helmetItem = mobData.getEquipment().get("helmet");
+            Material helmetMaterial = helmetItem.getType();
 
-        // 設置宿主屬性
-        if (disguise.isRiderInvisible()) {
-            host.setInvisible(true);
+            // 檢查是否為方塊材料（不是物品）
+            if (helmetMaterial.isBlock() && !helmetMaterial.isItem()) {
+                plugin.getLogger().info("檢測到方塊材質頭盔: " + helmetMaterial.name() + "，使用 BlockDisplay 模式");
+                return spawnArmorStandDisguise(mobData, location, level);
+            }
         }
-        if (disguise.isRiderSilent()) {
-            host.setSilent(true);
-        }
-        if (disguise.isRiderInvulnerable()) {
-            host.setInvulnerable(true);
-        }
 
-        // 設置等級化屬性
-        double health = mobData.calculateHealth(level);
-        host.setMaxHealth(health);
-        host.setHealth(health);
-
-        // 裝備物品（給宿主）
-        applyEquipment(host, mobData);
-
-        // 生成偽裝實體（視覺顯示）
+        // 一般偽裝：直接生成偽裝實體（例如：豬）
         Entity disguiseEntity = location.getWorld().spawnEntity(location, disguise.getDisguiseType());
         if (!(disguiseEntity instanceof LivingEntity)) {
-            host.remove();
             disguiseEntity.remove();
             return null;
         }
 
-        LivingEntity disguiseMob = (LivingEntity) disguiseEntity;
+        LivingEntity mob = (LivingEntity) disguiseEntity;
 
-        // 設置偽裝實體屬性
-        disguiseMob.setSilent(true);
-        disguiseMob.setInvulnerable(true);
-        disguiseMob.setAI(false);
-
-        // 隨機幼年
-        if (disguise.getBabyChance() > 0 && random.nextDouble() < disguise.getBabyChance()) {
-            if (disguiseMob instanceof org.bukkit.entity.Ageable) {
-                ((org.bukkit.entity.Ageable) disguiseMob).setBaby();
-            }
-        }
-
-        // 設置名稱（顯示在偽裝實體上）
+        // 設置名稱
         String displayName = mobData.getName();
         if (mobData.shouldShowLevelInName() && mobData.hasLevelSystem()) {
             displayName = "&8[&eLv." + level + "&8] " + mobData.getName();
         }
-        disguiseMob.setCustomName(org.bukkit.ChatColor.translateAlternateColorCodes('&', displayName));
-        disguiseMob.setCustomNameVisible(true);
+        mob.setCustomName(org.bukkit.ChatColor.translateAlternateColorCodes('&', displayName));
+        mob.setCustomNameVisible(true);
 
-        // 讓偽裝實體騎在宿主上
-        host.addPassenger(disguiseMob);
+        // 設置等級化屬性
+        double health = mobData.calculateHealth(level);
+        mob.setMaxHealth(health);
+        mob.setHealth(health);
 
-        // 標記偽裝實體（用於識別和清理）
-        disguiseMob.getPersistentDataContainer().set(
-            new NamespacedKey(plugin, "disguise_passenger"),
-            PersistentDataType.STRING,
-            "true"
+        // 隨機幼年
+        if (disguise.getBabyChance() > 0 && random.nextDouble() < disguise.getBabyChance()) {
+            if (mob instanceof org.bukkit.entity.Ageable) {
+                ((org.bukkit.entity.Ageable) mob).setBaby();
+            }
+        }
+
+        // 裝備物品
+        applyEquipment(mob, mobData);
+
+        // 只有當生物是被動類型且設置了傷害值時，才賦予攻擊行為
+        if (isPassiveMob(disguise.getDisguiseType()) && mobData.getBaseDamage() > 0) {
+            applyAggressiveBehavior(mob);
+        }
+
+        return mob;
+    }
+
+    /**
+     * Spawn BlockDisplay disguise - creates a walking block (like cactus)
+     * 使用 BlockDisplay 生成會行走的方塊偽裝（如仙人掌）
+     *
+     * 架構說明：
+     * 1. 隱形殭屍作為移動核心（提供 AI 和碰撞）
+     * 2. BlockDisplay 作為視覺顯示（精準位置控制）
+     * 3. ArmorStand 作為名稱標籤（顯示名稱和等級）
+     *
+     * BlockDisplay 的優勢：
+     * - 不受乘客系統限制，可以精準設置位置
+     * - 支援 Transformation 調整偏移、旋轉、縮放
+     * - 平滑插值移動（setTeleportDuration）
+     * - 可以顯示任何方塊類型
+     */
+    private LivingEntity spawnArmorStandDisguise(MobData mobData, Location location, int level) {
+        plugin.getLogger().info("=== 開始生成 BlockDisplay 行走方塊 ===");
+
+        // ===== 第一步：生成隱形殭屍核心 =====
+        Entity coreEntity = location.getWorld().spawnEntity(location, EntityType.ZOMBIE);
+        if (!(coreEntity instanceof Zombie core)) {
+            coreEntity.remove();
+            plugin.getLogger().severe("✗ 無法生成殭屍核心");
+            return null;
+        }
+
+        // 設置殭屍屬性（隱形、靜音、保持 AI）
+        core.setAdult(); // 使用新 API 設置成年
+        core.setInvisible(true);
+        core.setSilent(true);
+        core.setAI(true);
+        core.setRemoveWhenFarAway(false); // 防止自動清除
+
+        // 設置生命值和傷害（等級化）
+        double health = mobData.calculateHealth(level);
+        core.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(health);
+        core.setHealth(health);
+
+        // 設置攻擊力（等級化）
+        double damage = mobData.calculateDamage(level);
+        core.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(damage);
+
+        plugin.getLogger().info("✓ 殭屍核心已生成 (隱形, Lv." + level + ", HP:" + health + ", ATK:" + damage + ")");
+
+        // **重要：標記殭屍核心為自定義怪物**
+        // 這樣 MobListener 才能識別並正確處理傷害、掉落物、經驗值
+        core.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobData.getKey());
+        core.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+        plugin.getLogger().info("✓ 殭屍核心已標記為自定義怪物: " + mobData.getKey() + " (Lv." + level + ")");
+
+        // ===== 第二步：獲取方塊類型 =====
+        Material blockMaterial = Material.CACTUS;
+        if (mobData.getEquipment().containsKey("helmet")) {
+            ItemStack helmetItem = mobData.getEquipment().get("helmet");
+            blockMaterial = helmetItem.getType();
+        }
+        plugin.getLogger().info("✓ 方塊材質: " + blockMaterial.name());
+
+        // ===== 第三步：生成 BlockDisplay =====
+        Location displayLocation = location.clone();
+        BlockDisplay blockDisplay = (BlockDisplay) location.getWorld().spawnEntity(
+            displayLocation,
+            EntityType.BLOCK_DISPLAY
         );
 
-        return host;
+        // 設置方塊數據
+        blockDisplay.setBlock(blockMaterial.createBlockData());
+
+        // 設置 Transformation（精準位置控制的關鍵）
+        // translation: 相對於當前位置的偏移量 (x, y, z)
+        //   - Y 軸偏移讓方塊浮空或貼地
+        //   - X/Z 軸可以微調水平位置
+        // scale: 方塊大小縮放 (x, y, z)
+        //   - 1.0 = 原始大小
+        //   - 可以做出巨大或迷你方塊效果
+        // rotation: 旋轉角度（使用四元數表示）
+        Vector3f translation = new Vector3f(0f, 0.5f, 0f); // Y=0.5 讓方塊在地面上方（重要！）
+        AxisAngle4f leftRotation = new AxisAngle4f(0, 0, 1, 0); // 無旋轉
+        Vector3f scale = new Vector3f(1.0f, 1.0f, 1.0f); // 原始大小
+        AxisAngle4f rightRotation = new AxisAngle4f(0, 0, 1, 0); // 無旋轉
+
+        Transformation transformation = new Transformation(translation, leftRotation, scale, rightRotation);
+        blockDisplay.setTransformation(transformation);
+
+        // 設置顯示屬性
+        blockDisplay.setTeleportDuration(2); // 平滑傳送（2 ticks = 0.1秒）
+        blockDisplay.setInterpolationDuration(2); // 插值時間
+        blockDisplay.setInterpolationDelay(0); // 立即開始插值
+        blockDisplay.setViewRange(128.0f); // 可視範圍 128 格
+        blockDisplay.setBrightness(new org.bukkit.entity.Display.Brightness(15, 15)); // 最大亮度（不受環境影響）
+        blockDisplay.setShadowRadius(0.5f); // 陰影半徑
+        blockDisplay.setShadowStrength(1.0f); // 陰影強度
+
+        // 標記為偽裝實體（用於清理和識別）
+        blockDisplay.getPersistentDataContainer().set(
+            new NamespacedKey(plugin, "disguise_blockdisplay"),
+            PersistentDataType.STRING,
+            core.getUniqueId().toString()
+        );
+
+        plugin.getLogger().info("✓ BlockDisplay 已生成（平滑移動: 2 ticks）");
+
+        // ===== 第四步：生成名稱標籤 ArmorStand =====
+        Location nameLocation = location.clone().add(0, 2.0, 0); // 在方块上方 2 格
+        ArmorStand nameTag = (ArmorStand) location.getWorld().spawnEntity(
+            nameLocation,
+            EntityType.ARMOR_STAND
+        );
+
+        // 設置為隱形 marker（不占空間、不碰撞、不受重力）
+        nameTag.setVisible(false);
+        nameTag.setGravity(false);
+        nameTag.setInvulnerable(true);
+        nameTag.setMarker(true);
+        nameTag.setSmall(true);
+        nameTag.setBasePlate(false);
+        nameTag.setArms(false);
+
+        // 設置名稱
+        String displayName = mobData.getName();
+        if (mobData.shouldShowLevelInName() && mobData.hasLevelSystem()) {
+            displayName = "&8[&eLv." + level + "&8] " + mobData.getName();
+        }
+        nameTag.customName(net.kyori.adventure.text.Component.text(
+            org.bukkit.ChatColor.translateAlternateColorCodes('&', displayName)
+        ));
+        nameTag.setCustomNameVisible(true);
+
+        // 標記為偽裝名稱標籤
+        nameTag.getPersistentDataContainer().set(
+            new NamespacedKey(plugin, "disguise_nametag"),
+            PersistentDataType.STRING,
+            core.getUniqueId().toString()
+        );
+
+        plugin.getLogger().info("✓ 名稱標籤已生成: " + displayName);
+
+        // ===== 第五步：建立位置同步系統 =====
+        // 使用高頻率更新（每 tick）確保 BlockDisplay 跟隨殭屍移動
+        // 這是精準控制位置的關鍵
+        new BukkitRunnable() {
+            private Location lastCoreLoc = null;
+            private int tickCounter = 0;
+
+            @Override
+            public void run() {
+                // 檢查核心是否還存在
+                if (core.isDead() || !core.isValid()) {
+                    // 清理所有關聯實體
+                    if (blockDisplay.isValid()) blockDisplay.remove();
+                    if (nameTag.isValid()) nameTag.remove();
+                    this.cancel();
+                    plugin.getLogger().info("✗ BlockDisplay 已清理（核心死亡）");
+                    return;
+                }
+
+                // 獲取殭屍當前位置
+                Location coreLoc = core.getLocation();
+                tickCounter++;
+
+                // 同步 BlockDisplay 位置
+                if (blockDisplay.isValid()) {
+                    // 檢查位置是否改變（優化性能）
+                    boolean moved = lastCoreLoc == null ||
+                                  lastCoreLoc.getX() != coreLoc.getX() ||
+                                  lastCoreLoc.getY() != coreLoc.getY() ||
+                                  lastCoreLoc.getZ() != coreLoc.getZ();
+
+                    if (moved) {
+                        // 精準設置 BlockDisplay 位置
+                        // BlockDisplay 的 transformation 已經處理了 Y 軸偏移
+                        Location blockLoc = coreLoc.clone();
+                        blockLoc.setYaw(0); // BlockDisplay 不需要旋轉（方塊是立方體）
+                        blockLoc.setPitch(0);
+                        blockDisplay.teleport(blockLoc);
+
+                        lastCoreLoc = coreLoc.clone();
+                    }
+                } else {
+                    // BlockDisplay 消失，清理所有
+                    if (nameTag.isValid()) nameTag.remove();
+                    core.remove();
+                    this.cancel();
+                    return;
+                }
+
+                // 同步名稱標籤位置（在方塊上方）
+                if (nameTag.isValid()) {
+                    Location nameLoc = coreLoc.clone().add(0, 2.0, 0); // 在方块上方 2 格
+                    nameLoc.setYaw(0);
+                    nameLoc.setPitch(0);
+                    nameTag.teleport(nameLoc);
+                } else {
+                    // 名稱標籤消失，清理所有
+                    if (blockDisplay.isValid()) blockDisplay.remove();
+                    core.remove();
+                    this.cancel();
+                    return;
+                }
+
+                // 每 100 ticks（5秒）輸出一次調試信息
+                if (tickCounter % 100 == 0) {
+                    plugin.getLogger().fine("BlockDisplay 同步中 (tick " + tickCounter + ")");
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 1L); // 每 tick 更新（20 次/秒）
+
+        plugin.getLogger().info("=== BlockDisplay 行走方塊生成完成 ===");
+        plugin.getLogger().info("  實體 UUID: " + core.getUniqueId());
+        plugin.getLogger().info("  方塊類型: " + blockMaterial.name());
+        plugin.getLogger().info("  顯示名稱: " + displayName);
+        plugin.getLogger().info("  等級: " + level + " | HP: " + health + " | ATK: " + damage);
+
+        return core;
+    }
+
+    /**
+     * Check if an entity type is a passive mob
+     * 檢查生物類型是否為被動生物
+     */
+    private boolean isPassiveMob(EntityType type) {
+        switch (type) {
+            // 被動生物
+            case PIG:
+            case COW:
+            case SHEEP:
+            case CHICKEN:
+            case RABBIT:
+            case HORSE:
+            case DONKEY:
+            case MULE:
+            case LLAMA:
+            case PARROT:
+            case BAT:
+            case OCELOT:
+            case CAT:
+            case PANDA:
+            case FOX:
+            case VILLAGER:
+            case WANDERING_TRADER:
+            case IRON_GOLEM:
+            case SNOW_GOLEM:
+            case TURTLE:
+            case MOOSHROOM:
+            case SQUID:
+            case GLOW_SQUID:
+            case COD:
+            case SALMON:
+            case TROPICAL_FISH:
+            case PUFFERFISH:
+            case DOLPHIN:
+            case AXOLOTL:
+            case STRIDER:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Apply aggressive behavior to passive mobs
+     * 讓被動生物（如豬、雞等）能夠攻擊玩家
+     */
+    private void applyAggressiveBehavior(LivingEntity mob) {
+        try {
+            // 使用 Bukkit API 讓生物主動尋找附近的玩家並攻擊
+            // 透過定期任務模擬攻擊行為
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (mob.isDead() || !mob.isValid()) {
+                        this.cancel();
+                        return;
+                    }
+
+                    // 檢查附近是否有玩家
+                    Player target = findNearestPlayer(mob, 16.0);
+                    if (target != null && target.getGameMode() != org.bukkit.GameMode.CREATIVE &&
+                        target.getGameMode() != org.bukkit.GameMode.SPECTATOR) {
+
+                        // 設置生物的目標為玩家
+                        if (mob instanceof Mob) {
+                            ((Mob) mob).setTarget(target);
+                        }
+
+                        // 讓生物朝玩家移動
+                        Location targetLoc = target.getLocation();
+                        Location mobLoc = mob.getLocation();
+
+                        double distance = mobLoc.distance(targetLoc);
+
+                        // 計算朝向玩家的角度
+                        Vector direction = targetLoc.toVector().subtract(mobLoc.toVector());
+                        double yaw = Math.toDegrees(Math.atan2(-direction.getX(), direction.getZ()));
+                        double pitch = Math.toDegrees(Math.atan2(-direction.getY(),
+                            Math.sqrt(direction.getX() * direction.getX() + direction.getZ() * direction.getZ())));
+
+                        // 設置生物朝向玩家
+                        Location newLoc = mobLoc.clone();
+                        newLoc.setYaw((float) yaw);
+                        newLoc.setPitch((float) pitch);
+                        mob.teleport(newLoc);
+
+                        // 如果在攻擊範圍內（2格內），則進行攻擊
+                        if (distance <= 2.0) {
+                            // 透過 EntityDamageByEntityEvent 處理傷害
+                            // 這裡只需要標記，實際傷害由事件處理
+                            target.damage(0.1, mob); // 極小傷害，實際傷害在事件中設置
+                        } else if (distance <= 16.0) {
+                            // 計算移動方向（水平）
+                            direction.normalize();
+                            direction.setY(0); // 保持在水平面移動
+
+                            // 設置速度（追逐玩家）
+                            Vector velocity = direction.multiply(0.3);
+                            velocity.setY(mob.getVelocity().getY()); // 保持原有的Y軸速度（重力）
+                            mob.setVelocity(velocity);
+                        }
+                    }
+                }
+            }.runTaskTimer(plugin, 0L, 10L); // 每 0.5 秒執行一次
+
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to apply aggressive behavior: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Find the nearest player to a mob within range
+     */
+    private Player findNearestPlayer(LivingEntity mob, double range) {
+        Player nearest = null;
+        double nearestDistance = range * range; // 使用平方距離避免開方運算
+
+        for (Player player : mob.getWorld().getPlayers()) {
+            if (player.getGameMode() == org.bukkit.GameMode.CREATIVE ||
+                player.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+                continue;
+            }
+
+            double distanceSquared = player.getLocation().distanceSquared(mob.getLocation());
+            if (distanceSquared < nearestDistance) {
+                nearest = player;
+                nearestDistance = distanceSquared;
+            }
+        }
+
+        return nearest;
     }
 
     /**
@@ -759,25 +1099,15 @@ public class MobManager {
         private final boolean enabled;
         private final EntityType disguiseType;
         private final double babyChance;
-        private final boolean riderInvisible;
-        private final boolean riderSilent;
-        private final boolean riderInvulnerable;
 
-        public DisguiseConfig(boolean enabled, EntityType disguiseType, double babyChance,
-                             boolean riderInvisible, boolean riderSilent, boolean riderInvulnerable) {
+        public DisguiseConfig(boolean enabled, EntityType disguiseType, double babyChance) {
             this.enabled = enabled;
             this.disguiseType = disguiseType;
             this.babyChance = babyChance;
-            this.riderInvisible = riderInvisible;
-            this.riderSilent = riderSilent;
-            this.riderInvulnerable = riderInvulnerable;
         }
 
         public boolean isEnabled() { return enabled; }
         public EntityType getDisguiseType() { return disguiseType; }
         public double getBabyChance() { return babyChance; }
-        public boolean isRiderInvisible() { return riderInvisible; }
-        public boolean isRiderSilent() { return riderSilent; }
-        public boolean isRiderInvulnerable() { return riderInvulnerable; }
     }
 }

@@ -5,11 +5,15 @@ import com.customrpg.commands.StatsCommand;
 import com.customrpg.commands.StatsShortcutCommand;
 import com.customrpg.commands.WeaponCommand;
 import com.customrpg.gui.StatsGUI;
+import com.customrpg.listeners.DamageDisplayListener;
+import com.customrpg.listeners.HealthDisplayListener;
 import com.customrpg.listeners.MobListener;
 import com.customrpg.listeners.StatsListener;
 import com.customrpg.listeners.WeaponListener;
 import com.customrpg.listeners.SkillTriggerListener;
 import com.customrpg.managers.ConfigManager;
+import com.customrpg.managers.DamageDisplayManager;
+import com.customrpg.managers.HealthDisplayManager;
 import com.customrpg.managers.MobManager;
 import com.customrpg.managers.PlayerStatsManager;
 import com.customrpg.managers.WeaponManager;
@@ -38,6 +42,8 @@ public class CustomRPG extends JavaPlugin {
     private MobManager mobManager;
     private PlayerStatsManager statsManager;
     private StatsGUI statsGUI;
+    private HealthDisplayManager healthDisplayManager;
+    private DamageDisplayManager damageDisplayManager;
 
     // New skill system
     private SkillManager newSkillManager;
@@ -82,6 +88,18 @@ public class CustomRPG extends JavaPlugin {
             getLogger().info("- All player stats saved");
         }
 
+        // 停止血量顯示任務
+        if (healthDisplayManager != null) {
+            healthDisplayManager.shutdown();
+            getLogger().info("- HealthDisplayManager shutdown");
+        }
+
+        // 停止傷害顯示任務
+        if (damageDisplayManager != null) {
+            damageDisplayManager.shutdown();
+            getLogger().info("- DamageDisplayManager shutdown");
+        }
+
         // New skill system cooldowns are in-memory; stopping the plugin clears them.
 
         // Cleanup managers
@@ -90,6 +108,8 @@ public class CustomRPG extends JavaPlugin {
         mobManager = null;
         statsManager = null;
         newSkillManager = null;
+        healthDisplayManager = null;
+        damageDisplayManager = null;
 
         getLogger().info("CustomRPG has been disabled successfully!");
         getLogger().info("=================================");
@@ -134,6 +154,17 @@ public class CustomRPG extends JavaPlugin {
         newSkillManager.registerSkillsFromConfig(configManager.getAllWeaponSkills());
 
         getLogger().info("- New SkillManager initialized with " + newSkillManager.getRegisteredSkillIds().size() + " skills");
+
+        // Initialize HealthDisplayManager
+        healthDisplayManager = new HealthDisplayManager(this, mobManager);
+        getLogger().info("- HealthDisplayManager initialized");
+
+        // Initialize DamageDisplayManager
+        damageDisplayManager = new DamageDisplayManager(this);
+        getLogger().info("- DamageDisplayManager initialized");
+
+        // 設置兩個管理器之間的關聯，避免顯示衝突
+        healthDisplayManager.setDamageDisplayManager(damageDisplayManager);
     }
 
     /**
@@ -158,6 +189,9 @@ public class CustomRPG extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(statsGUI, this);
         getLogger().info("- StatsGUI registered");
+
+        getServer().getPluginManager().registerEvents(new HealthDisplayListener(healthDisplayManager), this);
+        getLogger().info("- HealthDisplayListener registered");
     }
 
     /**

@@ -118,9 +118,10 @@ armored_skeleton:
   show-level-in-name: true
 
 # 範例 3: 偽裝型生物 - 攻擊型豬
+# 注意：新系統直接生成豬並賦予其攻擊能力，不再使用騎乘機制
 aggressive_pig:
   name: "&d&l狂暴豬"
-  type: ZOMBIE              # 實際生成的實體（宿主）
+  type: PIG               # 直接生成豬（不再需要 ZOMBIE 作為宿主）
 
   level-range:
     min: 3
@@ -134,14 +135,11 @@ aggressive_pig:
     health-per-level: 4.0
     damage-per-level: 1.5
 
-  # 偽裝配置
+  # 偽裝配置（簡化版）
   disguise:
     enabled: true
-    type: PIG               # 視覺上顯示為豬
+    type: PIG               # 偽裝類型（現在是主體，不是騎士）
     baby-chance: 0.3        # 30% 機率生成為幼年
-    rider-invisible: true   # 隱藏宿主實體
-    rider-silent: true      # 宿主實體靜音
-    rider-invulnerable: false  # 宿主是否無敵（false = 可被傷害）
 
   exp:
     base: 15
@@ -212,7 +210,62 @@ slime_king:
   special-behavior: "split_on_death"
   show-level-in-name: true
 
-# 範例 5: 簡易配置（向後兼容）
+# 範例 5: 行走的仙人掌 - 使用裝備模擬仙人掌外觀
+walking_cactus:
+  name: "&2&l⚠ 行走的仙人掌 ⚠"
+  type: ZOMBIE             # 使用殭屍作為基礎（有追蹤和攻擊AI）
+
+  level-range:
+    min: 8
+    max: 18
+
+  base-stats:
+    health: 50.0
+    damage: 15.0           # 仙人掌的刺很痛
+
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 2.0
+
+  # 偽裝配置
+  disguise:
+    enabled: true
+    type: ZOMBIE
+    baby-chance: 0.3       # 30% 機率為小仙人掌
+
+  # 裝備 - 用來模擬仙人掌的外觀
+  equipment:
+    helmet:
+      material: CACTUS     # 頭上戴仙人掌方塊
+    chestplate:
+      material: LEATHER_CHESTPLATE  # 綠色皮革裝甲模擬仙人掌身體
+    leggings:
+      material: LEATHER_LEGGINGS
+    boots:
+      material: LEATHER_BOOTS
+    main-hand:
+      material: CACTUS     # 手持仙人掌作為武器
+
+  exp:
+    base: 25
+    per-level: 10
+
+  drops:
+    vanilla-items:
+      - material: CACTUS
+        amount: 3-8
+        chance: 1.0
+      - material: GREEN_DYE
+        amount: 2-5
+        chance: 0.8
+      - material: EMERALD
+        amount: 1-2
+        chance: 0.15
+
+  special-behavior: "poison_attack"
+  show-level-in-name: true
+
+# 範例 6: 簡易配置（向後兼容）
 simple_zombie:
   name: "&8簡易殭屍"
   type: ZOMBIE

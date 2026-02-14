@@ -6,7 +6,6 @@ import com.customrpg.managers.PlayerStatsManager;
 import com.customrpg.managers.WeaponManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -161,9 +160,6 @@ public class MobListener implements Listener {
                 killer.sendMessage(ChatColor.YELLOW + "擊敗 [Lv." + mobLevel + "] " +
                     ChatColor.stripColor(mobData.getName()) + " 獲得 " + expReward + " 經驗值");
             }
-
-            // 清理偽裝實體（如果有）
-            cleanupDisguise(event.getEntity());
         } else {
             // 如果是普通怪物，給予 2 點經驗值
             statsManager.addExp(killer, 2);
@@ -173,10 +169,82 @@ public class MobListener implements Listener {
 
     /**
      * Handle custom mob damage events (level-scaled damage)
+     * 處理玩家攻擊 BlockDisplay 偽裝系統的情況
      * @param event EntityDamageByEntityEvent
      */
     @EventHandler
     public void onMobAttack(EntityDamageByEntityEvent event) {
+        // === 情況 1：玩家攻擊 BlockDisplay 或名稱標籤 ArmorStand ===
+        // BlockDisplay 和 ArmorStand 不是 LivingEntity，需要找到對應的隱形核心
+        if (event.getDamager() instanceof Player player) {
+            Entity target = event.getEntity();
+
+            // 檢查是否攻擊到 BlockDisplay
+            if (target instanceof org.bukkit.entity.BlockDisplay) {
+                event.setCancelled(true); // 取消對 BlockDisplay 的傷害
+
+                // 從 BlockDisplay 的 PersistentData 獲取核心 UUID
+                String coreUuidString = target.getPersistentDataContainer().get(
+                    new org.bukkit.NamespacedKey(plugin, "disguise_blockdisplay"),
+                    org.bukkit.persistence.PersistentDataType.STRING
+                );
+
+                if (coreUuidString != null) {
+                    java.util.UUID coreUuid = java.util.UUID.fromString(coreUuidString);
+                    // 在同一世界中尋找核心實體
+                    for (Entity entity : target.getWorld().getEntities()) {
+                        if (entity.getUniqueId().equals(coreUuid) && entity instanceof LivingEntity core) {
+                            // 找到核心，對其造成傷害
+
+                            // 計算傷害（考慮玩家的武器）
+                            double damage = 1.0;
+                            ItemStack weapon = player.getInventory().getItemInMainHand();
+                            if (weapon != null && !weapon.getType().isAir()) {
+                                // 這裡可以加入自定義武器傷害計算
+                                damage = weaponManager.getBaseDamage(weapon);
+                            }
+
+                            core.damage(damage, player);
+                            plugin.getLogger().fine("玩家攻擊 BlockDisplay，轉移 " + damage + " 傷害到核心");
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 檢查是否攻擊到名稱標籤 ArmorStand
+            if (target instanceof ArmorStand armorStand) {
+                String coreUuidString = armorStand.getPersistentDataContainer().get(
+                    new org.bukkit.NamespacedKey(plugin, "disguise_nametag"),
+                    org.bukkit.persistence.PersistentDataType.STRING
+                );
+
+                if (coreUuidString != null) {
+                    event.setCancelled(true); // 取消對 ArmorStand 的傷害
+
+                    java.util.UUID coreUuid = java.util.UUID.fromString(coreUuidString);
+                    // 在同一世界中尋找核心實體
+                    for (Entity entity : target.getWorld().getEntities()) {
+                        if (entity.getUniqueId().equals(coreUuid) && entity instanceof LivingEntity core) {
+                            // 找到核心，對其造成傷害
+
+                            // 計算傷害
+                            double damage = 1.0;
+                            ItemStack weapon = player.getInventory().getItemInMainHand();
+                            if (weapon != null && !weapon.getType().isAir()) {
+                                damage = weaponManager.getBaseDamage(weapon);
+                            }
+
+                            core.damage(damage, player);
+                            plugin.getLogger().fine("玩家攻擊名稱標籤，轉移 " + damage + " 傷害到核心");
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // === 情況 2：自定義生物攻擊玩家（等級化傷害）===
         // 檢查是否為自定義生物攻擊玩家
         if (!(event.getDamager() instanceof LivingEntity)) {
             return;
@@ -202,19 +270,14 @@ public class MobListener implements Listener {
         int mobLevel = mobManager.getMobLevel(attacker);
         double scaledDamage = mobData.calculateDamage(mobLevel);
 
-        // 設置等級化傷害
-        event.setDamage(scaledDamage);
-    }
-
-    /**
-     * Clean up disguise passenger when host dies
-     */
-    private void cleanupDisguise(LivingEntity host) {
-        for (Entity passenger : host.getPassengers()) {
-            if (passenger instanceof LivingEntity) {
-                passenger.remove();
-            }
+        // 設置等級化傷害（對於偽裝生物，確保傷害大於0）
+        if (scaledDamage < 1.0) {
+            scaledDamage = 1.0; // 最低傷害為 1
         }
+        event.setDamage(scaledDamage);
+        
+        // Debug 訊息
+        plugin.getLogger().info("Custom mob " + mobData.getName() + " (Lv." + mobLevel + ") attacked player with " + scaledDamage + " damage");
     }
 
     /**

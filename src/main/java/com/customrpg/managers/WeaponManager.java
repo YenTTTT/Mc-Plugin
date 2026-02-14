@@ -265,6 +265,45 @@ public class WeaponManager {
     }
 
     /**
+     * Get base damage for an item (custom weapon or vanilla weapon)
+     * 獲取物品的基礎傷害（自定義武器或原版武器）
+     * @param item The item to check
+     * @return Base damage value
+     */
+    public double getBaseDamage(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) {
+            return 1.0; // 空手傷害
+        }
+
+        // 檢查是否為自定義武器
+        String weaponKey = getWeaponKey(item);
+        if (weaponKey != null) {
+            WeaponData weaponData = weapons.get(weaponKey);
+            if (weaponData != null) {
+                // 獲取自定義武器的基礎傷害
+                double baseDamage = weaponData.getDoubleExtra("base-damage", 1.0);
+                return baseDamage;
+            }
+        }
+
+        // 原版武器傷害
+        return switch (item.getType()) {
+            case WOODEN_SWORD, GOLDEN_SWORD -> 4.0;
+            case STONE_SWORD -> 5.0;
+            case IRON_SWORD -> 6.0;
+            case DIAMOND_SWORD -> 7.0;
+            case NETHERITE_SWORD -> 8.0;
+            case WOODEN_AXE, GOLDEN_AXE -> 7.0;
+            case STONE_AXE -> 9.0;
+            case IRON_AXE -> 9.0;
+            case DIAMOND_AXE -> 9.0;
+            case NETHERITE_AXE -> 10.0;
+            case TRIDENT -> 9.0;
+            default -> 1.0; // 其他物品/空手
+        };
+    }
+
+    /**
      * Reload weapons, clearing the current list and reloading from config
      */
     public void reloadWeapons() {
