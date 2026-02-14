@@ -30,6 +30,12 @@ commands:
     permission: customrpg.rpg
     permission-message: You don't have permission to use this command!
     aliases: [playerstats]
+  talent:
+    description: Manage talent points and talent tree
+    usage: /talent [warrior|mage|assassin|give|reset|info|reload|help]
+    permission: customrpg.talent
+    permission-message: You don't have permission to use this command!
+    aliases: [talents, skill, skills]
 
 permissions:
   customrpg.*:
@@ -38,6 +44,8 @@ permissions:
       customrpg.weapon: true
       customrpg.weapon.others: true
       customrpg.rpg: true
+      customrpg.talent: true
+      customrpg.talent.admin: true
       customrpg.admin: true
   customrpg.weapon:
     description: Allows using the /weapon command for yourself
@@ -48,6 +56,12 @@ permissions:
   customrpg.rpg:
     description: Allows viewing own stats
     default: true
+  customrpg.talent:
+    description: Allows using talent system and GUI
+    default: true
+  customrpg.talent.admin:
+    description: Allows managing other players' talents
+    default: op
   customrpg.admin:
     description: Administrative access to all features
     default: op

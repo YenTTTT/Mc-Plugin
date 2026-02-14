@@ -85,6 +85,7 @@ public class PlayerStatsManager {
         data.put("level", config.getInt("stats.level", 1));
         data.put("exp", config.getInt("stats.exp", 0));
         data.put("statPoints", config.getInt("stats.statPoints", 0));
+        data.put("talentPoints", config.getInt("stats.talentPoints", 0)); // 載入天賦點數
 
         data.put("maxMana", config.getDouble("stats.maxMana", 100.0));
         data.put("currentMana", config.getDouble("stats.currentMana", 100.0));
@@ -122,6 +123,7 @@ public class PlayerStatsManager {
         config.set("stats.level", data.get("level"));
         config.set("stats.exp", data.get("exp"));
         config.set("stats.statPoints", data.get("statPoints"));
+        config.set("stats.talentPoints", data.get("talentPoints")); // 儲存天賦點數
 
         config.set("stats.maxMana", data.get("maxMana"));
         config.set("stats.currentMana", data.get("currentMana"));
@@ -242,6 +244,9 @@ public class PlayerStatsManager {
         // 增加屬性點數 (10 點)
         stats.setStatPoints(stats.getStatPoints() + 10);
 
+        // 增加天賦點數 (每級1點)
+        stats.addTalentPoints(1);
+
         // 自動提升整體屬性 (每升一等全屬性 +1)
         stats.setStrength(stats.getStrength() + 1);
         stats.setMagic(stats.getMagic() + 1);
@@ -256,6 +261,7 @@ public class PlayerStatsManager {
         player.sendMessage(ChatColor.GOLD + "========================================");
         player.sendMessage(ChatColor.YELLOW + "  🎉 恭喜升級！你現在是等級 " + ChatColor.AQUA + (currentLevel + 1));
         player.sendMessage(ChatColor.GREEN + "  獲得 10 點屬性點數！");
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "  獲得 1 點天賦點數！");
         player.sendMessage(ChatColor.GREEN + "  全屬性自動 +1！");
         player.sendMessage(ChatColor.GOLD + "========================================");
 

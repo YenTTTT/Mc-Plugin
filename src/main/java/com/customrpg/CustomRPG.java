@@ -52,6 +52,11 @@ public class CustomRPG extends JavaPlugin {
     // Talent skill system (legacy)
     private com.customrpg.managers.SkillManager talentSkillManager;
 
+    // Talent system
+    private com.customrpg.managers.TalentManager talentManager;
+    private com.customrpg.gui.TalentGUI talentGUI;
+    private com.customrpg.managers.TalentPassiveEffectManager talentPassiveEffectManager;
+
     // New skill system (weapon skills)
     private SkillManager newSkillManager;
 
@@ -93,6 +98,24 @@ public class CustomRPG extends JavaPlugin {
         if (statsManager != null) {
             statsManager.saveAllStats();
             getLogger().info("- All player stats saved");
+        }
+
+        // 儲存天賦數據並清理
+        if (talentManager != null) {
+            talentManager.shutdown();
+            getLogger().info("- TalentManager shutdown");
+        }
+
+        // 清理天賦GUI
+        if (talentGUI != null) {
+            talentGUI.cleanup();
+            getLogger().info("- TalentGUI cleanup");
+        }
+
+        // 清理天賦被動效果管理器
+        if (talentPassiveEffectManager != null) {
+            talentPassiveEffectManager.shutdown();
+            getLogger().info("- TalentPassiveEffectManager shutdown");
         }
 
         // 停止血量顯示任務
@@ -166,6 +189,16 @@ public class CustomRPG extends JavaPlugin {
         talentSkillManager = new com.customrpg.managers.SkillManager(this, configManager);
         getLogger().info("- TalentSkillManager initialized with " + talentSkillManager.getSkillCount() + " talent skills");
 
+        // ===== Talent System =====
+        talentManager = new com.customrpg.managers.TalentManager(this);
+        getLogger().info("- TalentManager initialized with " + talentManager.getTotalTalentCount() + " talents");
+
+        talentGUI = new com.customrpg.gui.TalentGUI(this, talentManager);
+        getLogger().info("- TalentGUI initialized");
+
+        talentPassiveEffectManager = new com.customrpg.managers.TalentPassiveEffectManager(this, talentManager, statsManager);
+        getLogger().info("- TalentPassiveEffectManager initialized");
+
         // ===== New skill system (manager/service pattern) =====
         com.customrpg.weaponSkills.managers.CooldownManager cooldownManager = new com.customrpg.weaponSkills.managers.CooldownManager();
         com.customrpg.weaponSkills.managers.BuffManager buffManager = new com.customrpg.weaponSkills.managers.BuffManager();
@@ -229,6 +262,17 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(statsGUI, this);
         getLogger().info("- StatsGUI registered");
 
+        // Talent system listeners
+        getServer().getPluginManager().registerEvents(talentGUI, this);
+        getLogger().info("- TalentGUI registered");
+
+        getServer().getPluginManager().registerEvents(talentPassiveEffectManager, this);
+        getLogger().info("- TalentPassiveEffectManager registered");
+
+        // 註冊TalentListener來處理玩家登入時的天賦效果應用
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.TalentListener(talentManager), this);
+        getLogger().info("- TalentListener registered");
+
         getServer().getPluginManager().registerEvents(new HealthDisplayListener(healthDisplayManager), this);
         getLogger().info("- HealthDisplayListener registered");
 
@@ -283,6 +327,17 @@ public class CustomRPG extends JavaPlugin {
         } else {
             getLogger().warning("- Failed to register /rpg command: command not defined in plugin.yml");
         }
+
+        // Talent system command
+        org.bukkit.command.PluginCommand talentCommand = getCommand("talent");
+        if (talentCommand != null) {
+            com.customrpg.commands.TalentCommand talentCommandExecutor = new com.customrpg.commands.TalentCommand(this, talentManager, talentGUI);
+            talentCommand.setExecutor(talentCommandExecutor);
+            talentCommand.setTabCompleter(talentCommandExecutor);
+            getLogger().info("- /talent command registered");
+        } else {
+            getLogger().warning("- Failed to register /talent command: command not defined in plugin.yml");
+        }
     }
 
     /**
@@ -301,6 +356,13 @@ public class CustomRPG extends JavaPlugin {
         return weaponManager;
     }
 
+    /**
+     * Get the PlayerStatsManager instance
+     * @return PlayerStatsManager instance
+     */
+    public PlayerStatsManager getPlayerStatsManager() {
+        return statsManager;
+    }
 
     /**
      * Get the MobManager instance

@@ -1,0 +1,51 @@
+# 簡化版天賦配置 - 用於測試分支切換功能
+
+# 戰士分支
+warrior:
+  warrior_strength:
+    name: "§c力量強化"
+    description: "§7增加基礎力量，提升物理攻擊傷害"
+    type: "ATTRIBUTE"
+    max-level: 5
+    points-per-level: 1
+    tier: 1
+    icon: "IRON_SWORD"
+    prerequisites: []
+    base-effects:
+      strength: 2
+    level-scaling:
+      strength: 1
+
+# 法師分支
+mage:
+  mage_magic:
+    name: "§b魔法強化"
+    description: "§7增加基礎魔法力，提升法術傷害"
+    type: "ATTRIBUTE"
+    max-level: 5
+    points-per-level: 1
+    tier: 1
+    icon: "ENCHANTED_BOOK"
+    prerequisites: []
+    base-effects:
+      magic: 2
+    level-scaling:
+      magic: 1
+
+# 刺客分支
+assassin:
+  assassin_agility:
+    name: "§a敏捷強化"
+    description: "§7增加基礎敏捷，提升移動與攻擊速度"
+    type: "ATTRIBUTE"
+    max-level: 5
+    points-per-level: 1
+    tier: 1
+    icon: "LEATHER_BOOTS"
+    prerequisites: []
+    base-effects:
+      agility: 2
+      speed: 5
+    level-scaling:
+      agility: 1
+      speed: 3

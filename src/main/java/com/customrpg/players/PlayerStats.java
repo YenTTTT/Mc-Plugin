@@ -24,6 +24,7 @@ public class PlayerStats {
     private int level;
     private long exp;
     private int statPoints;
+    private int talentPoints;       // 天賦點數
 
     // Mana 系統
     private double currentMana;     // 當前魔力值
@@ -43,6 +44,7 @@ public class PlayerStats {
         this.level = 1;
         this.exp = 0;
         this.statPoints = 0;
+        this.talentPoints = 0;      // 初始天賦點數為0
 
         this.maxMana = 100.0;
         this.currentMana = 100.0;
@@ -52,7 +54,7 @@ public class PlayerStats {
     /**
      * 完整建構子
      */
-    public PlayerStats(int strength, int magic, int agility, int vitality, int defense, int level, long exp, int statPoints) {
+    public PlayerStats(int strength, int magic, int agility, int vitality, int defense, int level, long exp, int statPoints, int talentPoints) {
         this.strength = strength;
         this.magic = magic;
         this.agility = agility;
@@ -62,6 +64,7 @@ public class PlayerStats {
         this.level = level;
         this.exp = exp;
         this.statPoints = statPoints;
+        this.talentPoints = talentPoints;
 
         this.maxMana = 100.0;
         this.currentMana = 100.0;
@@ -72,7 +75,7 @@ public class PlayerStats {
      * 完整建構子（含 Mana）
      */
     public PlayerStats(int strength, int magic, int agility, int vitality, int defense,
-                      int level, long exp, int statPoints,
+                      int level, long exp, int statPoints, int talentPoints,
                       double maxMana, double currentMana, double manaRegen) {
         this.strength = strength;
         this.magic = magic;
@@ -83,6 +86,7 @@ public class PlayerStats {
         this.level = level;
         this.exp = exp;
         this.statPoints = statPoints;
+        this.talentPoints = talentPoints;
 
         this.maxMana = maxMana;
         this.currentMana = currentMana;
@@ -155,6 +159,26 @@ public class PlayerStats {
         this.statPoints = Math.max(0, statPoints);
     }
 
+    public int getTalentPoints() {
+        return talentPoints;
+    }
+
+    public void setTalentPoints(int talentPoints) {
+        this.talentPoints = Math.max(0, talentPoints);
+    }
+
+    public void addTalentPoints(int points) {
+        this.talentPoints += points;
+    }
+
+    public boolean spendTalentPoints(int points) {
+        if (talentPoints >= points) {
+            talentPoints -= points;
+            return true;
+        }
+        return false;
+    }
+
     // ===== Mana Getters & Setters =====
 
     public double getCurrentMana() {
@@ -222,6 +246,7 @@ public class PlayerStats {
         data.put("level", level);
         data.put("exp", exp);
         data.put("statPoints", statPoints);
+        data.put("talentPoints", talentPoints);
 
         data.put("maxMana", maxMana);
         data.put("currentMana", currentMana);
@@ -243,12 +268,13 @@ public class PlayerStats {
         int lvl = data.containsKey("level") ? getInt(data, "level") : 1;
         long xp = data.containsKey("exp") ? ((Number) data.get("exp")).longValue() : 0;
         int pts = data.containsKey("statPoints") ? getInt(data, "statPoints") : 0;
+        int talentPts = data.containsKey("talentPoints") ? getInt(data, "talentPoints") : 0;
 
         double maxMana = data.containsKey("maxMana") ? getDouble(data, "maxMana") : 100.0;
         double currentMana = data.containsKey("currentMana") ? getDouble(data, "currentMana") : maxMana;
         double manaRegen = data.containsKey("manaRegen") ? getDouble(data, "manaRegen") : 1.0;
 
-        return new PlayerStats(str, mag, agi, vit, def, lvl, xp, pts, maxMana, currentMana, manaRegen);
+        return new PlayerStats(str, mag, agi, vit, def, lvl, xp, pts, talentPts, maxMana, currentMana, manaRegen);
     }
 
     private static int getInt(Map<String, Object> map, String key) {
