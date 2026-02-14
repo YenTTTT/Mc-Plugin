@@ -36,6 +36,17 @@ commands:
     permission: customrpg.talent
     permission-message: You don't have permission to use this command!
     aliases: [talents, skill, skills]
+  equipment:
+    description: Manage equipment and gear
+    usage: /equipment [open|give|enhance|info|list|reload|help]
+    permission: customrpg.equipment
+    permission-message: You don't have permission to use this command!
+    aliases: [equip, gear, eq]
+  stat:
+    description: Display complete character information in chat
+    usage: /stat
+    permission: customrpg.stat
+    permission-message: You don't have permission to use this command!
 
 permissions:
   customrpg.*:
@@ -44,8 +55,12 @@ permissions:
       customrpg.weapon: true
       customrpg.weapon.others: true
       customrpg.rpg: true
+      customrpg.stat: true
       customrpg.talent: true
       customrpg.talent.admin: true
+      customrpg.equipment: true
+      customrpg.equipment.give: true
+      customrpg.equipment.reload: true
       customrpg.admin: true
   customrpg.weapon:
     description: Allows using the /weapon command for yourself
@@ -56,11 +71,23 @@ permissions:
   customrpg.rpg:
     description: Allows viewing own stats
     default: true
+  customrpg.stat:
+    description: Allows using /stat command to view character information
+    default: true
   customrpg.talent:
     description: Allows using talent system and GUI
     default: true
   customrpg.talent.admin:
     description: Allows managing other players' talents
+    default: op
+  customrpg.equipment:
+    description: Allows using equipment system and GUI
+    default: true
+  customrpg.equipment.give:
+    description: Allows giving equipment to players
+    default: op
+  customrpg.equipment.reload:
+    description: Allows reloading equipment configuration
     default: op
   customrpg.admin:
     description: Administrative access to all features

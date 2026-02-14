@@ -1,0 +1,238 @@
+# 套裝效果配置文件
+# 定義各種裝備套裝的組合效果
+
+sets:
+  # ================================
+  # 戰士基礎套裝
+  # ================================
+  warrior_basic_set:
+    name: "戰士基礎套裝"
+    description: "為新手戰士設計的基礎防護套裝"
+    equipment:
+      - warrior_helmet_basic
+      - warrior_chestplate_basic
+      - warrior_leggings_basic
+      - warrior_boots_basic
+    bonuses:
+      2:
+        description: "戰士之力"
+        attributes:
+          STR: 10
+          ATK: 15
+        effects:
+          - "物理攻擊力增加8%"
+      3:
+        description: "堅固防護"
+        attributes:
+          DEF: 20
+          HP: 80
+          PRES: 10
+        effects:
+          - "受到物理攻擊時有15%機率減少50%傷害"
+      4:
+        description: "戰士之魂"
+        attributes:
+          STR: 20
+          ATK: 30
+          HP: 150
+        effects:
+          - "暴擊時回復5%最大生命值"
+          - "戰鬥中每擊殺一個敵人獲得5秒狂暴效果(攻擊力+20%)"
+
+  # ================================
+  # 法師基礎套裝
+  # ================================
+  mage_basic_set:
+    name: "法師基礎套裝"
+    description: "蘊含魔力的法師專用套裝"
+    equipment:
+      - mage_hat_basic
+      - mage_robe_basic
+    bonuses:
+      2:
+        description: "魔力共鳴"
+        attributes:
+          INT: 15
+          MATK: 25
+          MP: 100
+          MREGEN: 3
+        effects:
+          - "魔法攻擊力增加12%"
+          - "技能冷卻時間減少10%"
+
+  # ================================
+  # 刺客基礎套裝
+  # ================================
+  assassin_basic_set:
+    name: "刺客基礎套裝"
+    description: "為敏捷刺客設計的輕裝套裝"
+    equipment:
+      - assassin_hood_basic
+      - assassin_armor_basic
+    bonuses:
+      2:
+        description: "影之舞"
+        attributes:
+          AGI: 20
+          CRIT: 15
+          EVA: 25
+          ASPD: 0.4
+        effects:
+          - "暴擊率增加10%"
+          - "攻擊速度增加15%"
+          - "背後攻擊傷害增加30%"
+
+  # ================================
+  # 龍族套裝 (高級套裝)
+  # ================================
+  dragon_set:
+    name: "龍族套裝"
+    description: "古龍力量的完整體現"
+    equipment:
+      - dragon_helmet
+      - dragon_chestplate
+      - dragon_leggings
+      - dragon_boots
+      - dragon_cloak
+    bonuses:
+      2:
+        description: "龍之血脈"
+        attributes:
+          STR: 25
+          DEF: 30
+          FIRE_RES: 30
+        effects:
+          - "火焰抗性增加30%"
+          - "攻擊時有15%機率造成龍息效果"
+      3:
+        description: "龍之威嚴"
+        attributes:
+          HP: 200
+          ATK: 40
+          FIRE_RES: 50
+        effects:
+          - "周圍敵人攻擊力降低20%"
+          - "免疫恐懼和迷惑效果"
+      5:
+        description: "真龍覺醒"
+        attributes:
+          STR: 50
+          DEF: 60
+          HP: 300
+          ATK: 80
+        effects:
+          - "獲得龍之形態技能"
+          - "所有元素抗性+25%"
+          - "攻擊附帶龍炎效果(持續燃燒)"
+
+  # ================================
+  # 元素大師套裝 (混搭套裝)
+  # ================================
+  elemental_master_set:
+    name: "元素大師套裝"
+    description: "掌控各種元素力量的混合套裝"
+    equipment:
+      - fire_staff
+      - ice_robe
+      - lightning_boots
+      - earth_ring
+    bonuses:
+      2:
+        description: "元素親和"
+        attributes:
+          INT: 20
+          MATK: 35
+        effects:
+          - "所有元素技能傷害增加15%"
+      3:
+        description: "元素掌控"
+        attributes:
+          MATK: 50
+          MP: 150
+        effects:
+          - "元素技能有20%機率不消耗魔力"
+          - "同時最多可維持3個不同元素的持續效果"
+      4:
+        description: "元素融合"
+        attributes:
+          INT: 40
+          MATK: 80
+          SKILL_DMG: 30
+        effects:
+          - "解鎖元素融合技能"
+          - "每種不同元素技能命中後，下一個不同元素技能傷害+25%(可疊加)"
+
+  # ================================
+  # 生存者套裝
+  # ================================
+  survivor_set:
+    name: "生存者套裝"
+    description: "專為長期戰鬥設計的耐久套裝"
+    equipment:
+      - survivor_helmet
+      - survivor_armor
+      - survivor_boots
+      - healing_ring
+      - endurance_belt
+    bonuses:
+      2:
+        description: "生存本能"
+        attributes:
+          HP: 100
+          HREGEN: 5
+          PRES: 15
+        effects:
+          - "生命值低於30%時所有抗性+20%"
+      3:
+        description: "不屈意志"
+        attributes:
+          HP: 200
+          DEF: 25
+          HREGEN: 8
+        effects:
+          - "致命傷害改為保留1點生命值(冷卻300秒)"
+          - "戰鬥外生命回復速度增加200%"
+      5:
+        description: "永恆守護"
+        attributes:
+          HP: 400
+          DEF: 50
+          HREGEN: 15
+          MRES: 25
+        effects:
+          - "所有持續傷害效果減少75%"
+          - "死亡時為周圍隊友提供10秒無敵護盾"
+          - "復活時保留50%生命值和魔力"
+
+  # ================================
+  # 暗影刺客套裝 (PvP向)
+  # ================================
+  shadow_assassin_set:
+    name: "暗影刺客套裝"
+    description: "專為暗殺和潛行設計的頂級套裝"
+    equipment:
+      - shadow_mask
+      - shadow_cloak
+      - shadow_boots
+      - shadow_daggers
+    bonuses:
+      2:
+        description: "暗影掌控"
+        attributes:
+          AGI: 30
+          CRIT: 20
+          EVA: 30
+        effects:
+          - "潛行狀態移動速度不減少"
+          - "背後攻擊必定暴擊"
+      4:
+        description: "暗影之主"
+        attributes:
+          AGI: 50
+          CRIT: 35
+          CRITDMG: 50
+          EVA: 50
+        effects:
+          - "擊殺敵人後進入2秒完全隱形狀態"
+          - "暗影技能冷卻時間減少50%"
+          - "夜晚時所有屬性額外增加20%"

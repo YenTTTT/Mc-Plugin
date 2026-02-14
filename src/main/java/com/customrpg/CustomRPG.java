@@ -1,11 +1,15 @@
 package com.customrpg;
 
+import com.customrpg.commands.EquipmentCommand;
 import com.customrpg.commands.MobCommand;
 import com.customrpg.commands.StatsCommand;
 import com.customrpg.commands.StatsShortcutCommand;
 import com.customrpg.commands.WeaponCommand;
+import com.customrpg.equipment.EquipmentManager;
+import com.customrpg.gui.EquipmentGUI;
 import com.customrpg.gui.StatsGUI;
 import com.customrpg.listeners.DamageDisplayListener;
+import com.customrpg.listeners.EquipmentSyncListener;
 import com.customrpg.listeners.HealthDisplayListener;
 import com.customrpg.listeners.MobListener;
 import com.customrpg.listeners.StatsListener;
@@ -44,6 +48,8 @@ public class CustomRPG extends JavaPlugin {
     private MobManager mobManager;
     private PlayerStatsManager statsManager;
     private StatsGUI statsGUI;
+    private EquipmentManager equipmentManager;
+    private EquipmentGUI equipmentGUI;
     private HealthDisplayManager healthDisplayManager;
     private DamageDisplayManager damageDisplayManager;
     private ManaManager manaManager;
@@ -106,6 +112,12 @@ public class CustomRPG extends JavaPlugin {
             getLogger().info("- TalentManager shutdown");
         }
 
+        // 清理裝備GUI
+        if (equipmentGUI != null) {
+            equipmentGUI.cleanup();
+            getLogger().info("- EquipmentGUI cleanup");
+        }
+
         // 清理天賦GUI
         if (talentGUI != null) {
             talentGUI.cleanup();
@@ -149,6 +161,8 @@ public class CustomRPG extends JavaPlugin {
         weaponManager = null;
         mobManager = null;
         statsManager = null;
+        equipmentManager = null;
+        equipmentGUI = null;
         talentSkillManager = null;
         newSkillManager = null;
         healthDisplayManager = null;
@@ -180,6 +194,14 @@ public class CustomRPG extends JavaPlugin {
 
         statsGUI = new StatsGUI(statsManager);
         getLogger().info("- StatsGUI initialized");
+
+        // Initialize EquipmentManager
+        equipmentManager = new EquipmentManager(this);
+        getLogger().info("- EquipmentManager initialized");
+
+        // Initialize EquipmentGUI
+        equipmentGUI = new EquipmentGUI(this, equipmentManager);
+        getLogger().info("- EquipmentGUI initialized");
 
         // Initialize ManaManager
         manaManager = new ManaManager(this, statsManager);
@@ -262,6 +284,14 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(statsGUI, this);
         getLogger().info("- StatsGUI registered");
 
+        // Register EquipmentGUI listener
+        getServer().getPluginManager().registerEvents(equipmentGUI, this);
+        getLogger().info("- EquipmentGUI registered");
+
+        // Register EquipmentSyncListener
+        getServer().getPluginManager().registerEvents(new EquipmentSyncListener(this, equipmentManager), this);
+        getLogger().info("- EquipmentSyncListener registered");
+
         // Talent system listeners
         getServer().getPluginManager().registerEvents(talentGUI, this);
         getLogger().info("- TalentGUI registered");
@@ -338,6 +368,27 @@ public class CustomRPG extends JavaPlugin {
         } else {
             getLogger().warning("- Failed to register /talent command: command not defined in plugin.yml");
         }
+
+        // Equipment system command
+        org.bukkit.command.PluginCommand equipmentCommand = getCommand("equipment");
+        if (equipmentCommand != null) {
+            EquipmentCommand equipmentCommandExecutor = new EquipmentCommand(this);
+            equipmentCommand.setExecutor(equipmentCommandExecutor);
+            equipmentCommand.setTabCompleter(equipmentCommandExecutor);
+            getLogger().info("- /equipment command registered");
+        } else {
+            getLogger().warning("- Failed to register /equipment command: command not defined in plugin.yml");
+        }
+
+        // Stat display command
+        org.bukkit.command.PluginCommand statCommand = getCommand("stat");
+        if (statCommand != null) {
+            com.customrpg.commands.StatCommand statCommandExecutor = new com.customrpg.commands.StatCommand(this);
+            statCommand.setExecutor(statCommandExecutor);
+            getLogger().info("- /stat command registered");
+        } else {
+            getLogger().warning("- Failed to register /stat command: command not defined in plugin.yml");
+        }
     }
 
     /**
@@ -370,5 +421,21 @@ public class CustomRPG extends JavaPlugin {
      */
     public MobManager getMobManager() {
         return mobManager;
+    }
+
+    /**
+     * Get the EquipmentManager instance
+     * @return EquipmentManager instance
+     */
+    public EquipmentManager getEquipmentManager() {
+        return equipmentManager;
+    }
+
+    /**
+     * Get the EquipmentGUI instance
+     * @return EquipmentGUI instance
+     */
+    public EquipmentGUI getEquipmentGUI() {
+        return equipmentGUI;
     }
 }

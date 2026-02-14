@@ -51,15 +51,20 @@ public class StatsGUI implements Listener {
         PlayerStats stats = statsManager.getStats(player);
 
         // Row 1: 屬性顯示
-        gui.setItem(0, createStatDisplay(Material.IRON_SWORD, "物理攻擊 (Strength)", stats.getStrength(),
+        gui.setItem(0, createStatDisplay(Material.IRON_SWORD, "物理攻擊 (Strength)",
+                stats.getStrength(), stats.getEquipmentStrength(),
                 "每點增加 0.5 近戰傷害"));
-        gui.setItem(1, createStatDisplay(Material.EXPERIENCE_BOTTLE, "魔法攻擊 (Magic)", stats.getMagic(),
+        gui.setItem(1, createStatDisplay(Material.EXPERIENCE_BOTTLE, "魔法攻擊 (Magic)",
+                stats.getMagic(), stats.getEquipmentMagic(),
                 "每點增加 0.3 技能傷害"));
-        gui.setItem(2, createStatDisplay(Material.BOW, "敏捷 (Agility)", stats.getAgility(),
+        gui.setItem(2, createStatDisplay(Material.BOW, "敏捷 (Agility)",
+                stats.getAgility(), stats.getEquipmentAgility(),
                 "每點增加 0.2% 暴擊率", "每點增加 0.1 弓箭傷害"));
-        gui.setItem(3, createStatDisplay(Material.POPPY, "生命力 (Vitality)", stats.getVitality(),
+        gui.setItem(3, createStatDisplay(Material.POPPY, "生命力 (Vitality)",
+                stats.getVitality(), stats.getEquipmentVitality(),
                 "每點增加 2.0 最大血量"));
-        gui.setItem(4, createStatDisplay(Material.DIAMOND_CHESTPLATE, "防禦 (Defense)", stats.getDefense(),
+        gui.setItem(4, createStatDisplay(Material.DIAMOND_CHESTPLATE, "防禦 (Defense)",
+                stats.getDefense(), stats.getEquipmentDefense(),
                 "每點減免 0.5% 傷害"));
 
         // Center slot: Stat Points Display
@@ -96,7 +101,7 @@ public class StatsGUI implements Listener {
     /**
      * 創建屬性顯示物品
      */
-    private ItemStack createStatDisplay(Material material, String name, int currentValue, String... descriptions) {
+    private ItemStack createStatDisplay(Material material, String name, int baseValue, int equipmentBonus, String... descriptions) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
 
@@ -104,7 +109,21 @@ public class StatsGUI implements Listener {
             meta.setDisplayName(ChatColor.GOLD + name);
 
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.YELLOW + "目前數值: " + ChatColor.WHITE + currentValue);
+
+            // 顯示基礎值
+            lore.add(ChatColor.GRAY + "基礎: " + ChatColor.WHITE + baseValue);
+
+            // 顯示裝備加成
+            if (equipmentBonus > 0) {
+                lore.add(ChatColor.GRAY + "裝備: " + ChatColor.GREEN + "+" + equipmentBonus);
+            } else {
+                lore.add(ChatColor.GRAY + "裝備: " + ChatColor.DARK_GRAY + "+0");
+            }
+
+            // 顯示總計
+            int total = baseValue + equipmentBonus;
+            lore.add(ChatColor.YELLOW + "總計: " + ChatColor.AQUA + "" + ChatColor.BOLD + total);
+
             lore.add("");
             for (String desc : descriptions) {
                 lore.add(ChatColor.GRAY + desc);

@@ -15,11 +15,26 @@ import java.util.Map;
  */
 public class PlayerStats {
 
+    // 基礎屬性（從點數分配）
     private int strength;    // 物理攻擊
     private int magic;       // 魔法攻擊
     private int agility;     // 敏捷 (影響暴擊率 & 弓箭傷害)
     private int vitality;    // 生命力 (影響最大血量)
     private int defense;     // 防禦 (減免傷害)
+
+    // 裝備屬性加成
+    private int equipmentStrength;
+    private int equipmentMagic;
+    private int equipmentAgility;
+    private int equipmentVitality;
+    private int equipmentDefense;
+
+    // 其他屬性加成（未來可擴展：天賦、BUFF等）
+    private double bonusAttackDamage;
+    private double bonusDefenseValue;
+    private double bonusMaxHealth;
+    private double bonusCritChance;
+    private double bonusCritDamage;
 
     private int level;
     private long exp;
@@ -40,6 +55,18 @@ public class PlayerStats {
         this.agility = 0;
         this.vitality = 0;
         this.defense = 0;
+
+        this.equipmentStrength = 0;
+        this.equipmentMagic = 0;
+        this.equipmentAgility = 0;
+        this.equipmentVitality = 0;
+        this.equipmentDefense = 0;
+
+        this.bonusAttackDamage = 0.0;
+        this.bonusDefenseValue = 0.0;
+        this.bonusMaxHealth = 0.0;
+        this.bonusCritChance = 0.0;
+        this.bonusCritDamage = 0.0;
 
         this.level = 1;
         this.exp = 0;
@@ -134,6 +161,129 @@ public class PlayerStats {
     public void setDefense(int defense) {
         this.defense = Math.max(0, defense);
     }
+
+    // ===== 裝備加成 Getters & Setters =====
+
+    public int getEquipmentStrength() {
+        return equipmentStrength;
+    }
+
+    public void setEquipmentStrength(int equipmentStrength) {
+        this.equipmentStrength = Math.max(0, equipmentStrength);
+    }
+
+    public int getEquipmentMagic() {
+        return equipmentMagic;
+    }
+
+    public void setEquipmentMagic(int equipmentMagic) {
+        this.equipmentMagic = Math.max(0, equipmentMagic);
+    }
+
+    public int getEquipmentAgility() {
+        return equipmentAgility;
+    }
+
+    public void setEquipmentAgility(int equipmentAgility) {
+        this.equipmentAgility = Math.max(0, equipmentAgility);
+    }
+
+    public int getEquipmentVitality() {
+        return equipmentVitality;
+    }
+
+    public void setEquipmentVitality(int equipmentVitality) {
+        this.equipmentVitality = Math.max(0, equipmentVitality);
+    }
+
+    public int getEquipmentDefense() {
+        return equipmentDefense;
+    }
+
+    public void setEquipmentDefense(int equipmentDefense) {
+        this.equipmentDefense = Math.max(0, equipmentDefense);
+    }
+
+    // ===== 總屬性 (基礎 + 裝備加成) =====
+
+    /**
+     * 獲取總力量（基礎 + 裝備）
+     */
+    public int getTotalStrength() {
+        return strength + equipmentStrength;
+    }
+
+    /**
+     * 獲取總魔法（基礎 + 裝備）
+     */
+    public int getTotalMagic() {
+        return magic + equipmentMagic;
+    }
+
+    /**
+     * 獲取總敏捷（基礎 + 裝備）
+     */
+    public int getTotalAgility() {
+        return agility + equipmentAgility;
+    }
+
+    /**
+     * 獲取總生命力（基礎 + 裝備）
+     */
+    public int getTotalVitality() {
+        return vitality + equipmentVitality;
+    }
+
+    /**
+     * 獲取總防禦（基礎 + 裝備）
+     */
+    public int getTotalDefense() {
+        return defense + equipmentDefense;
+    }
+
+    // ===== 其他加成 Getters & Setters =====
+
+    public double getBonusAttackDamage() {
+        return bonusAttackDamage;
+    }
+
+    public void setBonusAttackDamage(double bonusAttackDamage) {
+        this.bonusAttackDamage = bonusAttackDamage;
+    }
+
+    public double getBonusDefenseValue() {
+        return bonusDefenseValue;
+    }
+
+    public void setBonusDefenseValue(double bonusDefenseValue) {
+        this.bonusDefenseValue = bonusDefenseValue;
+    }
+
+    public double getBonusMaxHealth() {
+        return bonusMaxHealth;
+    }
+
+    public void setBonusMaxHealth(double bonusMaxHealth) {
+        this.bonusMaxHealth = bonusMaxHealth;
+    }
+
+    public double getBonusCritChance() {
+        return bonusCritChance;
+    }
+
+    public void setBonusCritChance(double bonusCritChance) {
+        this.bonusCritChance = bonusCritChance;
+    }
+
+    public double getBonusCritDamage() {
+        return bonusCritDamage;
+    }
+
+    public void setBonusCritDamage(double bonusCritDamage) {
+        this.bonusCritDamage = bonusCritDamage;
+    }
+
+    // ===== Level, Exp, Points =====
 
     public int getLevel() {
         return level;
