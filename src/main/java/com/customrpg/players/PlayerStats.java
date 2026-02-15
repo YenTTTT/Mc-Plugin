@@ -12,6 +12,7 @@ import java.util.Map;
  * - Agility (敏捷 - 暴擊/遠程)
  * - Vitality (生命力 - 最大血量)
  * - Defense (防禦)
+ * - Spirit (精神)
  */
 public class PlayerStats {
 
@@ -21,6 +22,7 @@ public class PlayerStats {
     private int agility;     // 敏捷 (影響暴擊率 & 弓箭傷害)
     private int vitality;    // 生命力 (影響最大血量)
     private int defense;     // 防禦 (減免傷害)
+    private int spirit;      // 精神
 
     // 裝備屬性加成
     private int equipmentStrength;
@@ -28,6 +30,7 @@ public class PlayerStats {
     private int equipmentAgility;
     private int equipmentVitality;
     private int equipmentDefense;
+    private int equipmentSpirit;
 
     // 其他屬性加成（未來可擴展：天賦、BUFF等）
     private double bonusAttackDamage;
@@ -55,12 +58,14 @@ public class PlayerStats {
         this.agility = 0;
         this.vitality = 0;
         this.defense = 0;
+        this.spirit = 0;
 
         this.equipmentStrength = 0;
         this.equipmentMagic = 0;
         this.equipmentAgility = 0;
         this.equipmentVitality = 0;
         this.equipmentDefense = 0;
+        this.equipmentSpirit = 0;
 
         this.bonusAttackDamage = 0.0;
         this.bonusDefenseValue = 0.0;
@@ -81,12 +86,13 @@ public class PlayerStats {
     /**
      * 完整建構子
      */
-    public PlayerStats(int strength, int magic, int agility, int vitality, int defense, int level, long exp, int statPoints, int talentPoints) {
+    public PlayerStats(int strength, int magic, int agility, int vitality, int defense, int spirit, int level, long exp, int statPoints, int talentPoints) {
         this.strength = strength;
         this.magic = magic;
         this.agility = agility;
         this.vitality = vitality;
         this.defense = defense;
+        this.spirit = spirit;
 
         this.level = level;
         this.exp = exp;
@@ -101,7 +107,7 @@ public class PlayerStats {
     /**
      * 完整建構子（含 Mana）
      */
-    public PlayerStats(int strength, int magic, int agility, int vitality, int defense,
+    public PlayerStats(int strength, int magic, int agility, int vitality, int defense, int spirit,
                       int level, long exp, int statPoints, int talentPoints,
                       double maxMana, double currentMana, double manaRegen) {
         this.strength = strength;
@@ -109,6 +115,7 @@ public class PlayerStats {
         this.agility = agility;
         this.vitality = vitality;
         this.defense = defense;
+        this.spirit = spirit;
 
         this.level = level;
         this.exp = exp;
@@ -162,6 +169,14 @@ public class PlayerStats {
         this.defense = Math.max(0, defense);
     }
 
+    public int getSpirit() {
+        return spirit;
+    }
+
+    public void setSpirit(int spirit) {
+        this.spirit = Math.max(0, spirit);
+    }
+
     // ===== 裝備加成 Getters & Setters =====
 
     public int getEquipmentStrength() {
@@ -204,6 +219,14 @@ public class PlayerStats {
         this.equipmentDefense = Math.max(0, equipmentDefense);
     }
 
+    public int getEquipmentSpirit() {
+        return equipmentSpirit;
+    }
+
+    public void setEquipmentSpirit(int equipmentSpirit) {
+        this.equipmentSpirit = Math.max(0, equipmentSpirit);
+    }
+
     // ===== 總屬性 (基礎 + 裝備加成) =====
 
     /**
@@ -239,6 +262,13 @@ public class PlayerStats {
      */
     public int getTotalDefense() {
         return defense + equipmentDefense;
+    }
+
+    /**
+     * 獲取總精神（基礎 + 裝備）
+     */
+    public int getTotalSpirit() {
+        return spirit + equipmentSpirit;
     }
 
     // ===== 其他加成 Getters & Setters =====
@@ -392,6 +422,7 @@ public class PlayerStats {
         data.put("agility", agility);
         data.put("vitality", vitality);
         data.put("defense", defense);
+        data.put("spirit", spirit);
 
         data.put("level", level);
         data.put("exp", exp);
@@ -414,6 +445,7 @@ public class PlayerStats {
         int agi = getInt(data, "agility");
         int vit = getInt(data, "vitality");
         int def = getInt(data, "defense");
+        int spirit = getInt(data, "spirit");
 
         int lvl = data.containsKey("level") ? getInt(data, "level") : 1;
         long xp = data.containsKey("exp") ? ((Number) data.get("exp")).longValue() : 0;
@@ -424,7 +456,7 @@ public class PlayerStats {
         double currentMana = data.containsKey("currentMana") ? getDouble(data, "currentMana") : maxMana;
         double manaRegen = data.containsKey("manaRegen") ? getDouble(data, "manaRegen") : 1.0;
 
-        return new PlayerStats(str, mag, agi, vit, def, lvl, xp, pts, talentPts, maxMana, currentMana, manaRegen);
+        return new PlayerStats(str, mag, agi, vit, def, spirit, lvl, xp, pts, talentPts, maxMana, currentMana, manaRegen);
     }
 
     private static int getInt(Map<String, Object> map, String key) {
@@ -451,6 +483,7 @@ public class PlayerStats {
                 ", Agility=" + agility +
                 ", Vitality=" + vitality +
                 ", Defense=" + defense +
+                ", Spirit=" + spirit +
                 ", Level=" + level +
                 ", Exp=" + exp +
                 ", StatPoints=" + statPoints +

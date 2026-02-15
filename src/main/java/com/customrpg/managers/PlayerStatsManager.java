@@ -81,6 +81,7 @@ public class PlayerStatsManager {
         data.put("agility", config.getInt("stats.agility", 0));
         data.put("vitality", config.getInt("stats.vitality", 0));
         data.put("defense", config.getInt("stats.defense", 0));
+        data.put("spirit", config.getInt("stats.spirit", 0));
 
         data.put("level", config.getInt("stats.level", 1));
         data.put("exp", config.getInt("stats.exp", 0));
@@ -119,6 +120,7 @@ public class PlayerStatsManager {
         config.set("stats.agility", data.get("agility"));
         config.set("stats.vitality", data.get("vitality"));
         config.set("stats.defense", data.get("defense"));
+        config.set("stats.spirit", data.get("spirit"));
 
         config.set("stats.level", data.get("level"));
         config.set("stats.exp", data.get("exp"));
@@ -175,6 +177,7 @@ public class PlayerStatsManager {
             case "agility", "agi" -> stats.setAgility(value);
             case "vitality", "vit" -> stats.setVitality(value);
             case "defense", "def" -> stats.setDefense(value);
+            case "spirit", "spi" -> stats.setSpirit(value);
             case "level", "lvl" -> stats.setLevel(value);
             case "exp" -> stats.setExp(value);
             case "points", "pts" -> stats.setStatPoints(value);
@@ -257,6 +260,7 @@ public class PlayerStatsManager {
         stats.setAgility(stats.getAgility() + 1);
         stats.setVitality(stats.getVitality() + 1);
         stats.setDefense(stats.getDefense() + 1);
+        stats.setSpirit(stats.getSpirit() + 1);
 
         // 更新最大血量
         updateMaxHealth(player);

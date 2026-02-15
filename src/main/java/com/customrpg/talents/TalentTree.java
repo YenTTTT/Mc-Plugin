@@ -46,12 +46,6 @@ public class TalentTree {
         }
 
         talents.put(talent.getId(), talent);
-
-        // 添加到對應層級
-        int tier = talent.getTier();
-        if (tier >= 1 && tier <= maxTier) {
-            tierTalents.get(tier).add(talent);
-        }
     }
 
     /**
@@ -69,15 +63,6 @@ public class TalentTree {
      */
     public Map<String, Talent> getAllTalents() {
         return talents;
-    }
-
-    /**
-     * 獲取指定層級的天賦
-     * @param tier 層級
-     * @return 天賦列表
-     */
-    public List<Talent> getTalentsByTier(int tier) {
-        return tierTalents.getOrDefault(tier, new ArrayList<>());
     }
 
     /**
@@ -104,12 +89,42 @@ public class TalentTree {
         Talent talent = getTalent(talentId);
         if (talent == null) return "天賦不存在";
 
+        List<Talent.Prerequisite> prerequisites = talent.getPrerequisites();
+        if (prerequisites.isEmpty()) {
+            return "§a可以學習";
+        }
+
+        Talent.PrerequisiteMode mode = talent.getPrerequisiteMode();
+
+        // ANY 模式：至少需要滿足一個
+        if (mode == Talent.PrerequisiteMode.ANY) {
+            boolean hasAnyMet = false;
+            List<String> allPrerequisites = new ArrayList<>();
+
+            for (Talent.Prerequisite pre : prerequisites) {
+                Talent prereqTalent = getTalent(pre.talentId);
+                String prereqName = prereqTalent != null ? prereqTalent.getName() : pre.talentId;
+                allPrerequisites.add(prereqName + "(Lv" + pre.requiredLevel + ")");
+
+                if (playerTalents.getOrDefault(pre.talentId, 0) >= pre.requiredLevel) {
+                    hasAnyMet = true;
+                }
+            }
+
+            if (hasAnyMet) {
+                return "§a可以學習";
+            } else {
+                return "§c需要前置天賦 (至少一個): " + String.join(" §7或§c ", allPrerequisites);
+            }
+        }
+
+        // ALL 模式：需要滿足所有
         List<String> missingPrerequisites = new ArrayList<>();
-        for (String prerequisiteId : talent.getPrerequisites()) {
-            if (!playerTalents.containsKey(prerequisiteId) || playerTalents.get(prerequisiteId) == 0) {
-                Talent prereqTalent = getTalent(prerequisiteId);
-                String prereqName = prereqTalent != null ? prereqTalent.getName() : prerequisiteId;
-                missingPrerequisites.add(prereqName);
+        for (Talent.Prerequisite pre : prerequisites) {
+            if (playerTalents.getOrDefault(pre.talentId, 0) < pre.requiredLevel) {
+                Talent prereqTalent = getTalent(pre.talentId);
+                String prereqName = prereqTalent != null ? prereqTalent.getName() : pre.talentId;
+                missingPrerequisites.add(prereqName + "(Lv" + pre.requiredLevel + ")");
             }
         }
 
@@ -121,32 +136,13 @@ public class TalentTree {
     }
 
     /**
-     * 計算天賦在GUI中的位置
+     * 獲取天賦在GUI中的位置
      * @param talentId 天賦ID
      * @return GUI slot位置 (-1 表示無效)
      */
     public int calculateGUISlot(String talentId) {
         Talent talent = getTalent(talentId);
-        if (talent == null) return -1;
-
-        int tier = talent.getTier();
-        List<Talent> tierTalents = getTalentsByTier(tier);
-        int index = tierTalents.indexOf(talent);
-
-        if (index == -1) return -1;
-
-        // GUI佈局：每層3個位置，從左到右排列
-        // 第1層: slots 10, 13, 16 (row 1, columns 1, 4, 7)
-        // 第2層: slots 19, 22, 25 (row 2, columns 1, 4, 7)
-        // 依此類推...
-        int[] tierBaseSlots = {10, 19, 28, 37, 46}; // 每層的起始slot
-        int[] offsets = {0, 3, 6}; // 同層內的offset
-
-        if (tier < 1 || tier > tierBaseSlots.length || index >= offsets.length) {
-            return -1;
-        }
-
-        return tierBaseSlots[tier - 1] + offsets[index];
+        return talent != null ? talent.getGuiSlot() : -1;
     }
 
     /**
@@ -160,7 +156,7 @@ public class TalentTree {
             String talentId = entry.getKey();
             Talent talent = entry.getValue();
             int level = playerTalents.getOrDefault(talentId, 0);
-            totalPoints += talent.getTotalPointsCost(level);
+            totalPoints += (talent.getPointsPerLevel() * level);
         }
         return totalPoints;
     }

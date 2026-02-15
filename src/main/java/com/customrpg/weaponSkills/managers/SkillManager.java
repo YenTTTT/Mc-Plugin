@@ -50,6 +50,10 @@ public class SkillManager {
         this.sounds = sounds;
     }
 
+    public WeaponManager getWeaponManager() {
+        return weaponManager;
+    }
+
     public void registerSkill(Skill skill) {
         if (skill == null) {
             return;

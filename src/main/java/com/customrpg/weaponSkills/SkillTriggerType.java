@@ -4,7 +4,10 @@ package com.customrpg.weaponSkills;
 public enum SkillTriggerType {
     RIGHT_CLICK,
     LEFT_CLICK,
+    RIGHT_CLICK_SNEAK,
+    LEFT_CLICK_SNEAK,
     WEAPON_USE,
+    ON_HIT,
     CUSTOM
 }
 

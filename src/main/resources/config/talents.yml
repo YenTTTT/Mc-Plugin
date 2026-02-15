@@ -1,51 +1,453 @@
-# 簡化版天賦配置 - 用於測試分支切換功能
-
-# 戰士分支
-warrior:
-  warrior_strength:
-    name: "§c力量強化"
-    description: "§7增加基礎力量，提升物理攻擊傷害"
-    type: "ATTRIBUTE"
-    max-level: 5
+weapon:
+  # 熱兵器 (5,2) -> slot = 5 * 9 + 2 = 47
+  weapon_firearms_mastery:
+    name: "熱兵器"
+    description: "增加所有火槍的傷害"
+    type: "WEAPON_PASSIVE"
+    max-level: 3
     points-per-level: 1
-    tier: 1
-    icon: "IRON_SWORD"
-    prerequisites: []
-    base-effects:
-      strength: 2
-    level-scaling:
-      strength: 1
+    mechanism: "被動"
+    gui:
+      slot: 47
+      icon: "IRON_HORSE_ARMOR"
+    levels:
+      1:
+        effect:
+          weaponDamageBonus: 90
+      2:
+        effect:
+          weaponDamageBonus: 150
+      3:
+        effect:
+          weaponDamageScaling:
+            stat: "AGILITY"
+            multiplier: 0.5
 
-# 法師分支
-mage:
-  mage_magic:
-    name: "§b魔法強化"
-    description: "§7增加基礎魔法力，提升法術傷害"
-    type: "ATTRIBUTE"
-    max-level: 5
+  # 冷兵器 (5,4) -> slot 49
+  weapon_melee_mastery:
+    name: "冷兵器"
+    description: "增加所有近戰武器的傷害"
+    type: "WEAPON_PASSIVE"
+    max-level: 3
     points-per-level: 1
-    tier: 1
-    icon: "ENCHANTED_BOOK"
-    prerequisites: []
-    base-effects:
-      magic: 2
-    level-scaling:
-      magic: 1
+    mechanism: "被動"
+    gui:
+      slot: 49
+      icon: "IRON_SWORD"
+    levels:
+      1:
+        effect:
+          weaponDamageBonus: 20
+      2:
+        effect:
+          weaponDamageBonus: 60
+      3:
+        effect:
+          weaponDamageBonus: 100
 
-# 刺客分支
-assassin:
-  assassin_agility:
-    name: "§a敏捷強化"
-    description: "§7增加基礎敏捷，提升移動與攻擊速度"
-    type: "ATTRIBUTE"
-    max-level: 5
+
+  # 魔法兵器 (5,6) -> slot = 5 * 9 + 6 = 51
+  weapon_magic_mastery:
+    name: "魔法兵器"
+    description: "增加所有法仗的傷害"
+    type: "WEAPON_PASSIVE"
+    max-level: 3
     points-per-level: 1
-    tier: 1
-    icon: "LEATHER_BOOTS"
-    prerequisites: []
-    base-effects:
-      agility: 2
-      speed: 5
-    level-scaling:
-      agility: 1
-      speed: 3
+    mechanism: "被動"
+    gui:
+      slot: 51
+      icon: "ENCHANTED_BOOK"
+    levels:
+      1:
+        effect:
+          weaponDamageBonus: 45
+      2:
+        effect:
+          weaponDamageBonus: 85
+      3:
+        effect:
+          weaponDamageScaling:
+            stat: "MAGIC"
+            multiplier: 0.4
+
+  # 疾行者 (4,1) -> slot 37
+  swift_striker:
+    name: "疾行者"
+    description: "任意武器打到敵人後有15%機率獲得加速II與物理傷害"
+    type: "PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "被動"
+    cooldown: 3
+    manaCost: 1
+    trigger:
+      type: "ON_HIT"
+    prerequisite:
+      skill: "weapon_melee_mastery"
+      level: 3
+    gui:
+      slot: 37
+      icon: "FEATHER"
+    levels:
+      1:
+        effect:
+          bonusDamageMultiplier: 4.3
+          chance: 0.15
+
+  # 裂地擊 (3,3) -> slot 30
+  earth_shatter:
+    name: "裂地擊"
+    description: "持武器蹲下右鍵打擊前方地面造成地板裂開地刺"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "持武器蹲下右鍵"
+    cooldown: 3
+    manaCost: 1
+    trigger:
+      type: "RIGHT_CLICK_SNEAK"
+    prerequisite:
+      skill: "weapon_melee_mastery"
+      level: 3
+    gui:
+      slot: 30
+      icon: "NETHERITE_AXE"
+    levels:
+      1:
+        effect:
+          damageMultiplier: 1.7
+
+  # 無限箭制 (2,4) -> slot = 2 * 9 + 4 = 22
+  infinite_arrows:
+    name: "無限箭制"
+    description: "實體箭矢射擊傷害獲得增加"
+    type: "WEAPON_PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    prerequisite:
+      skill: "weapon_melee_mastery"
+      level: 3
+    mechanism: "被動"
+    gui:
+      slot: 22
+      icon: "ARROW"
+    levels:
+      1:
+        effect:
+          weaponDamageBonus: 320
+
+  # 魔法漩渦 (3,6) -> slot = 3 * 9 + 6 = 33
+  magic_vortex:
+    name: "魔法漩渦"
+    description: "持武器蹲下右鍵施放魔法漩渦控住敵人並造成傷害"
+    type: "ACTIVE"
+    max-level: 2
+    points-per-level: 1
+    mechanism: "持武器蹲下右鍵"
+    cooldown: 2
+    manaCost: 0
+    trigger:
+      type: "RIGHT_CLICK_SNEAK"
+    prerequisite:
+      skill: "weapon_magic_mastery"
+      level: 3
+    gui:
+      slot: 33
+      icon: "ENDER_EYE"
+    levels:
+      1:
+        effect:
+          damageMultiplier: 1.5
+          controlDuration: 0.5
+      2:
+        effect:
+          damageMultiplier: 1.8
+          controlDuration: 0.5
+          slowLevel: 3
+          slowDuration: 2
+
+  # 狙殺 (3,2) -> slot = 3 * 9 + 2 = 29
+  sniper_shot:
+    name: "狙殺"
+    description: "瞄準0.5秒後射擊，造成物理傷害"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "手持海磷碎片按左鍵"
+    cooldown: 0
+    manaCost: 0
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "weapon_firearms_mastery"
+      level: 3
+    gui:
+      slot: 29
+      icon: "PRISMARINE_SHARD"
+    levels:
+      1:
+        effect:
+          damageMultiplier: 1.0
+
+nature:
+  # 星碎 (5,7) -> slot = 5 * 9 + 7 = 52
+  star_shatter:
+    name: "星碎"
+    description: "投射3發自動追蹤的星光碎片攻擊敵人"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "金粒"
+    cooldown: 1
+    manaCost: 4
+    trigger:
+      type: "LEFT_CLICK"
+    gui:
+      slot: 52
+      icon: "GOLD_NUGGET"
+    levels:
+      1:
+        effect:
+          baseDamage: 33
+          allStatsScaling: 0.05
+          damageType: "MAGIC"
+          projectileCount: 3
+          homing: true
+
+  # 落雷 (5,6) -> slot = 5 * 9 + 6 = 51
+  lightning_strike:
+    name: "落雷"
+    description: "對指定敵人發出一道落雷，使敵人周遭至多3位目標受到魔法傷害"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 2
+    manaCost: 10
+    trigger:
+      type: "LEFT_CLICK"
+    gui:
+      slot: 51
+      icon: "BONE"
+    levels:
+      1:
+        effect:
+          baseDamage: 75
+          allStatsScaling: 0.2
+          weaponDamageScaling: 0.16
+          damageType: "MAGIC"
+          maxTargets: 3
+
+  # 直線風壓 (5,2) -> slot = 5 * 9 + 2 = 47
+  wind_blade:
+    name: "直線風壓"
+    description: "放出一道強風割傷行經路徑上的敵人，並給予自身移動加速"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "木棒"
+    cooldown: 1
+    manaCost: 5
+    trigger:
+      type: "RIGHT_CLICK"
+    gui:
+      slot: 47
+      icon: "STICK"
+    levels:
+      1:
+        effect:
+          baseDamage: 55
+          allStatsScaling: 0.14
+          weaponDamageScaling: 0.1
+          damageType: "PHYSICAL"
+          selfEffect:
+            type: "SPEED"
+            level: 1
+            duration: 3
+
+  # 土崩 (5,0) -> slot = 5 * 9 + 0 = 45
+  earth_collapse:
+    name: "土崩"
+    description: "重組前方的土壤結構，大地分出蘊含魔法能量的砂礫將目標噴飛"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "木棒"
+    cooldown: 2
+    manaCost: 8
+    trigger:
+      type: "RIGHT_CLICK"
+    gui:
+      slot: 45
+      icon: "DIRT"
+    levels:
+      1:
+        effect:
+          baseDamage: 70
+          allStatsScaling: 0.27
+          weaponDamageScaling: 0.22
+          damageType: "PHYSICAL"
+          knockupEffect: true
+
+  # 觀星 (4,7) -> slot = 4 * 9 + 7 = 43
+  stargazing:
+    name: "觀星"
+    description: "增加精神與智慧"
+    type: "PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "lightning_strike"
+          level: 1
+        - skill: "star_shatter"
+          level: 1
+    gui:
+      slot: 43
+      icon: "SPYGLASS"
+    levels:
+      1:
+        effect:
+          statBonus:
+            spirit: 25
+            magic: 25
+
+  # 龍捲風LV2 (4,2) -> slot = 4 * 9 + 2 = 38
+  tornado_lv2:
+    name: "龍捲風LV2"
+    description: "引起空氣亂流，在玩家前方1格位置製造出龍捲風，增加傷害範圍"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "海靈晶體"
+    cooldown: 12
+    manaCost: 45
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "nature_doctrine"
+      level: 3
+    gui:
+      slot: 38
+      icon: "PRISMARINE_CRYSTALS"
+    levels:
+      1:
+        effect:
+          allStatsScaling: 1.0
+          weaponDamageScaling: 0.72
+          damageType: "PHYSICAL"
+          hitCount: 4
+          pullEffect: true
+          knockupEffect: true
+          spawnDistance: 1
+          increasedRadius: true
+
+  # 自然教義 (4,4) -> slot = 4 * 9 + 4 = 40
+  nature_doctrine:
+    name: "自然教義"
+    description: "增加精神與智慧"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "earth_collapse"
+          level: 1
+        - skill: "wind_blade"
+          level: 1
+    gui:
+      slot: 40
+      icon: "OAK_SAPLING"
+    levels:
+      1:
+        effect:
+          statBonus:
+            spirit: 25
+            magic: 25
+      2:
+        effect:
+          statBonus:
+            spirit: 50
+            magic: 50
+      3:
+        effect:
+          statBonus:
+            spirit: 75
+            magic: 75
+
+  # 煥發LV2 (3,5) -> slot = 3 * 9 + 5 = 32
+  flourish_lv2:
+    name: "煥發"
+    description: "在指定地點施放後，密集的生機能量將持續煥發，帶給範圍內的隊友和自身持續治療，生長出的彈射果則會攻擊敵人"
+    type: "ACTIVE"
+    max-level: 2
+    points-per-level: 1
+    mechanism: "海靈晶體"
+    cooldown: 23
+    manaCost: 76
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      anyOf:
+        - skill: "nature_doctrine"
+          level: 1
+        - skill: "stargazing"
+          level: 1
+    gui:
+      slot: 32
+      icon: "CHORUS_FRUIT"
+    levels:
+      1:
+        effect:
+          duration: 10
+          radius: 8
+          healingPerSecond:
+            stat: "SPIRIT"
+            multiplier: 0.5
+          damagePerSecond:
+            allStatsScaling: 0.43
+          damageType: "MAGIC"
+          particle: "VILLAGER_HAPPY"
+      2:
+        effect:
+          duration: 15
+          radius: 8
+          healingPerSecond:
+            stat: "SPIRIT"
+            multiplier: 0.5
+          damagePerSecond:
+            allStatsScaling: 0.43
+          damageType: "MAGIC"
+          particle: "VILLAGER_HAPPY"
+
+  # 連鎖閃電LV2 (3,6) -> slot = 3 * 9 + 6 = 33
+  chain_lightning_lv2:
+    name: "連鎖閃電LV2"
+    description: "射出一道閃電連鎖多個目標，對被電到的目標造成魔法傷害並暈眩"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "金粒"
+    cooldown: 2
+    manaCost: 10
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "stargazing"
+      level: 1
+    gui:
+      slot: 33
+      icon: "GOLD_NUGGET"
+    levels:
+      1:
+        effect:
+          allStatsScaling: 0.35
+          weaponDamageScaling: 0.28
+          damageType: "MAGIC"
+          maxChains: 6
+          stunDuration: 0.5
+          stunEffect: "INSTANT_EFFECT"
+          hitParticle: "ENCHANTED_HIT"
+

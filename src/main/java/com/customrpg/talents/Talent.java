@@ -1,35 +1,45 @@
 package com.customrpg.talents;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Talent - 天賦技能類
+ * Talent - 天賦技能類 (重構版)
  *
- * 代表一個具體的天賦技能，包含：
- * - 基本資訊（ID、名稱、描述）
- * - 學習條件（前置天賦、最大等級、每級消耗點數）
- * - 效果數據（屬性加成、技能效果）
+ * 支援新規格：
+ * - GUI Slot 指定
+ * - 主動/被動觸發機制
+ * - 冷卻與消耗
+ * - 多級別效果定義
  */
 public class Talent {
     private final String id;                    // 天賦ID
     private final String name;                  // 天賦名稱
-    private final String description;           // 天賦描述
+    private final String description;           // 天賦基礎描述
     private final TalentType type;              // 天賦類型
     private final TalentBranch branch;          // 所屬分支
     private final int maxLevel;                 // 最大等級
     private final int pointsPerLevel;           // 每級消耗天賦點
-    private final List<String> prerequisites;   // 前置天賦ID列表
-    private final Map<String, Double> baseEffects;     // 基礎效果值
-    private final Map<String, Double> levelScaling;    // 等級成長係數
-    private final int tier;                     // 天賦層級（1-5）
-    private final String icon;                  // GUI圖示材質
+    private final List<Prerequisite> prerequisites; // 前置需求列表
+    private final PrerequisiteMode prerequisiteMode; // 前置條件模式 (ALL 或 ANY)
+    private final int guiSlot;                  // GUI 中的位置
+    private final String icon;                  // 預設圖示材質
+
+    // 技能機制相關
+    private final String mechanism;             // 機制描述 (如: 被動, 持武器蹲下右鍵)
+    private final double cooldown;              // 冷卻 (秒)
+    private final double manaCost;              // 消耗 (Mana)
+    private final String triggerType;           // 觸發類型 (RIGHT_CLICK_SNEAK, ON_HIT, etc.)
+
+    // 各等級的效果數據
+    private final Map<Integer, TalentLevelData> levelData;
 
     public Talent(String id, String name, String description, TalentType type,
                   TalentBranch branch, int maxLevel, int pointsPerLevel,
-                  List<String> prerequisites, Map<String, Double> baseEffects,
-                  Map<String, Double> levelScaling, int tier, String icon) {
+                  List<Prerequisite> prerequisites, PrerequisiteMode prerequisiteMode, int guiSlot, String icon,
+                  String mechanism, double cooldown, double manaCost, String triggerType) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -37,11 +47,19 @@ public class Talent {
         this.branch = branch;
         this.maxLevel = maxLevel;
         this.pointsPerLevel = pointsPerLevel;
-        this.prerequisites = prerequisites != null ? prerequisites : List.of();
-        this.baseEffects = baseEffects != null ? baseEffects : new HashMap<>();
-        this.levelScaling = levelScaling != null ? levelScaling : new HashMap<>();
-        this.tier = tier;
+        this.prerequisites = prerequisites != null ? prerequisites : new ArrayList<>();
+        this.prerequisiteMode = prerequisiteMode != null ? prerequisiteMode : PrerequisiteMode.ALL;
+        this.guiSlot = guiSlot;
         this.icon = icon;
+        this.mechanism = mechanism;
+        this.cooldown = cooldown;
+        this.manaCost = manaCost;
+        this.triggerType = triggerType;
+        this.levelData = new HashMap<>();
+    }
+
+    public void addLevelData(int level, TalentLevelData data) {
+        levelData.put(level, data);
     }
 
     // ===== Getters =====
@@ -52,80 +70,78 @@ public class Talent {
     public TalentBranch getBranch() { return branch; }
     public int getMaxLevel() { return maxLevel; }
     public int getPointsPerLevel() { return pointsPerLevel; }
-    public List<String> getPrerequisites() { return prerequisites; }
-    public Map<String, Double> getBaseEffects() { return baseEffects; }
-    public Map<String, Double> getLevelScaling() { return levelScaling; }
-    public int getTier() { return tier; }
+    public List<Prerequisite> getPrerequisites() { return prerequisites; }
+    public PrerequisiteMode getPrerequisiteMode() { return prerequisiteMode; }
+    public int getGuiSlot() { return guiSlot; }
     public String getIcon() { return icon; }
+    public String getMechanism() { return mechanism; }
+    public double getCooldown() { return cooldown; }
+    public double getManaCost() { return manaCost; }
+    public String getTriggerType() { return triggerType; }
 
-    /**
-     * 計算指定等級的效果值
-     * @param effectName 效果名稱
-     * @param level 天賦等級
-     * @return 計算後的效果值
-     */
-    public double getEffectValue(String effectName, int level) {
-        double base = baseEffects.getOrDefault(effectName, 0.0);
-        double scaling = levelScaling.getOrDefault(effectName, 0.0);
-        return base + (scaling * level);
+    public TalentLevelData getLevelData(int level) {
+        return levelData.get(level);
     }
 
-    /**
-     * 獲取天賦總消耗點數
-     * @param level 天賦等級
-     * @return 總消耗點數
-     */
-    public int getTotalPointsCost(int level) {
-        return pointsPerLevel * level;
-    }
-
-    /**
-     * 檢查是否可以學習此天賦
-     * @param playerTalents 玩家天賦數據
-     * @param targetLevel 目標等級
-     * @return 是否可以學習
-     */
     public boolean canLearn(Map<String, Integer> playerTalents, int targetLevel) {
-        // 檢查等級限制
         if (targetLevel > maxLevel) return false;
 
-        // 檢查前置條件
-        for (String prerequisiteId : prerequisites) {
-            if (!playerTalents.containsKey(prerequisiteId) || playerTalents.get(prerequisiteId) == 0) {
+        // 如果沒有前置條件，直接返回true
+        if (prerequisites.isEmpty()) return true;
+
+        // ANY 模式：至少滿足一個前置條件
+        if (prerequisiteMode == PrerequisiteMode.ANY) {
+            for (Prerequisite pre : prerequisites) {
+                if (playerTalents.getOrDefault(pre.talentId, 0) >= pre.requiredLevel) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // ALL 模式：需要滿足所有前置條件
+        for (Prerequisite pre : prerequisites) {
+            if (playerTalents.getOrDefault(pre.talentId, 0) < pre.requiredLevel) {
                 return false;
             }
         }
-
         return true;
     }
 
     /**
-     * 生成天賦描述文本（含等級效果）
-     * @param level 當前等級
-     * @return 描述文本
+     * 前置條件模式枚舉
      */
-    public String getFormattedDescription(int level) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(description);
+    public enum PrerequisiteMode {
+        ALL,  // 需要滿足所有前置條件 (AND)
+        ANY   // 至少滿足一個前置條件 (OR)
+    }
 
-        if (level > 0) {
-            sb.append("\n\n§6當前效果 (等級 ").append(level).append("):");
-            for (Map.Entry<String, Double> entry : baseEffects.entrySet()) {
-                String effectName = entry.getKey();
-                double value = getEffectValue(effectName, level);
-                sb.append("\n§e- ").append(effectName).append(": ").append(String.format("%.1f", value));
-            }
+    /**
+     * 前置需求類
+     */
+    public static class Prerequisite {
+        public final String talentId;
+        public final int requiredLevel;
+
+        public Prerequisite(String talentId, int requiredLevel) {
+            this.talentId = talentId;
+            this.requiredLevel = requiredLevel;
+        }
+    }
+
+    /**
+     * 單個等級的數據
+     */
+    public static class TalentLevelData {
+        public final Map<String, Double> effects = new HashMap<>();
+        public final Map<String, Double> scaling = new HashMap<>(); // 屬性係數
+
+        public void addEffect(String key, double value) {
+            effects.put(key, value);
         }
 
-        if (level < maxLevel) {
-            sb.append("\n\n§a下一級效果:");
-            for (Map.Entry<String, Double> entry : baseEffects.entrySet()) {
-                String effectName = entry.getKey();
-                double value = getEffectValue(effectName, level + 1);
-                sb.append("\n§e- ").append(effectName).append(": ").append(String.format("%.1f", value));
-            }
+        public void addScaling(String stat, double multiplier) {
+            scaling.put(stat, multiplier);
         }
-
-        return sb.toString();
     }
 }

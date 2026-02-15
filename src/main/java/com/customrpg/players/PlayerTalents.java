@@ -17,12 +17,14 @@ public class PlayerTalents {
     private final Map<String, Integer> talentLevels;     // 天賦ID -> 等級
     private final Map<TalentBranch, Integer> branchPoints; // 分支 -> 投入點數
     private int totalPointsSpent;                   // 總消耗點數
+    private final String[] selectedSkills;          // 選取的 4 個技能插槽 (天賦ID)
 
     public PlayerTalents() {
         this.availablePoints = 0;
         this.talentLevels = new HashMap<>();
         this.branchPoints = new HashMap<>();
         this.totalPointsSpent = 0;
+        this.selectedSkills = new String[4];
 
         // 初始化分支點數
         for (TalentBranch branch : TalentBranch.values()) {
@@ -169,5 +171,15 @@ public class PlayerTalents {
             return newLevel;
         }
         return getTalentLevel(talentId);
+    }
+
+    public String[] getSelectedSkills() {
+        return selectedSkills;
+    }
+
+    public void setSelectedSkill(int slot, String talentId) {
+        if (slot >= 0 && slot < 4) {
+            selectedSkills[slot] = talentId;
+        }
     }
 }

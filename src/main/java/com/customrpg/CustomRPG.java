@@ -61,8 +61,11 @@ public class CustomRPG extends JavaPlugin {
 
     // Talent system
     private com.customrpg.managers.TalentManager talentManager;
-    private com.customrpg.gui.TalentGUI talentGUI;
+    private com.customrpg.gui.TalentTreeGUI talentTreeGUI;
+    private com.customrpg.gui.TalentMainMenuGUI talentMainMenuGUI;
     private com.customrpg.managers.TalentPassiveEffectManager talentPassiveEffectManager;
+    private com.customrpg.managers.SkillSwitchManager skillSwitchManager;
+    private com.customrpg.managers.TalentSkillManager activeTalentSkillManager;
 
     // New skill system (weapon skills)
     private SkillManager newSkillManager;
@@ -117,12 +120,6 @@ public class CustomRPG extends JavaPlugin {
         if (equipmentGUI != null) {
             equipmentGUI.cleanup();
             getLogger().info("- EquipmentGUI cleanup");
-        }
-
-        // 清理天賦GUI
-        if (talentGUI != null) {
-            talentGUI.cleanup();
-            getLogger().info("- TalentGUI cleanup");
         }
 
         // 清理天賦被動效果管理器
@@ -220,11 +217,18 @@ public class CustomRPG extends JavaPlugin {
         talentManager = new com.customrpg.managers.TalentManager(this);
         getLogger().info("- TalentManager initialized with " + talentManager.getTotalTalentCount() + " talents");
 
-        talentGUI = new com.customrpg.gui.TalentGUI(this, talentManager);
-        getLogger().info("- TalentGUI initialized");
+        talentTreeGUI = new com.customrpg.gui.TalentTreeGUI(this, talentManager);
+        talentMainMenuGUI = new com.customrpg.gui.TalentMainMenuGUI(this, talentManager, talentTreeGUI);
+        getLogger().info("- Talent GUIs initialized");
 
         talentPassiveEffectManager = new com.customrpg.managers.TalentPassiveEffectManager(this, talentManager, statsManager);
         getLogger().info("- TalentPassiveEffectManager initialized");
+
+        skillSwitchManager = new com.customrpg.managers.SkillSwitchManager(this);
+        getLogger().info("- SkillSwitchManager initialized");
+
+        activeTalentSkillManager = new com.customrpg.managers.TalentSkillManager(this);
+        getLogger().info("- TalentSkillManager initialized");
 
         // ===== New skill system (manager/service pattern) =====
         com.customrpg.weaponSkills.managers.CooldownManager cooldownManager = new com.customrpg.weaponSkills.managers.CooldownManager();
@@ -298,8 +302,9 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("- EquipmentSyncListener registered");
 
         // Talent system listeners
-        getServer().getPluginManager().registerEvents(talentGUI, this);
-        getLogger().info("- TalentGUI registered");
+        getServer().getPluginManager().registerEvents(talentTreeGUI, this);
+        getServer().getPluginManager().registerEvents(talentMainMenuGUI, this);
+        getLogger().info("- Talent GUIs registered");
 
         getServer().getPluginManager().registerEvents(talentPassiveEffectManager, this);
         getLogger().info("- TalentPassiveEffectManager registered");
@@ -307,6 +312,10 @@ public class CustomRPG extends JavaPlugin {
         // 註冊TalentListener來處理玩家登入時的天賦效果應用
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.TalentListener(talentManager), this);
         getLogger().info("- TalentListener registered");
+
+        // 註冊SkillSwitchHintListener來顯示技能切換提示
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SkillSwitchHintListener(this), this);
+        getLogger().info("- SkillSwitchHintListener registered");
 
         getServer().getPluginManager().registerEvents(new HealthDisplayListener(healthDisplayManager), this);
         getLogger().info("- HealthDisplayListener registered");
@@ -366,7 +375,7 @@ public class CustomRPG extends JavaPlugin {
         // Talent system command
         org.bukkit.command.PluginCommand talentCommand = getCommand("talent");
         if (talentCommand != null) {
-            com.customrpg.commands.TalentCommand talentCommandExecutor = new com.customrpg.commands.TalentCommand(this, talentManager, talentGUI);
+            com.customrpg.commands.TalentCommand talentCommandExecutor = new com.customrpg.commands.TalentCommand(this, talentManager, talentMainMenuGUI);
             talentCommand.setExecutor(talentCommandExecutor);
             talentCommand.setTabCompleter(talentCommandExecutor);
             getLogger().info("- /talent command registered");
@@ -452,10 +461,29 @@ public class CustomRPG extends JavaPlugin {
         return talentManager;
     }
 
-    /**
-     * Get the ArmorManager instance
-     * @return ArmorManager instance
-     */
+    public com.customrpg.gui.TalentMainMenuGUI getTalentMainMenuGUI() {
+        return talentMainMenuGUI;
+    }
+
+    public com.customrpg.gui.TalentTreeGUI getTalentTreeGUI() {
+        return talentTreeGUI;
+    }
+
+    public ManaManager getManaManager() {
+        return manaManager;
+    }
+
+    public com.customrpg.managers.TalentSkillManager getTalentSkillManager() {
+        return activeTalentSkillManager;
+    }
+
+    public com.customrpg.managers.SkillSwitchManager getSkillSwitchManager() {
+        return skillSwitchManager;
+    }
+
+    public com.customrpg.weaponSkills.managers.SkillManager getNewSkillManager() {
+        return newSkillManager;
+    }
     public com.customrpg.equipment.ArmorManager getArmorManager() {
         return armorManager;
     }

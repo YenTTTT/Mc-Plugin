@@ -2,6 +2,8 @@ package com.customrpg.listeners;
 
 import com.customrpg.CustomRPG;
 import com.customrpg.managers.PassiveEffectManager;
+import com.customrpg.talents.Talent;
+import com.customrpg.talents.TalentType;
 import com.customrpg.managers.WeaponManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -119,6 +121,12 @@ public class WeaponListener implements Listener {
         double strengthBonus = playerStats.getStrength() * 0.2; // 每點 Strength +0.5 傷害
         baseDamage += strengthBonus;
 
+        // === 1.6) 加入天賦武器加成 (Talent Weapon Mastery) ===
+        baseDamage += calculateTalentWeaponBonus(player, weapon, playerStats);
+
+        // === 1.7) 處理天賦被動觸發 (例如: 疾行者) ===
+        baseDamage = handleAttackPassiveTalents(player, baseDamage, event);
+
         // === 2) Damage multiplier ===
         double damageMultiplier = 1.0;
         if (weaponData != null) {
@@ -179,6 +187,100 @@ public class WeaponListener implements Listener {
             // === 5) 特殊效果（僅限自訂武器） ===
             applySpecialEffect(player, event.getEntity(), weaponData, event);
         }
+    }
+
+    private double handleAttackPassiveTalents(Player player, double currentDamage, EntityDamageByEntityEvent event) {
+        com.customrpg.managers.TalentManager tm = plugin.getTalentManager();
+        if (tm == null) return currentDamage;
+
+        com.customrpg.players.PlayerTalents pt = tm.getPlayerTalents(player);
+        double finalDamage = currentDamage;
+
+        // 1. 疾行者 (Swift Striker)
+        int swiftStrikerLv = pt.getTalentLevel("swift_striker");
+        if (swiftStrikerLv > 0) {
+            String cdKey = "talent_proc:swift_striker:" + player.getUniqueId();
+            // 這裡我們暫時使用一個簡單的冷卻檢查，或者可以在 TalentSkillManager 中暴露冷卻器
+            // 為了簡化且不依賴其他管理器，我們檢查是否有加速效果作為簡單冷卻，或者直接執行
+            
+            // 根據需求：15%機率觸發
+            if (new Random().nextDouble() < 0.15) {
+                // 檢查 Mana (消耗 1 MANA)
+                com.customrpg.managers.ManaManager mm = plugin.getManaManager();
+                if (mm != null && mm.consumeMana(player, 1.0)) {
+                    // 效果：加速 II 6秒
+                    player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SPEED, 120, 1));
+                    
+                    // 傷害加成：4.3倍 (注意：這是對當前基礎傷害的加成)
+                    finalDamage *= 4.3;
+                    
+                    player.sendMessage("§b§l[天賦] §f觸發了 §e疾行者§f！ (4.3倍傷害 & 加速)");
+                    player.getWorld().spawnParticle(org.bukkit.Particle.FIREWORK, player.getLocation(), 20, 0.5, 1, 0.5, 0.1);
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0f, 1.5f);
+                }
+            }
+        }
+
+        return finalDamage;
+    }
+
+    private double calculateTalentWeaponBonus(Player player, ItemStack weapon, com.customrpg.players.PlayerStats stats) {
+        com.customrpg.managers.TalentManager tm = plugin.getTalentManager();
+        if (tm == null) return 0;
+        
+        com.customrpg.players.PlayerTalents pt = tm.getPlayerTalents(player);
+        double bonus = 0;
+        
+        Material mat = weapon.getType();
+        String weaponKey = weaponManager.getWeaponKey(weapon);
+        WeaponManager.WeaponData weaponData = weaponKey != null ? weaponManager.getWeaponData(weaponKey) : null;
+
+        boolean isTwoHanded = false;
+        if (weaponData != null) {
+            isTwoHanded = weaponData.getBooleanExtra("two-handed", false);
+        }
+
+        boolean isSword = mat.name().contains("SWORD");
+        boolean isAxe = mat.name().contains("AXE");
+        boolean isScythe = mat.name().contains("HOE");
+        boolean isMelee = isSword || isAxe || isScythe;
+        boolean isFirearm = mat == Material.IRON_HORSE_ARMOR || mat == Material.GOLDEN_HORSE_ARMOR || mat == Material.DIAMOND_HORSE_ARMOR;
+        boolean isWand = mat == Material.BLAZE_ROD || mat == Material.STICK || mat == Material.ENCHANTED_BOOK;
+        
+        for (Map.Entry<String, Integer> entry : pt.getTalentLevels().entrySet()) {
+            if (entry.getValue() <= 0) continue;
+            Talent t = tm.findTalent(entry.getKey());
+            if (t == null || t.getType() != com.customrpg.talents.TalentType.WEAPON_PASSIVE) continue;
+            
+            Talent.TalentLevelData data = t.getLevelData(entry.getValue());
+            if (data == null) continue;
+            
+            String tid = t.getId();
+
+            // 冷兵器 (涵蓋所有近戰武器)
+            if (tid.equals("weapon_melee_mastery") && isMelee) {
+                bonus += data.effects.getOrDefault("weaponDamageBonus", 0.0);
+            }
+            // 熱兵器加成
+            else if (tid.equals("weapon_firearms_mastery") && isFirearm) {
+                bonus += data.effects.getOrDefault("weaponDamageBonus", 0.0);
+                if (data.scaling.containsKey("AGILITY")) {
+                    bonus += stats.getAgility() * data.scaling.get("AGILITY");
+                }
+            }
+            // 魔法兵器加成
+            else if (tid.equals("weapon_magic_mastery") && isWand) {
+                bonus += data.effects.getOrDefault("weaponDamageBonus", 0.0);
+                if (data.scaling.containsKey("MAGIC")) {
+                    bonus += stats.getMagic() * data.scaling.get("MAGIC");
+                }
+            }
+            // 無限箭制 (實體箭矢)
+            else if (tid.equals("infinite_arrows") && mat == Material.BOW) {
+                bonus += data.effects.getOrDefault("weaponDamageBonus", 0.0);
+            }
+        }
+        return bonus;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

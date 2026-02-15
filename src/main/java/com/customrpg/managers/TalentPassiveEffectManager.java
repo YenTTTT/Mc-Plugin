@@ -114,10 +114,11 @@ public class TalentPassiveEffectManager implements Listener {
                 int level = playerTalents.getTalentLevel(talent.getId());
                 if (level > 0) {
                     // 累加天賦效果
-                    for (Map.Entry<String, Double> effect : talent.getBaseEffects().entrySet()) {
-                        String effectName = effect.getKey();
-                        double value = talent.getEffectValue(effectName, level);
-                        totalBonuses.merge(effectName, value, Double::sum);
+                    Talent.TalentLevelData levelData = talent.getLevelData(level);
+                    if (levelData != null) {
+                        for (Map.Entry<String, Double> entry : levelData.effects.entrySet()) {
+                            totalBonuses.merge(entry.getKey(), entry.getValue(), Double::sum);
+                        }
                     }
                 }
             }

@@ -19,13 +19,14 @@ import org.bukkit.entity.Player;
  * - 主屬性（力量、智慧、敏捷、體力、精神）
  * - 防禦屬性（物理防禦、魔法防禦）
  * - 副屬性（血量、Mana、暴擊率、暴擊傷害、移動速度、穿透、迴避）
- * - 種族加乘（武器傷害加成）
+ * - 武器加成（武器傷害加成）
  */
 public class StatCommand implements CommandExecutor {
-
+    private final CustomRPG plugin;
     private final PlayerStatsManager statsManager;
 
     public StatCommand(CustomRPG plugin) {
+        this.plugin = plugin;
         this.statsManager = plugin.getPlayerStatsManager();
     }
 
@@ -62,7 +63,7 @@ public class StatCommand implements CommandExecutor {
         sendHeader(player, "副屬性");
         sendSecondaryStats(player, calc);
 
-        sendHeader(player, "種族加乘");
+        sendHeader(player, "武器傷害加成");
         sendRacialBonus(player);
     }
 
@@ -78,6 +79,7 @@ public class StatCommand implements CommandExecutor {
         calc.equipAgility = stats.getEquipmentAgility();
         calc.equipVitality = stats.getEquipmentVitality();
         calc.equipDefense = stats.getEquipmentDefense();
+        calc.equipSpirit = stats.getEquipmentSpirit();
 
         // 總屬性
         calc.totalStrength = stats.getTotalStrength();
@@ -85,6 +87,7 @@ public class StatCommand implements CommandExecutor {
         calc.totalAgility = stats.getTotalAgility();
         calc.totalVitality = stats.getTotalVitality();
         calc.totalDefense = stats.getTotalDefense();
+        calc.totalSpirit = stats.getTotalSpirit();
 
         // 副屬性計算
         calc.maxHealth = player.getHealth();
@@ -132,11 +135,29 @@ public class StatCommand implements CommandExecutor {
         // ID
         player.sendMessage(ChatColor.GRAY + "ID: " + ChatColor.WHITE + player.getName());
 
-        // 種族（目前固定為人類，未來可擴展）
-        player.sendMessage(ChatColor.GRAY + "種族: " + ChatColor.YELLOW + "人類" + level + "等級");
+        // 種族
+        player.sendMessage(ChatColor.GRAY + "種族: " + ChatColor.YELLOW + "人類 " + level + "等級");
 
-        // 攜帶技能（暫時顯示為無，未來可以從天賦系統獲取）
-        player.sendMessage(ChatColor.GRAY + "攜帶技能: " + ChatColor.DARK_GRAY + "無");
+        // 攜帶技能 (天賦系統選取的技能)
+        com.customrpg.managers.TalentManager tm = plugin.getTalentManager();
+        if (tm != null) {
+            com.customrpg.players.PlayerTalents pt = tm.getPlayerTalents(player);
+            String[] selected = pt.getSelectedSkills();
+            java.util.List<String> names = new java.util.ArrayList<>();
+            for (String id : selected) {
+                if (id != null) {
+                    com.customrpg.talents.Talent t = tm.findTalent(id);
+                    if (t != null) names.add(t.getName());
+                }
+            }
+            if (names.isEmpty()) {
+                player.sendMessage(ChatColor.GRAY + "攜帶技能: " + ChatColor.DARK_GRAY + "無");
+            } else {
+                player.sendMessage(ChatColor.GRAY + "攜帶技能: " + ChatColor.LIGHT_PURPLE + String.join(", ", names));
+            }
+        } else {
+            player.sendMessage(ChatColor.GRAY + "攜帶技能: " + ChatColor.DARK_GRAY + "無");
+        }
 
         // 經驗值
         player.sendMessage(ChatColor.GRAY + "經驗值: " +
@@ -156,8 +177,8 @@ public class StatCommand implements CommandExecutor {
         player.sendMessage(formatStatLine("敏捷", calc.totalAgility, calc.equipAgility) + "  " +
                           formatStatLine("體力", calc.totalVitality, calc.equipVitality));
 
-        // 第三行：精神（映射為魔法）
-        player.sendMessage(formatStatLine("精神", calc.totalMagic, calc.equipMagic));
+        // 第三行：精神
+        player.sendMessage(formatStatLine("精神", calc.totalSpirit, calc.equipSpirit));
     }
 
     /**
@@ -204,15 +225,64 @@ public class StatCommand implements CommandExecutor {
     }
 
     /**
-     * 發送種族加乘
+     * 發送武器傷害加成
      */
     private void sendRacialBonus(Player player) {
-        // 目前固定顯示人類的武器加乘
-        // 未來可以根據玩家種族動態調整
-        player.sendMessage(ChatColor.GRAY + "木劍: " + ChatColor.GREEN + "+5 傷害");
-        player.sendMessage(ChatColor.GRAY + "石劍: " + ChatColor.GREEN + "+5 傷害");
-        player.sendMessage(ChatColor.GRAY + "鐵劍: " + ChatColor.GREEN + "+5 傷害");
-        player.sendMessage(ChatColor.GRAY + "黃金劍: " + ChatColor.GREEN + "+5 傷害");
+        com.customrpg.managers.TalentManager tm = plugin.getTalentManager();
+        com.customrpg.players.PlayerStats stats = statsManager.getStats(player);
+        
+        if (tm == null || stats == null) {
+            player.sendMessage(ChatColor.GRAY + "無法獲取天賦數據");
+            return;
+        }
+
+        double meleeBonus = calculateCategoryBonus(player, tm, stats, "weapon_melee_mastery", null, 0);
+        double firearmBonus = calculateCategoryBonus(player, tm, stats, "weapon_firearms_mastery", "AGILITY", 0.5);
+        double magicBonus = calculateCategoryBonus(player, tm, stats, "weapon_magic_mastery", "MAGIC", 0.4);
+        double bowBonus = calculateCategoryBonus(player, tm, stats, "infinite_arrows", null, 0);
+
+        player.sendMessage(ChatColor.GOLD + "--- 武器天賦加成 ---");
+        boolean hasAny = false;
+        if (meleeBonus > 0) { player.sendMessage(ChatColor.GRAY + "近戰武器: " + ChatColor.GREEN + "+" + String.format("%.1f", meleeBonus)); hasAny = true; }
+        if (firearmBonus > 0) { player.sendMessage(ChatColor.GRAY + "火槍: " + ChatColor.GREEN + "+" + String.format("%.1f", firearmBonus)); hasAny = true; }
+        if (magicBonus > 0) { player.sendMessage(ChatColor.GRAY + "法杖: " + ChatColor.GREEN + "+" + String.format("%.1f", magicBonus)); hasAny = true; }
+        if (bowBonus > 0) { player.sendMessage(ChatColor.GRAY + "弓箭: " + ChatColor.GREEN + "+" + String.format("%.1f", bowBonus)); hasAny = true; }
+        
+        if (!hasAny) {
+            player.sendMessage(ChatColor.GRAY + "目前沒有任何武器加成");
+        }
+    }
+
+    private double calculateCategoryBonus(Player player, com.customrpg.managers.TalentManager tm, 
+                                        com.customrpg.players.PlayerStats stats, String talentId, 
+                                        String scalingStat, double defaultMultiplier) {
+        com.customrpg.players.PlayerTalents pt = tm.getPlayerTalents(player);
+        int level = pt.getTalentLevel(talentId);
+        if (level <= 0) return 0;
+
+        com.customrpg.talents.Talent talent = tm.findTalent(talentId);
+        if (talent == null) return 0;
+
+        com.customrpg.talents.Talent.TalentLevelData data = talent.getLevelData(level);
+        if (data == null) return 0;
+
+        double bonus = data.effects.getOrDefault("weaponDamageBonus", 0.0);
+        
+        // 處理縮放
+        if (scalingStat != null) {
+            double multiplier = data.scaling.getOrDefault(scalingStat, 0.0);
+            // 如果配置中沒有明確的 multiplier，但在 WeaponListener 中有硬編碼的邏輯
+            // 這裡我們優先使用配置中的，如果配置中也沒有，則不計算（除非我們想在這裡也硬編碼）
+            // 為了保持一致性，我們查看 WeaponListener 的邏輯
+            
+            int statValue = 0;
+            if (scalingStat.equals("AGILITY")) statValue = stats.getAgility();
+            else if (scalingStat.equals("MAGIC")) statValue = stats.getMagic();
+            
+            bonus += statValue * multiplier;
+        }
+        
+        return bonus;
     }
 
     /**
@@ -237,10 +307,10 @@ public class StatCommand implements CommandExecutor {
      */
     private static class StatCalculation {
         // 裝備加成
-        int equipStrength, equipMagic, equipAgility, equipVitality, equipDefense;
+        int equipStrength, equipMagic, equipAgility, equipVitality, equipDefense, equipSpirit;
 
         // 總屬性
-        int totalStrength, totalMagic, totalAgility, totalVitality, totalDefense;
+        int totalStrength, totalMagic, totalAgility, totalVitality, totalDefense, totalSpirit;
 
         // 副屬性
         double maxHealth, currentHealth;

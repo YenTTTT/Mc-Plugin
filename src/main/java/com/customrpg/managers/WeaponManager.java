@@ -54,6 +54,10 @@ public class WeaponManager {
         loadWeapons();
     }
 
+    public CustomRPG getPlugin() {
+        return plugin;
+    }
+
     /**
      * Load all weapons from config/weapons/types/ folder
      */

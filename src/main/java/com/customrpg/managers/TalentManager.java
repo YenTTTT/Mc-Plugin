@@ -153,34 +153,129 @@ public class TalentManager {
         String name = section.getString("name", talentId);
         String description = section.getString("description", "");
         TalentType type = TalentType.valueOf(section.getString("type", "PASSIVE").toUpperCase());
-        int maxLevel = section.getInt("max-level", 5);
+        int maxLevel = section.getInt("max-level", 1);
         int pointsPerLevel = section.getInt("points-per-level", 1);
-        int tier = section.getInt("tier", 1);
-        String icon = section.getString("icon", "BOOK");
+        int guiSlot = section.getInt("gui.slot", 0);
+        String icon = section.getString("gui.icon", "BOOK");
 
-        List<String> prerequisites = section.getStringList("prerequisites");
+        // 新規格欄位
+        String mechanism = section.getString("mechanism", "被動");
+        double cooldown = section.getDouble("cooldown", 0);
+        double manaCost = section.getDouble("manaCost", 0);
+        String triggerType = section.getString("trigger.type", "NONE");
 
-        // 載入基礎效果
-        Map<String, Double> baseEffects = new HashMap<>();
-        ConfigurationSection effectsSection = section.getConfigurationSection("base-effects");
-        if (effectsSection != null) {
-            for (String key : effectsSection.getKeys(false)) {
-                baseEffects.put(key, effectsSection.getDouble(key));
+        // 載入前置
+        List<Talent.Prerequisite> prerequisites = new ArrayList<>();
+        Talent.PrerequisiteMode prerequisiteMode = Talent.PrerequisiteMode.ALL;
+
+        if (section.contains("prerequisite")) {
+            ConfigurationSection preSection = section.getConfigurationSection("prerequisite");
+
+            if (preSection != null) {
+                // 檢查是否包含 anyOf
+                if (preSection.contains("anyOf")) {
+                    prerequisiteMode = Talent.PrerequisiteMode.ANY;
+                    List<?> anyOfList = preSection.getList("anyOf");
+                    if (anyOfList != null) {
+                        for (Object obj : anyOfList) {
+                            if (obj instanceof Map) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> preMap = (Map<String, Object>) obj;
+                                String preId = (String) preMap.get("skill");
+                                int preLevel = preMap.containsKey("level") ?
+                                    ((Number) preMap.get("level")).intValue() : 1;
+                                if (preId != null) {
+                                    prerequisites.add(new Talent.Prerequisite(preId, preLevel));
+                                }
+                            }
+                        }
+                    }
+                }
+                // 單一前置條件格式
+                else if (preSection.contains("skill")) {
+                    String preId = preSection.getString("skill");
+                    int preLevel = preSection.getInt("level", 1);
+                    if (preId != null) {
+                        prerequisites.add(new Talent.Prerequisite(preId, preLevel));
+                    }
+                }
+            } else {
+                // 舊版或簡單前置邏輯
+                String preId = section.getString("prerequisite");
+                if (preId != null && !preId.equalsIgnoreCase("none")) {
+                    prerequisites.add(new Talent.Prerequisite(preId, 1));
+                }
             }
         }
 
-        // 載入等級成長係數
-        Map<String, Double> levelScaling = new HashMap<>();
-        ConfigurationSection scalingSection = section.getConfigurationSection("level-scaling");
-        if (scalingSection != null) {
-            for (String key : scalingSection.getKeys(false)) {
-                levelScaling.put(key, scalingSection.getDouble(key));
+        Talent talent = new Talent(talentId, name, description, type, branch,
+                maxLevel, pointsPerLevel, prerequisites, prerequisiteMode, guiSlot, icon,
+                mechanism, cooldown, manaCost, triggerType);
+
+        // 載入等級數據
+        ConfigurationSection levelsSection = section.getConfigurationSection("levels");
+        if (levelsSection != null) {
+            for (String levelKey : levelsSection.getKeys(false)) {
+                int level = Integer.parseInt(levelKey);
+                ConfigurationSection levelDataSection = levelsSection.getConfigurationSection(levelKey);
+                Talent.TalentLevelData levelData = new Talent.TalentLevelData();
+
+                ConfigurationSection effectSection = levelDataSection.getConfigurationSection("effect");
+                if (effectSection != null) {
+                    for (String effectKey : effectSection.getKeys(false)) {
+                        if (effectSection.isConfigurationSection(effectKey)) {
+                            ConfigurationSection subSection = effectSection.getConfigurationSection(effectKey);
+
+                            // 處理 statBonus 類型效果 { SPIRIT: 25, WISDOM: 25 }
+                            if (effectKey.equals("statBonus")) {
+                                for (String statName : subSection.getKeys(false)) {
+                                    double value = subSection.getDouble(statName);
+                                    levelData.addEffect("statBonus_" + statName, value);
+                                }
+                            }
+                            // 處理 scaling 類型效果 { stat: STRENGTH, multiplier: 0.5 }
+                            else if (subSection.contains("stat") && subSection.contains("multiplier")) {
+                                String stat = subSection.getString("stat");
+                                double multiplier = subSection.getDouble("multiplier");
+                                levelData.addScaling(stat, multiplier);
+                            }
+                            // 處理其他嵌套結構（如 selfEffect, healingPerSecond 等）
+                            else {
+                                for (String subKey : subSection.getKeys(false)) {
+                                    Object value = subSection.get(subKey);
+                                    if (value instanceof Number) {
+                                        levelData.addEffect(effectKey + "_" + subKey, ((Number) value).doubleValue());
+                                    } else if (value instanceof String) {
+                                        levelData.addEffect(effectKey + "_" + subKey, 0.0); // 儲存為標記
+                                    }
+                                }
+                            }
+                        } else {
+                            levelData.addEffect(effectKey, effectSection.getDouble(effectKey));
+                        }
+                    }
+                }
+                talent.addLevelData(level, levelData);
+            }
+        } else {
+            // 相容舊版或簡單效果 (base-effects / level-scaling)
+            for (int i = 1; i <= maxLevel; i++) {
+                Talent.TalentLevelData levelData = new Talent.TalentLevelData();
+                ConfigurationSection baseEffects = section.getConfigurationSection("base-effects");
+                ConfigurationSection levelScaling = section.getConfigurationSection("level-scaling");
+
+                if (baseEffects != null) {
+                    for (String key : baseEffects.getKeys(false)) {
+                        double base = baseEffects.getDouble(key);
+                        double scaling = (levelScaling != null) ? levelScaling.getDouble(key, 0) : 0;
+                        levelData.addEffect(key, base + (scaling * (i - 1)));
+                    }
+                }
+                talent.addLevelData(i, levelData);
             }
         }
 
-        return new Talent(talentId, name, description, type, branch,
-                         maxLevel, pointsPerLevel, prerequisites,
-                         baseEffects, levelScaling, tier, icon);
+        return talent;
     }
 
     /**
@@ -311,6 +406,12 @@ public class TalentManager {
                 }
             }
 
+            // 載入選取的技能
+            List<String> selected = config.getStringList("selected-skills");
+            for (int i = 0; i < Math.min(selected.size(), 4); i++) {
+                talents.setSelectedSkill(i, selected.get(i));
+            }
+
         } catch (Exception e) {
             plugin.getLogger().warning("載入玩家天賦數據失敗 " + uuid + ": " + e.getMessage());
         }
@@ -341,6 +442,9 @@ public class TalentManager {
             for (Map.Entry<TalentBranch, Integer> entry : talents.getBranchPoints().entrySet()) {
                 config.set("branch-points." + entry.getKey().name().toLowerCase(), entry.getValue());
             }
+
+            // 儲存選取的技能
+            config.set("selected-skills", Arrays.asList(talents.getSelectedSkills()));
 
             config.save(playerFile);
 
@@ -540,6 +644,7 @@ public class TalentManager {
             int totalAgilityBonus = 0;
             int totalVitalityBonus = 0;
             int totalDefenseBonus = 0;
+            int totalSpiritBonus = 0;
 
             // 遍歷所有學習過的天賦
             for (Map.Entry<String, Integer> entry : playerTalents.getTalentLevels().entrySet()) {
@@ -548,13 +653,28 @@ public class TalentManager {
 
                 if (level > 0) {
                     Talent talent = findTalent(talentId);
-                    if (talent != null && talent.getType() == TalentType.ATTRIBUTE) {
-                        // 計算屬性加成
-                        totalStrengthBonus += (int) talent.getEffectValue("strength", level);
-                        totalMagicBonus += (int) talent.getEffectValue("magic", level);
-                        totalAgilityBonus += (int) talent.getEffectValue("agility", level);
-                        totalVitalityBonus += (int) talent.getEffectValue("vitality", level);
-                        totalDefenseBonus += (int) talent.getEffectValue("defense", level);
+                    if (talent != null) {
+                        // 支持 ATTRIBUTE 和 PASSIVE 類型的屬性加成天賦
+                        if (talent.getType() == TalentType.ATTRIBUTE || talent.getType() == TalentType.PASSIVE) {
+                            Talent.TalentLevelData data = talent.getLevelData(level);
+                            if (data != null) {
+                                // 處理直接的屬性加成（舊格式）
+                                totalStrengthBonus += data.effects.getOrDefault("strength", 0.0).intValue();
+                                totalMagicBonus += data.effects.getOrDefault("magic", 0.0).intValue();
+                                totalAgilityBonus += data.effects.getOrDefault("agility", 0.0).intValue();
+                                totalVitalityBonus += data.effects.getOrDefault("vitality", 0.0).intValue();
+                                totalDefenseBonus += data.effects.getOrDefault("defense", 0.0).intValue();
+                                totalSpiritBonus += data.effects.getOrDefault("spirit", 0.0).intValue();
+
+                                // 處理 statBonus_ 前綴的效果（新格式）
+                                totalStrengthBonus += data.effects.getOrDefault("statBonus_strength", 0.0).intValue();
+                                totalMagicBonus += data.effects.getOrDefault("statBonus_magic", 0.0).intValue();
+                                totalAgilityBonus += data.effects.getOrDefault("statBonus_agility", 0.0).intValue();
+                                totalVitalityBonus += data.effects.getOrDefault("statBonus_vitality", 0.0).intValue();
+                                totalDefenseBonus += data.effects.getOrDefault("statBonus_defense", 0.0).intValue();
+                                totalSpiritBonus += data.effects.getOrDefault("statBonus_spirit", 0.0).intValue();
+                            }
+                        }
                     }
                 }
             }
@@ -565,6 +685,7 @@ public class TalentManager {
             int baseAgility = playerStats.getAgility() - getTalentAttributeBonus(player, "agility");
             int baseVitality = playerStats.getVitality() - getTalentAttributeBonus(player, "vitality");
             int baseDefense = playerStats.getDefense() - getTalentAttributeBonus(player, "defense");
+            int baseSpirit = playerStats.getSpirit() - getTalentAttributeBonus(player, "spirit");
 
             // 確保基礎值不會小於0
             baseStrength = Math.max(0, baseStrength);
@@ -572,6 +693,7 @@ public class TalentManager {
             baseAgility = Math.max(0, baseAgility);
             baseVitality = Math.max(0, baseVitality);
             baseDefense = Math.max(0, baseDefense);
+            baseSpirit = Math.max(0, baseSpirit);
 
             // 應用新的總屬性值（基礎 + 天賦加成）
             playerStats.setStrength(baseStrength + totalStrengthBonus);
@@ -579,6 +701,7 @@ public class TalentManager {
             playerStats.setAgility(baseAgility + totalAgilityBonus);
             playerStats.setVitality(baseVitality + totalVitalityBonus);
             playerStats.setDefense(baseDefense + totalDefenseBonus);
+            playerStats.setSpirit(baseSpirit + totalSpiritBonus);
 
             // 更新最大血量（基於新的vitality值）
             statsManager.updateMaxHealth(player);
@@ -587,11 +710,11 @@ public class TalentManager {
             statsManager.saveStats(player);
 
             // 快取天賦加成值以便下次使用
-            cacheTalentBonuses(player, totalStrengthBonus, totalMagicBonus, totalAgilityBonus, totalVitalityBonus, totalDefenseBonus);
+            cacheTalentBonuses(player, totalStrengthBonus, totalMagicBonus, totalAgilityBonus, totalVitalityBonus, totalDefenseBonus, totalSpiritBonus);
 
             player.sendMessage("§a天賦效果已應用！");
-            player.sendMessage("§7力量: +" + totalStrengthBonus + ", 魔法: +" + totalMagicBonus +
-                              ", 敏捷: +" + totalAgilityBonus + ", 體力: +" + totalVitalityBonus + ", 防禦: +" + totalDefenseBonus);
+            player.sendMessage("§7力量: +" + totalStrengthBonus + ", 智慧: +" + totalMagicBonus +
+                              ", 敏捷: +" + totalAgilityBonus + ", 體力: +" + totalVitalityBonus + ", 防禦: +" + totalDefenseBonus + ", 精神: +" + totalSpiritBonus);
 
         } catch (Exception e) {
             plugin.getLogger().warning("應用天賦效果時發生錯誤: " + e.getMessage());
@@ -605,13 +728,14 @@ public class TalentManager {
     /**
      * 快取天賦屬性加成
      */
-    private void cacheTalentBonuses(Player player, int str, int mag, int agi, int vit, int def) {
+    private void cacheTalentBonuses(Player player, int str, int mag, int agi, int vit, int def, int spi) {
         Map<String, Integer> bonuses = new HashMap<>();
         bonuses.put("strength", str);
         bonuses.put("magic", mag);
         bonuses.put("agility", agi);
         bonuses.put("vitality", vit);
         bonuses.put("defense", def);
+        bonuses.put("spirit", spi);
         talentBonusCache.put(player.getUniqueId(), bonuses);
     }
 
@@ -639,8 +763,11 @@ public class TalentManager {
 
             if (level > 0) {
                 Talent talent = findTalent(talentId);
-                if (talent != null && talent.getBaseEffects().containsKey(effectName)) {
-                    totalBonus += talent.getEffectValue(effectName, level);
+                if (talent != null) {
+                    Talent.TalentLevelData data = talent.getLevelData(level);
+                    if (data != null && data.effects.containsKey(effectName)) {
+                        totalBonus += data.effects.get(effectName);
+                    }
                 }
             }
         }

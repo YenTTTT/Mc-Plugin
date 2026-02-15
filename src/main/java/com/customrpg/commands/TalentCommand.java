@@ -1,7 +1,7 @@
 package com.customrpg.commands;
 
 import com.customrpg.CustomRPG;
-import com.customrpg.gui.TalentGUI;
+import com.customrpg.gui.TalentMainMenuGUI;
 import com.customrpg.managers.TalentManager;
 import com.customrpg.players.PlayerTalents;
 import com.customrpg.talents.TalentBranch;
@@ -21,7 +21,7 @@ import java.util.List;
  * TalentCommand - 天賦系統指令處理器
  *
  * 指令功能：
- * - /talent - 開啟天賦GUI
+ * - /talent - 開啟天賦主選單
  * - /talent <分支> - 開啟指定分支的天賦GUI
  * - /talent give <玩家> <點數> - 給予玩家天賦點數
  * - /talent reset <玩家> - 重置玩家天賦
@@ -32,18 +32,18 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
 
     private final CustomRPG plugin;
     private final TalentManager talentManager;
-    private final TalentGUI talentGUI;
+    private final TalentMainMenuGUI mainMenuGUI;
 
-    public TalentCommand(CustomRPG plugin, TalentManager talentManager, TalentGUI talentGUI) {
+    public TalentCommand(CustomRPG plugin, TalentManager talentManager, TalentMainMenuGUI mainMenuGUI) {
         this.plugin = plugin;
         this.talentManager = talentManager;
-        this.talentGUI = talentGUI;
+        this.mainMenuGUI = mainMenuGUI;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        // 無參數 - 開啟天賦GUI
+        // 無參數 - 開啟天賦主選單
         if (args.length == 0) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage(ChatColor.RED + "只有玩家可以使用此指令！");
@@ -51,7 +51,7 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
             }
 
             Player player = (Player) sender;
-            talentGUI.openTalentGUI(player, null);
+            mainMenuGUI.open(player);
             return true;
         }
 
@@ -103,7 +103,7 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        talentGUI.openTalentGUI(player, branch);
+        plugin.getTalentTreeGUI().open(player, branch);
         return true;
     }
 

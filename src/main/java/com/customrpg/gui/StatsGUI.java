@@ -32,11 +32,11 @@ public class StatsGUI implements Listener {
     private static final String GUI_TITLE = ChatColor.DARK_PURPLE + "屬性介面";
 
     // 槽位定義
-    private static final int[] STAT_DISPLAY_SLOTS = {0, 1, 2, 3, 4}; // Row 1
-    private static final int[] GLASS_ROW_2 = {9, 10, 11, 12, 13}; // Row 2
-    private static final int[] ADD_1_SLOTS = {18, 19, 20, 21, 22}; // Row 3
-    private static final int[] GLASS_ROW_4 = {27, 28, 29, 30, 31}; // Row 4
-    private static final int[] ADD_5_SLOTS = {36, 37, 38, 39, 40}; // Row 5
+    private static final int[] STAT_DISPLAY_SLOTS = {0, 1, 2, 3, 4, 5}; // Row 1
+    private static final int[] GLASS_ROW_2 = {9, 10, 11, 12, 13, 14}; // Row 2
+    private static final int[] ADD_1_SLOTS = {18, 19, 20, 21, 22, 23}; // Row 3
+    private static final int[] GLASS_ROW_4 = {27, 28, 29, 30, 31, 32}; // Row 4
+    private static final int[] ADD_5_SLOTS = {36, 37, 38, 39, 40, 41}; // Row 5
 
     public StatsGUI(PlayerStatsManager statsManager) {
         this.statsManager = statsManager;
@@ -66,6 +66,9 @@ public class StatsGUI implements Listener {
         gui.setItem(4, createStatDisplay(Material.DIAMOND_CHESTPLATE, "防禦 (Defense)",
                 stats.getDefense(), stats.getEquipmentDefense(),
                 "每點減免 0.5% 傷害"));
+        gui.setItem(5, createStatDisplay(Material.GHAST_TEAR, "精神 (Spirit)",
+                stats.getSpirit(), stats.getEquipmentSpirit(),
+                "目前無特殊效果"));
 
         // Center slot: Stat Points Display
         gui.setItem(8, createStatPointsDisplay(stats.getStatPoints(), stats.getLevel(), stats.getExp(), statsManager.getRequiredExp(stats.getLevel())));
@@ -82,6 +85,7 @@ public class StatsGUI implements Listener {
         gui.setItem(20, createAddButton(Material.DIAMOND, "增加 1 點 Agility", 1));
         gui.setItem(21, createAddButton(Material.DIAMOND, "增加 1 點 Vitality", 1));
         gui.setItem(22, createAddButton(Material.DIAMOND, "增加 1 點 Defense", 1));
+        gui.setItem(23, createAddButton(Material.DIAMOND, "增加 1 點 Spirit", 1));
 
         // Row 4: 灰色玻璃板
         for (int slot : GLASS_ROW_4) {
@@ -94,6 +98,7 @@ public class StatsGUI implements Listener {
         gui.setItem(38, createAddButton(Material.DIAMOND, "增加 5 點 Agility", 5));
         gui.setItem(39, createAddButton(Material.DIAMOND, "增加 5 點 Vitality", 5));
         gui.setItem(40, createAddButton(Material.DIAMOND, "增加 5 點 Defense", 5));
+        gui.setItem(41, createAddButton(Material.DIAMOND, "增加 5 點 Spirit", 5));
 
         player.openInventory(gui);
     }
@@ -279,6 +284,10 @@ public class StatsGUI implements Listener {
             case 4 -> {
                 stats.setDefense(stats.getDefense() + amount);
                 statName = "Defense";
+            }
+            case 5 -> {
+                stats.setSpirit(stats.getSpirit() + amount);
+                statName = "Spirit";
             }
         }
 
