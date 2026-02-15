@@ -762,6 +762,18 @@ public class EquipmentGUI implements Listener {
             return;
         }
 
+        // 處理玩家背包區域的 Shift+點擊
+        if (slot >= 54 && clickType.isShiftClick()) {
+            // 延遲一點點時間，讓物品移動完成後再檢查同步
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                // 如果玩家還開著 GUI，刷新它
+                if (isUsingEquipmentGUI(player)) {
+                    refreshCurrentGUI(player);
+                }
+            }, 1L);
+            return;
+        }
+
         // 檢查是否在背景區域
         if (isBackgroundSlot(slot)) {
             event.setCancelled(true);
@@ -1199,7 +1211,7 @@ public class EquipmentGUI implements Listener {
     /**
      * 刷新當前GUI
      */
-    private void refreshCurrentGUI(Player player) {
+    public void refreshCurrentGUI(Player player) {
         EquipmentGUIType guiType = currentGUIType.get(player.getUniqueId());
         if (guiType != null) {
             // 標記為正在刷新，防止關閉事件清除數據
@@ -1216,6 +1228,13 @@ public class EquipmentGUI implements Listener {
 
     // 用於追蹤正在刷新GUI的玩家，避免 close 事件清除數據
     private final Set<UUID> refreshingPlayers = new HashSet<>();
+
+    /**
+     * 檢查玩家是否正在使用任何裝備相關GUI
+     */
+    public boolean isUsingEquipmentGUI(Player player) {
+        return currentGUIType.containsKey(player.getUniqueId());
+    }
 
     /**
      * 處理GUI關閉事件

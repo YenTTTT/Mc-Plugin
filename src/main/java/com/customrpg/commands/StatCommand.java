@@ -125,18 +125,20 @@ public class StatCommand implements CommandExecutor {
      * 發送基本資訊
      */
     private void sendBasicInfo(Player player, PlayerStats stats) {
+        long currentExp = stats.getExp();
+        long requiredExp = statsManager.getRequiredExp(stats.getLevel());
+        int level = stats.getLevel();
+
         // ID
         player.sendMessage(ChatColor.GRAY + "ID: " + ChatColor.WHITE + player.getName());
 
         // 種族（目前固定為人類，未來可擴展）
-        player.sendMessage(ChatColor.GRAY + "種族: " + ChatColor.YELLOW + "人類");
+        player.sendMessage(ChatColor.GRAY + "種族: " + ChatColor.YELLOW + "人類" + level + "等級");
 
         // 攜帶技能（暫時顯示為無，未來可以從天賦系統獲取）
         player.sendMessage(ChatColor.GRAY + "攜帶技能: " + ChatColor.DARK_GRAY + "無");
 
         // 經驗值
-        long currentExp = stats.getExp();
-        long requiredExp = statsManager.getRequiredExp(stats.getLevel());
         player.sendMessage(ChatColor.GRAY + "經驗值: " +
                           ChatColor.GREEN + currentExp + ChatColor.GRAY + " / " +
                           ChatColor.YELLOW + requiredExp);

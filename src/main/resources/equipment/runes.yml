@@ -1,0 +1,104 @@
+# 符文系統配置文件
+# 定義各種符文的屬性和效果
+
+runes:
+  # ================================
+  # 攻擊型符文
+  # ================================
+
+  strength_rune_basic:
+    name: "力量符文"
+    description: "增強物理攻擊力的基礎符文"
+    type: ATTACK
+    rarity: BASIC
+    level: 1
+    attributes:
+      STR: 8
+      ATK: 12
+    special_effect: ""
+
+  critical_rune_advanced:
+    name: "暴擊符文"
+    description: "提升暴擊率和暴擊傷害"
+    type: ATTACK
+    rarity: ADVANCED
+    level: 1
+    attributes:
+      CRIT: 6
+      CRITDMG: 15
+    special_effect: "攻擊時有3%機率造成雙倍暴擊"
+
+  # ================================
+  # 防禦型符文
+  # ================================
+
+  defense_rune_basic:
+    name: "防禦符文"
+    description: "提供基礎防護能力"
+    type: DEFENSE
+    rarity: BASIC
+    level: 1
+    attributes:
+      DEF: 15
+      HP: 40
+    special_effect: ""
+
+  vitality_rune_expert:
+    name: "生命符文"
+    description: "大幅增加生命值和回復"
+    type: DEFENSE
+    rarity: EXPERT
+    level: 1
+    attributes:
+      VIT: 20
+      HP: 120
+      HREGEN: 3
+    special_effect: "生命值低於30%時回復速度增加100%"
+
+  # ================================
+  # 魔法型符文
+  # ================================
+
+  wisdom_rune_advanced:
+    name: "智慧符文"
+    description: "增強法術能力"
+    type: MAGIC
+    rarity: ADVANCED
+    level: 1
+    attributes:
+      INT: 18
+      MATK: 25
+      MP: 60
+    special_effect: "法術攻擊有10%機率回復魔力"
+
+  # ================================
+  # 輔助型符文
+  # ================================
+
+  speed_rune_basic:
+    name: "迅捷符文"
+    description: "提升移動和攻擊速度"
+    type: UTILITY
+    rarity: BASIC
+    level: 1
+    attributes:
+      AGI: 12
+      SPEED: 0.2
+      ASPD: 0.15
+    special_effect: ""
+
+  # ================================
+  # 特殊符文
+  # ================================
+
+  phoenix_rune_legendary:
+    name: "鳳凰符文"
+    description: "傳說級的復活符文"
+    type: SPECIAL
+    rarity: LEGENDARY
+    level: 1
+    attributes:
+      HP: 200
+      HREGEN: 10
+      FIRE_RES: 50
+    special_effect: "死亡時有20%機率原地復活(冷卻24小時)"

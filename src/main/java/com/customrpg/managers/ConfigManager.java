@@ -38,6 +38,7 @@ public class ConfigManager {
         File mobTypesDir = new File(mobsDir, "types");
         File mobSkillsDir = new File(mobsDir, "skills");
         File skillsDir = new File(configDir, "skills");
+        File equipmentDir = new File(configDir, "equipment");
 
         // Ensure directories exist
         if (!weaponTypesDir.exists() && !weaponTypesDir.mkdirs()) {
@@ -55,15 +56,20 @@ public class ConfigManager {
         if (!skillsDir.exists() && !skillsDir.mkdirs()) {
             plugin.getLogger().warning("Failed to create directory: " + skillsDir.getPath());
         }
+        if (!equipmentDir.exists() && !equipmentDir.mkdirs()) {
+            plugin.getLogger().warning("Failed to create directory: " + equipmentDir.getPath());
+        }
 
         // Ensure default example configs exist on disk (so directory scans can find them)
         ensureDefaultConfigExists("config/config.yml");
         ensureDefaultConfigExists("config/weapons/types/example.yml");
+        ensureDefaultConfigExists("config/weapons/types/mmorpg_weapons.yml");  // MMORPG 武器配置
         ensureDefaultConfigExists("config/weapons/skills/skill1.yml");
         // ensureDefaultConfigExists("config/mobs/types/example.yml");  // 舊格式範例（已棄用）
         ensureDefaultConfigExists("config/mobs/types/enhanced_example.yml");  // 新格式範例（推薦）
         ensureDefaultConfigExists("config/mobs/skills/skill1.yml");
         ensureDefaultConfigExists("config/skills/example.yml");
+        ensureDefaultConfigExists("config/equipment/armors.yml");  // MMORPG 裝甲配置
 
         // Load main config
         loadConfig("config/config.yml");
@@ -82,6 +88,9 @@ public class ConfigManager {
 
         // Load skill configs from config/skills/
         loadConfigsFromDirectory("config/skills");
+
+        // Load equipment configs from config/equipment/
+        loadConfigsFromDirectory("config/equipment");
 
         plugin.getLogger().info("Loaded " + configs.size() + " configuration file(s)");
     }
@@ -625,6 +634,35 @@ public class ConfigManager {
         }
 
         return allMobSkills;
+    }
+
+    /**
+     * Get all equipment (armor) configurations
+     * @return Map of equipment key to configuration section data
+     */
+    public Map<String, Map<String, Object>> getAllEquipment() {
+        Map<String, Map<String, Object>> allEquipment = new HashMap<>();
+
+        // Load from all equipment config files in config/equipment/
+        for (String configPath : configs.keySet()) {
+            if (configPath.startsWith("config/equipment/")) {
+                FileConfiguration config = configs.get(configPath);
+
+                // 檢查是否有 armors 區段
+                org.bukkit.configuration.ConfigurationSection armorsSection = config.getConfigurationSection("armors");
+                if (armorsSection != null) {
+                    for (String key : armorsSection.getKeys(false)) {
+                        org.bukkit.configuration.ConfigurationSection armorSection = armorsSection.getConfigurationSection(key);
+                        if (armorSection != null) {
+                            Map<String, Object> equipmentData = safeSectionToMap(armorSection);
+                            allEquipment.put(key, equipmentData);
+                        }
+                    }
+                }
+            }
+        }
+
+        return allEquipment;
     }
 
     /**

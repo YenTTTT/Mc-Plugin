@@ -57,30 +57,52 @@ public class EquipmentManager {
      * 初始化配置文件
      */
     private void initializeConfigs() {
-        // 創建配置目錄
-        File configDir = new File(plugin.getDataFolder(), "equipment");
+        // 創建配置目錄 - 使用 config/equipment 目錄
+        File configDir = new File(plugin.getDataFolder(), "config/equipment");
         if (!configDir.exists()) {
             configDir.mkdirs();
         }
 
-        // 裝備配置
-        equipmentConfigFile = new File(configDir, "equipment.yml");
+        // 裝備配置 - 使用 armors.yml
+        equipmentConfigFile = new File(configDir, "armors.yml");
         if (!equipmentConfigFile.exists()) {
-            plugin.saveResource("equipment/equipment.yml", false);
+            plugin.saveResource("config/equipment/armors.yml", false);
         }
         equipmentConfig = YamlConfiguration.loadConfiguration(equipmentConfigFile);
 
-        // 套裝配置
+        // 套裝配置 - 也放在 config/equipment 目錄
         setsConfigFile = new File(configDir, "sets.yml");
         if (!setsConfigFile.exists()) {
-            plugin.saveResource("equipment/sets.yml", false);
+            // 嘗試從 equipment/sets.yml 複製
+            try {
+                plugin.saveResource("equipment/sets.yml", false);
+                // saveResource 會把檔案存到 equipment/sets.yml，需要手動複製到目標位置
+                File srcFile = new File(plugin.getDataFolder(), "equipment/sets.yml");
+                if (srcFile.exists()) {
+                    java.nio.file.Files.copy(srcFile.toPath(), setsConfigFile.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("無法複製套裝配置: " + e.getMessage());
+            }
         }
         setsConfig = YamlConfiguration.loadConfiguration(setsConfigFile);
 
-        // 符文配置
+        // 符文配置 - 也放在 config/equipment 目錄
         runesConfigFile = new File(configDir, "runes.yml");
         if (!runesConfigFile.exists()) {
-            plugin.saveResource("equipment/runes.yml", false);
+            // 嘗試從 equipment/runes.yml 複製
+            try {
+                plugin.saveResource("equipment/runes.yml", false);
+                // saveResource 會把檔案存到 equipment/runes.yml，需要手動複製到目標位置
+                File srcFile = new File(plugin.getDataFolder(), "equipment/runes.yml");
+                if (srcFile.exists()) {
+                    java.nio.file.Files.copy(srcFile.toPath(), runesConfigFile.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("無法複製符文配置: " + e.getMessage());
+            }
         }
         runesConfig = YamlConfiguration.loadConfiguration(runesConfigFile);
     }
@@ -102,7 +124,7 @@ public class EquipmentManager {
     private void loadEquipmentTemplates() {
         equipmentTemplates.clear();
 
-        ConfigurationSection equipmentSection = equipmentConfig.getConfigurationSection("equipment");
+        ConfigurationSection equipmentSection = equipmentConfig.getConfigurationSection("armors");
         if (equipmentSection == null) return;
 
         for (String equipId : equipmentSection.getKeys(false)) {
@@ -145,7 +167,7 @@ public class EquipmentManager {
             if (attributesSection != null) {
                 Map<EquipmentAttribute, Double> attributes = new HashMap<>();
                 for (String attrKey : attributesSection.getKeys(false)) {
-                    EquipmentAttribute attr = EquipmentAttribute.fromShortName(attrKey.toUpperCase());
+                    EquipmentAttribute attr = EquipmentAttribute.fromName(attrKey.toUpperCase());
                     if (attr != null) {
                         double value = attributesSection.getDouble(attrKey);
                         attributes.put(attr, value);
@@ -216,7 +238,7 @@ public class EquipmentManager {
                         ConfigurationSection attrSection = bonusSection.getConfigurationSection("attributes");
                         if (attrSection != null) {
                             for (String attrKey : attrSection.getKeys(false)) {
-                                EquipmentAttribute attr = EquipmentAttribute.fromShortName(attrKey.toUpperCase());
+                                EquipmentAttribute attr = EquipmentAttribute.fromName(attrKey.toUpperCase());
                                 if (attr != null) {
                                     double value = attrSection.getDouble(attrKey);
                                     bonus.addAttributeBonus(attr, value);
@@ -285,7 +307,7 @@ public class EquipmentManager {
             ConfigurationSection attributesSection = section.getConfigurationSection("attributes");
             if (attributesSection != null) {
                 for (String attrKey : attributesSection.getKeys(false)) {
-                    EquipmentAttribute attr = EquipmentAttribute.fromShortName(attrKey.toUpperCase());
+                    EquipmentAttribute attr = EquipmentAttribute.fromName(attrKey.toUpperCase());
                     if (attr != null) {
                         double value = attributesSection.getDouble(attrKey);
                         rune.setBaseAttribute(attr, value);
@@ -356,7 +378,7 @@ public class EquipmentManager {
     /**
      * 同步裝備到Minecraft原生槽位
      */
-    private void syncToMinecraftEquipment(Player player, EquipmentSlot slot, EquipmentData equipment) {
+    public void syncToMinecraftEquipment(Player player, EquipmentSlot slot, EquipmentData equipment) {
         org.bukkit.inventory.PlayerInventory inv = player.getInventory();
         ItemStack item = equipment != null ? equipment.toItemStack() : null;
 
@@ -410,7 +432,7 @@ public class EquipmentManager {
     /**
      * 更新玩家屬性
      */
-    private void updatePlayerAttributes(Player player) {
+    public void updatePlayerAttributes(Player player) {
         Map<EquipmentSlot, EquipmentData> equipment = getPlayerEquipment(player.getUniqueId());
         Map<EquipmentAttribute, Double> totalAttributes = new HashMap<>();
 
@@ -508,7 +530,10 @@ public class EquipmentManager {
                     stats.setBonusAttackDamage(value);
                     break;
                 case MAX_HEALTH:
-                    stats.setBonusMaxHealth(value);
+                    // 將 MAX_HEALTH 轉換為 VITALITY (除以 HP_PER_VITALITY = 2.0)
+                    // 例如：+100 MAX_HEALTH = +50 VITALITY
+                    int vitalityEquivalent = (int) Math.ceil(value / 2.0);
+                    stats.setEquipmentVitality(stats.getEquipmentVitality() + vitalityEquivalent);
                     break;
                 case CRITICAL_CHANCE:  // 正確的枚舉名稱
                     stats.setBonusCritChance(value);
@@ -523,8 +548,8 @@ public class EquipmentManager {
             }
         }
 
-        // 更新最大血量（如果有生命力或最大血量加成）
-        if (stats.getBonusMaxHealth() > 0 || stats.getEquipmentVitality() > 0) {
+        // 更新最大血量（如果有生命力加成）
+        if (stats.getEquipmentVitality() > 0) {
             plugin.getPlayerStatsManager().updateMaxHealth(player);
         }
 
@@ -536,10 +561,11 @@ public class EquipmentManager {
         plugin.getLogger().info("  力量: +" + stats.getEquipmentStrength());
         plugin.getLogger().info("  魔法: +" + stats.getEquipmentMagic());
         plugin.getLogger().info("  敏捷: +" + stats.getEquipmentAgility());
-        plugin.getLogger().info("  生命力: +" + stats.getEquipmentVitality());
+        plugin.getLogger().info("  生命力: +" + stats.getEquipmentVitality() + " (包含從MAX_HEALTH轉換的體力)");
         plugin.getLogger().info("  防禦: +" + stats.getEquipmentDefense());
         plugin.getLogger().info("  總力量: " + stats.getTotalStrength());
         plugin.getLogger().info("  總魔法: " + stats.getTotalMagic());
+        plugin.getLogger().info("  總生命力: " + stats.getTotalVitality());
     }
 
     /**
@@ -564,9 +590,6 @@ public class EquipmentManager {
         equipment.setSetId(template.getSetId());
         equipment.setBaseAttributes(new HashMap<>(template.getBaseAttributes()));
         equipment.setSpecialEffects(new ArrayList<>(template.getSpecialEffects()));
-
-        // 生成隨機詞條
-        equipment.generateRandomAffixes();
 
         return equipment;
     }

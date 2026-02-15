@@ -116,14 +116,23 @@ public enum EquipmentAttribute {
     }
 
     /**
-     * 根據短名稱獲取屬性
+     * 根據短名稱或全名獲取屬性
      */
-    public static EquipmentAttribute fromShortName(String shortName) {
+    public static EquipmentAttribute fromName(String name) {
         for (EquipmentAttribute attr : values()) {
-            if (attr.shortName.equalsIgnoreCase(shortName)) {
+            if (attr.shortName.equalsIgnoreCase(name) || attr.name().equalsIgnoreCase(name)) {
                 return attr;
             }
         }
         return null;
+    }
+
+    /**
+     * 根據短名稱獲取屬性
+     * @deprecated 使用 fromName(String) 代替
+     */
+    @Deprecated
+    public static EquipmentAttribute fromShortName(String shortName) {
+        return fromName(shortName);
     }
 }

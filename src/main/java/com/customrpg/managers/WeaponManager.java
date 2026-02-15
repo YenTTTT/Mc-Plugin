@@ -152,6 +152,41 @@ public class WeaponManager {
             for (String line : weaponData.getLore()) {
                 lore.add(ChatColor.translateAlternateColorCodes('&', line));
             }
+
+            // 顯示武器屬性
+            lore.add("");
+            lore.add(ChatColor.GOLD + "武器屬性:");
+            
+            double baseDamage = weaponData.getDoubleExtra("base-damage", 0.0);
+            if (baseDamage > 0) {
+                lore.add(ChatColor.GRAY + " 基礎傷害: " + ChatColor.WHITE + baseDamage);
+            }
+            
+            double damageMultiplier = weaponData.getDamageMultiplier();
+            if (damageMultiplier != 1.0) {
+                lore.add(ChatColor.GRAY + " 傷害倍率: " + ChatColor.WHITE + String.format("%.1f", damageMultiplier) + "x");
+            }
+
+            double attackSpeed = weaponData.getDoubleExtra("attack-speed", 0.0);
+            if (attackSpeed > 0) {
+                lore.add(ChatColor.GRAY + " 攻擊速度: " + ChatColor.WHITE + attackSpeed);
+            }
+
+            double critChance = weaponData.getDoubleExtra("crit-chance", 0.0);
+            if (critChance > 0) {
+                lore.add(ChatColor.GRAY + " 暴擊機率: " + ChatColor.WHITE + String.format("%.1f%%", critChance));
+            }
+
+            double critDmgMult = weaponData.getDoubleExtra("crit-damage-multiplier", 0.0);
+            if (critDmgMult > 0) {
+                lore.add(ChatColor.GRAY + " 暴擊倍率: " + ChatColor.WHITE + String.format("%.1f", critDmgMult) + "x");
+            }
+
+            double knockback = weaponData.getDoubleExtra("knockback", 0.0);
+            if (knockback > 0) {
+                lore.add(ChatColor.GRAY + " 擊退強度: " + ChatColor.WHITE + knockback);
+            }
+
             if (weaponData.getMinLevel() > 0) {
                 lore.add(ChatColor.DARK_GRAY + "------------------");
                 lore.add(ChatColor.RED + "等級需求: " + weaponData.getMinLevel());
@@ -172,7 +207,6 @@ public class WeaponManager {
 
             // 套用攻擊速度（AttributeModifier）。
             // 注意：這是對「物品」的屬性，不是玩家永久屬性。
-            double attackSpeed = weaponData.getDoubleExtra("attack-speed", 0.0);
             if (attackSpeed != 0.0) {
                 AttributeModifier mod = new AttributeModifier(
                         attackSpeedModifierKey,
@@ -184,7 +218,6 @@ public class WeaponManager {
             }
 
             // 擊退強度（Knockback Resistance 不是擊退，這裡採用 attack knockback add）
-            double knockback = weaponData.getDoubleExtra("knockback", 0.0);
             if (knockback != 0.0) {
                 AttributeModifier mod = new AttributeModifier(
                         knockbackModifierKey,

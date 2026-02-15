@@ -1,0 +1,421 @@
+# ============================================
+# MMORPG 武器系統配置文件
+# 包含8種武器類型的範例配置
+# 已移除職業需求，所有玩家都可使用
+# ============================================
+
+# ==================== 刀系列 ====================
+iron_sword:
+  basic:
+    name: "鐵劍"
+    material: IRON_SWORD
+    rarity: "普通"
+    bind-type: "無"
+  appearance:
+    display-name: "&e&l鐵劍"
+    lore:
+      - "&7一把堅固的鐵製長劍"
+    custom-model-data: 0
+    enchanted-glow: false
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 15
+    attack-speed: 1.6
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.5
+    knockback: 0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  active-skill:
+    name: "none"
+  passive:
+    name: "無"
+    condition: "none"
+    chance: 0.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+mystic_blade:
+  basic:
+    name: "神秘之刃"
+    material: DIAMOND_SWORD
+    rarity: "稀有"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&d&l神秘之刃"
+    lore:
+      - "&7蘊含神秘力量的寶劍"
+      - "&6等級需求: 30"
+    custom-model-data: 0
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.8
+    base-damage: 35
+    attack-speed: 1.6
+    crit-chance: 15.0
+    crit-damage-multiplier: 2.0
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "連擊強化"
+    condition: "hit"
+    chance: 1.0
+    effect: "combo_boost"
+    value: 10.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 30
+
+# ==================== 法杖系列 ====================
+apprentice_staff:
+  basic:
+    name: "學徒法杖"
+    material: STICK
+    rarity: "普通"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l學徒法杖"
+    lore:
+      - "&7適合初學者的魔法法杖"
+    custom-model-data: 1
+    enchanted-glow: false
+  stats:
+    damage-multiplier: 0.8
+    base-damage: 8
+    attack-speed: 1.4
+    crit-chance: 5.0
+    crit-damage-multiplier: 1.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  active-skill:
+    name: "fireball"
+  passive:
+    name: "魔力回復"
+    condition: "hit"
+    chance: 0.2
+    effect: "mana_restore"
+    value: 5.0
+  element:
+    element: "火"
+    duration-ticks: 60
+  limits:
+    droppable: true
+    required-level: 1
+
+mystic_staff:
+  basic:
+    name: "神秘法杖"
+    material: BLAZE_ROD
+    rarity: "史詩"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l神秘法杖"
+    lore:
+      - "&7魔法能量環繞的強大法杖"
+      - "&6等級需求: 25"
+    custom-model-data: 2
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.5
+    base-damage: 25
+    attack-speed: 1.4
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+  active-skill:
+    name: "meteor"
+  passive:
+    name: "元素精通"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 25.0
+  element:
+    element: "火"
+    duration-ticks: 100
+  limits:
+    droppable: false
+    required-level: 25
+
+# ==================== 單手鐮刀系列 ====================
+iron_scythe:
+  basic:
+    name: "鐵鐮刀"
+    material: IRON_HOE
+    rarity: "普通"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l鐵鐮刀"
+    lore:
+      - "&7從背後攻擊造成額外傷害"
+    custom-model-data: 0
+    enchanted-glow: false
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 12
+    attack-speed: 1.5
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.5
+    effect: "backstab"
+  active-skill:
+    name: "shadow_strike"
+  passive:
+    name: "殺戮激勵"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 50.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# ==================== 雙手鐮刀系列 ====================
+death_scythe:
+  basic:
+    name: "死神鐮刀"
+    material: NETHERITE_HOE
+    rarity: "傳說"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&4&l死神鐮刀"
+    lore:
+      - "&7死神的專屬武器"
+      - "&c雙手武器"
+      - "&6等級需求: 40"
+    custom-model-data: 0
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.5
+    base-damage: 50
+    attack-speed: 1.2
+    crit-chance: 30.0
+    crit-damage-multiplier: 2.5
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 2.0
+    effect: "backstab"
+    aoe-range: 3.0
+  active-skill:
+    name: "soul_reaper"
+  passive:
+    name: "靈魂收割"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 20.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 40
+    two-handed: true
+
+# ==================== 單手斧系列 ====================
+warrior_axe:
+  basic:
+    name: "戰士戰斧"
+    material: IRON_AXE
+    rarity: "優良"
+    bind-type: "無"
+  appearance:
+    display-name: "&6&l戰士戰斧"
+    lore:
+      - "&7鋒利的單手戰斧"
+    custom-model-data: 0
+    enchanted-glow: false
+  stats:
+    damage-multiplier: 1.3
+    base-damage: 18
+    attack-speed: 1.8
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  active-skill:
+    name: "cleave"
+  passive:
+    name: "狂戰士"
+    condition: "low_health"
+    chance: 1.0
+    effect: "berserker"
+    value: 30.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 15
+
+# ==================== 雙手斧系列 ====================
+giant_battle_axe:
+  basic:
+    name: "巨型戰斧"
+    material: NETHERITE_AXE
+    rarity: "史詩"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&c&l巨型戰斧"
+    lore:
+      - "&7巨大而沉重的雙手戰斧"
+      - "&c雙手武器"
+      - "&6等級需求: 35"
+    custom-model-data: 0
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.0
+    base-damage: 65
+    attack-speed: 0.9
+    crit-chance: 15.0
+    crit-damage-multiplier: 2.2
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 4.0
+  active-skill:
+    name: "earthquake"
+  passive:
+    name: "粉碎打擊"
+    condition: "hit"
+    chance: 0.3
+    effect: "armor_break"
+    value: 50.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 35
+    two-handed: true
+
+# ==================== 弓系列 ====================
+hunter_bow:
+  basic:
+    name: "獵人之弓"
+    material: BOW
+    rarity: "普通"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l獵人之弓"
+    lore:
+      - "&7適合狩獵的長弓"
+      - "&c雙手武器"
+    custom-model-data: 0
+    enchanted-glow: false
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 20
+    attack-speed: 1.0
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  active-skill:
+    name: "multi_shot"
+  passive:
+    name: "精準射擊"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 50.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+    two-handed: true
+
+# ==================== 長槍系列 ====================
+iron_spear:
+  basic:
+    name: "鐵長槍"
+    material: FISHING_ROD
+    rarity: "普通"
+    bind-type: "無"
+  appearance:
+    display-name: "&7&l鐵長槍"
+    lore:
+      - "&7長距離突刺武器"
+      - "&c雙手武器"
+    custom-model-data: 1
+    enchanted-glow: false
+  stats:
+    damage-multiplier: 1.4
+    base-damage: 22
+    attack-speed: 1.3
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.7
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 2.0
+  active-skill:
+    name: "thrust"
+  passive:
+    name: "突刺精通"
+    condition: "hit"
+    chance: 1.0
+    effect: "knockback_bonus"
+    value: 20.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+    two-handed: true
+
+dragon_lance:
+  basic:
+    name: "龍騎士長槍"
+    material: FISHING_ROD
+    rarity: "傳說"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l龍騎士長槍"
+    lore:
+      - "&7傳說中龍騎士使用的長槍"
+      - "&c雙手武器"
+      - "&6等級需求: 45"
+    custom-model-data: 2
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 55
+    attack-speed: 1.3
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 3.0
+  active-skill:
+    name: "dragon_breath"
+  passive:
+    name: "龍之祝福"
+    condition: "hit"
+    chance: 0.15
+    effect: "dragon_aoe"
+    value: 100.0
+  element:
+    element: "火"
+    duration-ticks: 120
+  limits:
+    droppable: false
+    required-level: 45
+    two-handed: true
+

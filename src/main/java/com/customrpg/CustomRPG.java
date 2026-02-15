@@ -50,6 +50,7 @@ public class CustomRPG extends JavaPlugin {
     private StatsGUI statsGUI;
     private EquipmentManager equipmentManager;
     private EquipmentGUI equipmentGUI;
+    private com.customrpg.equipment.ArmorManager armorManager;
     private HealthDisplayManager healthDisplayManager;
     private DamageDisplayManager damageDisplayManager;
     private ManaManager manaManager;
@@ -202,6 +203,10 @@ public class CustomRPG extends JavaPlugin {
         // Initialize EquipmentGUI
         equipmentGUI = new EquipmentGUI(this, equipmentManager);
         getLogger().info("- EquipmentGUI initialized");
+
+        // Initialize ArmorManager
+        armorManager = new com.customrpg.equipment.ArmorManager(this);
+        getLogger().info("- ArmorManager initialized");
 
         // Initialize ManaManager
         manaManager = new ManaManager(this, statsManager);
@@ -437,5 +442,21 @@ public class CustomRPG extends JavaPlugin {
      */
     public EquipmentGUI getEquipmentGUI() {
         return equipmentGUI;
+    }
+
+    /**
+     * Get the TalentManager instance
+     * @return TalentManager instance
+     */
+    public com.customrpg.managers.TalentManager getTalentManager() {
+        return talentManager;
+    }
+
+    /**
+     * Get the ArmorManager instance
+     * @return ArmorManager instance
+     */
+    public com.customrpg.equipment.ArmorManager getArmorManager() {
+        return armorManager;
     }
 }

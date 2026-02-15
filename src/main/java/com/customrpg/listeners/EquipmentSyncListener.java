@@ -48,10 +48,16 @@ public class EquipmentSyncListener implements Listener {
 
         Player player = (Player) event.getWhoClicked();
 
-        // 只處理玩家自己的背包
-        if (event.getInventory().getType() != InventoryType.PLAYER) return;
+        // 處理 Shift+點擊
+        if (event.getClick().isShiftClick()) {
+            // 不論是在哪個 Inventory，只要是 Shift+點擊都可能導致裝備變動
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                checkAndSyncAllEquipmentSlots(player);
+            }, 1L);
+            return;
+        }
 
-        // 檢查是否點擊了裝備槽位
+        // 處理拖放與交換
         int slot = event.getRawSlot();
         EquipmentSlot equipSlot = getEquipmentSlotFromRawSlot(slot);
 
@@ -62,12 +68,64 @@ public class EquipmentSyncListener implements Listener {
             }, 1L);
         }
 
-        // 也檢查主手切換
-        if (slot == 36 || (slot >= 27 && slot <= 35)) { // 快捷欄
+        // 處理 Hotbar 交換 (按下 1-9 鍵交換物品到槽位)
+        if (event.getClick() == org.bukkit.event.inventory.ClickType.NUMBER_KEY) {
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                checkAndSyncAllEquipmentSlots(player);
+            }, 1L);
+        }
+
+        // 也檢查主手切換 (快捷欄點擊)
+        if (slot == 36 || (slot >= 27 && slot <= 35)) {
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 checkAndSyncEquipmentSlot(player, EquipmentSlot.MAIN_HAND);
             }, 1L);
         }
+    }
+
+    /**
+     * 監聽拖拽事件
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onInventoryDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        if (event.isCancelled()) return;
+
+        Player player = (Player) event.getWhoClicked();
+        boolean armorSlotAffected = false;
+
+        for (int slot : event.getRawSlots()) {
+            if (getEquipmentSlotFromRawSlot(slot) != null) {
+                armorSlotAffected = true;
+                break;
+            }
+        }
+
+        if (armorSlotAffected) {
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                checkAndSyncAllEquipmentSlots(player);
+            }, 1L);
+        }
+    }
+
+    /**
+     * 監聽背包關閉，做最後的同步確認
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onInventoryClose(org.bukkit.event.inventory.InventoryCloseEvent event) {
+        if (!(event.getPlayer() instanceof Player)) return;
+        checkAndSyncAllEquipmentSlots((Player) event.getPlayer());
+    }
+
+    /**
+     * 監聽創意模式點擊
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onCreativeClick(org.bukkit.event.inventory.InventoryCreativeEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            checkAndSyncAllEquipmentSlots((Player) event.getWhoClicked());
+        }, 1L);
     }
 
     /**
@@ -84,11 +142,46 @@ public class EquipmentSyncListener implements Listener {
     }
 
     /**
+     * 監聽玩家右鍵穿上裝備
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onInteract(org.bukkit.event.player.PlayerInteractEvent event) {
+        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_AIR && 
+            event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
+        
+        ItemStack item = event.getItem();
+        if (item == null || item.getType() == Material.AIR) return;
+
+        String typeName = item.getType().name();
+        if (typeName.contains("_HELMET") || typeName.contains("_CHESTPLATE") || 
+            typeName.contains("_LEGGINGS") || typeName.contains("_BOOTS")) {
+            // 右鍵穿裝備會影響多個槽位，延遲檢查全部
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                checkAndSyncAllEquipmentSlots(event.getPlayer());
+            }, 1L);
+        }
+    }
+
+    /**
      * 監聽玩家離開事件，清理數據
      */
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         cleanupPlayer(event.getPlayer().getUniqueId());
+    }
+
+    /**
+     * 檢查並同步所有裝備槽位
+     */
+    private void checkAndSyncAllEquipmentSlots(Player player) {
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            // 只檢查原生 Minecraft 有對應的槽位
+            if (slot == EquipmentSlot.HELMET || slot == EquipmentSlot.CHESTPLATE || 
+                slot == EquipmentSlot.LEGGINGS || slot == EquipmentSlot.BOOTS || 
+                slot == EquipmentSlot.MAIN_HAND || slot == EquipmentSlot.OFF_HAND) {
+                checkAndSyncEquipmentSlot(player, slot);
+            }
+        }
     }
 
     /**
@@ -142,17 +235,33 @@ public class EquipmentSyncListener implements Listener {
     }
 
     /**
-     * 同步到裝備系統
+     * 同步裝備到裝備系統
      */
     private void syncToEquipmentSystem(Player player, EquipmentSlot slot, ItemStack item) {
         if (item == null || item.getType() == Material.AIR) {
             // 移除裝備
-            equipmentManager.unequipItem(player, slot);
+            // 直接操作數據避免反向同步 Minecraft 槽位
+            Map<EquipmentSlot, EquipmentData> playerEquip = equipmentManager.getPlayerEquipment(player.getUniqueId());
+            if (playerEquip.remove(slot) != null) {
+                equipmentManager.updatePlayerAttributes(player);
+            }
         } else {
+            // 檢查是否已經是正確的裝備數據（避免重複轉換）
+            Map<EquipmentSlot, EquipmentData> playerEquip = equipmentManager.getPlayerEquipment(player.getUniqueId());
+            EquipmentData existing = playerEquip.get(slot);
+            if (existing != null) {
+                ItemStack existingItem = existing.toItemStack();
+                if (itemsEqual(existingItem, item)) {
+                    return; // 已經同步過了
+                }
+            }
+
             // 嘗試將物品轉換為裝備數據並裝備
             EquipmentData equipmentData = convertItemToEquipmentData(item, slot);
             if (equipmentData != null) {
-                equipmentManager.equipItem(player, slot, equipmentData);
+                // 直接操作數據避免反向同步 Minecraft 槽位
+                playerEquip.put(slot, equipmentData);
+                equipmentManager.updatePlayerAttributes(player);
             }
         }
     }
@@ -221,19 +330,13 @@ public class EquipmentSyncListener implements Listener {
     /**
      * 刷新玩家的裝備GUI（如果正在使用）
      */
-    private void refreshPlayerEquipmentGUI(Player player) {
-        // 檢查玩家是否正在使用裝備GUI
-        if (player.getOpenInventory().getTopInventory().getSize() == 54) {
-            String title = player.getOpenInventory().getTitle();
-            if (title != null && title.contains("角色裝備")) {
-                // 延遲一點刷新GUI，確保同步完成
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                    EquipmentGUI gui = plugin.getEquipmentGUI();
-                    if (gui != null) {
-                        gui.openEquipmentGUI(player);
-                    }
-                }, 2L);
-            }
+    public void refreshPlayerEquipmentGUI(Player player) {
+        EquipmentGUI gui = plugin.getEquipmentGUI();
+        if (gui != null && gui.isUsingEquipmentGUI(player)) {
+            // 使用同步任務確保線程安全
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                gui.refreshCurrentGUI(player);
+            });
         }
     }
 

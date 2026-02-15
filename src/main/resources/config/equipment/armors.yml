@@ -1,0 +1,408 @@
+# ============================================
+# MMORPG 裝甲系統配置文件
+# 包含三種裝甲類型的完整配置
+# ============================================
+
+armors:
+  # ==================== 輕甲系列（刺客專用）====================
+  # 特點：高敏捷、高暴擊、低防禦
+
+  leather_cap:
+    name: "皮革帽"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 1
+    physical_defense: 5
+    magical_defense: 2
+    attributes:
+      agility: 10
+      vitality: 5
+      critical_chance: 2.0
+    rarity: COMMON
+    max_durability: 100
+    description: "輕便的皮革帽，適合快速移動"
+
+  leather_tunic:
+    name: "皮革外套"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 1
+    physical_defense: 8
+    magical_defense: 3
+    attributes:
+      agility: 15
+      vitality: 8
+      critical_chance: 3.0
+      evasion: 2.0
+    rarity: COMMON
+    max_durability: 120
+    description: "靈活的皮革外套"
+
+  leather_pants:
+    name: "皮革褲子"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 1
+    physical_defense: 6
+    magical_defense: 2
+    attributes:
+      agility: 12
+      vitality: 6
+      critical_chance: 2.5
+    rarity: COMMON
+    max_durability: 110
+    description: "輕巧的皮革褲子"
+
+  leather_boots:
+    name: "皮革靴子"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 1
+    physical_defense: 4
+    magical_defense: 2
+    attributes:
+      agility: 8
+      vitality: 4
+      evasion: 1.5
+    rarity: COMMON
+    max_durability: 90
+    description: "輕便的皮革靴子"
+
+  shadow_hood:
+    name: "暗影兜帽"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 25
+    physical_defense: 12
+    magical_defense: 6
+    attributes:
+      agility: 25
+      vitality: 10
+      critical_chance: 5.0
+      critical_damage: 10.0
+      evasion: 3.0
+    rarity: RARE
+    max_durability: 200
+    description: "隱匿於暗影中的兜帽"
+
+  shadow_vest:
+    name: "暗影背心"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 25
+    physical_defense: 18
+    magical_defense: 8
+    attributes:
+      agility: 35
+      vitality: 15
+      critical_chance: 6.0
+      critical_damage: 15.0
+      evasion: 5.0
+    rarity: RARE
+    max_durability: 250
+    description: "暗影能量環繞的背心"
+
+  assassin_master_hood:
+    name: "大師刺客兜帽"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 40
+    physical_defense: 20
+    magical_defense: 10
+    attributes:
+      agility: 40
+      vitality: 20
+      critical_chance: 8.0
+      critical_damage: 20.0
+      evasion: 5.0
+      attack_damage: 10
+    rarity: EPIC
+    max_durability: 300
+    description: "傳奇刺客大師的專屬兜帽"
+
+
+  # ==================== 布甲系列（法師專用）====================
+  # 特點：高智慧、高魔力、低防禦
+
+  cloth_hat:
+    name: "布帽"
+    type: CLOTH
+    slot: HELMET
+    material: CHAINMAIL_HELMET
+    required_level: 1
+    physical_defense: 3
+    magical_defense: 8
+    attributes:
+      intelligence: 12
+      vitality: 5
+      max_mana: 20
+    rarity: COMMON
+    max_durability: 90
+    description: "簡單的布製帽子"
+
+  cloth_robe:
+    name: "布袍"
+    type: CLOTH
+    slot: CHESTPLATE
+    material: CHAINMAIL_CHESTPLATE
+    required_level: 1
+    physical_defense: 5
+    magical_defense: 12
+    attributes:
+      intelligence: 18
+      vitality: 8
+      max_mana: 30
+      magic_damage: 5
+    rarity: COMMON
+    max_durability: 110
+    description: "舒適的布製長袍"
+
+  cloth_pants:
+    name: "布褲"
+    type: CLOTH
+    slot: LEGGINGS
+    material: CHAINMAIL_LEGGINGS
+    required_level: 1
+    physical_defense: 4
+    magical_defense: 10
+    attributes:
+      intelligence: 15
+      vitality: 6
+      max_mana: 25
+    rarity: COMMON
+    max_durability: 100
+    description: "輕便的布褲"
+
+  cloth_shoes:
+    name: "布鞋"
+    type: CLOTH
+    slot: BOOTS
+    material: CHAINMAIL_BOOTS
+    required_level: 1
+    physical_defense: 2
+    magical_defense: 6
+    attributes:
+      intelligence: 10
+      vitality: 4
+      max_mana: 15
+    rarity: COMMON
+    max_durability: 80
+    description: "柔軟的布鞋"
+
+  silk_robe:
+    name: "絲質法袍"
+    type: CLOTH
+    slot: CHESTPLATE
+    material: CHAINMAIL_CHESTPLATE
+    required_level: 25
+    physical_defense: 8
+    magical_defense: 20
+    attributes:
+      intelligence: 40
+      vitality: 15
+      max_mana: 50
+      magic_damage: 25
+      mana_regen: 2.0
+    rarity: EPIC
+    max_durability: 200
+    description: "魔法能量環繞的法袍"
+
+  archmage_crown:
+    name: "大法師之冠"
+    type: CLOTH
+    slot: HELMET
+    material: CHAINMAIL_HELMET
+    required_level: 40
+    physical_defense: 10
+    magical_defense: 30
+    attributes:
+      intelligence: 50
+      vitality: 20
+      max_mana: 80
+      magic_damage: 35
+      mana_regen: 3.0
+      critical_chance: 5.0
+    rarity: LEGENDARY
+    max_durability: 350
+    description: "只有大法師才能駕馭的王冠"
+
+  mystic_vestments:
+    name: "神秘長袍"
+    type: CLOTH
+    slot: CHESTPLATE
+    material: CHAINMAIL_CHESTPLATE
+    required_level: 35
+    physical_defense: 12
+    magical_defense: 25
+    attributes:
+      intelligence: 45
+      vitality: 18
+      max_mana: 70
+      magic_damage: 30
+      mana_regen: 2.5
+    rarity: EPIC
+    max_durability: 280
+    description: "充滿神秘力量的長袍"
+
+
+  # ==================== 重甲系列（鬥士專用）====================
+  # 特點：高體力、高防禦、低敏捷
+
+  iron_helmet:
+    name: "鐵頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: IRON_HELMET
+    required_level: 1
+    physical_defense: 10
+    magical_defense: 4
+    attributes:
+      vitality: 12
+      defense: 8
+      max_health: 20
+    rarity: COMMON
+    max_durability: 150
+    description: "堅固的鐵製頭盔"
+
+  iron_chestplate:
+    name: "鐵胸甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: IRON_CHESTPLATE
+    required_level: 1
+    physical_defense: 15
+    magical_defense: 6
+    attributes:
+      vitality: 18
+      defense: 12
+      max_health: 30
+    rarity: COMMON
+    max_durability: 180
+    description: "厚重的鐵製胸甲"
+
+  iron_leggings:
+    name: "鐵護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: IRON_LEGGINGS
+    required_level: 1
+    physical_defense: 12
+    magical_defense: 5
+    attributes:
+      vitality: 15
+      defense: 10
+      max_health: 25
+    rarity: COMMON
+    max_durability: 170
+    description: "保護腿部的鐵甲"
+
+  iron_boots:
+    name: "鐵靴子"
+    type: HEAVY
+    slot: BOOTS
+    material: IRON_BOOTS
+    required_level: 1
+    physical_defense: 8
+    magical_defense: 3
+    attributes:
+      vitality: 10
+      defense: 6
+      max_health: 15
+    rarity: COMMON
+    max_durability: 140
+    description: "沉重的鐵製靴子"
+
+  iron_plate_chestplate:
+    name: "鐵板胸甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: IRON_CHESTPLATE
+    required_level: 33
+    physical_defense: 25
+    magical_defense: 10
+    attributes:
+      vitality: 30
+      defense: 20
+      max_health: 60
+      strength: 15
+    rarity: RARE
+    max_durability: 300
+    description: "堅固的鐵製板甲"
+
+  knight_helmet:
+    name: "騎士頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: DIAMOND_HELMET
+    required_level: 30
+    physical_defense: 20
+    magical_defense: 8
+    attributes:
+      vitality: 25
+      defense: 18
+      max_health: 50
+      strength: 12
+    rarity: RARE
+    max_durability: 280
+    description: "騎士專用的精緻頭盔"
+
+  knight_armor:
+    name: "騎士鎧甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: DIAMOND_CHESTPLATE
+    required_level: 30
+    physical_defense: 30
+    magical_defense: 12
+    attributes:
+      vitality: 35
+      defense: 25
+      max_health: 70
+      strength: 18
+    rarity: RARE
+    max_durability: 350
+    description: "騎士的榮耀鎧甲"
+
+  champion_helm:
+    name: "冠軍戰盔"
+    type: HEAVY
+    slot: HELMET
+    material: NETHERITE_HELMET
+    required_level: 45
+    physical_defense: 35
+    magical_defense: 15
+    attributes:
+      vitality: 45
+      defense: 30
+      max_health: 100
+      strength: 25
+      attack_damage: 15
+    rarity: LEGENDARY
+    max_durability: 500
+    description: "冠軍戰士的象徵"
+
+  champion_plate:
+    name: "冠軍板甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: NETHERITE_CHESTPLATE
+    required_level: 45
+    physical_defense: 50
+    magical_defense: 20
+    attributes:
+      vitality: 60
+      defense: 40
+      max_health: 150
+      strength: 35
+      attack_damage: 20
+    rarity: LEGENDARY
+    max_durability: 600
+    description: "傳說級的冠軍板甲"
+

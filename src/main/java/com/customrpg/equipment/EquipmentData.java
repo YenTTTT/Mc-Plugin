@@ -243,9 +243,17 @@ public class EquipmentData {
             Map<EquipmentAttribute, Double> allAttrs = getAllAttributes();
             if (!allAttrs.isEmpty()) {
                 lore.add("§6屬性:");
-                for (Map.Entry<EquipmentAttribute, Double> entry : allAttrs.entrySet()) {
-                    EquipmentAttribute attr = entry.getKey();
-                    double value = entry.getValue();
+                
+                // 優先顯示基礎屬性
+                List<EquipmentAttribute> sortedAttrs = new ArrayList<>(allAttrs.keySet());
+                sortedAttrs.sort((a, b) -> {
+                    if (a.isBasicAttribute() && !b.isBasicAttribute()) return -1;
+                    if (!a.isBasicAttribute() && b.isBasicAttribute()) return 1;
+                    return a.ordinal() - b.ordinal();
+                });
+
+                for (EquipmentAttribute attr : sortedAttrs) {
+                    double value = allAttrs.get(attr);
                     String valueStr = attr.formatValue(value);
                     lore.add("§7" + attr.getColoredDisplayName() + ": §f+" + valueStr);
                 }
@@ -337,6 +345,20 @@ public class EquipmentData {
     public Map<EquipmentAttribute, Double> getBaseAttributes() { return baseAttributes; }
     public void setBaseAttributes(Map<EquipmentAttribute, Double> baseAttributes) {
         this.baseAttributes = baseAttributes;
+    }
+
+    /**
+     * 設置單個基礎屬性
+     */
+    public void setBaseAttribute(EquipmentAttribute attribute, double value) {
+        baseAttributes.put(attribute, value);
+    }
+
+    /**
+     * 獲取單個屬性值（只獲取基礎屬性，不含其他加成）
+     */
+    public double getAttribute(EquipmentAttribute attribute) {
+        return baseAttributes.getOrDefault(attribute, 0.0);
     }
 
     public Map<EquipmentAttribute, Double> getRandomAffixes() { return randomAffixes; }

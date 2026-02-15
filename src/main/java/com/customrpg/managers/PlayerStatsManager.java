@@ -143,7 +143,11 @@ public class PlayerStatsManager {
      */
     public void updateMaxHealth(Player player) {
         PlayerStats stats = getStats(player);
-        double newMaxHealth = BASE_MAX_HEALTH + (stats.getVitality() * HP_PER_VITALITY);
+
+        // 計算最大生命值：基礎血量 + (總 Vitality × 每點血量)
+        // 總 Vitality 包含基礎體力 + 裝備體力（包含從 MAX_HEALTH 轉換的體力）
+        double vitalityBonus = stats.getTotalVitality() * HP_PER_VITALITY;
+        double newMaxHealth = BASE_MAX_HEALTH + vitalityBonus;
 
         // 使用 Attribute API 設定最大血量
         AttributeInstance maxHealthAttr = player.getAttribute(Attribute.MAX_HEALTH);
