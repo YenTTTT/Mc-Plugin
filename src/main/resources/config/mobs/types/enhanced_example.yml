@@ -210,10 +210,13 @@ slime_king:
   special-behavior: "split_on_death"
   show-level-in-name: true
 
-# 範例 5: 行走的仙人掌 - 使用裝備模擬仙人掌外觀
+# 範例 5: 行走的仙人掌 - 外觀是一個被放置的仙人掌方塊
+# 原理：隱形靜音殭屍(AI核心) + BlockDisplay(仙人掌外觀) + ArmorStand(名稱標籤)
+# 使用 disguise.type: ARMOR_STAND 觸發 BlockDisplay 生成模式
+# 殭屍完全隱形且靜音，玩家只看到一個仙人掌方塊在移動
 walking_cactus:
   name: "&2&l⚠ 行走的仙人掌 ⚠"
-  type: ZOMBIE             # 使用殭屍作為基礎（有追蹤和攻擊AI）
+  type: ZOMBIE
 
   level-range:
     min: 8
@@ -221,30 +224,23 @@ walking_cactus:
 
   base-stats:
     health: 50.0
-    damage: 15.0           # 仙人掌的刺很痛
+    damage: 15.0
 
   stat-scaling:
     health-per-level: 5.0
     damage-per-level: 2.0
 
-  # 偽裝配置
+  # 使用 ARMOR_STAND 觸發 BlockDisplay 模式
+  # 實際生成的是隱形靜音殭屍 + 仙人掌 BlockDisplay
   disguise:
     enabled: true
-    type: ZOMBIE
-    baby-chance: 0.3       # 30% 機率為小仙人掌
+    type: ARMOR_STAND
+    baby-chance: 0.0
 
-  # 裝備 - 用來模擬仙人掌的外觀
+  # helmet 設為 CACTUS → BlockDisplay 會顯示仙人掌方塊
   equipment:
     helmet:
-      material: CACTUS     # 頭上戴仙人掌方塊
-    chestplate:
-      material: LEATHER_CHESTPLATE  # 綠色皮革裝甲模擬仙人掌身體
-    leggings:
-      material: LEATHER_LEGGINGS
-    boots:
-      material: LEATHER_BOOTS
-    main-hand:
-      material: CACTUS     # 手持仙人掌作為武器
+      material: CACTUS
 
   exp:
     base: 25

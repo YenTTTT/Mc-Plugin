@@ -42,6 +42,9 @@ public class SkillSwitchManager {
         mechanismMaterials.put("木棒", Material.STICK);
         mechanismMaterials.put("海靈晶體", Material.PRISMARINE_CRYSTALS);
         mechanismMaterials.put("海磷碎片", Material.PRISMARINE_SHARD);
+        mechanismMaterials.put("地獄之星", Material.NETHER_STAR);
+        mechanismMaterials.put("鑽石劍", Material.DIAMOND_SWORD);
+        mechanismMaterials.put("紅石粉", Material.REDSTONE);
     }
 
     /**

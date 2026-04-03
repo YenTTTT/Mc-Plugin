@@ -116,10 +116,18 @@ public class WeaponListener implements Listener {
             }
         }
 
-        // === 1.5) 加入 Strength (物理攻擊) 加成 ===
-        // 無論是否使用自訂武器，都套用物理攻擊加成
-        double strengthBonus = playerStats.getStrength() * 0.2; // 每點 Strength +0.5 傷害
-        baseDamage += strengthBonus;
+        // === 1.5) 屬性加成 (基於武器類別的屬性縮放) ===
+        double statBonus;
+        if (weaponData != null) {
+            // 自訂武器：使用武器類別的屬性加成
+            statBonus = weaponData.getCategory().calculateStatBonus(playerStats);
+            // 稀有度加成
+            statBonus *= weaponData.getRarity().statMultiplier;
+        } else {
+            // 非自訂武器：使用基礎力量加成
+            statBonus = playerStats.getTotalStrength() * 0.2;
+        }
+        baseDamage += statBonus;
 
         // === 1.6) 加入天賦武器加成 (Talent Weapon Mastery) ===
         baseDamage += calculateTalentWeaponBonus(player, weapon, playerStats);
@@ -127,7 +135,7 @@ public class WeaponListener implements Listener {
         // === 1.7) 處理天賦被動觸發 (例如: 疾行者) ===
         baseDamage = handleAttackPassiveTalents(player, baseDamage, event);
 
-        // === 2) Damage multiplier ===
+        // === 2) Damage multiplier (含稀有度加成) ===
         double damageMultiplier = 1.0;
         if (weaponData != null) {
             damageMultiplier = weaponData.getDamageMultiplier();

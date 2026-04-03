@@ -10,6 +10,7 @@ iron_sword:
     name: "鐵劍"
     material: IRON_SWORD
     rarity: "普通"
+    category: "SWORD"
     bind-type: "無"
   appearance:
     display-name: "&e&l鐵劍"
@@ -44,6 +45,7 @@ mystic_blade:
     name: "神秘之刃"
     material: DIAMOND_SWORD
     rarity: "稀有"
+    category: "SWORD"
     bind-type: "綁定玩家"
   appearance:
     display-name: "&d&l神秘之刃"
@@ -80,6 +82,7 @@ apprentice_staff:
     name: "學徒法杖"
     material: STICK
     rarity: "普通"
+    category: "STAFF"
     bind-type: "無"
   appearance:
     display-name: "&b&l學徒法杖"
@@ -116,6 +119,7 @@ mystic_staff:
     name: "神秘法杖"
     material: BLAZE_ROD
     rarity: "史詩"
+    category: "STAFF"
     bind-type: "綁定玩家"
   appearance:
     display-name: "&5&l神秘法杖"
@@ -154,6 +158,7 @@ iron_scythe:
     name: "鐵鐮刀"
     material: IRON_HOE
     rarity: "普通"
+    category: "SCYTHE"
     bind-type: "無"
   appearance:
     display-name: "&a&l鐵鐮刀"
@@ -191,6 +196,7 @@ death_scythe:
     name: "死神鐮刀"
     material: NETHERITE_HOE
     rarity: "傳說"
+    category: "TWO_HAND_SCYTHE"
     bind-type: "綁定玩家"
   appearance:
     display-name: "&4&l死神鐮刀"
@@ -232,6 +238,7 @@ warrior_axe:
     name: "戰士戰斧"
     material: IRON_AXE
     rarity: "優良"
+    category: "AXE"
     bind-type: "無"
   appearance:
     display-name: "&6&l戰士戰斧"
@@ -268,6 +275,7 @@ giant_battle_axe:
     name: "巨型戰斧"
     material: NETHERITE_AXE
     rarity: "史詩"
+    category: "TWO_HAND_AXE"
     bind-type: "綁定玩家"
   appearance:
     display-name: "&c&l巨型戰斧"
@@ -308,6 +316,7 @@ hunter_bow:
     name: "獵人之弓"
     material: BOW
     rarity: "普通"
+    category: "BOW"
     bind-type: "無"
   appearance:
     display-name: "&a&l獵人之弓"
@@ -346,6 +355,7 @@ iron_spear:
     name: "鐵長槍"
     material: FISHING_ROD
     rarity: "普通"
+    category: "SPEAR"
     bind-type: "無"
   appearance:
     display-name: "&7&l鐵長槍"
@@ -384,6 +394,7 @@ dragon_lance:
     name: "龍騎士長槍"
     material: FISHING_ROD
     rarity: "傳說"
+    category: "SPEAR"
     bind-type: "綁定玩家"
   appearance:
     display-name: "&6&l龍騎士長槍"
@@ -419,3 +430,439 @@ dragon_lance:
     required-level: 45
     two-handed: true
 
+# ============================================
+# 擴展武器 — 多稀有度武器庫
+# ============================================
+
+# ==================== 劍系列 (擴展) ====================
+
+flame_katana:
+  basic:
+    name: "炎刃太刀"
+    material: DIAMOND_SWORD
+    rarity: "史詩"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&c&l炎刃太刀"
+    lore:
+      - "&7以龍焰鍛造的東方刀劍"
+      - "&7斬擊時火焰隨之迸發"
+    custom-model-data: 0
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 42
+    attack-speed: 1.8
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.2
+    knockback: 0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "灼燒之痕"
+    condition: "hit"
+    chance: 0.3
+    effect: "burn_on_hit"
+    value: 40.0
+  element:
+    element: "火"
+    duration-ticks: 80
+  limits:
+    droppable: false
+    required-level: 25
+
+holy_excalibur:
+  basic:
+    name: "聖劍·王者之證"
+    material: NETHERITE_SWORD
+    rarity: "神話"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l聖劍·王者之證"
+    lore:
+      - "&7只有被選中的勇者才能握起的聖劍"
+      - "&7蘊含淨化一切黑暗的神聖力量"
+    custom-model-data: 0
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.2
+    base-damage: 80
+    attack-speed: 1.6
+    crit-chance: 25.0
+    crit-damage-multiplier: 2.8
+    knockback: 2
+  special:
+    backstab-enabled: false
+    effect: "none"
+    life-steal: 8.0
+  passive:
+    name: "神聖審判"
+    condition: "hit"
+    chance: 0.1
+    effect: "holy_smite"
+    value: 150.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 50
+
+rusty_blade:
+  basic:
+    name: "鏽蝕短劍"
+    material: STONE_SWORD
+    rarity: "普通"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&7&l鏽蝕短劍"
+    lore:
+      - "&7一把佈滿鏽跡的短劍"
+      - "&7勉強還能用"
+  stats:
+    damage-multiplier: 0.9
+    base-damage: 8
+    attack-speed: 1.7
+    crit-chance: 5.0
+    crit-damage-multiplier: 1.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# ==================== 法杖系列 (擴展) ====================
+
+nature_wand:
+  basic:
+    name: "自然之杖"
+    material: STICK
+    rarity: "優良"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&2&l自然之杖"
+    lore:
+      - "&7纏繞著藤蔓的古木法杖"
+      - "&7散發著自然的芬芳"
+    custom-model-data: 3
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 14
+    attack-speed: 1.4
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "自然回復"
+    condition: "hit"
+    chance: 0.25
+    effect: "mana_restore"
+    value: 8.0
+  element:
+    element: "毒"
+    poison-duration-ticks: 60
+    poison-level: 1
+  limits:
+    droppable: true
+    required-level: 10
+
+arcane_codex:
+  basic:
+    name: "奧術聖典"
+    material: BLAZE_ROD
+    rarity: "傳說"
+    category: "STAFF"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l奧術聖典"
+    lore:
+      - "&7記載遠古魔法的禁忌之書"
+      - "&7每一頁都蘊含著毀滅性的力量"
+    custom-model-data: 4
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.5
+    base-damage: 45
+    attack-speed: 1.2
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "奧術共鳴"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 35.0
+  element:
+    element: "雷"
+    lightning-chance: 0.25
+  limits:
+    droppable: false
+    required-level: 40
+
+# ==================== 鐮刀系列 (擴展) ====================
+
+shadow_sickle:
+  basic:
+    name: "暗影之鐮"
+    material: DIAMOND_HOE
+    rarity: "稀有"
+    category: "SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&8&l暗影之鐮"
+    lore:
+      - "&7沾染暗影氣息的鐮刀"
+      - "&7在黑暗中揮舞更加致命"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.6
+    base-damage: 24
+    attack-speed: 1.6
+    crit-chance: 25.0
+    crit-damage-multiplier: 2.2
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.8
+    effect: "backstab"
+  passive:
+    name: "暗影步"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 60.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 20
+
+# ==================== 斧系列 (擴展) ====================
+
+berserker_cleaver:
+  basic:
+    name: "狂戰士碎骨斧"
+    material: DIAMOND_AXE
+    rarity: "傳說"
+    category: "AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&4&l狂戰士碎骨斧"
+    lore:
+      - "&7被鮮血浸染的戰場遺物"
+      - "&7揮舞者會陷入戰鬥狂熱"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.2
+    base-damage: 48
+    attack-speed: 1.5
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.0
+    knockback: 2
+  special:
+    backstab-enabled: false
+    effect: "none"
+    armor-pierce: 15.0
+  passive:
+    name: "血怒"
+    condition: "low_health"
+    chance: 1.0
+    effect: "berserker"
+    value: 50.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 35
+
+# ==================== 弓系列 (擴展) ====================
+
+gale_longbow:
+  basic:
+    name: "疾風長弓"
+    material: BOW
+    rarity: "稀有"
+    category: "BOW"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l疾風長弓"
+    lore:
+      - "&7以精靈木製成的輕盈長弓"
+      - "&7箭矢如風般飛出"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.6
+    base-damage: 28
+    attack-speed: 1.2
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "疾風連射"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 65.0
+  element:
+    element: "冰"
+    ice-chance: 0.2
+    ice-duration-ticks: 30
+  limits:
+    droppable: true
+    required-level: 15
+    two-handed: true
+
+celestial_bow:
+  basic:
+    name: "天穹星弓"
+    material: BOW
+    rarity: "神話"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l天穹星弓"
+    lore:
+      - "&7以星辰碎片為弦的神弓"
+      - "&7射出的每一箭都帶著星光"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.0
+    base-damage: 70
+    attack-speed: 1.0
+    crit-chance: 30.0
+    crit-damage-multiplier: 3.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "星辰審判"
+    condition: "hit"
+    chance: 0.15
+    effect: "holy_smite"
+    value: 120.0
+  element:
+    element: "雷"
+    lightning-chance: 0.2
+  limits:
+    droppable: false
+    required-level: 50
+    two-handed: true
+
+# ==================== 長槍系列 (擴展) ====================
+
+thunder_halberd:
+  basic:
+    name: "雷鳴戟"
+    material: TRIDENT
+    rarity: "史詩"
+    category: "SPEAR"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l雷鳴戟"
+    lore:
+      - "&7以雷電鍛造的戰戟"
+      - "&7每次揮擊都伴隨著雷鳴"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.2
+    base-damage: 40
+    attack-speed: 1.4
+    crit-chance: 16.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 2.5
+  passive:
+    name: "雷電突刺"
+    condition: "hit"
+    chance: 0.2
+    effect: "knockback_bonus"
+    value: 40.0
+  element:
+    element: "雷"
+    lightning-chance: 0.35
+  limits:
+    droppable: false
+    required-level: 30
+    two-handed: true
+
+# ==================== 優良入門武器 (各類別) ====================
+
+steel_longsword:
+  basic:
+    name: "精鋼長劍"
+    material: IRON_SWORD
+    rarity: "優良"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l精鋼長劍"
+    lore:
+      - "&7由經驗豐富的鐵匠打造"
+      - "&7品質優於普通鐵劍"
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 20
+    attack-speed: 1.6
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 8
+
+reinforced_staff:
+  basic:
+    name: "強化法杖"
+    material: BLAZE_ROD
+    rarity: "稀有"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&9&l強化法杖"
+    lore:
+      - "&7鑲嵌了魔法水晶的法杖"
+      - "&7能更好地引導魔法能量"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.3
+    base-damage: 20
+    attack-speed: 1.4
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "魔力增幅"
+    condition: "hit"
+    chance: 0.3
+    effect: "mana_restore"
+    value: 10.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 15

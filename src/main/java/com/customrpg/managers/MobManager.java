@@ -38,6 +38,7 @@ public class MobManager {
     private final Map<String, MobData> mobTypes;
     private final NamespacedKey customMobKey;
     private final NamespacedKey mobLevelKey;
+    private final NamespacedKey mobTierKey;
     private final ConfigManager configManager;
     private final Random random;
 
@@ -52,6 +53,7 @@ public class MobManager {
         this.mobTypes = new HashMap<>();
         this.customMobKey = new NamespacedKey(plugin, "custom_mob_type");
         this.mobLevelKey = new NamespacedKey(plugin, "mob_level");
+        this.mobTierKey = new NamespacedKey(plugin, "mob_tier");
         this.random = new Random();
         loadMobTypes();
     }
@@ -373,6 +375,78 @@ public class MobManager {
     }
 
     /**
+     * Spawn a custom mob at a specified location with a specified level
+     * @param mobKey The mob type identifier
+     * @param location The spawn location
+     * @param level The desired level for the mob
+     * @return The spawned entity, or null if mob type not found
+     */
+    public LivingEntity spawnCustomMobWithLevel(String mobKey, Location location, int level) {
+        MobData mobData = mobTypes.get(mobKey);
+        if (mobData == null) {
+            return null;
+        }
+
+        // Clamp level to at least 1
+        level = Math.max(1, level);
+
+        // 檢查是否需要偽裝
+        LivingEntity mob;
+        if (mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
+            mob = spawnDisguisedMob(mobData, location, level);
+        } else {
+            mob = spawnNormalMob(mobData, location, level);
+        }
+
+        if (mob == null) {
+            return null;
+        }
+
+        // 設置持久化數據
+        mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
+        mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+
+        return mob;
+    }
+
+    /**
+     * Set the tier tag on a mob entity
+     * @param entity The entity
+     * @param tier The tier string (NORMAL, ELITE, BOSS)
+     */
+    public void setMobTier(LivingEntity entity, String tier) {
+        entity.getPersistentDataContainer().set(mobTierKey, PersistentDataType.STRING, tier);
+    }
+
+    /**
+     * Get the tier of a custom mob
+     * @param entity The entity to check
+     * @return Tier string ("NORMAL", "ELITE", "BOSS"), or "NORMAL" if not set
+     */
+    public String getMobTier(Entity entity) {
+        if (!(entity instanceof LivingEntity mob)) {
+            return "NORMAL";
+        }
+        String tier = mob.getPersistentDataContainer().get(mobTierKey, PersistentDataType.STRING);
+        return tier != null ? tier : "NORMAL";
+    }
+
+    /**
+     * Get all registered mob types
+     * @return Collection of MobData
+     */
+    public java.util.Collection<MobData> getMobTypes() {
+        return mobTypes.values();
+    }
+
+    /**
+     * Get the custom mob NamespacedKey (for external checks)
+     */
+    public NamespacedKey getCustomMobNamespacedKey() {
+        return customMobKey;
+    }
+
+    /**
      * Spawn a normal (non-disguised) mob
      */
     private LivingEntity spawnNormalMob(MobData mobData, Location location, int level) {
@@ -421,8 +495,9 @@ public class MobManager {
             ItemStack helmetItem = mobData.getEquipment().get("helmet");
             Material helmetMaterial = helmetItem.getType();
 
-            // 檢查是否為方塊材料（不是物品）
-            if (helmetMaterial.isBlock() && !helmetMaterial.isItem()) {
+            // 檢查是否為適合當 BlockDisplay 的方塊材料
+            // (isBlock() 足夠判斷，不需要排除 isItem()，因為很多方塊同時也是物品)
+            if (helmetMaterial.isBlock() && isBlockDisplayCandidate(helmetMaterial)) {
                 plugin.getLogger().info("檢測到方塊材質頭盔: " + helmetMaterial.name() + "，使用 BlockDisplay 模式");
                 return spawnArmorStandDisguise(mobData, location, level);
             }
@@ -495,11 +570,24 @@ public class MobManager {
         }
 
         // 設置殭屍屬性（隱形、靜音、保持 AI）
-        core.setAdult(); // 使用新 API 設置成年
+        core.setAdult();
         core.setInvisible(true);
         core.setSilent(true);
         core.setAI(true);
-        core.setRemoveWhenFarAway(false); // 防止自動清除
+        core.setRemoveWhenFarAway(false);
+        core.setCanPickupItems(false);
+        core.setShouldBurnInDay(false); // 殭屍不會在白天燃燒
+
+        // 清空裝備、掉落率歸零（不戴任何東西，避免看到裝備）
+        if (core.getEquipment() != null) {
+            core.getEquipment().clear();
+            core.getEquipment().setHelmetDropChance(0f);
+            core.getEquipment().setChestplateDropChance(0f);
+            core.getEquipment().setLeggingsDropChance(0f);
+            core.getEquipment().setBootsDropChance(0f);
+            core.getEquipment().setItemInMainHandDropChance(0f);
+            core.getEquipment().setItemInOffHandDropChance(0f);
+        }
 
         // 設置生命值和傷害（等級化）
         double health = mobData.calculateHealth(level);
@@ -537,14 +625,11 @@ public class MobManager {
         blockDisplay.setBlock(blockMaterial.createBlockData());
 
         // 設置 Transformation（精準位置控制的關鍵）
-        // translation: 相對於當前位置的偏移量 (x, y, z)
-        //   - Y 軸偏移讓方塊浮空或貼地
-        //   - X/Z 軸可以微調水平位置
-        // scale: 方塊大小縮放 (x, y, z)
-        //   - 1.0 = 原始大小
-        //   - 可以做出巨大或迷你方塊效果
-        // rotation: 旋轉角度（使用四元數表示）
-        Vector3f translation = new Vector3f(0f, 0.5f, 0f); // Y=0.5 讓方塊在地面上方（重要！）
+        // BlockDisplay 從座標角落開始渲染 (1x1x1 方塊)
+        // 殭屍碰撞箱中心在 spawn 點，寬 0.6
+        // 所以 X/Z 各偏移 -0.5 讓方塊中心對齊殭屍中心
+        // Y=0 讓方塊底部對齊殭屍腳底（地面）
+        Vector3f translation = new Vector3f(-0.5f, 0f, -0.5f);
         AxisAngle4f leftRotation = new AxisAngle4f(0, 0, 1, 0); // 無旋轉
         Vector3f scale = new Vector3f(1.0f, 1.0f, 1.0f); // 原始大小
         AxisAngle4f rightRotation = new AxisAngle4f(0, 0, 1, 0); // 無旋轉
@@ -571,7 +656,7 @@ public class MobManager {
         plugin.getLogger().info("✓ BlockDisplay 已生成（平滑移動: 2 ticks）");
 
         // ===== 第四步：生成名稱標籤 ArmorStand =====
-        Location nameLocation = location.clone().add(0, 2.0, 0); // 在方块上方 2 格
+        Location nameLocation = location.clone().add(0, 1.3, 0); // 方塊頂部上方
         ArmorStand nameTag = (ArmorStand) location.getWorld().spawnEntity(
             nameLocation,
             EntityType.ARMOR_STAND
@@ -656,7 +741,7 @@ public class MobManager {
 
                 // 同步名稱標籤位置（在方塊上方）
                 if (nameTag.isValid()) {
-                    Location nameLoc = coreLoc.clone().add(0, 2.0, 0); // 在方块上方 2 格
+                    Location nameLoc = coreLoc.clone().add(0, 1.3, 0);
                     nameLoc.setYaw(0);
                     nameLoc.setPitch(0);
                     nameTag.teleport(nameLoc);
@@ -725,6 +810,26 @@ public class MobManager {
             default:
                 return false;
         }
+    }
+
+    /**
+     * 判斷材料是否適合做 BlockDisplay 偽裝
+     * (非穿戴型方塊，如仙人掌、TNT、南瓜等)
+     */
+    private boolean isBlockDisplayCandidate(Material mat) {
+        // 非方塊材料一律不行
+        if (!mat.isBlock()) return false;
+
+        // 排除正常盔甲 / 頭顱（這些應該直接穿戴）
+        String name = mat.name();
+        if (name.contains("HELMET") || name.contains("CHESTPLATE")
+                || name.contains("LEGGINGS") || name.contains("BOOTS")
+                || name.contains("_HEAD") || name.contains("_SKULL")) {
+            return false;
+        }
+
+        // 其餘方塊都視為 BlockDisplay 候選
+        return true;
     }
 
     /**

@@ -1,0 +1,315 @@
+# ========================================
+# 野外自動生成怪物 - 用於 MobSpawnManager 測試
+# ========================================
+
+# ===== 近戰類 =====
+
+# 1. 腐蝕殭屍 - 低等級常見怪
+rotten_zombie:
+  name: "&2腐蝕殭屍"
+  type: ZOMBIE
+
+  level-range:
+    min: 1
+    max: 15
+
+  base-stats:
+    health: 25.0
+    damage: 4.0
+
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.8
+
+  exp:
+    base: 8
+    per-level: 3
+
+  drops:
+    vanilla-items:
+      - material: ROTTEN_FLESH
+        amount: 1-3
+        chance: 0.8
+      - material: IRON_NUGGET
+        amount: 1-2
+        chance: 0.15
+
+  special-behavior: "aggressive"
+  show-level-in-name: true
+
+# 2. 狂暴骷髏戰士 - 近戰骷髏
+skeleton_warrior:
+  name: "&f骷髏戰士"
+  type: SKELETON
+
+  level-range:
+    min: 3
+    max: 20
+
+  base-stats:
+    health: 30.0
+    damage: 6.0
+
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 1.0
+
+  equipment:
+    main-hand:
+      material: IRON_SWORD
+    helmet:
+      material: CHAINMAIL_HELMET
+
+  exp:
+    base: 12
+    per-level: 4
+
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1-3
+        chance: 0.9
+      - material: IRON_SWORD
+        amount: 1
+        chance: 0.05
+
+  special-behavior: "aggressive"
+  show-level-in-name: true
+
+# ===== 遠程類 =====
+
+# 3. 暗影弓手 - 遠程骷髏
+shadow_archer:
+  name: "&8暗影弓手"
+  type: SKELETON
+
+  level-range:
+    min: 5
+    max: 25
+
+  base-stats:
+    health: 22.0
+    damage: 7.0
+
+  stat-scaling:
+    health-per-level: 2.5
+    damage-per-level: 1.2
+
+  equipment:
+    main-hand:
+      material: BOW
+    helmet:
+      material: LEATHER_HELMET
+
+  exp:
+    base: 15
+    per-level: 5
+
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 3-8
+        chance: 0.8
+      - material: BOW
+        amount: 1
+        chance: 0.1
+
+  special-behavior: "none"
+  show-level-in-name: true
+
+# ===== 蜘蛛類 =====
+
+# 4. 毒牙蜘蛛 - 快速移動
+venomous_spider:
+  name: "&5毒牙蜘蛛"
+  type: SPIDER
+
+  level-range:
+    min: 2
+    max: 18
+
+  base-stats:
+    health: 18.0
+    damage: 5.0
+
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 0.9
+
+  exp:
+    base: 10
+    per-level: 4
+
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 1-3
+        chance: 0.9
+      - material: SPIDER_EYE
+        amount: 1
+        chance: 0.4
+      - material: FERMENTED_SPIDER_EYE
+        amount: 1
+        chance: 0.05
+
+  special-behavior: "none"
+  show-level-in-name: true
+
+# ===== 苦力怕類 =====
+
+# 5. 不穩定苦力怕 - 危險的爆炸怪
+unstable_creeper:
+  name: "&a不穩定苦力怕"
+  type: CREEPER
+
+  level-range:
+    min: 5
+    max: 20
+
+  base-stats:
+    health: 20.0
+    damage: 10.0
+
+  stat-scaling:
+    health-per-level: 2.0
+    damage-per-level: 1.5
+
+  exp:
+    base: 20
+    per-level: 6
+
+  drops:
+    vanilla-items:
+      - material: GUNPOWDER
+        amount: 1-3
+        chance: 0.9
+      - material: TNT
+        amount: 1
+        chance: 0.05
+
+  special-behavior: "none"
+  show-level-in-name: true
+
+# ===== 魔法類 =====
+
+# 6. 暗夜女巫 - 魔法攻擊
+dark_witch:
+  name: "&d暗夜女巫"
+  type: WITCH
+
+  level-range:
+    min: 8
+    max: 30
+
+  base-stats:
+    health: 35.0
+    damage: 8.0
+
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 1.0
+
+  exp:
+    base: 25
+    per-level: 7
+
+  drops:
+    vanilla-items:
+      - material: GLOWSTONE_DUST
+        amount: 1-3
+        chance: 0.5
+      - material: REDSTONE
+        amount: 1-3
+        chance: 0.5
+      - material: GLASS_BOTTLE
+        amount: 1-2
+        chance: 0.3
+      - material: EMERALD
+        amount: 1
+        chance: 0.1
+
+  special-behavior: "none"
+  show-level-in-name: true
+
+# ===== 地獄類 =====
+
+# 7. 烈焰衛兵 - 噴火
+blaze_guard:
+  name: "&6烈焰衛兵"
+  type: BLAZE
+
+  level-range:
+    min: 10
+    max: 30
+
+  base-stats:
+    health: 30.0
+    damage: 9.0
+
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 1.3
+
+  exp:
+    base: 30
+    per-level: 8
+
+  drops:
+    vanilla-items:
+      - material: BLAZE_ROD
+        amount: 1-2
+        chance: 0.6
+      - material: BLAZE_POWDER
+        amount: 1-3
+        chance: 0.4
+
+  special-behavior: "none"
+  show-level-in-name: true
+
+# ===== 重甲類 =====
+
+# 8. 鐵甲亡靈 - 全裝殭屍
+ironclad_undead:
+  name: "&7鐵甲亡靈"
+  type: ZOMBIE
+
+  level-range:
+    min: 10
+    max: 25
+
+  base-stats:
+    health: 50.0
+    damage: 7.0
+
+  stat-scaling:
+    health-per-level: 6.0
+    damage-per-level: 1.0
+
+  equipment:
+    helmet:
+      material: IRON_HELMET
+    chestplate:
+      material: IRON_CHESTPLATE
+    leggings:
+      material: IRON_LEGGINGS
+    boots:
+      material: IRON_BOOTS
+    main-hand:
+      material: IRON_AXE
+
+  exp:
+    base: 25
+    per-level: 8
+
+  drops:
+    vanilla-items:
+      - material: IRON_INGOT
+        amount: 1-3
+        chance: 0.3
+      - material: IRON_NUGGET
+        amount: 3-6
+        chance: 0.6
+
+  special-behavior: "aggressive"
+  show-level-in-name: true
+

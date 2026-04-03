@@ -64,12 +64,13 @@ public class ConfigManager {
         ensureDefaultConfigExists("config/config.yml");
         ensureDefaultConfigExists("config/weapons/types/example.yml");
         ensureDefaultConfigExists("config/weapons/types/mmorpg_weapons.yml");  // MMORPG 武器配置
-        ensureDefaultConfigExists("config/weapons/skills/skill1.yml");
         // ensureDefaultConfigExists("config/mobs/types/example.yml");  // 舊格式範例（已棄用）
         ensureDefaultConfigExists("config/mobs/types/enhanced_example.yml");  // 新格式範例（推薦）
+        ensureDefaultConfigExists("config/mobs/types/wild_mobs.yml");          // 野外自動生成怪物
         ensureDefaultConfigExists("config/mobs/skills/skill1.yml");
         ensureDefaultConfigExists("config/skills/example.yml");
         ensureDefaultConfigExists("config/equipment/armors.yml");  // MMORPG 裝甲配置
+        ensureDefaultConfigExists("config/mob_spawner.yml");       // 動態怪物生成系統配置
 
         // Load main config
         loadConfig("config/config.yml");
@@ -205,6 +206,14 @@ public class ConfigManager {
                     // 【武器基本資料】
                     weaponData.put("name", config.getString(key + ".basic.name"));
                     weaponData.put("material", config.getString(key + ".basic.material"));
+                    weaponData.put("rarity", config.getString(key + ".basic.rarity", "普通"));
+                    weaponData.put("category", config.getString(key + ".basic.category", ""));
+
+                    // 【雙手武器標記】
+                    weaponData.put("two-handed", config.getBoolean(key + ".limits.two-handed", false));
+
+                    // 【等級需求】
+                    weaponData.put("min-level", config.getInt(key + ".limits.required-level", 0));
 
                     // 【外觀設定】
                     weaponData.put("display-name", config.getString(key + ".appearance.display-name"));

@@ -55,6 +55,9 @@ public class CustomRPG extends JavaPlugin {
     private DamageDisplayManager damageDisplayManager;
     private ManaManager manaManager;
     private ManaDisplayManager manaDisplayManager;
+    private com.customrpg.managers.BloodManager bloodManager;
+    private com.customrpg.managers.MobSpawnManager mobSpawnManager;
+    private com.customrpg.managers.ProtectionAreaManager protectionAreaManager;
 
     // Talent skill system (legacy)
     private com.customrpg.managers.SkillManager talentSkillManager;
@@ -116,6 +119,12 @@ public class CustomRPG extends JavaPlugin {
             getLogger().info("- TalentManager shutdown");
         }
 
+        // 關閉怪物生成系統
+        if (mobSpawnManager != null) {
+            mobSpawnManager.shutdown();
+            getLogger().info("- MobSpawnManager shutdown");
+        }
+
         // 清理裝備GUI
         if (equipmentGUI != null) {
             equipmentGUI.cleanup();
@@ -158,6 +167,7 @@ public class CustomRPG extends JavaPlugin {
         configManager = null;
         weaponManager = null;
         mobManager = null;
+        mobSpawnManager = null;
         statsManager = null;
         equipmentManager = null;
         equipmentGUI = null;
@@ -190,6 +200,13 @@ public class CustomRPG extends JavaPlugin {
         statsManager = new PlayerStatsManager(this);
         getLogger().info("- PlayerStatsManager initialized");
 
+        // Initialize MobSpawnManager (dynamic mob spawning)
+        mobSpawnManager = new com.customrpg.managers.MobSpawnManager(this, mobManager, statsManager);
+        getLogger().info("- MobSpawnManager initialized");
+
+        protectionAreaManager = new com.customrpg.managers.ProtectionAreaManager(this);
+        getLogger().info("- ProtectionAreaManager initialized");
+
         statsGUI = new StatsGUI(statsManager);
         getLogger().info("- StatsGUI initialized");
 
@@ -208,6 +225,10 @@ public class CustomRPG extends JavaPlugin {
         // Initialize ManaManager
         manaManager = new ManaManager(this, statsManager);
         getLogger().info("- ManaManager initialized");
+
+        // Initialize BloodManager
+        bloodManager = new com.customrpg.managers.BloodManager(this);
+        getLogger().info("- BloodManager initialized");
 
         // Initialize TalentSkillManager (legacy skill system for talent skills)
         talentSkillManager = new com.customrpg.managers.SkillManager(this, configManager);
@@ -325,6 +346,9 @@ public class CustomRPG extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ManaListener(), this);
         getLogger().info("- ManaListener registered");
+
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ProtectAreaListener(this, protectionAreaManager), this);
+        getLogger().info("- ProtectAreaListener registered");
     }
 
     /**
@@ -403,6 +427,28 @@ public class CustomRPG extends JavaPlugin {
         } else {
             getLogger().warning("- Failed to register /stat command: command not defined in plugin.yml");
         }
+
+        // MobSpawn management command
+        org.bukkit.command.PluginCommand mobSpawnCommand = getCommand("mobspawn");
+        if (mobSpawnCommand != null) {
+            com.customrpg.commands.MobSpawnCommand mobSpawnCommandExecutor = new com.customrpg.commands.MobSpawnCommand(this);
+            mobSpawnCommand.setExecutor(mobSpawnCommandExecutor);
+            mobSpawnCommand.setTabCompleter(mobSpawnCommandExecutor);
+            getLogger().info("- /mobspawn command registered");
+        } else {
+            getLogger().warning("- Failed to register /mobspawn command: command not defined in plugin.yml");
+        }
+
+        // ProtectArea command
+        org.bukkit.command.PluginCommand protectAreaCmd = getCommand("protectarea");
+        if (protectAreaCmd != null) {
+            com.customrpg.commands.ProtectAreaCommand protectAreaCommand = new com.customrpg.commands.ProtectAreaCommand(this, protectionAreaManager);
+            protectAreaCmd.setExecutor(protectAreaCommand);
+            protectAreaCmd.setTabCompleter(protectAreaCommand);
+            getLogger().info("- /protectarea command registered");
+        } else {
+            getLogger().warning("- Failed to register /protectarea command: command not defined in plugin.yml");
+        }
     }
 
     /**
@@ -473,6 +519,10 @@ public class CustomRPG extends JavaPlugin {
         return manaManager;
     }
 
+    public com.customrpg.managers.BloodManager getBloodManager() {
+        return bloodManager;
+    }
+
     public com.customrpg.managers.TalentSkillManager getTalentSkillManager() {
         return activeTalentSkillManager;
     }
@@ -486,5 +536,13 @@ public class CustomRPG extends JavaPlugin {
     }
     public com.customrpg.equipment.ArmorManager getArmorManager() {
         return armorManager;
+    }
+
+    public com.customrpg.managers.MobSpawnManager getMobSpawnManager() {
+        return mobSpawnManager;
+    }
+
+    public com.customrpg.managers.ProtectionAreaManager getProtectionAreaManager() {
+        return protectionAreaManager;
     }
 }

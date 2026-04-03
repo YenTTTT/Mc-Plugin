@@ -47,6 +47,18 @@ commands:
     usage: /stat
     permission: customrpg.stat
     permission-message: You don't have permission to use this command!
+  mobspawn:
+    description: 動態怪物生成系統管理與測試
+    usage: /mobspawn <status|spawn|clear|debug|reload|help>
+    permission: customrpg.admin
+    permission-message: You don't have permission to use this command!
+    aliases: [ms, mobsp]
+  protectarea:
+    description: 保護區域管理 — 區域內不生成怪物
+    usage: /protectarea [name|list|remove|reload|help]
+    permission: customrpg.admin
+    permission-message: You don't have permission to use this command!
+    aliases: [pa, protect]
 
 permissions:
   customrpg.*:
@@ -58,10 +70,11 @@ permissions:
       customrpg.stat: true
       customrpg.talent: true
       customrpg.talent.admin: true
+      customrpg.mob: true
+      customrpg.admin: true
       customrpg.equipment: true
       customrpg.equipment.give: true
       customrpg.equipment.reload: true
-      customrpg.admin: true
   customrpg.weapon:
     description: Allows using the /weapon command for yourself
     default: op

@@ -15,7 +15,9 @@ public enum TalentBranch {
     DARK("暗黑系", "施放技能會消耗自身血量的高風險技能"),
     WEAPON("武器系", "強化武器攻擊與戰鬥技巧"),
     TECH("科技系", "機械 / 裝置 / 特殊戰術技能"),
-    NATURE("自然系", "治療 / 控制 / 自然元素技能");
+    NATURE("自然系", "治療 / 控制 / 自然元素技能"),
+    SUKUNA("宿儺系", "咒術王的斬擊與火焰術式"),
+    BLOOD("赤血操術系", "操控血液的禁忌術式");
 
     private final String displayName;
     private final String description;

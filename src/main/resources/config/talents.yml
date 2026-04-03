@@ -451,3 +451,525 @@ nature:
           stunEffect: "INSTANT_EFFECT"
           hitParticle: "ENCHANTED_HIT"
 
+  # 領域展開 - 影牢 (2,4) -> slot = 2 * 9 + 4 = 22
+  shadow_prison_domain:
+    name: "領域展開 - 影牢"
+    description: "以自身為中心展開影之領域，域內敵人持續受到魔法傷害並被減速，施術者獲得傷害增幅與抗性"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "地獄之星"
+    cooldown: 30
+    manaCost: 60
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      anyOf:
+        - skill: "nature_doctrine"
+          level: 3
+        - skill: "stargazing"
+          level: 1
+    gui:
+      slot: 22
+      icon: "NETHER_STAR"
+    levels:
+      1:
+        effect:
+          baseDamage: 15
+          magicScaling: 0.3
+          radius: 6
+          duration: 8
+          slowLevel: 2
+          damageInterval: 10
+          damageBoostLevel: 1
+          resistanceLevel: 1
+      2:
+        effect:
+          baseDamage: 22
+          magicScaling: 0.45
+          radius: 7
+          duration: 10
+          slowLevel: 3
+          damageInterval: 8
+          damageBoostLevel: 2
+          resistanceLevel: 1
+      3:
+        effect:
+          baseDamage: 30
+          magicScaling: 0.6
+          radius: 8
+          duration: 12
+          slowLevel: 4
+          damageInterval: 6
+          damageBoostLevel: 2
+          resistanceLevel: 2
+
+
+# ==================== 宿儺系 (Sukuna) ====================
+sukuna:
+  # 解體 (Dismantle) (5,0) -> slot = 5 * 9 + 0 = 45
+  dismantle:
+    name: "解體"
+    description: "發射高速不可見的斬擊投射物，命中首個敵人造成傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鑽石劍"
+    cooldown: 0.5
+    manaCost: 5
+    trigger:
+      type: "LEFT_CLICK"
+    gui:
+      slot: 45
+      icon: "DIAMOND_SWORD"
+    levels:
+      1:
+        effect:
+          baseDamage: 50
+          strengthScaling: 0.3
+          agilityScaling: 0.2
+          range: 10
+      2:
+        effect:
+          baseDamage: 75
+          strengthScaling: 0.4
+          agilityScaling: 0.25
+          range: 12
+      3:
+        effect:
+          baseDamage: 100
+          strengthScaling: 0.5
+          agilityScaling: 0.3
+          range: 15
+
+  # 捌 (Cleave) (5,2) -> slot = 5 * 9 + 2 = 47
+  cleave:
+    name: "捌"
+    description: "根據目標最大生命值造成百分比傷害的強力斬擊"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鑽石劍"
+    cooldown: 2
+    manaCost: 15
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "dismantle"
+      level: 1
+    gui:
+      slot: 47
+      icon: "NETHERITE_SWORD"
+    levels:
+      1:
+        effect:
+          baseDamage: 30
+          maxHealthScaling: 0.10
+          range: 5
+      2:
+        effect:
+          baseDamage: 45
+          maxHealthScaling: 0.15
+          range: 6
+      3:
+        effect:
+          baseDamage: 60
+          maxHealthScaling: 0.20
+          range: 7
+
+  # 貫穿斬 (Piercing Slash) (5,4) -> slot = 5 * 9 + 4 = 49
+  piercing_slash:
+    name: "貫穿斬"
+    description: "發射穿透型斬擊，貫穿並傷害路徑上的所有敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鑽石劍"
+    cooldown: 3
+    manaCost: 20
+    trigger:
+      type: "LEFT_CLICK_SNEAK"
+    prerequisite:
+      skill: "dismantle"
+      level: 1
+    gui:
+      slot: 49
+      icon: "IRON_SWORD"
+    levels:
+      1:
+        effect:
+          baseDamage: 80
+          strengthScaling: 0.4
+          range: 12
+          pierceCount: 3
+      2:
+        effect:
+          baseDamage: 120
+          strengthScaling: 0.5
+          range: 15
+          pierceCount: 5
+      3:
+        effect:
+          baseDamage: 160
+          strengthScaling: 0.6
+          range: 18
+          pierceCount: 8
+
+  # 火之術式 (Flame Technique) (4,2) -> slot = 4 * 9 + 2 = 38
+  flame_technique:
+    name: "火之術式"
+    description: "在指定位置引發咒力火焰爆炸，造成範圍傷害並點燃敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鑽石劍"
+    cooldown: 4
+    manaCost: 30
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "cleave"
+      level: 2
+    gui:
+      slot: 38
+      icon: "BLAZE_POWDER"
+    levels:
+      1:
+        effect:
+          baseDamage: 100
+          magicScaling: 0.5
+          radius: 4
+          burnDuration: 3
+      2:
+        effect:
+          baseDamage: 150
+          magicScaling: 0.65
+          radius: 5
+          burnDuration: 4
+      3:
+        effect:
+          baseDamage: 200
+          magicScaling: 0.8
+          radius: 6
+          burnDuration: 5
+
+  # 咒力強化 (Cursed Energy Enhancement) (4,4) -> slot = 4 * 9 + 4 = 40
+  cursed_energy_enhancement:
+    name: "咒力強化"
+    description: "被動增加力量與敏捷"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "cleave"
+          level: 1
+        - skill: "piercing_slash"
+          level: 1
+    gui:
+      slot: 40
+      icon: "NETHER_STAR"
+    levels:
+      1:
+        effect:
+          statBonus:
+            strength: 30
+            agility: 20
+      2:
+        effect:
+          statBonus:
+            strength: 60
+            agility: 40
+      3:
+        effect:
+          statBonus:
+            strength: 100
+            agility: 70
+
+  # 領域展開 - 伏魔御廚子 (Malevolent Shrine) (3,2) -> slot = 3 * 9 + 2 = 29
+  malevolent_shrine:
+    name: "領域展開 - 伏魔御廚子"
+    description: "展開必中領域，領域內所有目標持續受到無差別斬擊攻擊"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "地獄之星"
+    cooldown: 60
+    manaCost: 100
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "cursed_energy_enhancement"
+      level: 3
+    gui:
+      slot: 29
+      icon: "NETHER_STAR"
+    levels:
+      1:
+        effect:
+          baseDamage: 25
+          strengthScaling: 0.2
+          agilityScaling: 0.1
+          radius: 8
+          duration: 6
+          damageInterval: 5
+      2:
+        effect:
+          baseDamage: 40
+          strengthScaling: 0.3
+          agilityScaling: 0.15
+          radius: 10
+          duration: 8
+          damageInterval: 4
+      3:
+        effect:
+          baseDamage: 60
+          strengthScaling: 0.4
+          agilityScaling: 0.2
+          radius: 12
+          duration: 10
+          damageInterval: 3
+
+# ==================== 赤血操術系 (Blood Manipulation) ====================
+blood:
+  # 穿血 (Piercing Blood) (5,0) -> slot = 5 * 9 + 0 = 45
+  piercing_blood:
+    name: "穿血"
+    description: "發射高速直線血箭，穿透多個敵人造成高傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 2
+    bloodCost: 10
+    trigger:
+      type: "RIGHT_CLICK"
+    gui:
+      slot: 45
+      icon: "REDSTONE"
+    levels:
+      1:
+        effect:
+          baseDamage: 80
+          bloodScaling: 0.5
+          range: 20
+          pierceCount: 3
+      2:
+        effect:
+          baseDamage: 120
+          bloodScaling: 0.7
+          range: 25
+          pierceCount: 5
+      3:
+        effect:
+          baseDamage: 160
+          bloodScaling: 0.9
+          range: 30
+          pierceCount: 8
+
+  # 血潮 (Blood Wave) (5,2) -> slot = 5 * 9 + 2 = 47
+  blood_wave:
+    name: "血潮"
+    description: "向前釋放血浪，持續推進並造成多段傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 4
+    bloodCost: 15
+    trigger:
+      type: "LEFT_CLICK"
+    gui:
+      slot: 47
+      icon: "RED_DYE"
+    levels:
+      1:
+        effect:
+          baseDamage: 25
+          bloodScaling: 0.2
+          range: 8
+          width: 3
+          hitCount: 4
+          pushForce: 0.3
+      2:
+        effect:
+          baseDamage: 40
+          bloodScaling: 0.3
+          range: 10
+          width: 4
+          hitCount: 5
+          pushForce: 0.4
+      3:
+        effect:
+          baseDamage: 55
+          bloodScaling: 0.4
+          range: 12
+          width: 5
+          hitCount: 6
+          pushForce: 0.5
+
+  # 血爆 (Blood Burst) (5,4) -> slot = 5 * 9 + 4 = 49
+  blood_burst:
+    name: "血爆"
+    description: "引爆指定位置的血液能量，造成範圍傷害，傷害隨血量資源增加"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 5
+    bloodCost: 20
+    trigger:
+      type: "RIGHT_CLICK"
+    gui:
+      slot: 49
+      icon: "TNT"
+    levels:
+      1:
+        effect:
+          baseDamage: 60
+          bloodScaling: 1.0
+          bloodPercentBonus: 0.5
+          radius: 4
+      2:
+        effect:
+          baseDamage: 90
+          bloodScaling: 1.3
+          bloodPercentBonus: 0.7
+          radius: 5
+      3:
+        effect:
+          baseDamage: 120
+          bloodScaling: 1.6
+          bloodPercentBonus: 1.0
+          radius: 6
+
+  # 血縛 (Blood Binding) (4,2) -> slot = 4 * 9 + 2 = 38
+  blood_binding:
+    name: "血縛"
+    description: "以血液束縛敵人，使其無法移動2秒"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 6
+    bloodCost: 15
+    trigger:
+      type: "LEFT_CLICK_SNEAK"
+    prerequisite:
+      skill: "blood_wave"
+      level: 1
+    gui:
+      slot: 38
+      icon: "LEAD"
+    levels:
+      1:
+        effect:
+          rootDuration: 2.0
+          damage: 20
+          range: 10
+      2:
+        effect:
+          rootDuration: 2.5
+          damage: 35
+          range: 12
+      3:
+        effect:
+          rootDuration: 3.0
+          damage: 50
+          range: 15
+
+  # 血回收 (Blood Recovery) (4,4) -> slot = 4 * 9 + 4 = 40
+  blood_recovery:
+    name: "血回收"
+    description: "被動效果：擊殺敵人時回復血量資源"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "piercing_blood"
+          level: 1
+        - skill: "blood_burst"
+          level: 1
+    gui:
+      slot: 40
+      icon: "GHAST_TEAR"
+    levels:
+      1:
+        effect:
+          recoveryAmount: 8
+      2:
+        effect:
+          recoveryAmount: 15
+      3:
+        effect:
+          recoveryAmount: 25
+
+  # 赤血強化 (Blood Enhancement) (4,6) -> slot = 4 * 9 + 6 = 42
+  blood_enhancement:
+    name: "赤血強化"
+    description: "被動增加最大血量資源與血液技能傷害"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "blood_recovery"
+      level: 1
+    gui:
+      slot: 42
+      icon: "REDSTONE_BLOCK"
+    levels:
+      1:
+        effect:
+          maxBloodBonus: 20
+          bloodDamageBonus: 0.1
+      2:
+        effect:
+          maxBloodBonus: 40
+          bloodDamageBonus: 0.2
+      3:
+        effect:
+          maxBloodBonus: 60
+          bloodDamageBonus: 0.3
+
+  # 血狂 (Blood Frenzy) (3,3) -> slot = 3 * 9 + 3 = 30
+  blood_frenzy:
+    name: "血狂"
+    description: "進入血狂狀態，大幅提升攻擊與技能傷害，但持續消耗生命值"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 30
+    bloodCost: 30
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "blood_enhancement"
+      level: 2
+    gui:
+      slot: 30
+      icon: "NETHER_STAR"
+    levels:
+      1:
+        effect:
+          duration: 8
+          damageBoost: 0.3
+          attackSpeedBoost: 0.2
+          healthDrainPerSecond: 2
+      2:
+        effect:
+          duration: 10
+          damageBoost: 0.5
+          attackSpeedBoost: 0.3
+          healthDrainPerSecond: 3
+      3:
+        effect:
+          duration: 12
+          damageBoost: 0.7
+          attackSpeedBoost: 0.4
+          healthDrainPerSecond: 4
+

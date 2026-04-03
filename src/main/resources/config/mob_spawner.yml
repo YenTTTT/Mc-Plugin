@@ -1,0 +1,104 @@
+# ========================================
+# 動態怪物生成系統配置
+# MobSpawnManager Configuration
+# ========================================
+
+# 是否啟用自動生成系統
+enabled: true
+
+# 是否啟用 debug 日誌 (在 console 輸出詳細生成過程，測試時建議開啟)
+debug: true
+
+# 生成檢查間隔 (ticks, 20 ticks = 1 秒)
+interval-ticks: 60
+
+# 每次檢查每位玩家最多嘗試生成幾隻怪
+spawns-per-cycle: 3
+
+# ===== 生成範圍 =====
+spawn-radius:
+  # 最小生成距離 (不會太靠近玩家)
+  min: 10
+  # 最大生成距離
+  max: 35
+  # 怪物之間最小距離
+  min-between-mobs: 8
+
+# ===== 數量限制 =====
+limits:
+  # 每位玩家附近最大自定義怪物數量
+  max-mobs-per-player: 10
+
+# ===== 怪物階級 =====
+tiers:
+  # 普通怪
+  normal:
+    # 等級偏移範圍: playerLevel + offset
+    level-offset-min: -3
+    level-offset-max: 3
+    # 屬性倍率
+    stat-multiplier: 1.0
+    # 名稱前綴 (空 = 不加)
+    name-prefix: ""
+
+  # 精英怪 (20% 機率)
+  elite:
+    chance: 0.20
+    level-offset-min: 1
+    level-offset-max: 5
+    stat-multiplier: 1.5
+    name-prefix: "&6⚔ "
+
+  # BOSS 怪 — 累積機率系統 (保底機制)
+  # 每次生成周期擲骰，沒出BOSS → 機率累積，出了 → 重置
+  boss:
+    # 基礎機率 (0.2%)
+    base-chance: 0.002
+    # 每次沒出時累積增加的機率 (+0.3%)
+    pity-increment: 0.003
+    # 冷卻時間 (秒) — BOSS 出現後 30 分鐘內不會再出
+    cooldown-seconds: 1800
+    # BOSS 生成距離玩家的範圍 (比普通怪更遠，讓玩家去找)
+    spawn-radius-min: 40
+    spawn-radius-max: 80
+    level-offset-min: 3
+    level-offset-max: 8
+    stat-multiplier: 3.0
+    name-prefix: "&c✦ BOSS ✦ "
+    # BOSS 生成時的粒子效果
+    spawn-particle: FLAME
+    spawn-particle-count: 100
+    # BOSS 生成時的音效
+    spawn-sound: ENTITY_ENDER_DRAGON_GROWL
+    spawn-sound-volume: 2.0
+    spawn-sound-pitch: 0.5
+
+# ===== 距離加成 =====
+# 距離世界出生點越遠，怪物等級越高
+distance-scaling:
+  enabled: true
+  # 每幾格距離增加1級
+  blocks-per-level: 200
+
+# ===== 生成條件 =====
+conditions:
+  # 是否只在夜晚生成 (false = 白天也生成)
+  night-only: false
+  # 最低光照等級才生成 (0 = 無限制)
+  max-light-level: 15
+  # 地面上才生成 (排除空中)
+  require-solid-ground: true
+  # 需要空間 (腳+頭兩格空氣)
+  require-air-space: true
+
+# ===== 排除的世界 =====
+disabled-worlds:
+  - "world_the_end"
+
+# ===== 安全區 =====
+# 在世界出生點附近不會生成自定義怪物
+safe-zone:
+  enabled: true
+  # 安全區半徑 (格)
+  radius: 20
+
