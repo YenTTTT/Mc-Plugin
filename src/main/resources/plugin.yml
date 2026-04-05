@@ -59,6 +59,24 @@ commands:
     permission: customrpg.admin
     permission-message: You don't have permission to use this command!
     aliases: [pa, protect]
+  race:
+    description: 種族系統 — 選擇種族、查看資訊
+    usage: /race [info|set|reset|list|reload|help]
+    permission: customrpg.race
+    permission-message: You don't have permission to use this command!
+    aliases: [races]
+  setmob:
+    description: 怪物區域管理 — 設定安全區域與怪物等級
+    usage: /setmob [<minLevel> <maxLevel> <zoneId>|list|remove|info|tier|reload|help]
+    permission: customrpg.admin
+    permission-message: You don't have permission to use this command!
+    aliases: [mobzone, mz]
+  menu:
+    description: 開啟主選單 GUI — 快速存取所有 RPG 功能
+    usage: /menu [getitem]
+    permission: customrpg.menu
+    permission-message: You don't have permission to use this command!
+    aliases: [m, mainmenu]
 
 permissions:
   customrpg.*:
@@ -75,6 +93,9 @@ permissions:
       customrpg.equipment: true
       customrpg.equipment.give: true
       customrpg.equipment.reload: true
+      customrpg.race: true
+      customrpg.race.admin: true
+      customrpg.menu: true
   customrpg.weapon:
     description: Allows using the /weapon command for yourself
     default: op
@@ -105,3 +126,12 @@ permissions:
   customrpg.admin:
     description: Administrative access to all features
     default: op
+  customrpg.race:
+    description: Allows using race system and GUI
+    default: true
+  customrpg.race.admin:
+    description: Allows managing other players' races
+    default: op
+  customrpg.menu:
+    description: Allows using /menu command to open main menu
+    default: true

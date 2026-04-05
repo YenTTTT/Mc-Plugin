@@ -135,6 +135,23 @@ public class WeaponListener implements Listener {
         // === 1.7) 處理天賦被動觸發 (例如: 疾行者) ===
         baseDamage = handleAttackPassiveTalents(player, baseDamage, event);
 
+        // === 1.8) 種族武器類型傷害加成 ===
+        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
+        if (raceManager != null && raceManager.hasRace(player)) {
+            // 取得武器類別名稱
+            String weaponTypeName;
+            if (weaponData != null) {
+                weaponTypeName = weaponData.getCategory().name();
+            } else {
+                // 非自訂武器：根據 Material 偵測
+                weaponTypeName = WeaponManager.WeaponCategory.detectFromMaterial(weapon.getType(), false).name();
+            }
+
+            // 種族對此武器類型的傷害加成
+            double raceWeaponBonus = raceManager.getWeaponDamageBonus(player, weaponTypeName);
+            baseDamage *= raceWeaponBonus;
+        }
+
         // === 2) Damage multiplier (含稀有度加成) ===
         double damageMultiplier = 1.0;
         if (weaponData != null) {
@@ -162,6 +179,17 @@ public class WeaponListener implements Listener {
         // 無論是否使用自訂武器，都套用敏捷暴擊加成
         double agilityBonus = playerStats.getAgility() * 0.2; // 每點 Agility +0.2% 暴擊率
         critChancePercent += agilityBonus;
+
+        // === 3.6) 種族被動暴擊率加成 ===
+        if (raceManager != null && raceManager.hasRace(player)) {
+            com.customrpg.races.RaceData raceData = raceManager.getPlayerRaceData(player);
+            if (raceData != null) {
+                critChancePercent += raceData.getBonusCritChance();
+                if (raceData.getBonusCritDamage() > 0 && critDamageMultiplier > 1.0) {
+                    critDamageMultiplier += raceData.getBonusCritDamage();
+                }
+            }
+        }
 
         // 防呆：暴擊率上限 100%
         critChancePercent = Math.max(0.0, Math.min(100.0, critChancePercent));

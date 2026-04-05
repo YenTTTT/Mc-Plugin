@@ -52,23 +52,26 @@ public class StatsGUI implements Listener {
 
         // Row 1: 屬性顯示
         gui.setItem(0, createStatDisplay(Material.IRON_SWORD, "物理攻擊 (Strength)",
-                stats.getStrength(), stats.getEquipmentStrength(),
+                stats.getStrength(), stats.getEquipmentStrength(), stats.getRaceStrength(),
                 "每點增加 0.5 近戰傷害"));
         gui.setItem(1, createStatDisplay(Material.EXPERIENCE_BOTTLE, "魔法攻擊 (Magic)",
-                stats.getMagic(), stats.getEquipmentMagic(),
+                stats.getMagic(), stats.getEquipmentMagic(), stats.getRaceMagic(),
                 "每點增加 0.3 技能傷害"));
         gui.setItem(2, createStatDisplay(Material.BOW, "敏捷 (Agility)",
-                stats.getAgility(), stats.getEquipmentAgility(),
+                stats.getAgility(), stats.getEquipmentAgility(), stats.getRaceAgility(),
                 "每點增加 0.2% 暴擊率", "每點增加 0.1 弓箭傷害"));
         gui.setItem(3, createStatDisplay(Material.POPPY, "生命力 (Vitality)",
-                stats.getVitality(), stats.getEquipmentVitality(),
+                stats.getVitality(), stats.getEquipmentVitality(), stats.getRaceVitality(),
                 "每點增加 2.0 最大血量"));
         gui.setItem(4, createStatDisplay(Material.DIAMOND_CHESTPLATE, "防禦 (Defense)",
-                stats.getDefense(), stats.getEquipmentDefense(),
+                stats.getDefense(), stats.getEquipmentDefense(), stats.getRaceDefense(),
                 "每點減免 0.5% 傷害"));
         gui.setItem(5, createStatDisplay(Material.GHAST_TEAR, "精神 (Spirit)",
-                stats.getSpirit(), stats.getEquipmentSpirit(),
+                stats.getSpirit(), stats.getEquipmentSpirit(), stats.getRaceSpirit(),
                 "目前無特殊效果"));
+
+        // Slot 7: 種族資訊顯示
+        gui.setItem(7, createRaceDisplay(player));
 
         // Center slot: Stat Points Display
         gui.setItem(8, createStatPointsDisplay(stats.getStatPoints(), stats.getLevel(), stats.getExp(), statsManager.getRequiredExp(stats.getLevel())));
@@ -106,7 +109,7 @@ public class StatsGUI implements Listener {
     /**
      * 創建屬性顯示物品
      */
-    private ItemStack createStatDisplay(Material material, String name, int baseValue, int equipmentBonus, String... descriptions) {
+    private ItemStack createStatDisplay(Material material, String name, int baseValue, int equipmentBonus, int raceBonus, String... descriptions) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
 
@@ -125,8 +128,15 @@ public class StatsGUI implements Listener {
                 lore.add(ChatColor.GRAY + "裝備: " + ChatColor.DARK_GRAY + "+0");
             }
 
+            // 顯示種族加成
+            if (raceBonus > 0) {
+                lore.add(ChatColor.GRAY + "種族: " + ChatColor.LIGHT_PURPLE + "+" + raceBonus);
+            } else {
+                lore.add(ChatColor.GRAY + "種族: " + ChatColor.DARK_GRAY + "+0");
+            }
+
             // 顯示總計
-            int total = baseValue + equipmentBonus;
+            int total = baseValue + equipmentBonus + raceBonus;
             lore.add(ChatColor.YELLOW + "總計: " + ChatColor.AQUA + "" + ChatColor.BOLD + total);
 
             lore.add("");
@@ -136,6 +146,71 @@ public class StatsGUI implements Listener {
 
             meta.setLore(lore);
             item.setItemMeta(meta);
+        }
+
+        return item;
+    }
+
+    /**
+     * 創建種族資訊顯示物品
+     */
+    private ItemStack createRaceDisplay(org.bukkit.entity.Player player) {
+        // 嘗試取得 RaceManager
+        com.customrpg.CustomRPG plugin = (com.customrpg.CustomRPG) org.bukkit.Bukkit.getPluginManager().getPlugin("CustomRPG");
+        ItemStack item;
+
+        if (plugin != null && plugin.getRaceManager() != null) {
+            com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
+            com.customrpg.races.RaceData raceData = raceManager.getPlayerRaceData(player);
+
+            if (raceData != null) {
+                item = new ItemStack(Material.DRAGON_EGG);
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    meta.setDisplayName(ChatColor.LIGHT_PURPLE + "種族: " + raceData.getDisplayName());
+                    List<String> lore = new ArrayList<>();
+                    // 武器類型傷害加成
+                    java.util.Map<String, Double> weaponBonuses = raceData.getWeaponBonuses();
+                    if (!weaponBonuses.isEmpty()) {
+                        lore.add(ChatColor.GOLD + "武器傷害加成:");
+                        for (java.util.Map.Entry<String, Double> entry : weaponBonuses.entrySet()) {
+                            double bonus = entry.getValue();
+                            String color = bonus > 1.0 ? ChatColor.GREEN.toString() : (bonus < 1.0 ? ChatColor.RED.toString() : ChatColor.WHITE.toString());
+                            lore.add(ChatColor.GRAY + "  " + entry.getKey() + ": " + color + String.format("%.0f%%", bonus * 100));
+                        }
+                        lore.add(ChatColor.GRAY + "  其他: " + ChatColor.WHITE + String.format("%.0f%%", raceData.getDefaultWeaponBonus() * 100));
+                    } else {
+                        lore.add(ChatColor.GRAY + "武器傷害: " + ChatColor.GREEN + String.format("%.0f%%", raceData.getDefaultWeaponBonus() * 100));
+                    }
+                    if (raceData.getBonusCritChance() > 0)
+                        lore.add(ChatColor.GRAY + "暴擊率加成: " + ChatColor.GREEN + "+" + String.format("%.1f%%", raceData.getBonusCritChance()));
+                    if (raceData.getBonusMoveSpeed() != 0)
+                        lore.add(ChatColor.GRAY + "移動速度: " + ChatColor.GREEN + String.format("%+.0f%%", raceData.getBonusMoveSpeed() * 100));
+                    if (raceData.getBonusHealthRegen() != 0)
+                        lore.add(ChatColor.GRAY + "生命回復: " + ChatColor.GREEN + String.format("%+.1f/s", raceData.getBonusHealthRegen()));
+                    lore.add("");
+                    lore.add(ChatColor.YELLOW + "使用 /race info 查看詳細");
+                    meta.setLore(lore);
+                    item.setItemMeta(meta);
+                }
+            } else {
+                item = new ItemStack(Material.BARRIER);
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    meta.setDisplayName(ChatColor.RED + "尚未選擇種族");
+                    List<String> lore = new ArrayList<>();
+                    lore.add(ChatColor.GRAY + "使用 /race 選擇種族");
+                    meta.setLore(lore);
+                    item.setItemMeta(meta);
+                }
+            }
+        } else {
+            item = new ItemStack(Material.BARRIER);
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName(ChatColor.RED + "種族系統未啟用");
+                item.setItemMeta(meta);
+            }
         }
 
         return item;

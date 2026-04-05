@@ -265,6 +265,12 @@ public class PlayerStatsManager {
         // 更新最大血量
         updateMaxHealth(player);
 
+        // 重新計算種族屬性加成 (因為成長倍率與等級相關)
+        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
+        if (raceManager != null && raceManager.hasRace(player)) {
+            raceManager.applyRaceStats(player);
+        }
+
         // 特效與訊息
         player.sendMessage(ChatColor.GOLD + "========================================");
         player.sendMessage(ChatColor.YELLOW + "  🎉 恭喜升級！你現在是等級 " + ChatColor.AQUA + (currentLevel + 1));

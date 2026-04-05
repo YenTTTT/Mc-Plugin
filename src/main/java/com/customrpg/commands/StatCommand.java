@@ -136,7 +136,15 @@ public class StatCommand implements CommandExecutor {
         player.sendMessage(ChatColor.GRAY + "ID: " + ChatColor.WHITE + player.getName());
 
         // 種族
-        player.sendMessage(ChatColor.GRAY + "種族: " + ChatColor.YELLOW + "人類 " + level + "等級");
+        String raceName = "未選擇";
+        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
+        if (raceManager != null && raceManager.hasRace(player)) {
+            com.customrpg.races.RaceData raceData = raceManager.getPlayerRaceData(player);
+            if (raceData != null) {
+                raceName = raceData.getDisplayName();
+            }
+        }
+        player.sendMessage(ChatColor.GRAY + "種族: " + ChatColor.YELLOW + raceName + " " + level + "等級");
 
         // 攜帶技能 (天賦系統選取的技能)
         com.customrpg.managers.TalentManager tm = plugin.getTalentManager();
@@ -250,6 +258,30 @@ public class StatCommand implements CommandExecutor {
         
         if (!hasAny) {
             player.sendMessage(ChatColor.GRAY + "目前沒有任何武器加成");
+        }
+
+        // 種族武器加成
+        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
+        if (raceManager != null && raceManager.hasRace(player)) {
+            com.customrpg.races.RaceData raceData = raceManager.getPlayerRaceData(player);
+            if (raceData != null) {
+                player.sendMessage(ChatColor.GOLD + "--- 種族加成 ---");
+                java.util.Map<String, Double> weaponBonuses = raceData.getWeaponBonuses();
+                if (weaponBonuses.isEmpty()) {
+                    player.sendMessage(ChatColor.GRAY + "武器傷害: " + ChatColor.GREEN + String.format("%.0f%%", raceData.getDefaultWeaponBonus() * 100));
+                } else {
+                    for (java.util.Map.Entry<String, Double> entry : weaponBonuses.entrySet()) {
+                        double bonus = entry.getValue();
+                        String color = bonus > 1.0 ? ChatColor.GREEN.toString() : (bonus < 1.0 ? ChatColor.RED.toString() : ChatColor.WHITE.toString());
+                        player.sendMessage(ChatColor.GRAY + entry.getKey() + ": " + color + String.format("%.0f%%", bonus * 100));
+                    }
+                    player.sendMessage(ChatColor.GRAY + "其他武器: " + ChatColor.WHITE + String.format("%.0f%%", raceData.getDefaultWeaponBonus() * 100));
+                }
+                if (raceData.getBonusCritChance() > 0)
+                    player.sendMessage(ChatColor.GRAY + "暴擊率: " + ChatColor.GREEN + "+" + String.format("%.1f%%", raceData.getBonusCritChance()));
+                if (raceData.getBonusCritDamage() > 0)
+                    player.sendMessage(ChatColor.GRAY + "暴擊傷害: " + ChatColor.GREEN + "+" + String.format("%.0f%%", raceData.getBonusCritDamage() * 100));
+            }
         }
     }
 

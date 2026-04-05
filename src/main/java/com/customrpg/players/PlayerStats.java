@@ -32,6 +32,14 @@ public class PlayerStats {
     private int equipmentDefense;
     private int equipmentSpirit;
 
+    // 種族屬性加成
+    private int raceStrength;
+    private int raceMagic;
+    private int raceAgility;
+    private int raceVitality;
+    private int raceDefense;
+    private int raceSpirit;
+
     // 其他屬性加成（未來可擴展：天賦、BUFF等）
     private double bonusAttackDamage;
     private double bonusDefenseValue;
@@ -66,6 +74,13 @@ public class PlayerStats {
         this.equipmentVitality = 0;
         this.equipmentDefense = 0;
         this.equipmentSpirit = 0;
+
+        this.raceStrength = 0;
+        this.raceMagic = 0;
+        this.raceAgility = 0;
+        this.raceVitality = 0;
+        this.raceDefense = 0;
+        this.raceSpirit = 0;
 
         this.bonusAttackDamage = 0.0;
         this.bonusDefenseValue = 0.0;
@@ -227,48 +242,68 @@ public class PlayerStats {
         this.equipmentSpirit = Math.max(0, equipmentSpirit);
     }
 
-    // ===== 總屬性 (基礎 + 裝備加成) =====
+    // ===== 種族加成 Getters & Setters =====
+
+    public int getRaceStrength() { return raceStrength; }
+    public void setRaceStrength(int raceStrength) { this.raceStrength = Math.max(0, raceStrength); }
+
+    public int getRaceMagic() { return raceMagic; }
+    public void setRaceMagic(int raceMagic) { this.raceMagic = Math.max(0, raceMagic); }
+
+    public int getRaceAgility() { return raceAgility; }
+    public void setRaceAgility(int raceAgility) { this.raceAgility = Math.max(0, raceAgility); }
+
+    public int getRaceVitality() { return raceVitality; }
+    public void setRaceVitality(int raceVitality) { this.raceVitality = Math.max(0, raceVitality); }
+
+    public int getRaceDefense() { return raceDefense; }
+    public void setRaceDefense(int raceDefense) { this.raceDefense = Math.max(0, raceDefense); }
+
+    public int getRaceSpirit() { return raceSpirit; }
+    public void setRaceSpirit(int raceSpirit) { this.raceSpirit = Math.max(0, raceSpirit); }
+
+    // ===== 總屬性 (基礎 + 裝備加成 + 種族加成) =====
 
     /**
-     * 獲取總力量（基礎 + 裝備）
+     * 獲取總力量（基礎 + 裝備 + 種族）
      */
     public int getTotalStrength() {
-        return strength + equipmentStrength;
+        return strength + equipmentStrength + raceStrength;
     }
 
     /**
-     * 獲取總魔法（基礎 + 裝備）
+     * 獲取總魔法（基礎 + 裝備 + 種族）
      */
     public int getTotalMagic() {
-        return magic + equipmentMagic;
+        return magic + equipmentMagic + raceMagic;
     }
 
     /**
-     * 獲取總敏捷（基礎 + 裝備）
+     * 獲取總敏捷（基礎 + 裝備 + 種族）
      */
     public int getTotalAgility() {
-        return agility + equipmentAgility;
+        return agility + equipmentAgility + raceAgility;
     }
 
     /**
-     * 獲取總生命力（基礎 + 裝備）
+     * 獲取總生命力（基礎 + 裝備 + 種族）
      */
     public int getTotalVitality() {
-        return vitality + equipmentVitality;
+        return vitality + equipmentVitality + raceVitality;
     }
 
     /**
-     * 獲取總防禦（基礎 + 裝備）
+     * 獲取總防禦（基礎 + 裝備 + 種族）
      */
     public int getTotalDefense() {
-        return defense + equipmentDefense;
+        return defense + equipmentDefense + raceDefense;
     }
 
     /**
-     * 獲取總精神（基礎 + 裝備）
+     * 獲取總精神（基礎 + 裝備 + 種族）
      */
     public int getTotalSpirit() {
-        return spirit + equipmentSpirit;
+        return spirit + equipmentSpirit + raceSpirit;
     }
 
     // ===== 其他加成 Getters & Setters =====

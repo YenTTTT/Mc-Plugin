@@ -20,7 +20,13 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 /**
- * MobSpawnManager - 動態怪物生成系統
+ * MobSpawnManager - 區域式動態怪物生成系統
+ *
+ * Zone-Based 生成：
+ * - 玩家在 zone 內 → 不生成怪物
+ * - 玩家在 zone 外 → 依距離計算怪物等級 (tier 系統)
+ * - 保留 BOSS / ELITE / NORMAL 階級系統
+ * - 保留累積機率 (pity) 系統
  */
 public class MobSpawnManager {
 
@@ -47,8 +53,8 @@ public class MobSpawnManager {
     private final Logger log;
     private BukkitTask spawnTask;
 
-    // Debug mode - 開啟後會在 console 輸出詳細日誌
-    private boolean debug = true;
+    // Debug mode
+    private boolean debug = false;
 
     // ===== Configuration =====
     private boolean enabled;
@@ -68,11 +74,11 @@ public class MobSpawnManager {
     private String eliteNamePrefix;
 
     // Boss — 累積機率系統 (pity system)
-    private double bossBaseChance;      // 基礎機率 (0.2%)
-    private double bossPityIncrement;   // 每次沒出時累加 (+0.3%)
-    private int bossCooldownSeconds;    // 冷卻秒數 (1800 = 30分鐘)
-    private int bossSpawnRadiusMin;     // BOSS 專用生成最小距離
-    private int bossSpawnRadiusMax;     // BOSS 專用生成最大距離
+    private double bossBaseChance;
+    private double bossPityIncrement;
+    private int bossCooldownSeconds;
+    private int bossSpawnRadiusMin;
+    private int bossSpawnRadiusMax;
     private int bossLevelOffsetMin, bossLevelOffsetMax;
     private double bossStatMultiplier;
     private String bossNamePrefix;
@@ -82,12 +88,8 @@ public class MobSpawnManager {
     private float bossSoundVolume, bossSoundPitch;
 
     // Boss pity 運行時狀態 (per-player)
-    private final Map<UUID, Double> playerPityChance = new HashMap<>();  // 玩家當前累積機率
-    private final Map<UUID, Long> playerBossCooldown = new HashMap<>();  // 玩家BOSS冷卻到期時間
-
-    // Distance scaling
-    private boolean distanceScalingEnabled;
-    private int blocksPerLevel;
+    private final Map<UUID, Double> playerPityChance = new HashMap<>();
+    private final Map<UUID, Long> playerBossCooldown = new HashMap<>();
 
     // Conditions
     private boolean nightOnly;
@@ -95,10 +97,8 @@ public class MobSpawnManager {
     private boolean requireSolidGround;
     private boolean requireAirSpace;
 
-    // Disabled worlds / safe zone
+    // Disabled worlds
     private Set<String> disabledWorlds;
-    private boolean safeZoneEnabled;
-    private int safeZoneRadius;
 
     // Track spawned mobs
     private final Set<UUID> spawnedMobs = new HashSet<>();
@@ -120,12 +120,6 @@ public class MobSpawnManager {
 
         if (enabled) {
             startSpawnTask();
-            log.info("[MobSpawnManager] ✓ 動態怪物生成系統已啟用");
-            log.info("[MobSpawnManager]   間隔: " + intervalTicks + " ticks, 每次: " + spawnsPerCycle + " 隻");
-            log.info("[MobSpawnManager]   範圍: " + spawnRadiusMin + "~" + spawnRadiusMax + " 格");
-            log.info("[MobSpawnManager]   上限: " + maxMobsPerPlayer + " 隻/玩家");
-            log.info("[MobSpawnManager]   安全區: " + (safeZoneEnabled ? safeZoneRadius + " 格" : "停用"));
-            log.info("[MobSpawnManager]   可用怪物種類: " + mobManager.getMobKeys().size());
         } else {
             log.info("[MobSpawnManager] ✗ 動態怪物生成系統已停用 (config: enabled=false)");
         }
@@ -140,7 +134,7 @@ public class MobSpawnManager {
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
         enabled = config.getBoolean("enabled", true);
-        debug = config.getBoolean("debug", true);
+        debug = config.getBoolean("debug", false);
         intervalTicks = config.getInt("interval-ticks", 60);
         spawnsPerCycle = config.getInt("spawns-per-cycle", 3);
 
@@ -179,10 +173,6 @@ public class MobSpawnManager {
         bossSoundVolume = (float) config.getDouble("tiers.boss.spawn-sound-volume", 2.0);
         bossSoundPitch = (float) config.getDouble("tiers.boss.spawn-sound-pitch", 0.5);
 
-        // Distance scaling
-        distanceScalingEnabled = config.getBoolean("distance-scaling.enabled", true);
-        blocksPerLevel = config.getInt("distance-scaling.blocks-per-level", 200);
-
         // Conditions
         nightOnly = config.getBoolean("conditions.night-only", false);
         maxLightLevel = config.getInt("conditions.max-light-level", 15);
@@ -190,8 +180,6 @@ public class MobSpawnManager {
         requireAirSpace = config.getBoolean("conditions.require-air-space", true);
 
         disabledWorlds = new HashSet<>(config.getStringList("disabled-worlds"));
-        safeZoneEnabled = config.getBoolean("safe-zone.enabled", true);
-        safeZoneRadius = config.getInt("safe-zone.radius", 20);
     }
 
     private void startSpawnTask() {
@@ -209,14 +197,13 @@ public class MobSpawnManager {
                     processPlayer(player);
                 }
             }
-        }.runTaskTimer(plugin, 40, intervalTicks); // 首次延遲2秒
+        }.runTaskTimer(plugin, 40, intervalTicks);
     }
 
     private void processPlayer(Player player) {
         String pName = player.getName();
 
-        // 不再跳過 Creative — 讓 OP 也能測試
-        // 只跳過 Spectator
+        // 跳過旁觀者
         if (player.getGameMode() == GameMode.SPECTATOR) {
             if (debug) log.info("[MobSpawn] 跳過 " + pName + ": 旁觀者模式");
             lastSkipReason = "旁觀者模式";
@@ -241,18 +228,18 @@ public class MobSpawnManager {
             }
         }
 
-        // 安全區
-        if (safeZoneEnabled) {
-            Location worldSpawn = player.getWorld().getSpawnLocation();
-            double distToSpawn = player.getLocation().distance(worldSpawn);
-            if (distToSpawn < safeZoneRadius) {
-                if (debug) log.info("[MobSpawn] 跳過 " + pName + ": 在安全區內 (距出生點: " + String.format("%.1f", distToSpawn) + " < " + safeZoneRadius + ")");
-                lastSkipReason = "安全區 (距離: " + String.format("%.1f", distToSpawn) + ")";
+        // ===== Zone-Based 檢查 =====
+        ZoneManager zoneManager = plugin.getZoneManager();
+        if (zoneManager != null && zoneManager.getZoneCount() > 0) {
+            // 玩家在安全區域內 → 不生成
+            if (zoneManager.isInsideAnyZone(player.getLocation())) {
+                if (debug) log.info("[MobSpawn] 跳過 " + pName + ": 在怪物安全區域內");
+                lastSkipReason = "怪物安全區域";
                 return;
             }
         }
 
-        // 保護區域 — 玩家在保護區內時不生成任何自訂怪物
+        // 保護區域 — 原有的 ProtectionArea 系統也繼續生效
         ProtectionAreaManager pam = plugin.getProtectionAreaManager();
         if (pam != null && pam.isInProtectedArea(player.getLocation())) {
             if (debug) log.info("[MobSpawn] 跳過 " + pName + ": 在保護區域內");
@@ -292,7 +279,6 @@ public class MobSpawnManager {
 
     private int countNearbyCustomMobs(Player player) {
         int count = 0;
-        // 使用較大的搜索範圍 (包含 BOSS 的生成範圍)
         int searchRadius = Math.max(spawnRadiusMax, bossSpawnRadiusMax);
         NamespacedKey key = mobManager.getCustomMobNamespacedKey();
         for (Entity entity : player.getNearbyEntities(searchRadius, searchRadius, searchRadius)) {
@@ -307,7 +293,6 @@ public class MobSpawnManager {
 
     /**
      * 嘗試生成一隻怪物
-     * @return 是否成功
      */
     private boolean attemptSpawn(Player player, List<String> mobKeys) {
         totalSpawnAttempts++;
@@ -326,13 +311,34 @@ public class MobSpawnManager {
         if (spawnLoc == null) {
             totalLocationFails++;
             if (debug) log.info("[MobSpawn]   找不到有效生成位置 (嘗試5次失敗)");
-            // BOSS 找不到位置不算擲骰失敗，不增加 pity
             return false;
         }
 
-        PlayerStats stats = statsManager.getStats(player);
-        int playerLevel = stats.getLevel();
-        int mobLevel = calculateLevel(playerLevel, tier, player.getLocation());
+        // ===== Zone-Based 等級計算 =====
+        ZoneManager zoneManager = plugin.getZoneManager();
+        int mobLevel;
+        if (zoneManager != null && zoneManager.getZoneCount() > 0) {
+            // 使用 zone 系統計算等級
+            int[] levelRange = zoneManager.calculateMobLevelRange(spawnLoc);
+            int baseLevel = levelRange[0] + random.nextInt(Math.max(1, levelRange[1] - levelRange[0] + 1));
+
+            // 再疊加階級偏移
+            int tierOffset = calculateTierLevelOffset(tier);
+            mobLevel = Math.max(1, baseLevel + tierOffset);
+
+            if (debug) {
+                int zoneTier = zoneManager.calculateTier(spawnLoc);
+                log.info("[MobSpawn]   Zone等級: " + levelRange[0] + "~" + levelRange[1]
+                        + " (Tier " + zoneTier + "), 基礎=" + baseLevel + " + 階級偏移=" + tierOffset
+                        + " → 最終等級=" + mobLevel);
+            }
+        } else {
+            // 沒有 zone → 使用原有的玩家等級方式
+            PlayerStats stats = statsManager.getStats(player);
+            int playerLevel = stats.getLevel();
+            mobLevel = calculateLevelLegacy(playerLevel, tier, player.getLocation());
+        }
+
         String mobKey = selectMobType(mobKeys);
 
         if (debug) {
@@ -356,19 +362,28 @@ public class MobSpawnManager {
     }
 
     /**
+     * 計算階級等級偏移
+     */
+    private int calculateTierLevelOffset(MobTier tier) {
+        return switch (tier) {
+            case ELITE -> ThreadLocalRandom.current().nextInt(eliteLevelOffsetMin, eliteLevelOffsetMax + 1);
+            case BOSS -> ThreadLocalRandom.current().nextInt(bossLevelOffsetMin, bossLevelOffsetMax + 1);
+            default -> ThreadLocalRandom.current().nextInt(normalLevelOffsetMin, normalLevelOffsetMax + 1);
+        };
+    }
+
+    /**
      * 決定怪物階級 (含累積機率系統)
      */
     private MobTier determineTier(Player player) {
         UUID pid = player.getUniqueId();
 
         // === BOSS 擲骰 (pity system) ===
-        // 檢查冷卻
         long now = System.currentTimeMillis();
         Long cooldownEnd = playerBossCooldown.get(pid);
         boolean bossOnCooldown = (cooldownEnd != null && now < cooldownEnd);
 
         if (!bossOnCooldown) {
-            // 取得當前累積機率
             double currentPity = playerPityChance.getOrDefault(pid, bossBaseChance);
             double roll = random.nextDouble();
 
@@ -379,10 +394,8 @@ public class MobSpawnManager {
             }
 
             if (roll < currentPity) {
-                // 命中 BOSS!
                 return MobTier.BOSS;
             } else {
-                // 沒命中 → 累積機率
                 double newPity = currentPity + bossPityIncrement;
                 playerPityChance.put(pid, newPity);
                 if (debug) {
@@ -397,8 +410,17 @@ public class MobSpawnManager {
         }
 
         // === 精英 / 普通 擲骰 ===
+        // 高 tier 區域提升精英機率
+        double adjustedEliteChance = eliteChance;
+        ZoneManager zoneManager = plugin.getZoneManager();
+        if (zoneManager != null && zoneManager.getZoneCount() > 0) {
+            int zoneTier = zoneManager.calculateTier(player.getLocation());
+            // 每個 tier 增加 5% 精英機率
+            adjustedEliteChance = Math.min(0.80, eliteChance + (zoneTier - 1) * 0.05);
+        }
+
         double roll = random.nextDouble();
-        if (roll < eliteChance) {
+        if (roll < adjustedEliteChance) {
             return MobTier.ELITE;
         }
         return MobTier.NORMAL;
@@ -412,7 +434,7 @@ public class MobSpawnManager {
     }
 
     /**
-     * 尋找 BOSS 的生成位置 (更遠的距離)
+     * 尋找 BOSS 的生成位置 (更遠)
      */
     private Location findBossSpawnLocation(Player player) {
         return findSpawnLocationInRadius(player, bossSpawnRadiusMin, bossSpawnRadiusMax);
@@ -436,7 +458,7 @@ public class MobSpawnManager {
             int chunkX = (int) x >> 4;
             int chunkZ = (int) z >> 4;
             if (!world.isChunkLoaded(chunkX, chunkZ)) {
-                continue; // 不強制載入 chunk
+                continue;
             }
 
             int highestY = world.getHighestBlockYAt((int) x, (int) z);
@@ -450,7 +472,14 @@ public class MobSpawnManager {
                 continue;
             }
 
-            // 檢查是否在保護區域內 (2D 判定，忽略 Y 軸)
+            // 檢查是否在 Zone 安全區內
+            ZoneManager zoneManager = plugin.getZoneManager();
+            if (zoneManager != null && zoneManager.isInsideAnyZone(candidate)) {
+                if (debug) log.info("[MobSpawn]   候選位置在怪物安全區域內，跳過");
+                continue;
+            }
+
+            // 檢查是否在保護區域內
             ProtectionAreaManager pam = plugin.getProtectionAreaManager();
             if (pam != null && pam.isInProtectedArea2D(candidate)) {
                 if (debug) log.info("[MobSpawn]   候選位置在保護區域內，跳過");
@@ -492,29 +521,12 @@ public class MobSpawnManager {
         return true;
     }
 
-    private int calculateLevel(int playerLevel, MobTier tier, Location playerLocation) {
-        int levelOffset;
-        switch (tier) {
-            case ELITE:
-                levelOffset = ThreadLocalRandom.current().nextInt(eliteLevelOffsetMin, eliteLevelOffsetMax + 1);
-                break;
-            case BOSS:
-                levelOffset = ThreadLocalRandom.current().nextInt(bossLevelOffsetMin, bossLevelOffsetMax + 1);
-                break;
-            default:
-                levelOffset = ThreadLocalRandom.current().nextInt(normalLevelOffsetMin, normalLevelOffsetMax + 1);
-                break;
-        }
-
+    /**
+     * 舊版等級計算 (當沒有 zone 時使用)
+     */
+    private int calculateLevelLegacy(int playerLevel, MobTier tier, Location playerLocation) {
+        int levelOffset = calculateTierLevelOffset(tier);
         int level = playerLevel + levelOffset;
-
-        if (distanceScalingEnabled && blocksPerLevel > 0) {
-            Location worldSpawn = playerLocation.getWorld().getSpawnLocation();
-            double distanceFromSpawn = playerLocation.distance(worldSpawn);
-            int distanceBonus = (int) Math.floor(distanceFromSpawn / blocksPerLevel);
-            level += distanceBonus;
-        }
-
         return Math.max(1, level);
     }
 
@@ -616,13 +628,20 @@ public class MobSpawnManager {
 
         String coordStr = ChatColor.AQUA + "(" + bx + ", " + by + ", " + bz + ")";
 
+        // 顯示 Zone Tier 資訊
+        String tierInfo = "";
+        ZoneManager zoneManager = plugin.getZoneManager();
+        if (zoneManager != null && zoneManager.getZoneCount() > 0) {
+            int zoneTier = zoneManager.calculateTier(location);
+            tierInfo = ChatColor.GRAY + " [" + zoneManager.getTierDisplayName(zoneTier) + ChatColor.GRAY + "]";
+        }
+
         String message = ChatColor.RED + "" + ChatColor.BOLD + "⚠ "
                 + ChatColor.DARK_RED + "" + ChatColor.BOLD + "【BOSS出現】\n"
-                + ChatColor.RED + mobName + ChatColor.GRAY + " (Lv." + level + ")\n"
+                + ChatColor.RED + mobName + ChatColor.GRAY + " (Lv." + level + ")" + tierInfo + "\n"
                 + ChatColor.YELLOW + "座標: " + coordStr + "\n"
                 + ChatColor.GOLD + "快去討伐吧！";
 
-        // 通知範圍 = BOSS 生成範圍的 3 倍 (讓更多人看到)
         double notifyRadius = bossSpawnRadiusMax * 3.0;
 
         for (Player player : location.getWorld().getPlayers()) {
@@ -632,7 +651,6 @@ public class MobSpawnManager {
                 player.sendMessage(message);
                 player.sendMessage(ChatColor.GOLD + "════════════════════════════════");
                 player.sendMessage("");
-                // Title
                 player.sendTitle(
                         ChatColor.RED + "⚠ BOSS 出現 ⚠",
                         ChatColor.GOLD + mobName + ChatColor.GRAY + " Lv." + level + "  " + coordStr,
@@ -655,7 +673,6 @@ public class MobSpawnManager {
             return ChatColor.RED + "沒有已註冊的怪物類型！";
         }
 
-        // 如果沒指定 key，隨機選
         if (mobKey == null || mobKey.isEmpty()) {
             mobKey = selectMobType(mobKeys);
         } else if (mobManager.getMobData(mobKey) == null) {
@@ -663,13 +680,22 @@ public class MobSpawnManager {
                     + ChatColor.YELLOW + "可用類型: " + String.join(", ", mobKeys);
         }
 
-        // 在玩家前方 8 格生成
         Location spawnLoc = player.getLocation().add(player.getLocation().getDirection().multiply(8));
         spawnLoc.setY(player.getWorld().getHighestBlockYAt(spawnLoc.getBlockX(), spawnLoc.getBlockZ()) + 1);
 
-        PlayerStats stats = statsManager.getStats(player);
-        int playerLevel = stats.getLevel();
-        int mobLevel = calculateLevel(playerLevel, tier, player.getLocation());
+        // Zone-based level
+        int mobLevel;
+        ZoneManager zoneManager = plugin.getZoneManager();
+        if (zoneManager != null && zoneManager.getZoneCount() > 0) {
+            int[] levelRange = zoneManager.calculateMobLevelRange(spawnLoc);
+            int baseLevel = levelRange[0] + random.nextInt(Math.max(1, levelRange[1] - levelRange[0] + 1));
+            int tierOffset = calculateTierLevelOffset(tier);
+            mobLevel = Math.max(1, baseLevel + tierOffset);
+        } else {
+            PlayerStats stats = statsManager.getStats(player);
+            int playerLevel = stats.getLevel();
+            mobLevel = calculateLevelLegacy(playerLevel, tier, player.getLocation());
+        }
 
         boolean success = spawnTieredMob(mobKey, spawnLoc, mobLevel, tier);
         if (success) {
@@ -701,6 +727,18 @@ public class MobSpawnManager {
         }
         lines.add("");
 
+        // Zone 資訊
+        ZoneManager zoneManager = plugin.getZoneManager();
+        if (zoneManager != null) {
+            lines.add(ChatColor.AQUA + "--- Zone-Based 系統 ---");
+            lines.add(ChatColor.YELLOW + "怪物區域數量: " + ChatColor.WHITE + zoneManager.getZoneCount());
+            for (var zone : zoneManager.getAllZones()) {
+                lines.add(ChatColor.GRAY + "  " + zone.name + ": Lv." + zone.minLevel + "~" + zone.maxLevel
+                        + " (步進: " + zone.radiusStep + "格)");
+            }
+            lines.add("");
+        }
+
         // 玩家資訊
         if (player != null) {
             lines.add(ChatColor.AQUA + "--- 你的狀態 ---");
@@ -708,12 +746,22 @@ public class MobSpawnManager {
             lines.add(ChatColor.YELLOW + "世界: " + ChatColor.WHITE + player.getWorld().getName()
                     + (disabledWorlds.contains(player.getWorld().getName()) ? ChatColor.RED + " (已禁用)" : ChatColor.GREEN + " (允許)"));
 
-            Location worldSpawn = player.getWorld().getSpawnLocation();
-            double distToSpawn = player.getLocation().distance(worldSpawn);
-            lines.add(ChatColor.YELLOW + "距出生點: " + ChatColor.WHITE + String.format("%.1f", distToSpawn) + " 格"
-                    + (safeZoneEnabled && distToSpawn < safeZoneRadius
-                    ? ChatColor.RED + " (在安全區內! 需 > " + safeZoneRadius + ")"
-                    : ChatColor.GREEN + " (安全區外 ✓)"));
+            // Zone-based 狀態
+            if (zoneManager != null && zoneManager.getZoneCount() > 0) {
+                boolean inZone = zoneManager.isInsideAnyZone(player.getLocation());
+                lines.add(ChatColor.YELLOW + "安全區域: " + (inZone ? ChatColor.GREEN + "✓ 在安全區內" : ChatColor.RED + "✗ 在野外"));
+
+                int zoneTier = zoneManager.calculateTier(player.getLocation());
+                lines.add(ChatColor.YELLOW + "Zone Tier: " + zoneManager.getTierDisplayName(zoneTier));
+
+                int[] levelRange = zoneManager.calculateMobLevelRange(player.getLocation());
+                lines.add(ChatColor.YELLOW + "怪物等級: " + ChatColor.WHITE + "Lv." + levelRange[0] + " ~ Lv." + levelRange[1]);
+
+                double dist = zoneManager.getDistanceToNearestZoneBorder(player.getLocation());
+                if (dist >= 0) {
+                    lines.add(ChatColor.YELLOW + "距最近安全區: " + ChatColor.WHITE + String.format("%.1f", dist) + " 格");
+                }
+            }
 
             int nearbyCount = countNearbyCustomMobs(player);
             lines.add(ChatColor.YELLOW + "附近自訂怪物: " + ChatColor.WHITE + nearbyCount + "/" + maxMobsPerPlayer
@@ -794,7 +842,6 @@ public class MobSpawnManager {
         loadConfig();
         if (enabled) {
             startSpawnTask();
-            log.info("[MobSpawnManager] 配置已重新載入，生成系統已啟動");
         } else {
             log.info("[MobSpawnManager] 配置已重新載入，生成系統已停用");
         }
@@ -806,7 +853,6 @@ public class MobSpawnManager {
             spawnTask = null;
         }
         int removed = clearAllSpawnedMobs();
-        log.info("[MobSpawnManager] 已關閉，清除了 " + removed + " 隻生成的怪物");
     }
 
     public int getSpawnedMobCount() {
@@ -821,6 +867,5 @@ public class MobSpawnManager {
         return enabled;
     }
 }
-
 
 

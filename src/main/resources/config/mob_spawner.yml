@@ -7,7 +7,7 @@
 enabled: true
 
 # 是否啟用 debug 日誌 (在 console 輸出詳細生成過程，測試時建議開啟)
-debug: true
+debug: false
 
 # 生成檢查間隔 (ticks, 20 ticks = 1 秒)
 interval-ticks: 60

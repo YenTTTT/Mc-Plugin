@@ -58,6 +58,11 @@ public class CustomRPG extends JavaPlugin {
     private com.customrpg.managers.BloodManager bloodManager;
     private com.customrpg.managers.MobSpawnManager mobSpawnManager;
     private com.customrpg.managers.ProtectionAreaManager protectionAreaManager;
+    private com.customrpg.managers.ZoneManager zoneManager;
+
+    // Race system
+    private com.customrpg.races.RaceManager raceManager;
+    private com.customrpg.gui.RaceGUI raceGUI;
 
     // Talent skill system (legacy)
     private com.customrpg.managers.SkillManager talentSkillManager;
@@ -72,6 +77,9 @@ public class CustomRPG extends JavaPlugin {
 
     // New skill system (weapon skills)
     private SkillManager newSkillManager;
+
+    // Menu GUI
+    private com.customrpg.gui.MenuGUI menuGUI;
 
     /**
      * Called when the plugin is enabled
@@ -111,6 +119,12 @@ public class CustomRPG extends JavaPlugin {
         if (statsManager != null) {
             statsManager.saveAllStats();
             getLogger().info("- All player stats saved");
+        }
+
+        // 儲存種族數據
+        if (raceManager != null) {
+            raceManager.saveAll();
+            getLogger().info("- All race data saved");
         }
 
         // 儲存天賦數據並清理
@@ -200,12 +214,23 @@ public class CustomRPG extends JavaPlugin {
         statsManager = new PlayerStatsManager(this);
         getLogger().info("- PlayerStatsManager initialized");
 
+        // Initialize ZoneManager (mob zone system)
+        zoneManager = new com.customrpg.managers.ZoneManager(this);
+        getLogger().info("- ZoneManager initialized with " + zoneManager.getZoneCount() + " zones");
+
         // Initialize MobSpawnManager (dynamic mob spawning)
         mobSpawnManager = new com.customrpg.managers.MobSpawnManager(this, mobManager, statsManager);
         getLogger().info("- MobSpawnManager initialized");
 
         protectionAreaManager = new com.customrpg.managers.ProtectionAreaManager(this);
         getLogger().info("- ProtectionAreaManager initialized");
+
+        // Initialize Race System
+        raceManager = new com.customrpg.races.RaceManager(this);
+        getLogger().info("- RaceManager initialized with " + raceManager.getRaceCount() + " races");
+
+        raceGUI = new com.customrpg.gui.RaceGUI(this, raceManager);
+        getLogger().info("- RaceGUI initialized");
 
         statsGUI = new StatsGUI(statsManager);
         getLogger().info("- StatsGUI initialized");
@@ -287,6 +312,10 @@ public class CustomRPG extends JavaPlugin {
         healthDisplayManager.setManaDisplayManager(manaDisplayManager);
         manaDisplayManager.setDamageDisplayManager(damageDisplayManager);
         manaDisplayManager.setHealthDisplayManager(healthDisplayManager);
+
+        // Initialize MenuGUI
+        menuGUI = new com.customrpg.gui.MenuGUI(this);
+        getLogger().info("- MenuGUI initialized");
     }
 
     /**
@@ -349,6 +378,22 @@ public class CustomRPG extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ProtectAreaListener(this, protectionAreaManager), this);
         getLogger().info("- ProtectAreaListener registered");
+
+        // SetMob zone listener
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SetMobListener(this, zoneManager), this);
+        getLogger().info("- SetMobListener registered");
+
+        // Race system listeners
+        getServer().getPluginManager().registerEvents(raceGUI, this);
+        getLogger().info("- RaceGUI registered");
+
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.RaceListener(this, raceManager), this);
+        getLogger().info("- RaceListener registered");
+
+        // Menu GUI + compass listener
+        getServer().getPluginManager().registerEvents(menuGUI, this);
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.MenuListener(this, menuGUI), this);
+        getLogger().info("- MenuGUI & MenuListener registered");
     }
 
     /**
@@ -449,6 +494,39 @@ public class CustomRPG extends JavaPlugin {
         } else {
             getLogger().warning("- Failed to register /protectarea command: command not defined in plugin.yml");
         }
+
+        // Race system command
+        org.bukkit.command.PluginCommand raceCmd = getCommand("race");
+        if (raceCmd != null) {
+            com.customrpg.commands.RaceCommand raceCommand = new com.customrpg.commands.RaceCommand(this, raceManager, raceGUI);
+            raceCmd.setExecutor(raceCommand);
+            raceCmd.setTabCompleter(raceCommand);
+            getLogger().info("- /race command registered");
+        } else {
+            getLogger().warning("- Failed to register /race command: command not defined in plugin.yml");
+        }
+
+        // SetMob zone command
+        org.bukkit.command.PluginCommand setMobCmd = getCommand("setmob");
+        if (setMobCmd != null) {
+            com.customrpg.commands.SetMobCommand setMobCommand = new com.customrpg.commands.SetMobCommand(this, zoneManager);
+            setMobCmd.setExecutor(setMobCommand);
+            setMobCmd.setTabCompleter(setMobCommand);
+            getLogger().info("- /setmob command registered");
+        } else {
+            getLogger().warning("- Failed to register /setmob command: command not defined in plugin.yml");
+        }
+
+        // Menu command
+        org.bukkit.command.PluginCommand menuCmd = getCommand("menu");
+        if (menuCmd != null) {
+            com.customrpg.commands.MenuCommand menuCommand = new com.customrpg.commands.MenuCommand(this, menuGUI);
+            menuCmd.setExecutor(menuCommand);
+            menuCmd.setTabCompleter(menuCommand);
+            getLogger().info("- /menu command registered");
+        } else {
+            getLogger().warning("- Failed to register /menu command: command not defined in plugin.yml");
+        }
     }
 
     /**
@@ -544,5 +622,25 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.managers.ProtectionAreaManager getProtectionAreaManager() {
         return protectionAreaManager;
+    }
+
+    public com.customrpg.managers.ZoneManager getZoneManager() {
+        return zoneManager;
+    }
+
+    public com.customrpg.races.RaceManager getRaceManager() {
+        return raceManager;
+    }
+
+    public com.customrpg.gui.RaceGUI getRaceGUI() {
+        return raceGUI;
+    }
+
+    public com.customrpg.gui.MenuGUI getMenuGUI() {
+        return menuGUI;
+    }
+
+    public StatsGUI getStatsGUI() {
+        return statsGUI;
     }
 }

@@ -1,0 +1,316 @@
+# ===================================
+# CustomRPG - 種族配置檔案
+# ===================================
+# 每個種族包含：
+#   - name: 顯示名稱 (支援顏色碼)
+#   - description: 簡短描述
+#   - base-stats: 基礎屬性加成
+#   - growth: 每級成長倍率
+#   - skills: 種族技能 (最多2個)
+#   - weapon: 武器類型傷害加成
+#       - default: 未列出的武器類型預設倍率
+#       - bonuses: 各武器類型的傷害倍率
+#   - passives: 被動效果
+#
+# 武器類型列表:
+#   SWORD(劍), STAFF(法杖), SCYTHE(鐮刀),
+#   TWO_HAND_SCYTHE(雙手鐮刀), AXE(斧), TWO_HAND_AXE(雙手斧),
+#   BOW(弓), SPEAR(長槍), UNKNOWN(未知)
+# ===================================
+
+races:
+
+  # ===== 人類 =====
+  human:
+    name: "§f人類"
+    description: "平衡發展的種族，適合所有武器"
+
+    base-stats:
+      strength: 5
+      agility: 5
+      magic: 5
+      vitality: 5
+      defense: 5
+      spirit: 5
+
+    growth:
+      strength: 1.0
+      agility: 1.0
+      magic: 1.0
+      vitality: 1.0
+      defense: 1.0
+      spirit: 1.0
+
+    skills:
+      - focus
+      - adaptability
+
+    weapon:
+      default: 1.0
+      bonuses:
+        SWORD: 1.1
+        AXE: 1.05
+        SPEAR: 1.05
+        BOW: 1.0
+        STAFF: 1.0
+
+    passives:
+      crit-chance: 0.0
+      crit-damage: 0.0
+      move-speed: 0.0
+      health-regen: 0.0
+
+  # ===== 精靈 =====
+  elf:
+    name: "§a精靈"
+    description: "敏捷與魔法兼具的森林種族"
+
+    base-stats:
+      strength: 3
+      agility: 8
+      magic: 7
+      vitality: 4
+      defense: 3
+      spirit: 6
+
+    growth:
+      strength: 0.8
+      agility: 1.3
+      magic: 1.2
+      vitality: 0.9
+      defense: 0.8
+      spirit: 1.1
+
+    skills:
+      - wind_step
+      - nature_blessing
+
+    weapon:
+      default: 0.85
+      bonuses:
+        BOW: 1.35
+        STAFF: 1.25
+        SCYTHE: 1.15
+        SWORD: 0.9
+        AXE: 0.75
+        TWO_HAND_AXE: 0.7
+        SPEAR: 1.0
+
+    passives:
+      crit-chance: 3.0
+      crit-damage: 0.0
+      move-speed: 0.1
+      health-regen: 0.0
+
+  # ===== 獸人 =====
+  orc:
+    name: "§c獸人"
+    description: "蠻力無雙的戰鬥種族"
+
+    base-stats:
+      strength: 9
+      agility: 3
+      magic: 2
+      vitality: 8
+      defense: 6
+      spirit: 2
+
+    growth:
+      strength: 1.4
+      agility: 0.8
+      magic: 0.6
+      vitality: 1.3
+      defense: 1.2
+      spirit: 0.7
+
+    skills:
+      - berserk
+      - blood_rage
+
+    weapon:
+      default: 0.9
+      bonuses:
+        AXE: 1.35
+        TWO_HAND_AXE: 1.45
+        SWORD: 1.2
+        SPEAR: 1.1
+        SCYTHE: 1.0
+        TWO_HAND_SCYTHE: 1.05
+        BOW: 0.7
+        STAFF: 0.6
+
+    passives:
+      crit-chance: 2.0
+      crit-damage: 0.15
+      move-speed: 0.0
+      health-regen: 0.5
+
+  # ===== 矮人 =====
+  dwarf:
+    name: "§6矮人"
+    description: "堅韌不拔的防禦型種族"
+
+    base-stats:
+      strength: 7
+      agility: 3
+      magic: 4
+      vitality: 8
+      defense: 8
+      spirit: 4
+
+    growth:
+      strength: 1.1
+      agility: 0.7
+      magic: 0.9
+      vitality: 1.3
+      defense: 1.4
+      spirit: 0.9
+
+    skills:
+      - stone_skin
+      - forge_master
+
+    weapon:
+      default: 0.9
+      bonuses:
+        AXE: 1.3
+        TWO_HAND_AXE: 1.35
+        SWORD: 1.15
+        SPEAR: 1.1
+        SCYTHE: 0.95
+        BOW: 0.75
+        STAFF: 0.85
+
+    passives:
+      crit-chance: 0.0
+      crit-damage: 0.0
+      move-speed: -0.05
+      health-regen: 1.0
+
+  # ===== 不死族 =====
+  undead:
+    name: "§8不死族"
+    description: "黑暗力量的化身，精通亡靈魔法"
+
+    base-stats:
+      strength: 4
+      agility: 5
+      magic: 9
+      vitality: 6
+      defense: 4
+      spirit: 7
+
+    growth:
+      strength: 0.9
+      agility: 1.0
+      magic: 1.4
+      vitality: 1.1
+      defense: 0.9
+      spirit: 1.3
+
+    skills:
+      - soul_drain
+      - death_touch
+
+    weapon:
+      default: 0.85
+      bonuses:
+        STAFF: 1.4
+        SCYTHE: 1.3
+        TWO_HAND_SCYTHE: 1.35
+        SWORD: 1.0
+        AXE: 0.85
+        BOW: 0.8
+        SPEAR: 0.9
+
+    passives:
+      crit-chance: 0.0
+      crit-damage: 0.1
+      move-speed: 0.0
+      health-regen: -0.5
+
+  # ===== 惡魔族 =====
+  demon:
+    name: "§4惡魔族"
+    description: "地獄來的毀滅者，極致攻擊力"
+
+    base-stats:
+      strength: 8
+      agility: 6
+      magic: 7
+      vitality: 5
+      defense: 3
+      spirit: 3
+
+    growth:
+      strength: 1.3
+      agility: 1.1
+      magic: 1.2
+      vitality: 0.9
+      defense: 0.7
+      spirit: 0.8
+
+    skills:
+      - hellfire
+      - demon_form
+
+    weapon:
+      default: 1.0
+      bonuses:
+        SWORD: 1.3
+        AXE: 1.25
+        TWO_HAND_AXE: 1.3
+        SCYTHE: 1.2
+        TWO_HAND_SCYTHE: 1.25
+        STAFF: 1.1
+        BOW: 0.85
+        SPEAR: 1.05
+
+    passives:
+      crit-chance: 5.0
+      crit-damage: 0.2
+      move-speed: 0.05
+      health-regen: -0.3
+
+  # ===== 天使族 =====
+  angel:
+    name: "§b天使族"
+    description: "神聖之力的守護者，治療與支援"
+
+    base-stats:
+      strength: 3
+      agility: 6
+      magic: 8
+      vitality: 5
+      defense: 5
+      spirit: 9
+
+    growth:
+      strength: 0.7
+      agility: 1.0
+      magic: 1.3
+      vitality: 1.0
+      defense: 1.0
+      spirit: 1.5
+
+    skills:
+      - holy_light
+      - divine_shield
+
+    weapon:
+      default: 0.85
+      bonuses:
+        STAFF: 1.4
+        BOW: 1.15
+        SPEAR: 1.1
+        SWORD: 1.0
+        SCYTHE: 0.9
+        AXE: 0.8
+        TWO_HAND_AXE: 0.75
+
+    passives:
+      crit-chance: 0.0
+      crit-damage: 0.0
+      move-speed: 0.05
+      health-regen: 2.0
+

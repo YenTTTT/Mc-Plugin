@@ -71,6 +71,7 @@ public class ConfigManager {
         ensureDefaultConfigExists("config/skills/example.yml");
         ensureDefaultConfigExists("config/equipment/armors.yml");  // MMORPG 裝甲配置
         ensureDefaultConfigExists("config/mob_spawner.yml");       // 動態怪物生成系統配置
+        ensureDefaultConfigExists("config/races.yml");             // 種族系統配置
 
         // Load main config
         loadConfig("config/config.yml");
