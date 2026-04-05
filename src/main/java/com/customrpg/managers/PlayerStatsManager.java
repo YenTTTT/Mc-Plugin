@@ -262,11 +262,37 @@ public class PlayerStatsManager {
         stats.setDefense(stats.getDefense() + 1);
         stats.setSpirit(stats.getSpirit() + 1);
 
+        // 每次升級增加基礎魔力 +5 和魔力回復 +0.1
+        double baseManaGrowth = 5.0;
+        double baseManaRegenGrowth = 0.1;
+
+        // 如果有種族，種族的成長倍率也會影響
+        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
+        com.customrpg.races.RaceData raceData = null;
+        if (raceManager != null && raceManager.hasRace(player)) {
+            raceData = raceManager.getPlayerRaceData(player);
+        }
+
+        // 計算種族魔力成長加成
+        double raceManaBonus = 0;
+        double raceManaRegenBonus = 0;
+        if (raceData != null) {
+            raceManaBonus = raceData.calculateManaBonus(stats.getLevel());
+            raceManaRegenBonus = raceData.calculateManaRegenBonus(stats.getLevel());
+        }
+
+        // 最終最大魔力 = 基礎100 + (等級 * 每級基礎成長) + 種族加成 + 裝備加成
+        double newMaxMana = 100.0 + (stats.getLevel() * baseManaGrowth) + raceManaBonus + stats.getBonusMaxMana();
+        stats.setMaxMana(newMaxMana);
+
+        // 最終魔力回復 = 基礎1.0 + (等級 * 每級基礎成長) + 種族加成 + 裝備加成
+        double newManaRegen = 1.0 + (stats.getLevel() * baseManaRegenGrowth) + raceManaRegenBonus + stats.getBonusManaRegen();
+        stats.setManaRegen(newManaRegen);
+
         // 更新最大血量
         updateMaxHealth(player);
 
         // 重新計算種族屬性加成 (因為成長倍率與等級相關)
-        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
         if (raceManager != null && raceManager.hasRace(player)) {
             raceManager.applyRaceStats(player);
         }
@@ -277,6 +303,8 @@ public class PlayerStatsManager {
         player.sendMessage(ChatColor.GREEN + "  獲得 10 點屬性點數！");
         player.sendMessage(ChatColor.LIGHT_PURPLE + "  獲得 1 點天賦點數！");
         player.sendMessage(ChatColor.GREEN + "  全屬性自動 +1！");
+        player.sendMessage(ChatColor.AQUA + "  最大魔力: " + String.format("%.0f", stats.getMaxMana()) +
+                " §7| §b魔力回復: " + String.format("%.1f", stats.getManaRegen()) + "/秒");
         player.sendMessage(ChatColor.GOLD + "========================================");
 
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);

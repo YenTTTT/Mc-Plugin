@@ -37,6 +37,8 @@ public class EquipmentManager {
     // 配置文件
     private File equipmentConfigFile;
     private FileConfiguration equipmentConfig;
+    private File accessoriesConfigFile;
+    private FileConfiguration accessoriesConfig;
     private File setsConfigFile;
     private FileConfiguration setsConfig;
     private File runesConfigFile;
@@ -69,6 +71,13 @@ public class EquipmentManager {
             plugin.saveResource("config/equipment/armors.yml", false);
         }
         equipmentConfig = YamlConfiguration.loadConfiguration(equipmentConfigFile);
+
+        // 飾品配置 - accessories.yml
+        accessoriesConfigFile = new File(configDir, "accessories.yml");
+        if (!accessoriesConfigFile.exists()) {
+            plugin.saveResource("config/equipment/accessories.yml", false);
+        }
+        accessoriesConfig = YamlConfiguration.loadConfiguration(accessoriesConfigFile);
 
         // 套裝配置 - 也放在 config/equipment 目錄
         setsConfigFile = new File(configDir, "sets.yml");
@@ -124,17 +133,35 @@ public class EquipmentManager {
     private void loadEquipmentTemplates() {
         equipmentTemplates.clear();
 
+        // 載入護甲 (armors.yml)
         ConfigurationSection equipmentSection = equipmentConfig.getConfigurationSection("armors");
-        if (equipmentSection == null) return;
-
-        for (String equipId : equipmentSection.getKeys(false)) {
-            try {
-                EquipmentData equipment = loadEquipmentFromConfig(equipId, equipmentSection.getConfigurationSection(equipId));
-                if (equipment != null) {
-                    equipmentTemplates.put(equipId, equipment);
+        if (equipmentSection != null) {
+            for (String equipId : equipmentSection.getKeys(false)) {
+                try {
+                    EquipmentData equipment = loadEquipmentFromConfig(equipId, equipmentSection.getConfigurationSection(equipId));
+                    if (equipment != null) {
+                        equipmentTemplates.put(equipId, equipment);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("載入裝備 " + equipId + " 時發生錯誤: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                plugin.getLogger().warning("載入裝備 " + equipId + " 時發生錯誤: " + e.getMessage());
+            }
+        }
+
+        // 載入飾品 (accessories.yml)
+        if (accessoriesConfig != null) {
+            ConfigurationSection accessoriesSection = accessoriesConfig.getConfigurationSection("accessories");
+            if (accessoriesSection != null) {
+                for (String accId : accessoriesSection.getKeys(false)) {
+                    try {
+                        EquipmentData accessory = loadEquipmentFromConfig(accId, accessoriesSection.getConfigurationSection(accId));
+                        if (accessory != null) {
+                            equipmentTemplates.put(accId, accessory);
+                        }
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("載入飾品 " + accId + " 時發生錯誤: " + e.getMessage());
+                    }
+                }
             }
         }
     }
@@ -495,12 +522,15 @@ public class EquipmentManager {
         stats.setEquipmentAgility(0);
         stats.setEquipmentVitality(0);
         stats.setEquipmentDefense(0);
+        stats.setEquipmentSpirit(0);
 
         stats.setBonusAttackDamage(0);
         stats.setBonusDefenseValue(0);
         stats.setBonusMaxHealth(0);
         stats.setBonusCritChance(0);
         stats.setBonusCritDamage(0);
+        stats.setBonusMaxMana(0);
+        stats.setBonusManaRegen(0);
 
         // 應用裝備屬性加成
         for (Map.Entry<EquipmentAttribute, Double> entry : attributes.entrySet()) {
@@ -526,6 +556,9 @@ public class EquipmentManager {
                 case DEFENSE:
                     stats.setEquipmentDefense((int) value);
                     break;
+                case SPIRIT:
+                    stats.setEquipmentSpirit((int) value);
+                    break;
                 case ATTACK_DAMAGE:
                     stats.setBonusAttackDamage(value);
                     break;
@@ -544,6 +577,12 @@ public class EquipmentManager {
                 case PHYSICAL_RESISTANCE:  // 物理抗性映射到防禦加成
                     stats.setBonusDefenseValue(stats.getBonusDefenseValue() + value);
                     break;
+                case MAX_MANA:  // 最大魔力加成
+                    stats.setBonusMaxMana(stats.getBonusMaxMana() + value);
+                    break;
+                case MANA_REGEN:  // 魔力回復加成
+                    stats.setBonusManaRegen(stats.getBonusManaRegen() + value);
+                    break;
                 // 其他屬性可以根據需要添加
             }
         }
@@ -551,6 +590,13 @@ public class EquipmentManager {
         // 更新最大血量（如果有生命力加成）
         if (stats.getEquipmentVitality() > 0) {
             plugin.getPlayerStatsManager().updateMaxHealth(player);
+        }
+
+        // 更新最大魔力（如果有魔力加成）
+        if (stats.getBonusMaxMana() > 0) {
+            double baseMax = stats.getMaxMana() - stats.getBonusMaxMana(); // 取基礎值
+            if (baseMax < 100) baseMax = 100; // 最低100
+            stats.setMaxMana(baseMax + stats.getBonusMaxMana());
         }
 
         // 保存數據
@@ -634,6 +680,9 @@ public class EquipmentManager {
      */
     public void reload() {
         equipmentConfig = YamlConfiguration.loadConfiguration(equipmentConfigFile);
+        if (accessoriesConfigFile != null && accessoriesConfigFile.exists()) {
+            accessoriesConfig = YamlConfiguration.loadConfiguration(accessoriesConfigFile);
+        }
         setsConfig = YamlConfiguration.loadConfiguration(setsConfigFile);
         runesConfig = YamlConfiguration.loadConfiguration(runesConfigFile);
         loadAllData();

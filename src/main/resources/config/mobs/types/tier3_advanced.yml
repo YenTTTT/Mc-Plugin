@@ -1,0 +1,610 @@
+﻿# ========================================
+# 高級區域怪物 (Lv.40~70)
+# 中後期冒險者面對的強力敵人
+# ========================================
+
+# ───────────────────────────────
+#  魔境前線 (Lv.40~55)
+# ───────────────────────────────
+
+# 1. 深紅狂戰士 — 鑽石裝備近戰
+crimson_berserker:
+  name: "&4&l深紅狂戰士"
+  type: ZOMBIE
+  level-range:
+    min: 40
+    max: 55
+  base-stats:
+    health: 160.0
+    damage: 20.0
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 2.0
+  equipment:
+    helmet:
+      material: DIAMOND_HELMET
+    chestplate:
+      material: DIAMOND_CHESTPLATE
+    main-hand:
+      material: DIAMOND_AXE
+  exp:
+    base: 55
+    per-level: 12
+  drops:
+    vanilla-items:
+      - material: DIAMOND
+        amount: 1-2
+        chance: 0.15
+      - material: IRON_INGOT
+        amount: 2-5
+        chance: 0.5
+    custom-weapons:
+      - weapon-key: "warblade_t4"
+        chance: 0.03
+      - weapon-key: "bonebreaker_axe_t4"
+        chance: 0.02
+    custom-equipment:
+      - equipment-key: "gladiator_helmet"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "gladiator_chestplate"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "berserker_necklace"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [fire, nether, desert]
+
+# 2. 虛空幽靈 — 低血高傷飛行怪
+void_wraith:
+  name: "&5&l虛空幽靈"
+  type: VEX
+  level-range:
+    min: 40
+    max: 55
+  base-stats:
+    health: 80.0
+    damage: 25.0
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 2.5
+  exp:
+    base: 50
+    per-level: 11
+  drops:
+    vanilla-items:
+      - material: PHANTOM_MEMBRANE
+        amount: 1-3
+        chance: 0.4
+      - material: ENDER_PEARL
+        amount: 1
+        chance: 0.1
+    custom-equipment:
+      - equipment-key: "arcanist_boots"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "soul_bracelet"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [cave]
+
+# 3. 煉獄女巫 — 高等級魔法攻撃
+infernal_witch:
+  name: "&c&l煉獄女巫"
+  type: WITCH
+  level-range:
+    min: 42
+    max: 58
+  base-stats:
+    health: 100.0
+    damage: 18.0
+  stat-scaling:
+    health-per-level: 6.0
+    damage-per-level: 1.8
+  exp:
+    base: 55
+    per-level: 12
+  drops:
+    vanilla-items:
+      - material: BLAZE_POWDER
+        amount: 1-3
+        chance: 0.5
+      - material: GHAST_TEAR
+        amount: 1
+        chance: 0.08
+      - material: EXPERIENCE_BOTTLE
+        amount: 1-3
+        chance: 0.3
+    custom-weapons:
+      - weapon-key: "flame_staff_t4"
+        chance: 0.025
+    custom-equipment:
+      - equipment-key: "arcanist_helmet"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "elemental_charm"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [fire, nether]
+
+# 4. 骸骨騎士 — 全裝備鑽石骷髏
+skull_knight:
+  name: "&f&l骸骨騎士"
+  type: SKELETON
+  level-range:
+    min: 40
+    max: 55
+  base-stats:
+    health: 130.0
+    damage: 18.0
+  stat-scaling:
+    health-per-level: 7.0
+    damage-per-level: 1.8
+  equipment:
+    helmet:
+      material: IRON_HELMET
+    chestplate:
+      material: DIAMOND_CHESTPLATE
+    leggings:
+      material: IRON_LEGGINGS
+    boots:
+      material: IRON_BOOTS
+    main-hand:
+      material: DIAMOND_SWORD
+    off-hand:
+      material: SHIELD
+  exp:
+    base: 55
+    per-level: 12
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 3-6
+        chance: 0.8
+      - material: DIAMOND
+        amount: 1
+        chance: 0.08
+    custom-weapons:
+      - weapon-key: "warblade_t4"
+        chance: 0.03
+      - weapon-key: "dragonfang_spear_t4"
+        chance: 0.02
+    custom-equipment:
+      - equipment-key: "gladiator_leggings"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "ironwall_helmet"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "giant_belt"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, plains]
+
+# 5. 雷霆苦力怕 — 超高爆炸傷害
+thunder_creeper:
+  name: "&b&l雷霆苦力怕"
+  type: CREEPER
+  level-range:
+    min: 42
+    max: 55
+  base-stats:
+    health: 55.0
+    damage: 30.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 3.0
+  exp:
+    base: 50
+    per-level: 12
+  drops:
+    vanilla-items:
+      - material: GUNPOWDER
+        amount: 3-6
+        chance: 0.9
+      - material: NETHER_STAR
+        amount: 1
+        chance: 0.01
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [plains, mountain]
+
+# ───────────────────────────────
+#  地獄邊境 (Lv.45~65)
+# ───────────────────────────────
+
+# 6. 魔犬 — 快速移動近戰
+demon_hound:
+  name: "&4魔犬"
+  type: ZOMBIE
+  level-range:
+    min: 45
+    max: 60
+  base-stats:
+    health: 120.0
+    damage: 22.0
+  stat-scaling:
+    health-per-level: 6.5
+    damage-per-level: 2.2
+  exp:
+    base: 55
+    per-level: 12
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 2-4
+        chance: 0.7
+      - material: BLAZE_POWDER
+        amount: 1-2
+        chance: 0.3
+  special-behavior: "fast_movement"
+  show-level-in-name: true
+  tags: [fire, nether, cave]
+
+# 7. 地獄弓手 — 火焰箭凋零骷髏
+nether_archer:
+  name: "&6&l地獄弓手"
+  type: WITHER_SKELETON
+  level-range:
+    min: 45
+    max: 60
+  base-stats:
+    health: 100.0
+    damage: 20.0
+  stat-scaling:
+    health-per-level: 5.5
+    damage-per-level: 2.0
+  equipment:
+    main-hand:
+      material: BOW
+    helmet:
+      material: NETHERITE_HELMET
+  exp:
+    base: 55
+    per-level: 12
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 8-16
+        chance: 0.8
+      - material: WITHER_SKELETON_SKULL
+        amount: 1
+        chance: 0.02
+    custom-weapons:
+      - weapon-key: "skypiercer_crossbow_t4"
+        chance: 0.02
+    custom-equipment:
+      - equipment-key: "gale_chestplate"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "assassin_ring"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "fire_arrows"
+  show-level-in-name: true
+  tags: [fire, nether]
+
+# 8. 水晶傀儡 — 超高血量鑽石坦克
+crystal_golem:
+  name: "&b水晶傀儡"
+  type: ZOMBIE
+  level-range:
+    min: 48
+    max: 62
+  base-stats:
+    health: 200.0
+    damage: 15.0
+  stat-scaling:
+    health-per-level: 10.0
+    damage-per-level: 1.5
+  equipment:
+    helmet:
+      material: DIAMOND_HELMET
+    chestplate:
+      material: DIAMOND_CHESTPLATE
+    leggings:
+      material: DIAMOND_LEGGINGS
+    boots:
+      material: DIAMOND_BOOTS
+  exp:
+    base: 60
+    per-level: 14
+  drops:
+    vanilla-items:
+      - material: DIAMOND
+        amount: 1-3
+        chance: 0.3
+      - material: PRISMARINE_CRYSTALS
+        amount: 2-5
+        chance: 0.5
+    custom-weapons:
+      - weapon-key: "steelbreaker_t5"
+        chance: 0.02
+    custom-equipment:
+      - equipment-key: "dragonwar_leggings"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "indestructible_boots"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "bloodrage_necklace"
+        type: "accessory"
+        chance: 0.015
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [ice, cave, mountain]
+
+# 9. 瘟疫蜘蛛 — 毒攻強化版
+plague_spider:
+  name: "&2&l瘟疫蜘蛛"
+  type: SPIDER
+  level-range:
+    min: 45
+    max: 60
+  base-stats:
+    health: 90.0
+    damage: 18.0
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 1.8
+  exp:
+    base: 50
+    per-level: 11
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 3-6
+        chance: 0.8
+      - material: FERMENTED_SPIDER_EYE
+        amount: 1-2
+        chance: 0.3
+  special-behavior: "poison_attack"
+  show-level-in-name: true
+  tags: [swamp, forest]
+
+# ───────────────────────────────
+#  深淵領域 (Lv.50~70)
+# ───────────────────────────────
+
+# 10. 暗影法師 — 高傷遠程法師
+shadow_mage:
+  name: "&8&l暗影法師"
+  type: SKELETON
+  level-range:
+    min: 50
+    max: 65
+  base-stats:
+    health: 90.0
+    damage: 24.0
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 2.5
+  equipment:
+    main-hand:
+      material: BLAZE_ROD
+    helmet:
+      material: NETHERITE_HELMET
+  exp:
+    base: 60
+    per-level: 14
+  drops:
+    vanilla-items:
+      - material: ENDER_PEARL
+        amount: 1-2
+        chance: 0.2
+      - material: EXPERIENCE_BOTTLE
+        amount: 2-4
+        chance: 0.4
+    custom-weapons:
+      - weapon-key: "cyclone_staff_t5"
+        chance: 0.02
+      - weapon-key: "flame_staff_t4"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "void_mage_helmet"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "arcanist_chestplate"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "elemental_charm"
+        type: "accessory"
+        chance: 0.02
+      - equipment-key: "arcana_charm"
+        type: "accessory"
+        chance: 0.015
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [cave, forest]
+
+# 11. 守衛者殭屍 — 全套獄髓重甲
+warden_zombie:
+  name: "&1&l守衛者殭屍"
+  type: ZOMBIE
+  level-range:
+    min: 55
+    max: 70
+  base-stats:
+    health: 250.0
+    damage: 20.0
+  stat-scaling:
+    health-per-level: 12.0
+    damage-per-level: 2.0
+  equipment:
+    helmet:
+      material: NETHERITE_HELMET
+    chestplate:
+      material: NETHERITE_CHESTPLATE
+    leggings:
+      material: NETHERITE_LEGGINGS
+    boots:
+      material: NETHERITE_BOOTS
+    main-hand:
+      material: NETHERITE_SWORD
+  exp:
+    base: 70
+    per-level: 15
+  drops:
+    vanilla-items:
+      - material: NETHERITE_SCRAP
+        amount: 1
+        chance: 0.05
+      - material: DIAMOND
+        amount: 1-3
+        chance: 0.2
+    custom-weapons:
+      - weapon-key: "steelbreaker_t5"
+        chance: 0.02
+      - weapon-key: "frostbite_axe_t5"
+        chance: 0.02
+      - weapon-key: "infernal_blade_t6"
+        chance: 0.008
+    custom-equipment:
+      - equipment-key: "dragonwar_helmet"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "dragonwar_chestplate"
+        type: "armor"
+        chance: 0.01
+      - equipment-key: "indestructible_leggings"
+        type: "armor"
+        chance: 0.01
+      - equipment-key: "destruction_necklace"
+        type: "accessory"
+        chance: 0.015
+      - equipment-key: "immortal_belt"
+        type: "accessory"
+        chance: 0.015
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, nether]
+
+# 12. 風暴烈焰 — 高傷害烈焰人
+storm_blaze:
+  name: "&9&l風暴烈焰"
+  type: BLAZE
+  level-range:
+    min: 50
+    max: 65
+  base-stats:
+    health: 100.0
+    damage: 22.0
+  stat-scaling:
+    health-per-level: 6.0
+    damage-per-level: 2.2
+  exp:
+    base: 60
+    per-level: 13
+  drops:
+    vanilla-items:
+      - material: BLAZE_ROD
+        amount: 2-4
+        chance: 0.6
+      - material: NETHER_STAR
+        amount: 1
+        chance: 0.005
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [fire, nether, mountain]
+
+# 13. 深淵史萊姆 — 分裂型高血量
+abyssal_slime:
+  name: "&1深淵史萊姆"
+  type: SLIME
+  level-range:
+    min: 50
+    max: 65
+  base-stats:
+    health: 150.0
+    damage: 16.0
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 1.6
+  exp:
+    base: 55
+    per-level: 12
+  drops:
+    vanilla-items:
+      - material: SLIME_BALL
+        amount: 5-10
+        chance: 0.9
+      - material: EMERALD
+        amount: 1-3
+        chance: 0.2
+  special-behavior: "split_on_death"
+  show-level-in-name: true
+  tags: [swamp, cave]
+
+# 14. 詛咒掠奪者 — 高傷害弩手
+cursed_pillager:
+  name: "&5詛咒掠奪者"
+  type: PILLAGER
+  level-range:
+    min: 48
+    max: 62
+  base-stats:
+    health: 85.0
+    damage: 20.0
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 2.0
+  exp:
+    base: 55
+    per-level: 12
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 8-16
+        chance: 0.8
+      - material: EMERALD
+        amount: 1-3
+        chance: 0.25
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [plains, forest]
+
+# 15. 血狼 — 快速高傷近戰
+blood_wolf:
+  name: "&4血狼"
+  type: ZOMBIE
+  level-range:
+    min: 50
+    max: 65
+  base-stats:
+    health: 110.0
+    damage: 24.0
+  stat-scaling:
+    health-per-level: 6.0
+    damage-per-level: 2.4
+  exp:
+    base: 58
+    per-level: 13
+  drops:
+    vanilla-items:
+      - material: LEATHER
+        amount: 2-4
+        chance: 0.7
+      - material: GOLD_INGOT
+        amount: 1-2
+        chance: 0.2
+    custom-weapons:
+      - weapon-key: "bloodmoon_scythe_t5"
+        chance: 0.015
+    custom-equipment:
+      - equipment-key: "phantom_boots"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "lethal_ring"
+        type: "accessory"
+        chance: 0.015
+  special-behavior: "fast_movement"
+  show-level-in-name: true
+  tags: [forest, cave, nether]

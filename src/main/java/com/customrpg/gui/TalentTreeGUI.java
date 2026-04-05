@@ -119,10 +119,24 @@ public class TalentTreeGUI implements Listener {
             lore.add("");
             lore.add("§f" + talent.getDescription());
             lore.add("");
-            lore.add("§7冷卻: §f" + talent.getCooldown() + "秒");
-            lore.add("§7消耗: §f" + (int)talent.getManaCost() + " MANA");
-            lore.add("§7機制: §f" + talent.getMechanism());
-            
+
+            // 顯示按鍵觸發方式
+            String triggerDisplay = getTriggerDisplayName(talent);
+            if (triggerDisplay != null) {
+                lore.add("§7觸發方式: " + triggerDisplay);
+            }
+
+            // 主動技能才顯示冷卻/消耗/機制
+            if (talent.getType() == TalentType.ACTIVE) {
+                lore.add("§7冷卻: §f" + talent.getCooldown() + "秒");
+                if (talent.getManaCost() > 0) {
+                    lore.add("§7消耗: §b" + (int)talent.getManaCost() + " MANA");
+                }
+                if (talent.getMechanism() != null && !talent.getMechanism().isEmpty()) {
+                    lore.add("§7機制物品: §f" + talent.getMechanism());
+                }
+            }
+
             // 前置要求
             if (!talent.getPrerequisites().isEmpty()) {
                 lore.add("");
@@ -169,6 +183,33 @@ public class TalentTreeGUI implements Listener {
         for (Map.Entry<String, Double> entry : data.scaling.entrySet()) {
             lore.add(" §7- " + entry.getKey() + "加乘: §f自身" + entry.getKey() + " * " + entry.getValue());
         }
+    }
+
+    /**
+     * 根據天賦的觸發類型返回中文顯示名稱
+     * 被動與屬性類型返回 null（不顯示按鍵觸發）
+     */
+    private String getTriggerDisplayName(Talent talent) {
+        // 被動 / 屬性加成不需要顯示觸發方式
+        if (talent.getType() == TalentType.PASSIVE || talent.getType() == TalentType.ATTRIBUTE
+                || talent.getType() == TalentType.WEAPON_PASSIVE) {
+            return "§d被動效果（自動觸發）";
+        }
+
+        String trigger = talent.getTriggerType();
+        if (trigger == null || trigger.isEmpty()) return null;
+
+        return switch (trigger.toUpperCase()) {
+            case "RIGHT_CLICK" -> "§f手持機制物品 + §a右鍵";
+            case "LEFT_CLICK" -> "§f手持機制物品 + §c左鍵";
+            case "LEFT_CLICK_SNEAK" -> "§f手持機制物品 + §c蹲下左鍵";
+            case "RIGHT_CLICK_SNEAK" -> "§f手持機制物品 + §a蹲下右鍵";
+            case "ON_HIT" -> "§f攻擊命中時自動觸發";
+            case "ON_KILL" -> "§f擊殺敵人時自動觸發";
+            case "ON_DAMAGE" -> "§f受到傷害時自動觸發";
+            case "PASSIVE" -> "§d被動效果（自動觸發）";
+            default -> trigger;
+        };
     }
 
     private void addPlayerInfo(Inventory gui, Player player) {

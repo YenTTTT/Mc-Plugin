@@ -79,16 +79,18 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
             case "help" -> showHelp(player);
             case "tier" -> showCurrentTier(player);
             default -> {
-                // /setmob <minLevel> <maxLevel> <zoneId>
+                // /setmob <minLevel> <maxLevel> <zoneId> [biomeTag]
                 if (args.length >= 3) {
                     try {
                         int minLevel = Integer.parseInt(args[0]);
                         int maxLevel = Integer.parseInt(args[1]);
                         String zoneId = args[2];
-                        createZone(player, zoneId, minLevel, maxLevel);
+                        String biomeTag = args.length >= 4 ? args[3].toLowerCase() : null;
+                        createZone(player, zoneId, minLevel, maxLevel, biomeTag);
                     } catch (NumberFormatException e) {
-                        player.sendMessage(ChatColor.RED + "用法: /setmob <最小等級> <最大等級> <區域ID>");
+                        player.sendMessage(ChatColor.RED + "用法: /setmob <最小等級> <最大等級> <區域ID> [生態域標籤]");
                         player.sendMessage(ChatColor.GRAY + "範例: /setmob 1 5 area1");
+                        player.sendMessage(ChatColor.GRAY + "範例: /setmob 1 5 ice_zone ice");
                     }
                 } else {
                     player.sendMessage(ChatColor.RED + "未知指令！輸入 /setmob help 查看說明。");
@@ -121,7 +123,9 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
             lore.add("");
             lore.add(ChatColor.GREEN + "選好後輸入:");
             lore.add(ChatColor.WHITE + "  /setmob <最小等級> <最大等級> <區域ID>");
+            lore.add(ChatColor.WHITE + "  /setmob <最小等級> <最大等級> <區域ID> <生態域>");
             lore.add(ChatColor.GRAY + "  範例: /setmob 1 5 area1");
+            lore.add(ChatColor.GRAY + "  範例: /setmob 1 5 ice_zone ice");
             lore.add("");
             lore.add(ChatColor.DARK_GRAY + "區域內不會生成怪物");
             lore.add(ChatColor.DARK_GRAY + "區域外距離越遠怪物越強");
@@ -151,7 +155,7 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
     /**
      * 建立怪物區域
      */
-    private void createZone(Player player, String zoneId, int minLevel, int maxLevel) {
+    private void createZone(Player player, String zoneId, int minLevel, int maxLevel, String biomeTag) {
         if (minLevel < 1) {
             player.sendMessage(ChatColor.RED + "✗ 最小等級不能小於 1！");
             return;
@@ -174,7 +178,7 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        boolean success = zoneManager.createZone(player.getUniqueId(), zoneId, minLevel, maxLevel);
+        boolean success = zoneManager.createZone(player.getUniqueId(), zoneId, minLevel, maxLevel, biomeTag);
         if (success) {
             ZoneManager.MobZone zone = zoneManager.getZone(zoneId);
             player.sendMessage("");
@@ -187,9 +191,13 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
                         + "(" + zone.maxX + ", " + zone.maxY + ", " + zone.maxZ + ")");
                 player.sendMessage(ChatColor.GRAY + "  等級範圍: " + ChatColor.WHITE + "Lv." + zone.minLevel + " ~ Lv." + zone.maxLevel);
                 player.sendMessage(ChatColor.GRAY + "  距離步進: " + ChatColor.WHITE + zone.radiusStep + " 格/tier");
+                if (zone.biomeTag != null) {
+                    player.sendMessage(ChatColor.GRAY + "  生態域標籤: " + ChatColor.GREEN + zone.biomeTag);
+                    player.sendMessage(ChatColor.YELLOW + "  此區域只會生成帶有 [" + zone.biomeTag + "] 標籤的怪物。");
+                }
             }
             player.sendMessage(ChatColor.YELLOW + "  區域內不會生成怪物。");
-            player.sendMessage(ChatColor.YELLOW + "  離開區域後，每 " + 150 + " 格怪物等級提升一個等級。");
+            player.sendMessage(ChatColor.YELLOW + "  離開區域後，每 " + zone.radiusStep + " 格怪物等級提升 5 等。");
             player.sendMessage("");
         } else {
             player.sendMessage(ChatColor.RED + "✗ 建立失敗！請確認兩個座標在同一個世界。");
@@ -227,19 +235,28 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(ChatColor.YELLOW + "面積: " + ChatColor.WHITE + zone.getArea() + " 方塊");
         player.sendMessage(ChatColor.YELLOW + "等級範圍: " + ChatColor.WHITE + "Lv." + zone.minLevel + " ~ Lv." + zone.maxLevel);
         player.sendMessage(ChatColor.YELLOW + "距離步進: " + ChatColor.WHITE + zone.radiusStep + " 格/tier");
+        if (zone.biomeTag != null) {
+            player.sendMessage(ChatColor.YELLOW + "生態域標籤: " + ChatColor.GREEN + zone.biomeTag);
+        } else {
+            player.sendMessage(ChatColor.YELLOW + "生態域標籤: " + ChatColor.GRAY + "無 (生成所有怪物)");
+        }
         player.sendMessage("");
 
         // 顯示各 tier 等級
-        player.sendMessage(ChatColor.YELLOW + "等級縮放:");
-        for (int tier = 1; tier <= 5; tier++) {
-            int levelRange = zone.maxLevel - zone.minLevel;
-            int levelMin = zone.minLevel + ((tier - 1) * levelRange);
-            int levelMax = zone.maxLevel + ((tier - 1) * levelRange);
-            String tierName = zoneManager.getTierDisplayName(tier);
-            player.sendMessage(ChatColor.GRAY + "  " + tierName
-                    + ChatColor.GRAY + " → Lv." + ChatColor.WHITE + levelMin + "~" + levelMax
-                    + ChatColor.DARK_GRAY + " (距離 " + ((tier - 1) * zone.radiusStep) + "~" + (tier * zone.radiusStep) + "格)");
+        player.sendMessage(ChatColor.YELLOW + "等級分段 (每 " + zone.radiusStep + " 格一段，每段 5 等):");
+        int totalLevels = zone.maxLevel - zone.minLevel + 1;
+        int numTiers = (int) Math.ceil((double) totalLevels / 5);
+        for (int tier = 0; tier < numTiers; tier++) {
+            int segMin = zone.minLevel + (tier * 5);
+            int segMax = Math.min(segMin + 4, zone.maxLevel);
+            ChatColor color = zoneManager.getTierColor(tier);
+            int distMin = tier * zone.radiusStep;
+            int distMax = (tier + 1) * zone.radiusStep;
+            player.sendMessage(ChatColor.GRAY + "  " + color + "Tier " + (tier + 1)
+                    + ChatColor.GRAY + " → Lv." + ChatColor.WHITE + segMin + "~" + segMax
+                    + ChatColor.DARK_GRAY + " (距離 " + distMin + "~" + distMax + "格)");
         }
+        player.sendMessage(ChatColor.DARK_GRAY + "  (超過最遠距離後鎖定在最高等級段)");
         player.sendMessage(ChatColor.AQUA + "═══════════════════════════");
     }
 
@@ -255,12 +272,14 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
         }
         player.sendMessage(ChatColor.AQUA + "═══════ 怪物區域列表 ═══════");
         for (var zone : zones) {
+            String tagDisplay = zone.biomeTag != null ? (ChatColor.GREEN + " [" + zone.biomeTag + "]") : "";
             player.sendMessage(ChatColor.YELLOW + "▸ " + ChatColor.WHITE + zone.name
                     + ChatColor.GRAY + " [" + zone.worldName + "] "
                     + ChatColor.AQUA + "(" + zone.minX + "," + zone.minZ + ")"
                     + ChatColor.GRAY + " → "
                     + ChatColor.AQUA + "(" + zone.maxX + "," + zone.maxZ + ")"
-                    + ChatColor.GRAY + " Lv." + zone.minLevel + "~" + zone.maxLevel);
+                    + ChatColor.GRAY + " Lv." + zone.minLevel + "~" + zone.maxLevel
+                    + tagDisplay);
         }
         player.sendMessage(ChatColor.AQUA + "═══════════════════════════");
     }
@@ -283,6 +302,14 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
         } else {
             player.sendMessage(ChatColor.YELLOW + "距最近安全區: " + ChatColor.GRAY + "無安全區域");
         }
+        // 顯示最近區域的生態域標籤
+        ZoneManager.MobZone nearestZone = zoneManager.getNearestZone(player.getLocation());
+        if (nearestZone != null && nearestZone.biomeTag != null) {
+            player.sendMessage(ChatColor.YELLOW + "生態域標籤: " + ChatColor.GREEN + nearestZone.biomeTag
+                    + ChatColor.GRAY + " (只會生成對應標籤的怪物)");
+        } else if (nearestZone != null) {
+            player.sendMessage(ChatColor.YELLOW + "生態域標籤: " + ChatColor.GRAY + "無 (生成所有怪物)");
+        }
         player.sendMessage(ChatColor.AQUA + "═══════════════════════════");
         player.sendMessage("");
     }
@@ -294,6 +321,8 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(ChatColor.AQUA + "═══════ 怪物區域指令 ═══════");
         player.sendMessage(ChatColor.YELLOW + "/setmob" + ChatColor.GRAY + " — 取得選區工具");
         player.sendMessage(ChatColor.YELLOW + "/setmob <最小等級> <最大等級> <區域ID>" + ChatColor.GRAY + " — 建立區域");
+        player.sendMessage(ChatColor.YELLOW + "/setmob <最小等級> <最大等級> <區域ID> <生態域標籤>" + ChatColor.GRAY + " — 建立指定生態域區域");
+        player.sendMessage(ChatColor.GRAY + "  可用標籤: " + ChatColor.WHITE + "ice, fire, forest, desert, swamp, ocean, mountain, nether, plains ...");
         player.sendMessage(ChatColor.YELLOW + "/setmob list" + ChatColor.GRAY + " — 列出所有區域");
         player.sendMessage(ChatColor.YELLOW + "/setmob info <區域ID>" + ChatColor.GRAY + " — 查看區域資訊");
         player.sendMessage(ChatColor.YELLOW + "/setmob remove <區域ID>" + ChatColor.GRAY + " — 移除區域");
@@ -319,6 +348,11 @@ public class SetMobCommand implements CommandExecutor, TabCompleter {
                 completions.add(zone.name);
             }
             String input = args[1].toLowerCase();
+            completions.removeIf(s -> !s.toLowerCase().startsWith(input));
+        } else if (args.length == 4) {
+            // 第4個參數：生態域標籤建議
+            completions.addAll(List.of("ice", "fire", "forest", "desert", "swamp", "ocean", "mountain", "nether", "plains", "snow", "jungle", "cave"));
+            String input = args[3].toLowerCase();
             completions.removeIf(s -> !s.toLowerCase().startsWith(input));
         }
         return completions;

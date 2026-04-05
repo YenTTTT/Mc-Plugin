@@ -32,6 +32,8 @@ races:
       vitality: 5
       defense: 5
       spirit: 5
+      mana: 10
+      mana-regen: 0.2
 
     growth:
       strength: 1.0
@@ -40,6 +42,8 @@ races:
       vitality: 1.0
       defense: 1.0
       spirit: 1.0
+      mana: 2.0
+      mana-regen: 0.05
 
     skills:
       - focus
@@ -72,6 +76,8 @@ races:
       vitality: 4
       defense: 3
       spirit: 6
+      mana: 20
+      mana-regen: 0.3
 
     growth:
       strength: 0.8
@@ -80,6 +86,8 @@ races:
       vitality: 0.9
       defense: 0.8
       spirit: 1.1
+      mana: 3.0
+      mana-regen: 0.08
 
     skills:
       - wind_step
@@ -114,6 +122,8 @@ races:
       vitality: 8
       defense: 6
       spirit: 2
+      mana: 0
+      mana-regen: 0.0
 
     growth:
       strength: 1.4
@@ -122,6 +132,8 @@ races:
       vitality: 1.3
       defense: 1.2
       spirit: 0.7
+      mana: 0.5
+      mana-regen: 0.02
 
     skills:
       - berserk
@@ -157,6 +169,8 @@ races:
       vitality: 8
       defense: 8
       spirit: 4
+      mana: 5
+      mana-regen: 0.1
 
     growth:
       strength: 1.1
@@ -165,6 +179,8 @@ races:
       vitality: 1.3
       defense: 1.4
       spirit: 0.9
+      mana: 1.0
+      mana-regen: 0.03
 
     skills:
       - stone_skin
@@ -199,6 +215,8 @@ races:
       vitality: 6
       defense: 4
       spirit: 7
+      mana: 25
+      mana-regen: 0.4
 
     growth:
       strength: 0.9
@@ -207,6 +225,8 @@ races:
       vitality: 1.1
       defense: 0.9
       spirit: 1.3
+      mana: 3.5
+      mana-regen: 0.1
 
     skills:
       - soul_drain
@@ -241,6 +261,8 @@ races:
       vitality: 5
       defense: 3
       spirit: 3
+      mana: 15
+      mana-regen: 0.2
 
     growth:
       strength: 1.3
@@ -249,6 +271,8 @@ races:
       vitality: 0.9
       defense: 0.7
       spirit: 0.8
+      mana: 2.5
+      mana-regen: 0.06
 
     skills:
       - hellfire
@@ -284,6 +308,8 @@ races:
       vitality: 5
       defense: 5
       spirit: 9
+      mana: 30
+      mana-regen: 0.5
 
     growth:
       strength: 0.7
@@ -292,6 +318,8 @@ races:
       vitality: 1.0
       defense: 1.0
       spirit: 1.5
+      mana: 4.0
+      mana-regen: 0.12
 
     skills:
       - holy_light

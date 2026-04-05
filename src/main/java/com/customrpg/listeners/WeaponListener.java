@@ -6,9 +6,11 @@ import com.customrpg.talents.Talent;
 import com.customrpg.talents.TalentType;
 import com.customrpg.managers.WeaponManager;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -22,6 +24,7 @@ import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.Locale;
@@ -51,6 +54,9 @@ public class WeaponListener implements Listener {
     private final com.customrpg.managers.PlayerStatsManager statsManager;
 
     private final Map<UUID, Map<String, Long>> passiveCooldownNotify = new ConcurrentHashMap<>();
+    // 法杖普通攻擊冷卻追蹤 (UUID -> 上次攻擊時間)
+    private final Map<UUID, Long> staffAttackCooldown = new ConcurrentHashMap<>();
+    private static final long STAFF_ATTACK_COOLDOWN_MS = 1000L; // 1 秒冷卻
 
     // 這個用來判斷「最後一下是否為玩家造成」
     // （EntityDeathEvent 的 getKiller 在某些情況會是 null，例如環境傷害）
@@ -748,5 +754,258 @@ public class WeaponListener implements Listener {
         }
         perPlayer.put(key, now);
         return true;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  法杖右鍵普通攻擊 — 射出魔法彈
+    // ═══════════════════════════════════════════════════════════════
+
+    @EventHandler
+    public void onStaffRightClick(PlayerInteractEvent event) {
+        Action action = event.getAction();
+        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || item.getType() == Material.AIR) return;
+
+        // 判斷是否為法杖類別武器
+        String weaponKey = weaponManager.getWeaponKey(item);
+        WeaponManager.WeaponData weaponData = null;
+        WeaponManager.WeaponCategory category;
+
+        if (weaponKey != null) {
+            weaponData = weaponManager.getWeaponData(weaponKey);
+            if (weaponData == null) return;
+            category = weaponData.getCategory();
+        } else {
+            // 非自訂武器：根據 Material 判斷
+            category = WeaponManager.WeaponCategory.detectFromMaterial(item.getType(), false);
+        }
+
+        if (category != WeaponManager.WeaponCategory.STAFF) return;
+
+        // 等級需求檢查
+        com.customrpg.players.PlayerStats playerStats = statsManager.getStats(player);
+        if (weaponData != null && playerStats.getLevel() < weaponData.getMinLevel()) {
+            player.sendMessage(ChatColor.RED + "你必須達到等級 " + weaponData.getMinLevel() + " 才能使用此武器！");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+            return;
+        }
+
+        // 冷卻檢查
+        long now = System.currentTimeMillis();
+        Long lastAttack = staffAttackCooldown.get(player.getUniqueId());
+        if (lastAttack != null && (now - lastAttack) < STAFF_ATTACK_COOLDOWN_MS) {
+            // 還在冷卻中 — 計算剩餘時間
+            double remaining = (STAFF_ATTACK_COOLDOWN_MS - (now - lastAttack)) / 1000.0;
+            player.sendActionBar(ChatColor.GRAY + "法杖冷卻中... " + String.format("%.1f", remaining) + "s");
+            return;
+        }
+        staffAttackCooldown.put(player.getUniqueId(), now);
+
+        // 取消右鍵原本的行為（例如放置方塊）
+        event.setCancelled(true);
+
+        // 計算傷害
+        double baseDamage = 5.0; // 預設法杖基礎傷害
+        if (weaponData != null) {
+            double weaponBase = weaponData.getDoubleExtra("base-damage", 0.0);
+            if (weaponBase > 0) baseDamage = weaponBase;
+        }
+
+        // 屬性加成（法杖主要縮放 Magic）
+        double magicBonus = playerStats.getTotalMagic() * 0.4;
+        double spiritBonus = playerStats.getTotalSpirit() * 0.1;
+        baseDamage += magicBonus + spiritBonus;
+
+        // 武器倍率
+        if (weaponData != null) {
+            baseDamage *= weaponData.getDamageMultiplier();
+        }
+
+        // 種族武器加成
+        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
+        if (raceManager != null && raceManager.hasRace(player)) {
+            double raceBonus = raceManager.getWeaponDamageBonus(player, "STAFF");
+            baseDamage *= raceBonus;
+        }
+
+        // 決定元素類型和粒子
+        String element = "none";
+        if (weaponData != null) {
+            element = weaponData.getSpecialEffect();
+        }
+
+        // 發射魔法彈
+        launchMagicBolt(player, baseDamage, element, weaponData);
+
+        // 音效
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 0.6f, 1.5f);
+    }
+
+    /**
+     * 發射魔法彈投射物（純粒子效果）
+     */
+    private void launchMagicBolt(Player player, double damage, String element, WeaponManager.WeaponData weaponData) {
+        Location startLoc = player.getEyeLocation().clone();
+        Vector direction = startLoc.getDirection().normalize();
+        World world = player.getWorld();
+
+        // 決定粒子顏色和類型 (根據元素)
+        final Particle mainParticle;
+        final Particle trailParticle;
+        final Particle.DustOptions dustOptions;
+        final Sound hitSound;
+
+        switch (element.toLowerCase()) {
+            case "burn":
+                mainParticle = Particle.FLAME;
+                trailParticle = Particle.SMOKE;
+                dustOptions = null;
+                hitSound = Sound.ENTITY_BLAZE_HURT;
+                break;
+            case "ice":
+                mainParticle = Particle.SNOWFLAKE;
+                trailParticle = Particle.CLOUD;
+                dustOptions = null;
+                hitSound = Sound.BLOCK_GLASS_BREAK;
+                break;
+            case "lightning":
+                mainParticle = Particle.ELECTRIC_SPARK;
+                trailParticle = Particle.END_ROD;
+                dustOptions = null;
+                hitSound = Sound.ENTITY_LIGHTNING_BOLT_IMPACT;
+                break;
+            case "poison":
+                mainParticle = Particle.ITEM_SLIME;
+                trailParticle = Particle.ITEM_SLIME;
+                dustOptions = null;
+                hitSound = Sound.ENTITY_SLIME_SQUISH;
+                break;
+            default:
+                // 默認：紫色魔法彈
+                mainParticle = Particle.DUST;
+                trailParticle = Particle.ENCHANT;
+                dustOptions = new Particle.DustOptions(Color.fromRGB(160, 80, 255), 1.2f);
+                hitSound = Sound.ENTITY_EXPERIENCE_ORB_PICKUP;
+                break;
+        }
+
+        // 最大射程
+        double maxRange = 25.0;
+        double speed = 1.5; // 每 tick 移動的格數
+        int maxTicks = (int) (maxRange / speed);
+        final double finalDamage = damage;
+
+        new BukkitRunnable() {
+            Location current = startLoc.clone().add(direction.clone().multiply(0.5)); // 從玩家眼前稍微前方開始
+            int ticks = 0;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (ticks > maxTicks) {
+                    // 超出射程 — 消散效果
+                    world.spawnParticle(Particle.POOF, current, 5, 0.1, 0.1, 0.1, 0.02);
+                    cancel();
+                    return;
+                }
+
+                // 移動投射物
+                current.add(direction.clone().multiply(speed));
+
+                // 碰撞偵測：檢查是否撞到方塊
+                if (current.getBlock().getType().isSolid()) {
+                    // 撞到方塊 — 爆破粒子效果
+                    spawnHitEffect(world, current, mainParticle, dustOptions);
+                    world.playSound(current, hitSound, 0.8f, 1.2f);
+                    cancel();
+                    return;
+                }
+
+                // 產生飛行粒子
+                if (dustOptions != null) {
+                    world.spawnParticle(mainParticle, current, 3, 0.05, 0.05, 0.05, 0, dustOptions);
+                } else {
+                    world.spawnParticle(mainParticle, current, 3, 0.05, 0.05, 0.05, 0.01);
+                }
+                world.spawnParticle(trailParticle, current, 1, 0.08, 0.08, 0.08, 0.01);
+
+                // 碰撞偵測：檢查是否命中敵人
+                for (Entity entity : world.getNearbyEntities(current, 0.8, 0.8, 0.8)) {
+                    if (entity == player) continue;
+                    if (!(entity instanceof LivingEntity target)) continue;
+                    if (target.isDead()) continue;
+
+                    // 命中！
+                    target.damage(finalDamage, player);
+
+                    // 元素附加效果
+                    applyStaffElementEffect(target, element, weaponData);
+
+                    // 命中粒子特效
+                    spawnHitEffect(world, target.getLocation().add(0, 1, 0), mainParticle, dustOptions);
+                    world.playSound(target.getLocation(), hitSound, 0.8f, 1.0f);
+                    world.playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.5f, 1.0f);
+
+                    cancel();
+                    return;
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    /**
+     * 法杖元素附加效果
+     */
+    private void applyStaffElementEffect(LivingEntity target, String element, WeaponManager.WeaponData weaponData) {
+        switch (element.toLowerCase()) {
+            case "burn":
+                int burnTicks = 60; // 預設 3 秒
+                if (weaponData != null) burnTicks = weaponData.getIntExtra("burn-duration-ticks", 60);
+                target.setFireTicks(burnTicks);
+                break;
+            case "ice":
+                int iceDuration = 40; // 預設 2 秒
+                if (weaponData != null) iceDuration = weaponData.getIntExtra("ice-duration-ticks", 40);
+                target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.SLOWNESS, iceDuration, 1, false, true));
+                target.setFreezeTicks(iceDuration);
+                break;
+            case "lightning":
+                double lightningChance = 0.3;
+                if (weaponData != null) lightningChance = weaponData.getDoubleExtra("lightning-chance", 0.3);
+                if (random.nextDouble() < lightningChance) {
+                    target.getWorld().strikeLightningEffect(target.getLocation());
+                }
+                break;
+            case "poison":
+                int poisonTicks = 60;
+                int poisonLevel = 1;
+                if (weaponData != null) {
+                    poisonTicks = weaponData.getIntExtra("poison-duration-ticks", 60);
+                    poisonLevel = weaponData.getIntExtra("poison-level", 1);
+                }
+                target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.POISON, poisonTicks, poisonLevel - 1, false, true));
+                break;
+        }
+    }
+
+    /**
+     * 生成命中特效
+     */
+    private void spawnHitEffect(World world, Location loc, Particle particle, Particle.DustOptions dustOptions) {
+        // 爆破粒子
+        if (dustOptions != null) {
+            world.spawnParticle(particle, loc, 15, 0.3, 0.3, 0.3, 0, dustOptions);
+        } else {
+            world.spawnParticle(particle, loc, 15, 0.3, 0.3, 0.3, 0.05);
+        }
+        // 通用命中粒子
+        world.spawnParticle(Particle.ENCHANTED_HIT, loc, 10, 0.3, 0.3, 0.3, 0.1);
     }
 }

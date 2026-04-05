@@ -1,0 +1,741 @@
+# ============================================
+# MMORPG 飾品系統配置文件
+# 包含項鍊、戒指、手環、腰帶、護符、肩甲
+#
+# 槽位定義:
+#   NECKLACE  — 項鍊（主輸出：STRENGTH / INTELLIGENCE）
+#   RING_1/2  — 戒指（爆擊/敏捷：AGILITY 主）
+#   BRACELET  — 手環（技能/回復：SPIRIT 主）
+#   BELT      — 腰帶（血量：VITALITY 主）
+#   CHARM     — 護符（法系/輔助：INTELLIGENCE + SPIRIT）
+#   SHOULDER  — 肩甲（防禦：DEFENSE + VITALITY）
+# ============================================
+
+accessories:
+
+  # ═══════════════════════════════════════════
+  #  Lv.1~10 — 新手期
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  novice_necklace:
+    name: "新手項鍊"
+    slot: NECKLACE
+    material: IRON_NUGGET
+    required_level: 1
+    rarity: COMMON
+    description: "粗糙打造的項鍊，散發微弱光芒"
+    attributes:
+      strength: 2
+
+  # --- 戒指 ---
+  broken_ring:
+    name: "破損戒指"
+    slot: RING_1
+    material: GOLD_NUGGET
+    required_level: 1
+    rarity: COMMON
+    description: "殘破的金屬戒指，聊勝於無"
+    attributes:
+      agility: 2
+
+  # --- 手環 ---
+  rough_bracelet:
+    name: "粗布手環"
+    slot: BRACELET
+    material: STRING
+    required_level: 1
+    rarity: COMMON
+    description: "用粗布纏繞而成的手環"
+    attributes:
+      spirit: 2
+
+  # --- 腰帶 ---
+  old_belt:
+    name: "破舊腰帶"
+    slot: BELT
+    material: LEATHER
+    required_level: 1
+    rarity: COMMON
+    description: "磨損嚴重的皮革腰帶"
+    attributes:
+      vitality: 10
+
+  # --- 護符 ---
+  beginner_charm:
+    name: "初學護符"
+    slot: CHARM
+    material: TOTEM_OF_UNDYING
+    required_level: 1
+    rarity: COMMON
+    description: "簡陋的護符，殘留微弱魔力"
+    attributes:
+      intelligence: 2
+
+  # --- 肩甲 ---
+  wooden_shoulder:
+    name: "木製肩甲"
+    slot: SHOULDER
+    material: OAK_PLANKS
+    required_level: 1
+    rarity: COMMON
+    description: "木板做的肩甲，僅能擋擋風"
+    attributes:
+      defense: 5
+
+  # ═══════════════════════════════════════════
+  #  Lv.11~20 — 新手後期
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  iron_necklace:
+    name: "鐵製項鍊"
+    slot: NECKLACE
+    material: IRON_NUGGET
+    required_level: 11
+    rarity: UNCOMMON
+    description: "精鍛的鐵製項鍊，堅固耐用"
+    attributes:
+      strength: 8
+
+  # --- 戒指 ---
+  hunter_ring:
+    name: "獵人戒指"
+    slot: RING_1
+    material: GOLD_NUGGET
+    required_level: 11
+    rarity: UNCOMMON
+    description: "獵人世代傳承的戒指"
+    attributes:
+      agility: 6
+
+  # --- 手環 ---
+  healing_bracelet:
+    name: "治癒手環"
+    slot: BRACELET
+    material: STRING
+    required_level: 11
+    rarity: UNCOMMON
+    description: "鑲嵌了治癒寶石的手環"
+    attributes:
+      spirit: 5
+
+  # --- 腰帶 ---
+  reinforced_belt:
+    name: "強化腰帶"
+    slot: BELT
+    material: LEATHER
+    required_level: 11
+    rarity: UNCOMMON
+    description: "鉚釘強化的厚皮腰帶"
+    attributes:
+      vitality: 30
+
+  # --- 護符 ---
+  arcane_charm:
+    name: "奧術護符"
+    slot: CHARM
+    material: TOTEM_OF_UNDYING
+    required_level: 11
+    rarity: UNCOMMON
+    description: "蘊含奧術能量的護符"
+    attributes:
+      intelligence: 8
+      spirit: 3
+
+  # --- 肩甲 ---
+  heavy_shoulder:
+    name: "重型肩甲"
+    slot: SHOULDER
+    material: IRON_INGOT
+    required_level: 11
+    rarity: UNCOMMON
+    description: "鐵製重甲護肩，防禦優秀"
+    attributes:
+      defense: 15
+      vitality: 10
+
+  # ═══════════════════════════════════════════
+  #  Lv.21~30 — 成長期 (前段)
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  warrior_necklace:
+    name: "戰士項鍊"
+    slot: NECKLACE
+    material: IRON_INGOT
+    required_level: 21
+    rarity: RARE
+    description: "戰場老兵佩戴的力量項鍊"
+    attributes:
+      strength: 15
+
+  # --- 戒指 ---
+  precision_ring:
+    name: "精準戒指"
+    slot: RING_1
+    material: GOLD_NUGGET
+    required_level: 21
+    rarity: RARE
+    description: "提升精準度的魔法戒指"
+    attributes:
+      agility: 12
+
+  # --- 手環 ---
+  nimble_bracelet:
+    name: "靈巧手環"
+    slot: BRACELET
+    material: STRING
+    required_level: 21
+    rarity: RARE
+    description: "靈巧工匠鍛造的精緻手環"
+    attributes:
+      spirit: 10
+      agility: 5
+
+  # --- 腰帶 ---
+  thick_belt:
+    name: "厚皮腰帶"
+    slot: BELT
+    material: LEATHER
+    required_level: 21
+    rarity: RARE
+    description: "層層加固的野獸皮革腰帶"
+    attributes:
+      vitality: 70
+
+  # --- 護符 ---
+  archmage_charm:
+    name: "魔導護符"
+    slot: CHARM
+    material: TOTEM_OF_UNDYING
+    required_level: 21
+    rarity: RARE
+    description: "魔導師親手製作的強力護符"
+    attributes:
+      intelligence: 15
+      spirit: 8
+
+  # --- 肩甲 ---
+  guardian_shoulder:
+    name: "守護肩甲"
+    slot: SHOULDER
+    material: IRON_INGOT
+    required_level: 21
+    rarity: RARE
+    description: "守護騎士團御用的護肩"
+    attributes:
+      defense: 30
+      vitality: 20
+
+  # ═══════════════════════════════════════════
+  #  Lv.31~40 — 成長期 (中段)
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  berserker_necklace:
+    name: "狂戰項鍊"
+    slot: NECKLACE
+    material: GOLD_INGOT
+    required_level: 31
+    rarity: RARE
+    description: "蘊含狂暴之力的血紅項鍊"
+    attributes:
+      strength: 25
+
+  # --- 戒指 ---
+  assassin_ring:
+    name: "刺客戒指"
+    slot: RING_1
+    material: GOLD_NUGGET
+    required_level: 31
+    rarity: RARE
+    description: "暗殺組織的標誌性戒指"
+    attributes:
+      agility: 18
+
+  # --- 手環 ---
+  life_bracelet:
+    name: "生命手環"
+    slot: BRACELET
+    material: STRING
+    required_level: 31
+    rarity: RARE
+    description: "蘊含生命之力的翠綠手環"
+    attributes:
+      spirit: 15
+      intelligence: 5
+
+  # --- 腰帶 ---
+  giant_belt:
+    name: "巨人腰帶"
+    slot: BELT
+    material: LEATHER
+    required_level: 31
+    rarity: RARE
+    description: "傳說中巨人族遺留的腰帶"
+    attributes:
+      vitality: 120
+
+  # --- 護符 ---
+  elemental_charm:
+    name: "元素護符"
+    slot: CHARM
+    material: TOTEM_OF_UNDYING
+    required_level: 31
+    rarity: RARE
+    description: "封印了元素之力的古老護符"
+    attributes:
+      intelligence: 25
+      spirit: 10
+
+  # --- 肩甲 ---
+  fortress_shoulder:
+    name: "堡壘肩甲"
+    slot: SHOULDER
+    material: DIAMOND
+    required_level: 31
+    rarity: RARE
+    description: "堡壘守護者的厚重護肩"
+    attributes:
+      defense: 50
+      vitality: 30
+
+  # ═══════════════════════════════════════════
+  #  Lv.41~50 — 成長期 (後段)
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  bloodrage_necklace:
+    name: "血怒項鍊"
+    slot: NECKLACE
+    material: GOLD_INGOT
+    required_level: 41
+    rarity: EPIC
+    description: "浸染戰場鮮血的怒火項鍊"
+    attributes:
+      strength: 40
+
+  # --- 戒指 ---
+  lethal_ring:
+    name: "致命戒指"
+    slot: RING_1
+    material: GOLD_INGOT
+    required_level: 41
+    rarity: EPIC
+    description: "閃爍著致命光芒的精密戒指"
+    attributes:
+      agility: 25
+
+  # --- 手環 ---
+  soul_bracelet:
+    name: "靈魂手環"
+    slot: BRACELET
+    material: PRISMARINE_SHARD
+    required_level: 41
+    rarity: EPIC
+    description: "與靈魂共鳴的神秘手環"
+    attributes:
+      spirit: 20
+      intelligence: 10
+
+  # --- 腰帶 ---
+  steel_belt:
+    name: "鋼鐵腰帶"
+    slot: BELT
+    material: IRON_INGOT
+    required_level: 41
+    rarity: EPIC
+    description: "以精鋼打造的不屈腰帶"
+    attributes:
+      vitality: 200
+
+  # --- 護符 ---
+  arcana_charm:
+    name: "秘法護符"
+    slot: CHARM
+    material: ENCHANTED_GOLDEN_APPLE
+    required_level: 41
+    rarity: EPIC
+    description: "禁忌秘法凝聚而成的護符"
+    attributes:
+      intelligence: 40
+      spirit: 20
+
+  # --- 肩甲 ---
+  dragonscale_shoulder:
+    name: "龍鱗肩甲"
+    slot: SHOULDER
+    material: DIAMOND
+    required_level: 41
+    rarity: EPIC
+    description: "龍鱗鍛造的傳奇護肩"
+    attributes:
+      defense: 80
+      vitality: 50
+
+  # ═══════════════════════════════════════════
+  #  Lv.51~60 — 高階期 (前段)
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  destruction_necklace:
+    name: "毀滅項鍊"
+    slot: NECKLACE
+    material: GOLD_INGOT
+    required_level: 51
+    rarity: EPIC
+    description: "破壞之神賜予的毀滅項鍊"
+    attributes:
+      strength: 60
+
+  # --- 戒指 ---
+  abyss_ring:
+    name: "深淵戒指"
+    slot: RING_1
+    material: GOLD_INGOT
+    required_level: 51
+    rarity: EPIC
+    description: "深淵裂縫中發現的戒指"
+    attributes:
+      agility: 30
+
+  # --- 手環 ---
+  divine_bracelet:
+    name: "神恩手環"
+    slot: BRACELET
+    material: PRISMARINE_SHARD
+    required_level: 51
+    rarity: EPIC
+    description: "承載神聖恩典的手環"
+    attributes:
+      spirit: 30
+      intelligence: 15
+
+  # --- 腰帶 ---
+  immortal_belt:
+    name: "不朽腰帶"
+    slot: BELT
+    material: IRON_INGOT
+    required_level: 51
+    rarity: EPIC
+    description: "不朽戰士的遺物腰帶"
+    attributes:
+      vitality: 350
+
+  # --- 護符 ---
+  void_charm:
+    name: "虛空護符"
+    slot: CHARM
+    material: ENCHANTED_GOLDEN_APPLE
+    required_level: 51
+    rarity: EPIC
+    description: "來自虛空裂縫的異界護符"
+    attributes:
+      intelligence: 60
+      spirit: 30
+
+  # --- 肩甲 ---
+  aegis_shoulder:
+    name: "神盾肩甲"
+    slot: SHOULDER
+    material: DIAMOND
+    required_level: 51
+    rarity: EPIC
+    description: "以神盾碎片鍛造的護肩"
+    attributes:
+      defense: 120
+      vitality: 80
+
+  # ═══════════════════════════════════════════
+  #  Lv.61~70 — 高階期 (中段)
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  dragonsoul_necklace:
+    name: "龍魂項鍊"
+    slot: NECKLACE
+    material: NETHER_STAR
+    required_level: 61
+    rarity: LEGENDARY
+    description: "封印了龍魂的恐怖項鍊"
+    attributes:
+      strength: 90
+
+  # --- 戒指 ---
+  divine_judgment_ring:
+    name: "天罰戒指"
+    slot: RING_1
+    material: GOLD_INGOT
+    required_level: 61
+    rarity: LEGENDARY
+    description: "引動天罰之力的戒指"
+    attributes:
+      agility: 35
+
+  # --- 手環 ---
+  spacetime_bracelet:
+    name: "時空手環"
+    slot: BRACELET
+    material: ENDER_PEARL
+    required_level: 61
+    rarity: LEGENDARY
+    description: "扭曲時空的神秘手環"
+    attributes:
+      spirit: 40
+      intelligence: 20
+
+  # --- 腰帶 ---
+  titan_belt:
+    name: "泰坦腰帶"
+    slot: BELT
+    material: NETHERITE_INGOT
+    required_level: 61
+    rarity: LEGENDARY
+    description: "泰坦巨神留下的腰帶"
+    attributes:
+      vitality: 550
+
+  # --- 護符 ---
+  spirit_charm:
+    name: "靈魂護符"
+    slot: CHARM
+    material: ENCHANTED_GOLDEN_APPLE
+    required_level: 61
+    rarity: LEGENDARY
+    description: "無數靈魂凝聚而成的護符"
+    attributes:
+      intelligence: 90
+      spirit: 40
+
+  # --- 肩甲 ---
+  indestructible_shoulder:
+    name: "不滅肩甲"
+    slot: SHOULDER
+    material: NETHERITE_INGOT
+    required_level: 61
+    rarity: LEGENDARY
+    description: "永不毀壞的不滅護肩"
+    attributes:
+      defense: 180
+      vitality: 120
+
+  # ═══════════════════════════════════════════
+  #  Lv.71~80 — 高階期 (後段)
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  godwrath_necklace:
+    name: "神怒項鍊"
+    slot: NECKLACE
+    material: NETHER_STAR
+    required_level: 71
+    rarity: LEGENDARY
+    description: "承載諸神之怒的項鍊"
+    attributes:
+      strength: 120
+
+  # --- 戒指 ---
+  destiny_ring:
+    name: "命運戒指"
+    slot: RING_1
+    material: GOLD_INGOT
+    required_level: 71
+    rarity: LEGENDARY
+    description: "改寫命運軌跡的戒指"
+    attributes:
+      agility: 45
+
+  # --- 手環 ---
+  radiance_bracelet:
+    name: "光輝手環"
+    slot: BRACELET
+    material: ENDER_PEARL
+    required_level: 71
+    rarity: LEGENDARY
+    description: "散發聖光的耀眼手環"
+    attributes:
+      spirit: 50
+      intelligence: 25
+
+  # --- 腰帶 ---
+  godking_belt:
+    name: "神王腰帶"
+    slot: BELT
+    material: NETHERITE_INGOT
+    required_level: 71
+    rarity: LEGENDARY
+    description: "神王統治時代的遺物腰帶"
+    attributes:
+      vitality: 800
+
+  # --- 護符 ---
+  chaos_charm:
+    name: "混沌護符"
+    slot: CHARM
+    material: NETHER_STAR
+    required_level: 71
+    rarity: LEGENDARY
+    description: "混沌之力具現化的護符"
+    attributes:
+      intelligence: 120
+      spirit: 50
+
+  # --- 肩甲 ---
+  celestial_shoulder:
+    name: "天界肩甲"
+    slot: SHOULDER
+    material: NETHERITE_INGOT
+    required_level: 71
+    rarity: LEGENDARY
+    description: "天界鍛爐打造的神聖護肩"
+    attributes:
+      defense: 250
+      vitality: 180
+
+  # ═══════════════════════════════════════════
+  #  Lv.81~90 — 終局裝備 (前段)
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  genesis_necklace:
+    name: "創世項鍊"
+    slot: NECKLACE
+    material: NETHER_STAR
+    required_level: 81
+    rarity: LEGENDARY
+    description: "創世之初遺留的至高項鍊"
+    attributes:
+      strength: 180
+
+  # --- 戒指 ---
+  infinite_ring:
+    name: "無盡戒指"
+    slot: RING_1
+    material: NETHER_STAR
+    required_level: 81
+    rarity: LEGENDARY
+    description: "蘊含無盡可能的戒指"
+    attributes:
+      agility: 55
+
+  # --- 手環 ---
+  stellar_bracelet:
+    name: "星辰手環"
+    slot: BRACELET
+    material: ENDER_PEARL
+    required_level: 81
+    rarity: LEGENDARY
+    description: "凝聚星辰之力的手環"
+    attributes:
+      spirit: 60
+      intelligence: 30
+
+  # --- 腰帶 ---
+  eternal_belt:
+    name: "永恆腰帶"
+    slot: BELT
+    material: NETHERITE_INGOT
+    required_level: 81
+    rarity: LEGENDARY
+    description: "超越時間的永恆腰帶"
+    attributes:
+      vitality: 1100
+
+  # --- 護符 ---
+  astral_charm:
+    name: "星界護符"
+    slot: CHARM
+    material: NETHER_STAR
+    required_level: 81
+    rarity: LEGENDARY
+    description: "來自星界的至高護符"
+    attributes:
+      intelligence: 180
+      spirit: 60
+
+  # --- 肩甲 ---
+  holy_shoulder:
+    name: "神聖肩甲"
+    slot: SHOULDER
+    material: NETHERITE_INGOT
+    required_level: 81
+    rarity: LEGENDARY
+    description: "神聖鍛造的終極護肩"
+    attributes:
+      defense: 350
+      vitality: 250
+
+  # ═══════════════════════════════════════════
+  #  Lv.91~100 — 頂級終局裝備
+  # ═══════════════════════════════════════════
+
+  # --- 項鍊 ---
+  god_necklace:
+    name: "§6神之項鍊"
+    slot: NECKLACE
+    material: NETHER_STAR
+    required_level: 91
+    rarity: LEGENDARY
+    description: "唯有神才能佩戴的至上項鍊"
+    attributes:
+      strength: 300
+
+  # --- 戒指 ---
+  breaker_ring:
+    name: "§6破界戒指"
+    slot: RING_1
+    material: NETHER_STAR
+    required_level: 91
+    rarity: LEGENDARY
+    description: "能打破世界之壁的戒指"
+    attributes:
+      agility: 70
+
+  # --- 手環 ---
+  time_bracelet:
+    name: "§6時之手環"
+    slot: BRACELET
+    material: NETHER_STAR
+    required_level: 91
+    rarity: LEGENDARY
+    description: "掌控時間之河的手環"
+    attributes:
+      spirit: 80
+      intelligence: 40
+
+  # --- 腰帶 ---
+  unbreakable_belt:
+    name: "§6不滅腰帶"
+    slot: BELT
+    material: NETHER_STAR
+    required_level: 91
+    rarity: LEGENDARY
+    description: "不可摧毀的至高腰帶"
+    attributes:
+      vitality: 1800
+
+  # --- 護符 ---
+  origin_charm:
+    name: "§6起源護符"
+    slot: CHARM
+    material: NETHER_STAR
+    required_level: 91
+    rarity: LEGENDARY
+    description: "萬物起源之力凝聚的護符"
+    attributes:
+      intelligence: 300
+      spirit: 100
+
+  # --- 肩甲 ---
+  finality_shoulder:
+    name: "§6終焉肩甲"
+    slot: SHOULDER
+    material: NETHER_STAR
+    required_level: 91
+    rarity: LEGENDARY
+    description: "終焉之日降臨時的最終護肩"
+    attributes:
+      defense: 500
+      vitality: 400
+

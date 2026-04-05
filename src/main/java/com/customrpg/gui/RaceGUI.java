@@ -62,6 +62,47 @@ public class RaceGUI implements Listener {
         RACE_ICONS.put("dragon", Material.DRAGON_HEAD);
     }
 
+    // 武器類型中文對照
+    private static final Map<String, String> WEAPON_NAME_ZH = new LinkedHashMap<>();
+    static {
+        WEAPON_NAME_ZH.put("SWORD", "劍");
+        WEAPON_NAME_ZH.put("AXE", "斧");
+        WEAPON_NAME_ZH.put("TWO_HAND_AXE", "雙手斧");
+        WEAPON_NAME_ZH.put("BOW", "弓");
+        WEAPON_NAME_ZH.put("STAFF", "法杖");
+        WEAPON_NAME_ZH.put("SCYTHE", "鐮刀");
+        WEAPON_NAME_ZH.put("TWO_HAND_SCYTHE", "雙手鐮刀");
+        WEAPON_NAME_ZH.put("SPEAR", "長槍");
+        WEAPON_NAME_ZH.put("DAGGER", "匕首");
+        WEAPON_NAME_ZH.put("UNKNOWN", "未知");
+    }
+
+    // 種族技能中文對照
+    private static final Map<String, String> SKILL_NAME_ZH = new LinkedHashMap<>();
+    static {
+        // 人類
+        SKILL_NAME_ZH.put("focus", "§f專注 §7— 提升暴擊率");
+        SKILL_NAME_ZH.put("adaptability", "§f適應力 §7— 武器傷害小幅提升");
+        // 精靈
+        SKILL_NAME_ZH.put("wind_step", "§a風之步伐 §7— 移動速度提升");
+        SKILL_NAME_ZH.put("nature_blessing", "§a自然祝福 §7— 持續回復生命");
+        // 獸人
+        SKILL_NAME_ZH.put("berserk", "§c狂暴 §7— 血量越低傷害越高");
+        SKILL_NAME_ZH.put("blood_rage", "§c血之狂怒 §7— 攻擊回復生命");
+        // 矮人
+        SKILL_NAME_ZH.put("stone_skin", "§6石膚術 §7— 減少受到的傷害");
+        SKILL_NAME_ZH.put("forge_master", "§6鍛造大師 §7— 裝備效果提升");
+        // 不死族
+        SKILL_NAME_ZH.put("soul_drain", "§8靈魂汲取 §7— 攻擊吸取生命");
+        SKILL_NAME_ZH.put("death_touch", "§8死亡之觸 §7— 有機率造成額外傷害");
+        // 惡魔族
+        SKILL_NAME_ZH.put("hellfire", "§4地獄火 §7— 攻擊附帶火焰傷害");
+        SKILL_NAME_ZH.put("demon_form", "§4惡魔化 §7— 暫時大幅提升攻擊力");
+        // 天使族
+        SKILL_NAME_ZH.put("holy_light", "§b聖光 §7— 治療自身與附近隊友");
+        SKILL_NAME_ZH.put("divine_shield", "§b神聖護盾 §7— 暫時免疫傷害");
+    }
+
     // 執行時狀態
     private final Map<UUID, Map<Integer, String>> playerListSlotMap = new HashMap<>(); // 列表頁 slot→raceId
     private final Map<UUID, String> playerDetailRace = new HashMap<>();               // 詳情頁正在查看的 raceId
@@ -217,6 +258,12 @@ public class RaceGUI implements Listener {
             lore.add("§d  ♥ 體力: §f+" + race.getBaseVitality());
             lore.add("§9  ⛨ 防禦: §f+" + race.getBaseDefense());
             lore.add("§5  ✧ 精神: §f+" + race.getBaseSpirit());
+            if (race.getBaseMana() > 0) {
+                lore.add("§3  ✦ 魔力: §f+" + race.getBaseMana());
+            }
+            if (race.getBaseManaRegen() > 0) {
+                lore.add("§3  ↻ 魔力回復: §f+" + String.format("%.1f/s", race.getBaseManaRegen()));
+            }
             gui.setItem(SLOT_BASE_STATS, createItem(Material.DIAMOND, "§e§l✦ 基礎屬性", lore));
         }
 
@@ -260,7 +307,8 @@ public class RaceGUI implements Listener {
                 lore.add("§7選擇此種族後自動獲得的技能");
                 lore.add("");
                 for (String skill : race.getSkills()) {
-                    lore.add("§b  • " + skill);
+                    String skillZh = SKILL_NAME_ZH.getOrDefault(skill, "§f" + skill);
+                    lore.add("§b  • " + skillZh);
                 }
             } else {
                 lore.add("§7此種族沒有專屬技能");
@@ -281,7 +329,8 @@ public class RaceGUI implements Listener {
                 for (Map.Entry<String, Double> entry : wb.entrySet()) {
                     double bonus = entry.getValue();
                     String color = bonus > 1.0 ? "§a" : (bonus < 1.0 ? "§c" : "§f");
-                    lore.add("§e  " + entry.getKey() + ": " + color + String.format("%.0f%%", bonus * 100));
+                    String weaponZh = WEAPON_NAME_ZH.getOrDefault(entry.getKey(), entry.getKey());
+                    lore.add("§e  " + weaponZh + ": " + color + String.format("%.0f%%", bonus * 100));
                 }
                 lore.add("§7  其他武器: §f" + String.format("%.0f%%", race.getDefaultWeaponBonus() * 100));
             }

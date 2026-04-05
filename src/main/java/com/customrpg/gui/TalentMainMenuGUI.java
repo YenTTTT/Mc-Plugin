@@ -27,7 +27,7 @@ public class TalentMainMenuGUI implements Listener {
     private final TalentTreeGUI talentTreeGUI;
 
     private static final String GUI_TITLE = "§6§l選擇天賦流派";
-    private static final int GUI_SIZE = 36; // 擴大以容納更多流派
+    private static final int GUI_SIZE = 45; // 擴大以容納更多流派
 
     public TalentMainMenuGUI(CustomRPG plugin, TalentManager talentManager, TalentTreeGUI talentTreeGUI) {
         this.plugin = plugin;
@@ -58,6 +58,7 @@ public class TalentMainMenuGUI implements Listener {
         gui.setItem(15, createBranchIcon(TalentBranch.NATURE, Material.OAK_SAPLING));
         gui.setItem(22, createBranchIcon(TalentBranch.SUKUNA, Material.DIAMOND_SWORD)); // 宿儺系
         gui.setItem(23, createBranchIcon(TalentBranch.BLOOD, Material.REDSTONE)); // 赤血操術系
+        gui.setItem(24, createBranchIcon(TalentBranch.ASSASSIN, Material.SPIDER_EYE)); // 刺客系
 
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
@@ -96,6 +97,7 @@ public class TalentMainMenuGUI implements Listener {
             case 15: branch = TalentBranch.NATURE; break;
             case 22: branch = TalentBranch.SUKUNA; break;
             case 23: branch = TalentBranch.BLOOD; break;
+            case 24: branch = TalentBranch.ASSASSIN; break;
         }
 
         if (branch != null) {

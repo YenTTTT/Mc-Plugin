@@ -1,0 +1,747 @@
+# ========================================
+# 初級區域怪物 (Lv.1~15)
+# 新手玩家遇到的第一批怪物
+# ========================================
+
+# ───────────────────────────────
+#  Tier 1: 草原生物 (Lv.1~5)
+# ───────────────────────────────
+
+# 1. 草原殭屍 — 最基礎的近戰怪
+grass_zombie:
+  name: "&a草原殭屍"
+  type: ZOMBIE
+  level-range:
+    min: 1
+    max: 5
+  base-stats:
+    health: 18.0
+    damage: 3.0
+  stat-scaling:
+    health-per-level: 2.0
+    damage-per-level: 0.4
+  exp:
+    base: 5
+    per-level: 2
+  drops:
+    vanilla-items:
+      - material: ROTTEN_FLESH
+        amount: 1-2
+        chance: 0.8
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [plains, forest]
+
+# 2. 林間蜘蛛 — 低血量但速度快
+forest_spider:
+  name: "&2林間蜘蛛"
+  type: SPIDER
+  level-range:
+    min: 1
+    max: 5
+  base-stats:
+    health: 14.0
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 1.5
+    damage-per-level: 0.3
+  exp:
+    base: 4
+    per-level: 2
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 1-2
+        chance: 0.8
+      - material: SPIDER_EYE
+        amount: 1
+        chance: 0.2
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [forest, swamp]
+
+# 3. 迷路骷髏 — 基礎遠程怪
+lost_skeleton:
+  name: "&7迷路骷髏"
+  type: SKELETON
+  level-range:
+    min: 1
+    max: 4
+  base-stats:
+    health: 15.0
+    damage: 3.0
+  stat-scaling:
+    health-per-level: 1.5
+    damage-per-level: 0.3
+  exp:
+    base: 5
+    per-level: 2
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1-2
+        chance: 0.8
+      - material: ARROW
+        amount: 1-3
+        chance: 0.6
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [plains, cave]
+
+# 4. 草原史萊姆 — 純近戰，偶爾跳躍
+meadow_slime:
+  name: "&a草原史萊姆"
+  type: SLIME
+  level-range:
+    min: 1
+    max: 3
+  base-stats:
+    health: 12.0
+    damage: 2.0
+  stat-scaling:
+    health-per-level: 1.0
+    damage-per-level: 0.2
+  exp:
+    base: 3
+    per-level: 1
+  drops:
+    vanilla-items:
+      - material: SLIME_BALL
+        amount: 1-2
+        chance: 0.9
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [plains, swamp]
+
+# 5. 野生狼人 — 稍強近戰 (殭屍偽裝)
+feral_wolf:
+  name: "&6野生狼人"
+  type: ZOMBIE
+  level-range:
+    min: 2
+    max: 5
+  base-stats:
+    health: 22.0
+    damage: 4.0
+  stat-scaling:
+    health-per-level: 2.5
+    damage-per-level: 0.5
+  exp:
+    base: 6
+    per-level: 2
+  drops:
+    vanilla-items:
+      - material: LEATHER
+        amount: 1-2
+        chance: 0.7
+      - material: BONE
+        amount: 1
+        chance: 0.4
+  special-behavior: "fast_movement"
+  show-level-in-name: true
+  tags: [forest, plains]
+
+# ───────────────────────────────
+#  Tier 2: 森林 / 洞穴 (Lv.3~8)
+# ───────────────────────────────
+
+# 6. 毒蘑菇殭屍 — 毒攻擊
+mushroom_zombie:
+  name: "&5毒蘑菇殭屍"
+  type: ZOMBIE
+  level-range:
+    min: 3
+    max: 8
+  base-stats:
+    health: 28.0
+    damage: 4.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 0.5
+  exp:
+    base: 8
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: RED_MUSHROOM
+        amount: 1-3
+        chance: 0.6
+      - material: BROWN_MUSHROOM
+        amount: 1-2
+        chance: 0.5
+      - material: FERMENTED_SPIDER_EYE
+        amount: 1
+        chance: 0.1
+  special-behavior: "poison_attack"
+  show-level-in-name: true
+  tags: [forest, swamp]
+
+# 7. 洞穴蝙蝠精 — 低血快攻
+cave_bat:
+  name: "&8洞穴蝙蝠精"
+  type: VEX
+  level-range:
+    min: 3
+    max: 7
+  base-stats:
+    health: 16.0
+    damage: 5.0
+  stat-scaling:
+    health-per-level: 1.5
+    damage-per-level: 0.6
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: PHANTOM_MEMBRANE
+        amount: 1
+        chance: 0.3
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [cave, mountain]
+
+# 8. 盜墓者 — 持劍近戰，有裝備
+graverobber:
+  name: "&7盜墓者"
+  type: ZOMBIE
+  level-range:
+    min: 4
+    max: 8
+  base-stats:
+    health: 30.0
+    damage: 5.5
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 0.6
+  equipment:
+    main-hand:
+      material: STONE_SWORD
+    helmet:
+      material: LEATHER_HELMET
+  exp:
+    base: 10
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: GOLD_NUGGET
+        amount: 1-3
+        chance: 0.5
+      - material: IRON_NUGGET
+        amount: 1-2
+        chance: 0.3
+      - material: EMERALD
+        amount: 1
+        chance: 0.05
+    custom-weapons:
+      - weapon-key: "wooden_sword_t1"
+        chance: 0.02
+      - weapon-key: "farm_sickle_t1"
+        chance: 0.015
+    custom-equipment:
+      - equipment-key: "wanderer_boots"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "novice_necklace"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, plains]
+
+# 9. 孢子蜘蛛 — 死亡時小爆炸
+spore_spider:
+  name: "&2孢子蜘蛛"
+  type: CAVE_SPIDER
+  level-range:
+    min: 3
+    max: 7
+  base-stats:
+    health: 20.0
+    damage: 4.0
+  stat-scaling:
+    health-per-level: 2.0
+    damage-per-level: 0.5
+  exp:
+    base: 8
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 1-3
+        chance: 0.8
+      - material: FERMENTED_SPIDER_EYE
+        amount: 1
+        chance: 0.15
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [forest, cave, swamp]
+
+# 10. 流浪弓手 — 比迷路骷髏更強的遠程
+wandering_archer:
+  name: "&e流浪弓手"
+  type: SKELETON
+  level-range:
+    min: 4
+    max: 8
+  base-stats:
+    health: 24.0
+    damage: 5.0
+  stat-scaling:
+    health-per-level: 2.5
+    damage-per-level: 0.7
+  equipment:
+    main-hand:
+      material: BOW
+    helmet:
+      material: CHAINMAIL_HELMET
+  exp:
+    base: 10
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 3-6
+        chance: 0.8
+      - material: BOW
+        amount: 1
+        chance: 0.08
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [plains, desert]
+
+# ───────────────────────────────
+#  Tier 3: 危險林地 (Lv.5~15)
+# ───────────────────────────────
+
+# 11. 苦力怕幼體 — 小爆炸怪
+creeper_hatchling:
+  name: "&a苦力怕幼體"
+  type: CREEPER
+  level-range:
+    min: 5
+    max: 10
+  base-stats:
+    health: 15.0
+    damage: 6.0
+  stat-scaling:
+    health-per-level: 1.5
+    damage-per-level: 0.8
+  exp:
+    base: 10
+    per-level: 4
+  drops:
+    vanilla-items:
+      - material: GUNPOWDER
+        amount: 1-2
+        chance: 0.9
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [forest, plains]
+
+# 12. 腐木守衛 — 高血量坦克
+rotten_treant:
+  name: "&2腐木守衛"
+  type: ZOMBIE
+  level-range:
+    min: 6
+    max: 12
+  base-stats:
+    health: 50.0
+    damage: 4.5
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 0.5
+  equipment:
+    main-hand:
+      material: STICK
+  exp:
+    base: 12
+    per-level: 4
+  drops:
+    vanilla-items:
+      - material: OAK_LOG
+        amount: 1-3
+        chance: 0.7
+      - material: APPLE
+        amount: 1
+        chance: 0.2
+      - material: OAK_SAPLING
+        amount: 1
+        chance: 0.1
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [forest, swamp]
+
+# 13. 幽魂哨兵 — 穿透型遠程
+phantom_sentry:
+  name: "&9幽魂哨兵"
+  type: STRAY
+  level-range:
+    min: 7
+    max: 13
+  base-stats:
+    health: 28.0
+    damage: 6.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 0.8
+  equipment:
+    main-hand:
+      material: BOW
+      enchantments:
+        - type: ARROW_DAMAGE
+          level: 1
+  exp:
+    base: 14
+    per-level: 4
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1-3
+        chance: 0.7
+      - material: ARROW
+        amount: 3-6
+        chance: 0.6
+      - material: PHANTOM_MEMBRANE
+        amount: 1
+        chance: 0.08
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [ice, snow, cave]
+
+# 14. 暗影潛行者 — 快速近戰 (蜘蛛系)
+shadow_lurker:
+  name: "&8暗影潛行者"
+  type: SPIDER
+  level-range:
+    min: 8
+    max: 15
+  base-stats:
+    health: 32.0
+    damage: 7.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 0.9
+  exp:
+    base: 15
+    per-level: 5
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 2-4
+        chance: 0.8
+      - material: SPIDER_EYE
+        amount: 1
+        chance: 0.3
+      - material: ENDER_PEARL
+        amount: 1
+        chance: 0.03
+  special-behavior: "fast_movement"
+  show-level-in-name: true
+  tags: [cave, forest]
+
+# 15. 岩石傀儡 — 超高血量低傷害
+stone_golem:
+  name: "&7岩石傀儡"
+  type: ZOMBIE
+  level-range:
+    min: 8
+    max: 15
+  base-stats:
+    health: 60.0
+    damage: 5.0
+  stat-scaling:
+    health-per-level: 6.0
+    damage-per-level: 0.5
+  equipment:
+    helmet:
+      material: STONE
+    chestplate:
+      material: IRON_CHESTPLATE
+    main-hand:
+      material: COBBLESTONE
+  exp:
+    base: 15
+    per-level: 5
+  drops:
+    vanilla-items:
+      - material: COBBLESTONE
+        amount: 3-6
+        chance: 0.9
+      - material: IRON_NUGGET
+        amount: 1-3
+        chance: 0.4
+      - material: IRON_INGOT
+        amount: 1
+        chance: 0.08
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, mountain, desert]
+
+# ───────────────────────────────
+#  新增怪物
+# ───────────────────────────────
+
+# 16. 黏液爆破者 — 死亡2秒後小範圍爆炸
+slime_bomber:
+  name: "&a黏液爆破者"
+  type: SLIME
+  level-range:
+    min: 3
+    max: 8
+  base-stats:
+    health: 20.0
+    damage: 3.0
+  stat-scaling:
+    health-per-level: 2.0
+    damage-per-level: 0.4
+  exp:
+    base: 8
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: SLIME_BALL
+        amount: 1-3
+        chance: 0.9
+      - material: GUNPOWDER
+        amount: 1
+        chance: 0.3
+  special-behavior: "delayed_explosion"
+  show-level-in-name: true
+  tags: [swamp, cave]
+
+# 17. 野生雞 — 逃跑型資源怪
+wild_chicken:
+  name: "&e野生雞"
+  type: CHICKEN
+  level-range:
+    min: 1
+    max: 3
+  base-stats:
+    health: 8.0
+    damage: 0.0
+  stat-scaling:
+    health-per-level: 0.5
+    damage-per-level: 0.0
+  exp:
+    base: 2
+    per-level: 1
+  drops:
+    vanilla-items:
+      - material: CHICKEN
+        amount: 1-2
+        chance: 0.9
+      - material: FEATHER
+        amount: 1-3
+        chance: 0.8
+      - material: EGG
+        amount: 1
+        chance: 0.3
+  special-behavior: "flee"
+  show-level-in-name: true
+  tags: [plains, forest]
+
+# 18. 小型元素靈 — 遠距離攻擊（火/冰雪球）
+lesser_elemental:
+  name: "&b小型元素靈"
+  type: VEX
+  level-range:
+    min: 4
+    max: 10
+  base-stats:
+    health: 18.0
+    damage: 5.0
+  stat-scaling:
+    health-per-level: 2.0
+    damage-per-level: 0.6
+  exp:
+    base: 9
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: BLAZE_POWDER
+        amount: 1
+        chance: 0.4
+      - material: SNOWBALL
+        amount: 1-2
+        chance: 0.3
+  special-behavior: "snowball_thrower"
+  show-level-in-name: true
+  tags: [ice, fire, cave]
+
+# 19. 狂暴野豬 — 直線衝撞
+rage_boar:
+  name: "&c狂暴野豬"
+  type: ZOMBIE
+  level-range:
+    min: 3
+    max: 8
+  base-stats:
+    health: 30.0
+    damage: 6.0
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 0.7
+  disguise:
+    enabled: true
+    type: PIG
+    baby-chance: 0.0
+  exp:
+    base: 9
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: PORKCHOP
+        amount: 1-3
+        chance: 0.8
+      - material: LEATHER
+        amount: 1
+        chance: 0.3
+  special-behavior: "charge_attack"
+  show-level-in-name: true
+  tags: [plains, forest]
+
+# 20. 影襲蜘蛛 — 短距離瞬移 + 暗影粒子 (稀有)
+shadow_spider:
+  name: "&8&l影襲蜘蛛"
+  type: SPIDER
+  level-range:
+    min: 5
+    max: 12
+  base-stats:
+    health: 26.0
+    damage: 7.0
+  stat-scaling:
+    health-per-level: 2.5
+    damage-per-level: 0.8
+  exp:
+    base: 14
+    per-level: 5
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 2-4
+        chance: 0.8
+      - material: SPIDER_EYE
+        amount: 1
+        chance: 0.4
+      - material: ENDER_PEARL
+        amount: 1
+        chance: 0.08
+    custom-weapons:
+      - weapon-key: "farm_sickle_t1"
+        chance: 0.04
+    custom-equipment:
+      - equipment-key: "wanderer_helmet"
+        type: "armor"
+        chance: 0.025
+      - equipment-key: "thief_boots"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "broken_ring"
+        type: "accessory"
+        chance: 0.03
+  special-behavior: "shadow_teleport"
+  show-level-in-name: true
+  tags: [cave, forest]
+
+# 21. 骷髏法師 — 持木棒丟雪球（雪球扣血）
+skeleton_mage:
+  name: "&d骷髏法師"
+  type: SKELETON
+  level-range:
+    min: 4
+    max: 10
+  base-stats:
+    health: 22.0
+    damage: 5.0
+  stat-scaling:
+    health-per-level: 2.5
+    damage-per-level: 0.6
+  equipment:
+    main-hand:
+      material: STICK
+  exp:
+    base: 10
+    per-level: 4
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1-3
+        chance: 0.8
+      - material: STICK
+        amount: 1-2
+        chance: 0.5
+      - material: EXPERIENCE_BOTTLE
+        amount: 1
+        chance: 0.05
+    custom-weapons:
+      - weapon-key: "rotten_staff_t1"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "trainee_mage_helmet"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "beginner_charm"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "snowball_mage"
+  show-level-in-name: true
+  tags: [cave, ice]
+
+# 22. 草原狼 — 群體生成(3~5隻)、不主動攻擊
+prairie_wolf:
+  name: "&f草原狼"
+  type: WOLF
+  level-range:
+    min: 2
+    max: 6
+  base-stats:
+    health: 15.0
+    damage: 3.0
+  stat-scaling:
+    health-per-level: 1.5
+    damage-per-level: 0.3
+  exp:
+    base: 4
+    per-level: 2
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1
+        chance: 0.6
+      - material: LEATHER
+        amount: 1
+        chance: 0.3
+  special-behavior: "pack_passive"
+  show-level-in-name: true
+  tags: [plains]
+
+# 23. 小蟲子 — 外觀是 Silverfish
+small_bug:
+  name: "&7小蟲子"
+  type: SILVERFISH
+  level-range:
+    min: 1
+    max: 5
+  base-stats:
+    health: 10.0
+    damage: 2.0
+  stat-scaling:
+    health-per-level: 1.0
+    damage-per-level: 0.3
+  exp:
+    base: 3
+    per-level: 1
+  drops:
+    vanilla-items:
+      - material: ROTTEN_FLESH
+        amount: 1
+        chance: 0.5
+      - material: STRING
+        amount: 1
+        chance: 0.3
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [cave, forest, swamp]

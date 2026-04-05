@@ -1,0 +1,741 @@
+# ========================================
+# Boss 怪物專用配置
+# 只有 Boss 生成機制會從此檔案選擇怪物
+# ========================================
+
+# ───────────────────────────────
+#  Lv.20~30 野外 Boss
+# ───────────────────────────────
+
+# Boss: 南瓜騎士 — 近戰 + 格擋/重擊
+boss_pumpkin_knight:
+  name: "&6(野外Boss) &e南瓜騎士"
+  type: ZOMBIE
+  boss: true
+  level-range:
+    min: 20
+    max: 30
+  base-stats:
+    health: 350.0
+    damage: 14.0
+  stat-scaling:
+    health-per-level: 12.0
+    damage-per-level: 1.5
+  equipment:
+    helmet:
+      material: CARVED_PUMPKIN
+    chestplate:
+      material: DIAMOND_CHESTPLATE
+    leggings:
+      material: IRON_LEGGINGS
+    boots:
+      material: IRON_BOOTS
+    main-hand:
+      material: IRON_SWORD
+    off-hand:
+      material: SHIELD
+  exp:
+    base: 80
+    per-level: 15
+  drops:
+    vanilla-items:
+      - material: PUMPKIN
+        amount: 1-3
+        chance: 0.9
+      - material: DIAMOND
+        amount: 1-2
+        chance: 0.25
+      - material: IRON_INGOT
+        amount: 2-5
+        chance: 0.6
+      - material: GOLDEN_APPLE
+        amount: 1
+        chance: 0.1
+    custom-weapons:
+      - weapon-key: "steel_scimitar_t3"
+        chance: 0.15
+      - weapon-key: "knight_greatsword_t2"
+        chance: 0.20
+      - weapon-key: "iron_broadsword_t2"
+        chance: 0.25
+    custom-equipment:
+      - equipment-key: "knight_helmet"
+        type: "armor"
+        chance: 0.12
+      - equipment-key: "knight_chestplate"
+        type: "armor"
+        chance: 0.08
+      - equipment-key: "fortress_helmet"
+        type: "armor"
+        chance: 0.10
+      - equipment-key: "warrior_necklace"
+        type: "accessory"
+        chance: 0.10
+      - equipment-key: "guardian_shoulder"
+        type: "accessory"
+        chance: 0.12
+  special-behavior: "boss_pumpkin_knight"
+  show-level-in-name: true
+  tags: [plains, forest]
+
+# Boss: 瘋狂剪刀手 — 攻擊速度快
+boss_crazy_scissor:
+  name: "&c(野外Boss) &4瘋狂剪刀手"
+  type: ZOMBIE
+  boss: true
+  level-range:
+    min: 20
+    max: 30
+  base-stats:
+    health: 280.0
+    damage: 18.0
+  stat-scaling:
+    health-per-level: 10.0
+    damage-per-level: 2.0
+  equipment:
+    helmet:
+      material: PLAYER_HEAD
+      skull-owner: "MHF_Alex"
+    chestplate:
+      material: LEATHER_CHESTPLATE
+      color: "139,0,0"
+    leggings:
+      material: LEATHER_LEGGINGS
+      color: "139,0,0"
+    boots:
+      material: LEATHER_BOOTS
+      color: "139,0,0"
+    main-hand:
+      material: SHEARS
+      enchantments:
+        - type: UNBREAKING
+          level: 1
+  exp:
+    base: 80
+    per-level: 15
+  drops:
+    vanilla-items:
+      - material: SHEARS
+        amount: 1
+        chance: 0.3
+      - material: DIAMOND
+        amount: 1-2
+        chance: 0.2
+      - material: IRON_INGOT
+        amount: 2-4
+        chance: 0.6
+      - material: GOLD_INGOT
+        amount: 1-3
+        chance: 0.4
+    custom-weapons:
+      - weapon-key: "darkmoon_scythe_t3"
+        chance: 0.12
+      - weapon-key: "farm_sickle_t1"
+        chance: 0.30
+      - weapon-key: "steel_scimitar_t3"
+        chance: 0.10
+    custom-equipment:
+      - equipment-key: "shadow_helmet"
+        type: "armor"
+        chance: 0.12
+      - equipment-key: "shadow_chestplate"
+        type: "armor"
+        chance: 0.08
+      - equipment-key: "shadow_boots"
+        type: "armor"
+        chance: 0.10
+      - equipment-key: "precision_ring"
+        type: "accessory"
+        chance: 0.12
+      - equipment-key: "nimble_bracelet"
+        type: "accessory"
+        chance: 0.10
+  special-behavior: "boss_scissor_frenzy"
+  show-level-in-name: true
+  tags: [plains, cave]
+
+# Boss: 豬屍獸 — 衝撞攻擊
+boss_zombie_beast:
+  name: "&6(野外Boss) &4豬屍獸"
+  type: ZOMBIFIED_PIGLIN
+  boss: true
+  level-range:
+    min: 20
+    max: 30
+  base-stats:
+    health: 400.0
+    damage: 16.0
+  stat-scaling:
+    health-per-level: 14.0
+    damage-per-level: 1.8
+  equipment:
+    helmet:
+      material: NETHERITE_HELMET
+    chestplate:
+      material: IRON_CHESTPLATE
+    main-hand:
+      material: GOLDEN_AXE
+  exp:
+    base: 90
+    per-level: 16
+  drops:
+    vanilla-items:
+      - material: GOLD_INGOT
+        amount: 2-5
+        chance: 0.7
+      - material: DIAMOND
+        amount: 1-2
+        chance: 0.2
+      - material: GOLDEN_APPLE
+        amount: 1
+        chance: 0.08
+      - material: ROTTEN_FLESH
+        amount: 3-6
+        chance: 0.9
+    custom-weapons:
+      - weapon-key: "earthsplitter_axe_t3"
+        chance: 0.12
+      - weapon-key: "logging_axe_t1"
+        chance: 0.25
+      - weapon-key: "oak_quarterstaff_t3"
+        chance: 0.10
+    custom-equipment:
+      - equipment-key: "knight_leggings"
+        type: "armor"
+        chance: 0.12
+      - equipment-key: "knight_boots"
+        type: "armor"
+        chance: 0.12
+      - equipment-key: "fortress_chestplate"
+        type: "armor"
+        chance: 0.06
+      - equipment-key: "warrior_necklace"
+        type: "accessory"
+        chance: 0.10
+      - equipment-key: "thick_belt"
+        type: "accessory"
+        chance: 0.12
+      - equipment-key: "arcane_charm"
+        type: "accessory"
+        chance: 0.08
+  special-behavior: "boss_zombie_beast"
+  show-level-in-name: true
+  tags: [plains, nether]
+
+# ───────────────────────────────
+#  Lv.40~60 中期 Boss
+# ───────────────────────────────
+
+# Boss: 骸骨將軍 — 高傷近戰 + 召喚小兵
+boss_skull_general:
+  name: "&6(野外Boss) &f骸骨將軍"
+  type: SKELETON
+  boss: true
+  level-range:
+    min: 40
+    max: 55
+  base-stats:
+    health: 550.0
+    damage: 22.0
+  stat-scaling:
+    health-per-level: 14.0
+    damage-per-level: 2.2
+  equipment:
+    helmet:
+      material: DIAMOND_HELMET
+    chestplate:
+      material: DIAMOND_CHESTPLATE
+    leggings:
+      material: DIAMOND_LEGGINGS
+    boots:
+      material: DIAMOND_BOOTS
+    main-hand:
+      material: DIAMOND_SWORD
+    off-hand:
+      material: SHIELD
+  exp:
+    base: 150
+    per-level: 25
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 5-10
+        chance: 0.9
+      - material: DIAMOND
+        amount: 2-4
+        chance: 0.3
+      - material: GOLDEN_APPLE
+        amount: 1
+        chance: 0.15
+    custom-weapons:
+      - weapon-key: "warblade_t4"
+        chance: 0.12
+      - weapon-key: "dragonfang_spear_t4"
+        chance: 0.10
+      - weapon-key: "steelbreaker_t5"
+        chance: 0.06
+    custom-equipment:
+      - equipment-key: "gladiator_helmet"
+        type: "armor"
+        chance: 0.10
+      - equipment-key: "gladiator_chestplate"
+        type: "armor"
+        chance: 0.08
+      - equipment-key: "ironwall_chestplate"
+        type: "armor"
+        chance: 0.06
+      - equipment-key: "berserker_necklace"
+        type: "accessory"
+        chance: 0.10
+      - equipment-key: "giant_belt"
+        type: "accessory"
+        chance: 0.10
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, plains]
+
+# Boss: 煉獄魔女 — 強力魔法攻擊
+boss_infernal_queen:
+  name: "&6(野外Boss) &c煉獄魔女"
+  type: WITCH
+  boss: true
+  level-range:
+    min: 45
+    max: 60
+  base-stats:
+    health: 420.0
+    damage: 25.0
+  stat-scaling:
+    health-per-level: 12.0
+    damage-per-level: 2.5
+  exp:
+    base: 160
+    per-level: 28
+  drops:
+    vanilla-items:
+      - material: BLAZE_POWDER
+        amount: 3-6
+        chance: 0.7
+      - material: GHAST_TEAR
+        amount: 1-2
+        chance: 0.2
+      - material: EXPERIENCE_BOTTLE
+        amount: 3-6
+        chance: 0.5
+      - material: TOTEM_OF_UNDYING
+        amount: 1
+        chance: 0.05
+    custom-weapons:
+      - weapon-key: "flame_staff_t4"
+        chance: 0.12
+      - weapon-key: "cyclone_staff_t5"
+        chance: 0.08
+    custom-equipment:
+      - equipment-key: "arcanist_helmet"
+        type: "armor"
+        chance: 0.10
+      - equipment-key: "arcanist_chestplate"
+        type: "armor"
+        chance: 0.08
+      - equipment-key: "cleric_chestplate"
+        type: "armor"
+        chance: 0.06
+      - equipment-key: "elemental_charm"
+        type: "accessory"
+        chance: 0.10
+      - equipment-key: "soul_bracelet"
+        type: "accessory"
+        chance: 0.10
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [fire, nether, forest]
+
+# ───────────────────────────────
+#  Lv.60~80 高階 Boss
+# ───────────────────────────────
+
+# Boss: 深淵龍騎 — 超高血量近戰坦克
+boss_abyss_dragon_rider:
+  name: "&6(野外Boss) &4深淵龍騎"
+  type: ZOMBIE
+  boss: true
+  level-range:
+    min: 60
+    max: 78
+  base-stats:
+    health: 800.0
+    damage: 30.0
+  stat-scaling:
+    health-per-level: 18.0
+    damage-per-level: 3.0
+  equipment:
+    helmet:
+      material: DRAGON_HEAD
+    chestplate:
+      material: NETHERITE_CHESTPLATE
+    leggings:
+      material: NETHERITE_LEGGINGS
+    boots:
+      material: NETHERITE_BOOTS
+    main-hand:
+      material: NETHERITE_AXE
+    off-hand:
+      material: SHIELD
+  exp:
+    base: 250
+    per-level: 35
+  drops:
+    vanilla-items:
+      - material: DRAGON_BREATH
+        amount: 2-4
+        chance: 0.4
+      - material: NETHERITE_SCRAP
+        amount: 1
+        chance: 0.12
+      - material: DIAMOND
+        amount: 3-6
+        chance: 0.4
+    custom-weapons:
+      - weapon-key: "infernal_blade_t6"
+        chance: 0.10
+      - weapon-key: "titan_cleaver_t6"
+        chance: 0.08
+      - weapon-key: "dragonscale_sword_t7"
+        chance: 0.05
+    custom-equipment:
+      - equipment-key: "dragonwar_helmet"
+        type: "armor"
+        chance: 0.08
+      - equipment-key: "dragonwar_chestplate"
+        type: "armor"
+        chance: 0.06
+      - equipment-key: "conqueror_helmet"
+        type: "armor"
+        chance: 0.05
+      - equipment-key: "destruction_necklace"
+        type: "accessory"
+        chance: 0.08
+      - equipment-key: "immortal_belt"
+        type: "accessory"
+        chance: 0.08
+      - equipment-key: "abyss_ring"
+        type: "accessory"
+        chance: 0.06
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, nether, mountain]
+
+# Boss: 暗影君王 — 高傷快速攻擊
+boss_shadow_lord:
+  name: "&6(野外Boss) &8暗影君王"
+  type: WITHER_SKELETON
+  boss: true
+  level-range:
+    min: 65
+    max: 80
+  base-stats:
+    health: 600.0
+    damage: 35.0
+  stat-scaling:
+    health-per-level: 15.0
+    damage-per-level: 3.5
+  equipment:
+    helmet:
+      material: WITHER_SKELETON_SKULL
+    chestplate:
+      material: NETHERITE_CHESTPLATE
+    leggings:
+      material: NETHERITE_LEGGINGS
+    boots:
+      material: NETHERITE_BOOTS
+    main-hand:
+      material: NETHERITE_SWORD
+  exp:
+    base: 270
+    per-level: 38
+  drops:
+    vanilla-items:
+      - material: WITHER_SKELETON_SKULL
+        amount: 1
+        chance: 0.15
+      - material: NETHER_STAR
+        amount: 1
+        chance: 0.03
+      - material: DIAMOND
+        amount: 3-5
+        chance: 0.4
+    custom-weapons:
+      - weapon-key: "dragonscale_sword_t7"
+        chance: 0.08
+      - weapon-key: "judgment_greatsword_t7"
+        chance: 0.06
+      - weapon-key: "void_codex_t7"
+        chance: 0.06
+    custom-equipment:
+      - equipment-key: "conqueror_chestplate"
+        type: "armor"
+        chance: 0.06
+      - equipment-key: "nightblade_chestplate"
+        type: "armor"
+        chance: 0.06
+      - equipment-key: "aegis_helmet"
+        type: "armor"
+        chance: 0.05
+      - equipment-key: "dragonsoul_necklace"
+        type: "accessory"
+        chance: 0.08
+      - equipment-key: "destiny_ring"
+        type: "accessory"
+        chance: 0.06
+      - equipment-key: "chaos_charm"
+        type: "accessory"
+        chance: 0.06
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, nether]
+
+# ───────────────────────────────
+#  Lv.80~100 終盤 Boss
+# ───────────────────────────────
+
+# Boss: 末世審判者 — 終盤坦克型 Boss
+boss_doomsday_judge:
+  name: "&6(野外Boss) &4&l末世審判者"
+  type: ZOMBIE
+  boss: true
+  level-range:
+    min: 80
+    max: 95
+  base-stats:
+    health: 1200.0
+    damage: 40.0
+  stat-scaling:
+    health-per-level: 25.0
+    damage-per-level: 4.0
+  equipment:
+    helmet:
+      material: NETHERITE_HELMET
+    chestplate:
+      material: NETHERITE_CHESTPLATE
+    leggings:
+      material: NETHERITE_LEGGINGS
+    boots:
+      material: NETHERITE_BOOTS
+    main-hand:
+      material: NETHERITE_AXE
+    off-hand:
+      material: SHIELD
+  exp:
+    base: 400
+    per-level: 50
+  drops:
+    vanilla-items:
+      - material: NETHERITE_INGOT
+        amount: 1-2
+        chance: 0.15
+      - material: NETHER_STAR
+        amount: 1
+        chance: 0.05
+      - material: DIAMOND
+        amount: 5-8
+        chance: 0.5
+    custom-weapons:
+      - weapon-key: "divine_punishment_sword_t8"
+        chance: 0.08
+      - weapon-key: "doomsplitter_t8"
+        chance: 0.06
+      - weapon-key: "hades_scythe_t8"
+        chance: 0.05
+      - weapon-key: "genesis_sword_t9"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "genesis_warrior_helmet"
+        type: "armor"
+        chance: 0.05
+      - equipment-key: "genesis_warrior_chestplate"
+        type: "armor"
+        chance: 0.03
+      - equipment-key: "godking_tank_helmet"
+        type: "armor"
+        chance: 0.03
+      - equipment-key: "godking_tank_chestplate"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "genesis_necklace"
+        type: "accessory"
+        chance: 0.05
+      - equipment-key: "godwrath_necklace"
+        type: "accessory"
+        chance: 0.05
+      - equipment-key: "godking_belt"
+        type: "accessory"
+        chance: 0.05
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, nether, mountain]
+
+# Boss: 虛空大法師 — 魔法型 Boss
+boss_void_archmage:
+  name: "&6(野外Boss) &5&l虛空大法師"
+  type: SKELETON
+  boss: true
+  level-range:
+    min: 82
+    max: 96
+  base-stats:
+    health: 800.0
+    damage: 45.0
+  stat-scaling:
+    health-per-level: 18.0
+    damage-per-level: 4.5
+  equipment:
+    main-hand:
+      material: BLAZE_ROD
+    helmet:
+      material: NETHERITE_HELMET
+    chestplate:
+      material: NETHERITE_CHESTPLATE
+  exp:
+    base: 380
+    per-level: 48
+  drops:
+    vanilla-items:
+      - material: EXPERIENCE_BOTTLE
+        amount: 5-10
+        chance: 0.6
+      - material: NETHER_STAR
+        amount: 1
+        chance: 0.05
+      - material: TOTEM_OF_UNDYING
+        amount: 1
+        chance: 0.08
+    custom-weapons:
+      - weapon-key: "chaos_staff_t8"
+        chance: 0.08
+      - weapon-key: "astral_staff_t9"
+        chance: 0.04
+      - weapon-key: "origin_codex_t10"
+        chance: 0.01
+    custom-equipment:
+      - equipment-key: "origin_mage_helmet"
+        type: "armor"
+        chance: 0.05
+      - equipment-key: "origin_mage_chestplate"
+        type: "armor"
+        chance: 0.03
+      - equipment-key: "archmagus_helmet"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "astral_charm"
+        type: "accessory"
+        chance: 0.05
+      - equipment-key: "stellar_bracelet"
+        type: "accessory"
+        chance: 0.05
+      - equipment-key: "celestial_shoulder"
+        type: "accessory"
+        chance: 0.04
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [cave, forest]
+
+# Boss: 世界終結者 — 最強 Boss
+boss_world_ender:
+  name: "&6(野外Boss) &4&l&n世界終結者"
+  type: ZOMBIE
+  boss: true
+  level-range:
+    min: 92
+    max: 100
+  base-stats:
+    health: 2000.0
+    damage: 55.0
+  stat-scaling:
+    health-per-level: 35.0
+    damage-per-level: 5.5
+  equipment:
+    helmet:
+      material: NETHERITE_HELMET
+    chestplate:
+      material: NETHERITE_CHESTPLATE
+    leggings:
+      material: NETHERITE_LEGGINGS
+    boots:
+      material: NETHERITE_BOOTS
+    main-hand:
+      material: NETHERITE_SWORD
+  exp:
+    base: 500
+    per-level: 60
+  drops:
+    vanilla-items:
+      - material: NETHERITE_INGOT
+        amount: 1-3
+        chance: 0.2
+      - material: NETHER_STAR
+        amount: 1
+        chance: 0.08
+      - material: DIAMOND
+        amount: 8-15
+        chance: 0.6
+    custom-weapons:
+      - weapon-key: "god_sword_t10"
+        chance: 0.03
+      - weapon-key: "worldcleaver_t10"
+        chance: 0.03
+      - weapon-key: "origin_codex_t10"
+        chance: 0.03
+      - weapon-key: "death_scythe_eternal_t10"
+        chance: 0.03
+      - weapon-key: "destiny_bow_t10"
+        chance: 0.03
+      - weapon-key: "genesis_sword_t9"
+        chance: 0.06
+      - weapon-key: "destiny_lance_t9"
+        chance: 0.05
+      - weapon-key: "astral_staff_t9"
+        chance: 0.05
+    custom-equipment:
+      - equipment-key: "godwar_helmet"
+        type: "armor"
+        chance: 0.03
+      - equipment-key: "godwar_chestplate"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "genesis_warrior_chestplate"
+        type: "armor"
+        chance: 0.04
+      - equipment-key: "origin_mage_chestplate"
+        type: "armor"
+        chance: 0.04
+      - equipment-key: "finality_assassin_chestplate"
+        type: "armor"
+        chance: 0.04
+      - equipment-key: "sacred_healer_chestplate"
+        type: "armor"
+        chance: 0.04
+      - equipment-key: "godking_tank_chestplate"
+        type: "armor"
+        chance: 0.04
+      - equipment-key: "god_necklace"
+        type: "accessory"
+        chance: 0.03
+      - equipment-key: "breaker_ring"
+        type: "accessory"
+        chance: 0.03
+      - equipment-key: "origin_charm"
+        type: "accessory"
+        chance: 0.03
+      - equipment-key: "unbreakable_belt"
+        type: "accessory"
+        chance: 0.03
+      - equipment-key: "finality_shoulder"
+        type: "accessory"
+        chance: 0.03
+      - equipment-key: "time_bracelet"
+        type: "accessory"
+        chance: 0.03
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, nether, mountain, fire]
+

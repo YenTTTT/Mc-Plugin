@@ -1,0 +1,1373 @@
+﻿# ========================================
+# 中級區域怪物 (Lv.15~40)
+# 離開新手區後的主要敵人
+# ========================================
+
+# ───────────────────────────────
+#  荒野平原 (Lv.15~25)
+# ───────────────────────────────
+
+# 1. 荒野掠奪者 — 全裝備持斧近戰
+wasteland_raider:
+  name: "&c荒野掠奪者"
+  type: ZOMBIE
+  level-range:
+    min: 15
+    max: 25
+  base-stats:
+    health: 65.0
+    damage: 10.0
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 1.2
+  equipment:
+    helmet:
+      material: CHAINMAIL_HELMET
+    chestplate:
+      material: CHAINMAIL_CHESTPLATE
+    main-hand:
+      material: IRON_AXE
+  exp:
+    base: 25
+    per-level: 6
+  drops:
+    vanilla-items:
+      - material: IRON_INGOT
+        amount: 1-2
+        chance: 0.3
+      - material: GOLD_NUGGET
+        amount: 2-5
+        chance: 0.5
+    custom-weapons:
+      - weapon-key: "iron_broadsword_t2"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "guard_helmet"
+        type: "armor"
+        chance: 0.02
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [plains, desert]
+
+# 2. 沙漠木乃伊 — 緩速攻擊
+desert_mummy:
+  name: "&e沙漠木乃伊"
+  type: HUSK
+  level-range:
+    min: 15
+    max: 24
+  base-stats:
+    health: 55.0
+    damage: 8.0
+  stat-scaling:
+    health-per-level: 4.5
+    damage-per-level: 1.0
+  exp:
+    base: 22
+    per-level: 5
+  drops:
+    vanilla-items:
+      - material: ROTTEN_FLESH
+        amount: 2-4
+        chance: 0.8
+      - material: GOLD_INGOT
+        amount: 1
+        chance: 0.1
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [desert]
+
+# 3. 毒沼蜘蛛 — 毒攻 + 較高傷害
+swamp_spider:
+  name: "&2毒沼蜘蛛"
+  type: CAVE_SPIDER
+  level-range:
+    min: 15
+    max: 22
+  base-stats:
+    health: 40.0
+    damage: 9.0
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 1.0
+  exp:
+    base: 20
+    per-level: 5
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 2-4
+        chance: 0.8
+  special-behavior: "poison_attack"
+  show-level-in-name: true
+  tags: [swamp, forest]
+
+# 4. 暗影刺客 — 快速 + 高傷害 + 低血量
+shadow_assassin:
+  name: "&8暗影刺客"
+  type: ZOMBIE
+  level-range:
+    min: 16
+    max: 25
+  base-stats:
+    health: 45.0
+    damage: 13.0
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 1.5
+  equipment:
+    main-hand:
+      material: IRON_SWORD
+    boots:
+      material: LEATHER_BOOTS
+  exp:
+    base: 28
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: IRON_NUGGET
+        amount: 2-4
+        chance: 0.6
+    custom-weapons:
+      - weapon-key: "iron_broadsword_t2"
+        chance: 0.02
+    custom-equipment:
+      - equipment-key: "thief_chestplate"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "broken_ring"
+        type: "accessory"
+        chance: 0.03
+  special-behavior: "shadow_teleport"
+  show-level-in-name: true
+  tags: [cave, forest]
+
+# 5. 精英弩手 — 高傷害遠程
+elite_crossbowman:
+  name: "&6精英弩手"
+  type: PILLAGER
+  level-range:
+    min: 17
+    max: 25
+  base-stats:
+    health: 50.0
+    damage: 11.0
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 1.2
+  exp:
+    base: 26
+    per-level: 6
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 5-10
+        chance: 0.8
+      - material: EMERALD
+        amount: 1-2
+        chance: 0.15
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [plains, mountain]
+
+# 5.1 狂戰殭屍 — 血量越低攻擊越高 (HP<30% → +50%傷害)
+berserker_zombie:
+  name: "&4狂戰殭屍"
+  type: ZOMBIE
+  level-range:
+    min: 15
+    max: 25
+  base-stats:
+    health: 70.0
+    damage: 9.0
+  stat-scaling:
+    health-per-level: 5.5
+    damage-per-level: 1.1
+  equipment:
+    main-hand:
+      material: IRON_AXE
+    chestplate:
+      material: CHAINMAIL_CHESTPLATE
+  exp:
+    base: 28
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: ROTTEN_FLESH
+        amount: 2-4
+        chance: 0.8
+      - material: IRON_NUGGET
+        amount: 1-3
+        chance: 0.4
+  special-behavior: "berserker_rage"
+  show-level-in-name: true
+  tags: [plains, desert]
+
+# 5.2 爆裂骷髏 — 箭矢命中小範圍爆炸
+explosive_skeleton:
+  name: "&c爆裂骷髏"
+  type: SKELETON
+  level-range:
+    min: 16
+    max: 25
+  base-stats:
+    health: 40.0
+    damage: 12.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 1.3
+  equipment:
+    main-hand:
+      material: BOW
+    helmet:
+      material: CHAINMAIL_HELMET
+  exp:
+    base: 30
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1-3
+        chance: 0.8
+      - material: ARROW
+        amount: 3-6
+        chance: 0.6
+      - material: GUNPOWDER
+        amount: 1-2
+        chance: 0.3
+  special-behavior: "explosive_arrow"
+  show-level-in-name: true
+  tags: [cave, mountain]
+
+# 5.3 潛伏蜘蛛 — 靠近玩家隱形、突襲加傷
+stalker_spider:
+  name: "&8潛伏蜘蛛"
+  type: SPIDER
+  level-range:
+    min: 17
+    max: 25
+  base-stats:
+    health: 38.0
+    damage: 11.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 1.2
+  exp:
+    base: 30
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 2-4
+        chance: 0.8
+      - material: SPIDER_EYE
+        amount: 1
+        chance: 0.3
+      - material: FERMENTED_SPIDER_EYE
+        amount: 1
+        chance: 0.08
+  special-behavior: "stalker_stealth"
+  show-level-in-name: true
+  tags: [cave, forest]
+
+# 5.4 冰霜殭屍 — 攻擊附帶緩速
+frost_zombie:
+  name: "&b冰霜殭屍"
+  type: ZOMBIE
+  level-range:
+    min: 15
+    max: 24
+  base-stats:
+    health: 60.0
+    damage: 8.0
+  stat-scaling:
+    health-per-level: 4.5
+    damage-per-level: 1.0
+  equipment:
+    helmet:
+      material: LEATHER_HELMET
+    chestplate:
+      material: LEATHER_CHESTPLATE
+    leggings:
+      material: LEATHER_LEGGINGS
+    boots:
+      material: LEATHER_BOOTS
+  exp:
+    base: 24
+    per-level: 6
+  drops:
+    vanilla-items:
+      - material: ROTTEN_FLESH
+        amount: 1-3
+        chance: 0.8
+      - material: SNOWBALL
+        amount: 2-4
+        chance: 0.5
+      - material: PACKED_ICE
+        amount: 1
+        chance: 0.05
+  special-behavior: "frost_attack"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# 5.5 衝鋒野獸 — 鎖定玩家直線衝刺 (高傷害可閃)
+charge_beast:
+  name: "&6衝鋒野獸"
+  type: ZOMBIE
+  level-range:
+    min: 18
+    max: 25
+  base-stats:
+    health: 75.0
+    damage: 14.0
+  stat-scaling:
+    health-per-level: 5.5
+    damage-per-level: 1.5
+  disguise:
+    enabled: true
+    type: RAVAGER
+    baby-chance: 0.0
+  exp:
+    base: 32
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: LEATHER
+        amount: 2-4
+        chance: 0.7
+      - material: BONE
+        amount: 1-3
+        chance: 0.5
+  special-behavior: "charge_beast"
+  show-level-in-name: true
+  tags: [plains, forest]
+
+# 5.6 瘟疫散播者 — 周圍持續產生毒氣
+plague_carrier:
+  name: "&2瘟疫散播者"
+  type: ZOMBIE
+  level-range:
+    min: 18
+    max: 25
+  base-stats:
+    health: 55.0
+    damage: 7.0
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.8
+  equipment:
+    helmet:
+      material: LEATHER_HELMET
+    chestplate:
+      material: LEATHER_CHESTPLATE
+  exp:
+    base: 28
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: ROTTEN_FLESH
+        amount: 2-5
+        chance: 0.9
+      - material: SPIDER_EYE
+        amount: 1
+        chance: 0.3
+      - material: FERMENTED_SPIDER_EYE
+        amount: 1
+        chance: 0.1
+  special-behavior: "plague_aura"
+  show-level-in-name: true
+  tags: [swamp]
+
+# 5.7 鋼鐵守衛 — 高防禦鐵巨人
+iron_guard:
+  name: "&7鋼鐵守衛"
+  type: ZOMBIE
+  level-range:
+    min: 20
+    max: 25
+  base-stats:
+    health: 130.0
+    damage: 8.0
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.8
+  equipment:
+    helmet:
+      material: IRON_HELMET
+    chestplate:
+      material: IRON_CHESTPLATE
+    leggings:
+      material: IRON_LEGGINGS
+    boots:
+      material: IRON_BOOTS
+    main-hand:
+      material: IRON_SWORD
+    off-hand:
+      material: SHIELD
+  exp:
+    base: 35
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: IRON_INGOT
+        amount: 1-3
+        chance: 0.5
+      - material: IRON_NUGGET
+        amount: 3-6
+        chance: 0.7
+    custom-weapons:
+      - weapon-key: "iron_broadsword_t2"
+        chance: 0.03
+      - weapon-key: "infantry_spear_t2"
+        chance: 0.02
+    custom-equipment:
+      - equipment-key: "fortress_boots"
+        type: "armor"
+        chance: 0.03
+      - equipment-key: "rampart_chestplate"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "iron_necklace"
+        type: "accessory"
+        chance: 0.03
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, mountain]
+
+# ───────────────────────────────
+#  深層洞穴 (Lv.20~35)
+# ───────────────────────────────
+
+# 6. 熔岩史萊姆 — 火焰傷害
+lava_slime:
+  name: "&6熔岩史萊姆"
+  type: MAGMA_CUBE
+  level-range:
+    min: 20
+    max: 30
+  base-stats:
+    health: 60.0
+    damage: 10.0
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 1.0
+  exp:
+    base: 30
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: MAGMA_CREAM
+        amount: 1-3
+        chance: 0.8
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [fire, nether, cave]
+
+# 7. 亡靈騎士 — 全套鐵裝，高傷害
+undead_knight:
+  name: "&5亡靈騎士"
+  type: ZOMBIE
+  level-range:
+    min: 22
+    max: 35
+  base-stats:
+    health: 85.0
+    damage: 12.0
+  stat-scaling:
+    health-per-level: 6.0
+    damage-per-level: 1.3
+  equipment:
+    helmet:
+      material: IRON_HELMET
+    chestplate:
+      material: IRON_CHESTPLATE
+    leggings:
+      material: IRON_LEGGINGS
+    boots:
+      material: IRON_BOOTS
+    main-hand:
+      material: IRON_SWORD
+    off-hand:
+      material: SHIELD
+  exp:
+    base: 35
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: IRON_INGOT
+        amount: 1-3
+        chance: 0.4
+    custom-weapons:
+      - weapon-key: "steel_scimitar_t3"
+        chance: 0.03
+      - weapon-key: "infantry_spear_t2"
+        chance: 0.04
+    custom-equipment:
+      - equipment-key: "knight_helmet"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "knight_leggings"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "guardian_shoulder"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, plains]
+
+# 8. 冰霜射手 — 緩速箭
+frost_archer:
+  name: "&b冰霜射手"
+  type: STRAY
+  level-range:
+    min: 20
+    max: 32
+  base-stats:
+    health: 45.0
+    damage: 12.0
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 1.3
+  equipment:
+    main-hand:
+      material: BOW
+    helmet:
+      material: CHAINMAIL_HELMET
+  exp:
+    base: 30
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 5-10
+        chance: 0.8
+      - material: PACKED_ICE
+        amount: 1
+        chance: 0.05
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ───────────────────────────────
+#  暗黑森林 (Lv.25~40)
+# ───────────────────────────────
+
+# 9. 森林女巫 — 魔法攻擊 + 藥水
+forest_witch:
+  name: "&d森林女巫"
+  type: WITCH
+  level-range:
+    min: 25
+    max: 38
+  base-stats:
+    health: 65.0
+    damage: 11.0
+  stat-scaling:
+    health-per-level: 4.5
+    damage-per-level: 1.2
+  exp:
+    base: 35
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: GLOWSTONE_DUST
+        amount: 1-3
+        chance: 0.5
+      - material: EMERALD
+        amount: 1
+        chance: 0.1
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [forest, swamp]
+
+# 10. 暴怒熊人 — 血越低傷害越高
+berserker_bear:
+  name: "&c暴怒熊人"
+  type: ZOMBIE
+  level-range:
+    min: 28
+    max: 40
+  base-stats:
+    health: 100.0
+    damage: 14.0
+  stat-scaling:
+    health-per-level: 7.0
+    damage-per-level: 1.5
+  equipment:
+    main-hand:
+      material: IRON_AXE
+  exp:
+    base: 40
+    per-level: 9
+  drops:
+    vanilla-items:
+      - material: LEATHER
+        amount: 2-4
+        chance: 0.7
+      - material: COOKED_BEEF
+        amount: 1-3
+        chance: 0.5
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [forest, mountain]
+
+# 11. 黑暗遊俠 — 高傷害遠程精英
+dark_ranger:
+  name: "&8黑暗遊俠"
+  type: SKELETON
+  level-range:
+    min: 28
+    max: 40
+  base-stats:
+    health: 55.0
+    damage: 16.0
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 1.8
+  equipment:
+    main-hand:
+      material: BOW
+    helmet:
+      material: IRON_HELMET
+    chestplate:
+      material: CHAINMAIL_CHESTPLATE
+  exp:
+    base: 40
+    per-level: 9
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 5-12
+        chance: 0.8
+      - material: DIAMOND
+        amount: 1
+        chance: 0.03
+    custom-weapons:
+      - weapon-key: "hunter_longbow_t2"
+        chance: 0.04
+      - weapon-key: "windhawk_bow_t3"
+        chance: 0.02
+    custom-equipment:
+      - equipment-key: "shadow_chestplate"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "precise_ring"
+        type: "accessory"
+        chance: 0.03
+  special-behavior: "fire_arrows"
+  show-level-in-name: true
+  tags: [forest, cave]
+
+# 12. 腐化衛士 — 超高防禦
+corrupted_guard:
+  name: "&5腐化衛士"
+  type: ZOMBIE
+  level-range:
+    min: 30
+    max: 40
+  base-stats:
+    health: 120.0
+    damage: 10.0
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 1.0
+  equipment:
+    helmet:
+      material: DIAMOND_HELMET
+    chestplate:
+      material: IRON_CHESTPLATE
+    leggings:
+      material: IRON_LEGGINGS
+    boots:
+      material: IRON_BOOTS
+    main-hand:
+      material: IRON_SWORD
+    off-hand:
+      material: SHIELD
+  exp:
+    base: 42
+    per-level: 10
+  drops:
+    vanilla-items:
+      - material: IRON_INGOT
+        amount: 2-4
+        chance: 0.5
+      - material: DIAMOND
+        amount: 1
+        chance: 0.05
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave]
+
+# 13. 噴火蜥蜴 — 火焰攻擊
+fire_lizard:
+  name: "&6噴火蜥蜴"
+  type: BLAZE
+  level-range:
+    min: 25
+    max: 35
+  base-stats:
+    health: 55.0
+    damage: 13.0
+  stat-scaling:
+    health-per-level: 4.5
+    damage-per-level: 1.4
+  exp:
+    base: 35
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: BLAZE_ROD
+        amount: 1-2
+        chance: 0.5
+      - material: FIRE_CHARGE
+        amount: 1-3
+        chance: 0.3
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [fire, nether, desert]
+
+# 14. 苦力怕巫師 — 爆炸加強版
+creeper_mage:
+  name: "&a苦力怕巫師"
+  type: CREEPER
+  level-range:
+    min: 22
+    max: 32
+  base-stats:
+    health: 35.0
+    damage: 18.0
+  stat-scaling:
+    health-per-level: 2.5
+    damage-per-level: 2.0
+  exp:
+    base: 35
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: GUNPOWDER
+        amount: 2-5
+        chance: 0.9
+      - material: TNT
+        amount: 1
+        chance: 0.1
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [forest, cave]
+
+# 15. 洞穴巨魔 — 高血量坦克
+cave_troll:
+  name: "&7洞穴巨魔"
+  type: ZOMBIE
+  level-range:
+    min: 25
+    max: 35
+  base-stats:
+    health: 110.0
+    damage: 11.0
+  stat-scaling:
+    health-per-level: 7.5
+    damage-per-level: 1.1
+  equipment:
+    main-hand:
+      material: STONE_AXE
+  exp:
+    base: 38
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: COBBLESTONE
+        amount: 3-8
+        chance: 0.8
+      - material: IRON_INGOT
+        amount: 1
+        chance: 0.15
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [cave, mountain]
+
+# ───────────────────────────────
+#  冰原凍土 (Lv.15~30)
+#  冰天雪地中的危險生物
+# ───────────────────────────────
+
+# ICE-1. 霜狼 — 快速移動近戰，群體出沒
+frost_wolf:
+  name: "&b霜狼"
+  type: ZOMBIE
+  level-range:
+    min: 15
+    max: 22
+  base-stats:
+    health: 45.0
+    damage: 9.0
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 1.0
+  disguise:
+    enabled: true
+    type: WOLF
+    baby-chance: 0.0
+  exp:
+    base: 22
+    per-level: 5
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1-2
+        chance: 0.7
+      - material: LEATHER
+        amount: 1
+        chance: 0.4
+      - material: PACKED_ICE
+        amount: 1
+        chance: 0.05
+  special-behavior: "pack_passive"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-2. 冰晶史萊姆 — 接觸造成緩速
+ice_crystal_slime:
+  name: "&b冰晶史萊姆"
+  type: SLIME
+  level-range:
+    min: 15
+    max: 24
+  base-stats:
+    health: 50.0
+    damage: 7.0
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.8
+  exp:
+    base: 20
+    per-level: 5
+  drops:
+    vanilla-items:
+      - material: SLIME_BALL
+        amount: 1-3
+        chance: 0.9
+      - material: BLUE_ICE
+        amount: 1
+        chance: 0.08
+      - material: PACKED_ICE
+        amount: 1-2
+        chance: 0.3
+  special-behavior: "frost_attack"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-3. 雪原巡邏兵 — 持弩遠程，穿鐵鏈甲
+snow_patrol:
+  name: "&f雪原巡邏兵"
+  type: SKELETON
+  level-range:
+    min: 16
+    max: 26
+  base-stats:
+    health: 42.0
+    damage: 11.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 1.2
+  equipment:
+    main-hand:
+      material: BOW
+    helmet:
+      material: CHAINMAIL_HELMET
+    chestplate:
+      material: CHAINMAIL_CHESTPLATE
+    boots:
+      material: LEATHER_BOOTS
+  exp:
+    base: 26
+    per-level: 6
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 5-10
+        chance: 0.8
+      - material: SNOWBALL
+        amount: 3-6
+        chance: 0.6
+      - material: IRON_NUGGET
+        amount: 1-3
+        chance: 0.3
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-4. 凍骨亡靈 — 攻擊附帶緩速的近戰骷髏
+frozen_undead:
+  name: "&3凍骨亡靈"
+  type: STRAY
+  level-range:
+    min: 17
+    max: 27
+  base-stats:
+    health: 55.0
+    damage: 10.0
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 1.1
+  equipment:
+    main-hand:
+      material: IRON_SWORD
+    helmet:
+      material: IRON_HELMET
+    chestplate:
+      material: LEATHER_CHESTPLATE
+  exp:
+    base: 28
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1-3
+        chance: 0.8
+      - material: ICE
+        amount: 1-2
+        chance: 0.4
+      - material: IRON_NUGGET
+        amount: 1-2
+        chance: 0.2
+  special-behavior: "frost_attack"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-5. 暴雪巨熊 — 高血量坦克，衝撞攻擊
+blizzard_bear:
+  name: "&b&l暴雪巨熊"
+  type: ZOMBIE
+  level-range:
+    min: 18
+    max: 28
+  base-stats:
+    health: 95.0
+    damage: 12.0
+  stat-scaling:
+    health-per-level: 6.5
+    damage-per-level: 1.3
+  disguise:
+    enabled: true
+    type: POLAR_BEAR
+    baby-chance: 0.0
+  exp:
+    base: 32
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: LEATHER
+        amount: 2-4
+        chance: 0.7
+      - material: COD
+        amount: 1-3
+        chance: 0.5
+      - material: PACKED_ICE
+        amount: 1-2
+        chance: 0.15
+  special-behavior: "charge_attack"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-6. 冰霜女巫 — 魔法攻擊，施放緩速藥水
+frost_witch:
+  name: "&9冰霜女巫"
+  type: WITCH
+  level-range:
+    min: 18
+    max: 28
+  base-stats:
+    health: 48.0
+    damage: 13.0
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 1.4
+  exp:
+    base: 30
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: GLOWSTONE_DUST
+        amount: 1-2
+        chance: 0.4
+      - material: SNOWBALL
+        amount: 3-6
+        chance: 0.6
+      - material: BLUE_ICE
+        amount: 1
+        chance: 0.05
+      - material: EXPERIENCE_BOTTLE
+        amount: 1
+        chance: 0.1
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-7. 冰刺蜘蛛 — 快速近戰，死亡時小範圍冰凍
+ice_spike_spider:
+  name: "&3冰刺蜘蛛"
+  type: SPIDER
+  level-range:
+    min: 16
+    max: 25
+  base-stats:
+    health: 38.0
+    damage: 11.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 1.2
+  exp:
+    base: 26
+    per-level: 6
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 2-4
+        chance: 0.8
+      - material: SPIDER_EYE
+        amount: 1
+        chance: 0.3
+      - material: PACKED_ICE
+        amount: 1
+        chance: 0.1
+  special-behavior: "frost_attack"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-8. 永凍傀儡 — 超高血量冰甲坦克
+permafrost_golem:
+  name: "&b&l永凍傀儡"
+  type: ZOMBIE
+  level-range:
+    min: 20
+    max: 30
+  base-stats:
+    health: 140.0
+    damage: 9.0
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.9
+  equipment:
+    helmet:
+      material: DIAMOND_HELMET
+    chestplate:
+      material: IRON_CHESTPLATE
+    leggings:
+      material: IRON_LEGGINGS
+    boots:
+      material: IRON_BOOTS
+    main-hand:
+      material: PACKED_ICE
+  exp:
+    base: 35
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: PACKED_ICE
+        amount: 2-5
+        chance: 0.8
+      - material: BLUE_ICE
+        amount: 1-2
+        chance: 0.2
+      - material: IRON_INGOT
+        amount: 1
+        chance: 0.15
+      - material: DIAMOND
+        amount: 1
+        chance: 0.03
+    custom-weapons:
+      - weapon-key: "steel_scimitar_t3"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "fortress_helmet"
+        type: "armor"
+        chance: 0.03
+      - equipment-key: "fortress_leggings"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "thick_belt"
+        type: "accessory"
+        chance: 0.03
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-9. 寒霜幽靈 — 飛行型低血高傷，接觸造成凍傷
+frost_specter:
+  name: "&9寒霜幽靈"
+  type: VEX
+  level-range:
+    min: 19
+    max: 28
+  base-stats:
+    health: 32.0
+    damage: 15.0
+  stat-scaling:
+    health-per-level: 2.5
+    damage-per-level: 1.6
+  exp:
+    base: 30
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: PHANTOM_MEMBRANE
+        amount: 1
+        chance: 0.3
+      - material: SNOWBALL
+        amount: 2-4
+        chance: 0.5
+      - material: ICE
+        amount: 1-2
+        chance: 0.2
+  special-behavior: "frost_attack"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-10. 冰原苦力怕 — 爆炸後造成大範圍緩速
+arctic_creeper:
+  name: "&b冰原苦力怕"
+  type: CREEPER
+  level-range:
+    min: 18
+    max: 26
+  base-stats:
+    health: 28.0
+    damage: 16.0
+  stat-scaling:
+    health-per-level: 2.0
+    damage-per-level: 1.8
+  exp:
+    base: 28
+    per-level: 7
+  drops:
+    vanilla-items:
+      - material: GUNPOWDER
+        amount: 1-3
+        chance: 0.9
+      - material: SNOWBALL
+        amount: 3-6
+        chance: 0.6
+      - material: PACKED_ICE
+        amount: 1
+        chance: 0.1
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-11. 雪嶺獵手 — 高傷遠程弓箭手，箭矢附帶冰凍
+snowridge_hunter:
+  name: "&f雪嶺獵手"
+  type: SKELETON
+  level-range:
+    min: 20
+    max: 30
+  base-stats:
+    health: 50.0
+    damage: 14.0
+  stat-scaling:
+    health-per-level: 3.5
+    damage-per-level: 1.5
+  equipment:
+    main-hand:
+      material: BOW
+      enchantments:
+        - type: ARROW_DAMAGE
+          level: 1
+    helmet:
+      material: IRON_HELMET
+    chestplate:
+      material: CHAINMAIL_CHESTPLATE
+    boots:
+      material: LEATHER_BOOTS
+  exp:
+    base: 34
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: ARROW
+        amount: 6-12
+        chance: 0.8
+      - material: BOW
+        amount: 1
+        chance: 0.08
+      - material: BLUE_ICE
+        amount: 1
+        chance: 0.05
+  special-behavior: "none"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-12. 冰牙狂獸 — 高傷害近戰野獸，血量低時狂暴
+ice_fang_beast:
+  name: "&b冰牙狂獸"
+  type: ZOMBIE
+  level-range:
+    min: 20
+    max: 30
+  base-stats:
+    health: 80.0
+    damage: 13.0
+  stat-scaling:
+    health-per-level: 5.5
+    damage-per-level: 1.4
+  disguise:
+    enabled: true
+    type: WOLF
+    baby-chance: 0.0
+  exp:
+    base: 34
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 2-4
+        chance: 0.7
+      - material: LEATHER
+        amount: 1-3
+        chance: 0.5
+      - material: PACKED_ICE
+        amount: 1
+        chance: 0.1
+    custom-weapons:
+      - weapon-key: "iron_broadsword_t2"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "knight_boots"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "warrior_necklace"
+        type: "accessory"
+        chance: 0.02
+  special-behavior: "berserker_rage"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-13. 極地掠奪者 — 持斧全裝備近戰冰原強盜
+arctic_raider:
+  name: "&3極地掠奪者"
+  type: ZOMBIE
+  level-range:
+    min: 22
+    max: 30
+  base-stats:
+    health: 75.0
+    damage: 12.0
+  stat-scaling:
+    health-per-level: 5.0
+    damage-per-level: 1.3
+  equipment:
+    helmet:
+      material: IRON_HELMET
+    chestplate:
+      material: CHAINMAIL_CHESTPLATE
+    leggings:
+      material: LEATHER_LEGGINGS
+    boots:
+      material: LEATHER_BOOTS
+    main-hand:
+      material: IRON_AXE
+  exp:
+    base: 32
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: IRON_INGOT
+        amount: 1-2
+        chance: 0.3
+      - material: IRON_NUGGET
+        amount: 2-5
+        chance: 0.5
+      - material: PACKED_ICE
+        amount: 1-2
+        chance: 0.2
+  special-behavior: "aggressive"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-14. 冰魄法師 — 丟雪球造成傷害的骷髏法師
+ice_mage:
+  name: "&9冰魄法師"
+  type: SKELETON
+  level-range:
+    min: 20
+    max: 30
+  base-stats:
+    health: 40.0
+    damage: 14.0
+  stat-scaling:
+    health-per-level: 3.0
+    damage-per-level: 1.5
+  equipment:
+    main-hand:
+      material: STICK
+    helmet:
+      material: DIAMOND_HELMET
+  exp:
+    base: 34
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: BONE
+        amount: 1-3
+        chance: 0.8
+      - material: SNOWBALL
+        amount: 3-6
+        chance: 0.7
+      - material: BLUE_ICE
+        amount: 1
+        chance: 0.08
+      - material: EXPERIENCE_BOTTLE
+        amount: 1
+        chance: 0.08
+    custom-weapons:
+      - weapon-key: "apprentice_wand_t2"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "archmage_helmet"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "sorcerer_boots"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "arcane_charm"
+        type: "accessory"
+        chance: 0.03
+  special-behavior: "snowball_mage"
+  show-level-in-name: true
+  tags: [ice, snow]
+
+# ICE-15. 冰封蠍王 — 近戰毒攻+緩速，稀有怪
+ice_scorpion:
+  name: "&3&l冰封蠍王"
+  type: CAVE_SPIDER
+  level-range:
+    min: 22
+    max: 30
+  base-stats:
+    health: 65.0
+    damage: 14.0
+  stat-scaling:
+    health-per-level: 4.5
+    damage-per-level: 1.5
+  exp:
+    base: 36
+    per-level: 9
+  drops:
+    vanilla-items:
+      - material: STRING
+        amount: 2-5
+        chance: 0.8
+      - material: SPIDER_EYE
+        amount: 1-2
+        chance: 0.4
+      - material: FERMENTED_SPIDER_EYE
+        amount: 1
+        chance: 0.15
+      - material: BLUE_ICE
+        amount: 1
+        chance: 0.1
+  special-behavior: "poison_attack"
+  show-level-in-name: true
+  tags: [ice, snow]

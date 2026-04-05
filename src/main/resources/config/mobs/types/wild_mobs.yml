@@ -36,6 +36,7 @@ rotten_zombie:
 
   special-behavior: "aggressive"
   show-level-in-name: true
+  tags: [plains, forest, cave]
 
 # 2. 狂暴骷髏戰士 - 近戰骷髏
 skeleton_warrior:
@@ -72,9 +73,20 @@ skeleton_warrior:
       - material: IRON_SWORD
         amount: 1
         chance: 0.05
+    custom-weapons:
+      - weapon-key: "wooden_sword_t1"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "militia_helmet"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "novice_necklace"
+        type: "accessory"
+        chance: 0.02
 
   special-behavior: "aggressive"
   show-level-in-name: true
+  tags: [plains, cave, desert]
 
 # ===== 遠程類 =====
 
@@ -113,9 +125,20 @@ shadow_archer:
       - material: BOW
         amount: 1
         chance: 0.1
+    custom-weapons:
+      - weapon-key: "crude_shortbow_t1"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "wanderer_chestplate"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "broken_ring"
+        type: "accessory"
+        chance: 0.02
 
   special-behavior: "none"
   show-level-in-name: true
+  tags: [forest, cave]
 
 # ===== 蜘蛛類 =====
 
@@ -154,6 +177,7 @@ venomous_spider:
 
   special-behavior: "none"
   show-level-in-name: true
+  tags: [forest, swamp, cave]
 
 # ===== 苦力怕類 =====
 
@@ -189,6 +213,7 @@ unstable_creeper:
 
   special-behavior: "none"
   show-level-in-name: true
+  tags: [forest, plains]
 
 # ===== 魔法類 =====
 
@@ -227,9 +252,23 @@ dark_witch:
       - material: EMERALD
         amount: 1
         chance: 0.1
+    custom-weapons:
+      - weapon-key: "rotten_staff_t1"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "trainee_mage_chestplate"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "rough_bracelet"
+        type: "accessory"
+        chance: 0.02
+      - equipment-key: "beginner_charm"
+        type: "accessory"
+        chance: 0.015
 
   special-behavior: "none"
   show-level-in-name: true
+  tags: [forest, swamp]
 
 # ===== 地獄類 =====
 
@@ -265,6 +304,7 @@ blaze_guard:
 
   special-behavior: "none"
   show-level-in-name: true
+  tags: [fire, nether]
 
 # ===== 重甲類 =====
 
@@ -309,7 +349,22 @@ ironclad_undead:
       - material: IRON_NUGGET
         amount: 3-6
         chance: 0.6
+    custom-weapons:
+      - weapon-key: "logging_axe_t1"
+        chance: 0.03
+      - weapon-key: "wooden_sword_t1"
+        chance: 0.03
+    custom-equipment:
+      - equipment-key: "militia_chestplate"
+        type: "armor"
+        chance: 0.02
+      - equipment-key: "gatekeeper_helmet"
+        type: "armor"
+        chance: 0.015
+      - equipment-key: "old_belt"
+        type: "accessory"
+        chance: 0.02
 
   special-behavior: "aggressive"
   show-level-in-name: true
-
+  tags: [cave, plains]

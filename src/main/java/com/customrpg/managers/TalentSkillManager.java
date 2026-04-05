@@ -135,10 +135,6 @@ public class TalentSkillManager {
             case "chain_lightning_lv2":
                 success = executeChainLightningLv2(player, talent, level, item);
                 break;
-            // 領域展開
-            case "shadow_prison_domain":
-                success = executeShadowPrisonDomain(player, talent, level, item);
-                break;
             // ==================== 宿儺系技能 ====================
             case "dismantle":
                 success = executeDismantle(player, talent, level, item);
@@ -170,6 +166,59 @@ public class TalentSkillManager {
                 break;
             case "blood_frenzy":
                 success = executeBloodFrenzy(player, talent, level, item);
+                break;
+            // ==================== 烈焰系技能 ====================
+            case "fire_spark":
+                success = executeFireSpark(player, talent, level, item);
+                break;
+            case "destruction_orb":
+                success = executeDestructionOrb(player, talent, level, item);
+                break;
+            case "flame_storm":
+                success = executeFlameStorm(player, talent, level, item);
+                break;
+            case "meteor":
+                success = executeMeteor(player, talent, level, item);
+                break;
+            case "flame_jet":
+                success = executeFlameJet(player, talent, level, item);
+                break;
+            case "scorching_wave":
+                success = executeScorchingWave(player, talent, level, item);
+                break;
+            case "inferno_ring":
+                success = executeInfernoRing(player, talent, level, item);
+                break;
+            case "hell_domain":
+                success = executeHellDomain(player, talent, level, item);
+                break;
+            // ==================== 刺客系技能 ====================
+            case "stealth":
+                success = executeStealth(player, talent, level, item);
+                break;
+            case "shadow_assault":
+                success = executeShadowAssault(player, talent, level, item);
+                break;
+            case "phantom_massacre":
+                success = executePhantomMassacre(player, talent, level, item);
+                break;
+            case "rapid_slash":
+                success = executeRapidSlash(player, talent, level, item);
+                break;
+            case "cross_blade":
+                success = executeCrossBlade(player, talent, level, item);
+                break;
+            case "phantom_flurry":
+                success = executePhantomFlurry(player, talent, level, item);
+                break;
+            case "arc_slash":
+                success = executeArcSlash(player, talent, level, item);
+                break;
+            case "crescent_shadow":
+                success = executeCrescentShadow(player, talent, level, item);
+                break;
+            case "death_god":
+                success = executeDeathGod(player, talent, level, item);
                 break;
         }
 
@@ -670,110 +719,6 @@ public class TalentSkillManager {
         chainLightning(player, initialTarget, finalDamage, maxChains, stunDuration);
 
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0f, 1.5f);
-        return true;
-    }
-
-    // ==================== 領域展開 - 影牢 ====================
-
-    /**
-     * 領域展開 - 影牢
-     * 以自身為中心展開影之領域，域內敵人持續受到魔法傷害並被減速，
-     * 施術者獲得傷害增幅與抗性。
-     */
-    private boolean executeShadowPrisonDomain(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.NETHER_STAR) {
-            return false;
-        }
-
-        player.sendMessage("§5[領域展開] §d影牢！");
-
-        // 讀取等級數據
-        Talent.TalentLevelData data = talent.getLevelData(level);
-        double baseDamage = data.effects.getOrDefault("baseDamage", 15.0);
-        double magicScaling = data.effects.getOrDefault("magicScaling", 0.3);
-        double radius = data.effects.getOrDefault("radius", 6.0);
-        int durationSeconds = data.effects.getOrDefault("duration", 8.0).intValue();
-        int slowLevel = data.effects.getOrDefault("slowLevel", 2.0).intValue();
-        int damageInterval = data.effects.getOrDefault("damageInterval", 10.0).intValue(); // ticks
-        int damageBoostLevel = data.effects.getOrDefault("damageBoostLevel", 1.0).intValue();
-        int resistanceLevel = data.effects.getOrDefault("resistanceLevel", 1.0).intValue();
-
-        PlayerStats stats = statsManager.getStats(player);
-        double damagePerTick = baseDamage + stats.getMagic() * magicScaling;
-
-        // 固定領域中心為施法時的玩家位置
-        final Location domainCenter = player.getLocation().clone();
-
-        // === 開場效果 ===
-        // 音效：凋靈召喚聲
-        domainCenter.getWorld().playSound(domainCenter, Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.7f);
-        // 初始粒子爆發
-        spawnDomainBurstParticles(domainCenter, radius);
-
-        // === 持續效果 Tick 計時器 ===
-        final int totalTicks = durationSeconds * 20;
-        final int[] ticksElapsed = {0};
-        final double finalRadius = radius;
-
-        plugin.getServer().getScheduler().runTaskTimer(plugin, task -> {
-            // 檢查結束條件
-            if (ticksElapsed[0] >= totalTicks || !player.isOnline() || player.isDead()) {
-                // === 結束爆炸效果 ===
-                domainCenter.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, domainCenter.clone().add(0, 1, 0), 3, 1, 1, 1, 0);
-                domainCenter.getWorld().spawnParticle(Particle.SMOKE, domainCenter.clone().add(0, 1, 0), 150, finalRadius, 2, finalRadius, 0.05);
-                domainCenter.getWorld().spawnParticle(Particle.SOUL, domainCenter.clone().add(0, 2, 0), 80, finalRadius, 1, finalRadius, 0.02);
-                domainCenter.getWorld().playSound(domainCenter, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.6f);
-                task.cancel();
-                return;
-            }
-
-            // === 每 tick 邊界粒子環 (每 2 ticks 以優化效能) ===
-            if (ticksElapsed[0] % 2 == 0) {
-                spawnDomainBoundaryRing(domainCenter, finalRadius, ticksElapsed[0]);
-            }
-
-            // === 每 10 ticks 內部氛圍粒子 ===
-            if (ticksElapsed[0] % 10 == 0) {
-                domainCenter.getWorld().spawnParticle(Particle.SMOKE, domainCenter.clone().add(0, 0.5, 0), 20,
-                    finalRadius * 0.7, 0.5, finalRadius * 0.7, 0.01);
-                domainCenter.getWorld().spawnParticle(Particle.SOUL, domainCenter.clone().add(0, 1, 0), 8,
-                    finalRadius * 0.5, 1, finalRadius * 0.5, 0.01);
-            }
-
-            // === 每秒氛圍音效 ===
-            if (ticksElapsed[0] % 20 == 0) {
-                domainCenter.getWorld().playSound(domainCenter, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.6f, 0.5f);
-            }
-
-            // === 傷害敵人 (按照設定的間隔) ===
-            if (ticksElapsed[0] % damageInterval == 0) {
-                List<LivingEntity> enemies = aoeUtil.getRadiusTargets(player, domainCenter, finalRadius);
-                for (LivingEntity enemy : enemies) {
-                    // 造成傷害
-                    damageManager.dealSkillDamage(player, enemy, damagePerTick);
-                    // 緩速效果 (持續到下次傷害間隔 + 少量緩衝)
-                    enemy.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
-                        damageInterval + 5, slowLevel - 1, true, false));
-                    // 命中粒子
-                    enemy.getWorld().spawnParticle(Particle.SCULK_CHARGE_POP, enemy.getLocation().add(0, 1, 0), 8, 0.3, 0.5, 0.3, 0.02);
-                    enemy.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, enemy.getLocation().add(0, 1.2, 0), 3, 0.2, 0.2, 0.2, 0);
-                }
-            }
-
-            // === 給予施術者增益 (每 40 ticks 刷新) ===
-            if (ticksElapsed[0] % 40 == 0) {
-                // 確保施術者在領域內
-                if (player.getLocation().distance(domainCenter) <= finalRadius) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
-                        60, damageBoostLevel - 1, true, false));
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,
-                        60, resistanceLevel - 1, true, false));
-                }
-            }
-
-            ticksElapsed[0]++;
-        }, 0L, 1L);
-
         return true;
     }
 
@@ -1915,6 +1860,1091 @@ public class TalentSkillManager {
             ticksRemaining[0]--;
         }, 0L, 1L);
 
+        return true;
+    }
+
+    // ==================== 烈焰系技能實作 ====================
+
+    /**
+     * 火花 — 發射一顆小型火球
+     */
+    private boolean executeFireSpark(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.2);
+        double range = talent.getEffectDouble(level, "range", 15);
+        double damage = stats.getMagic() * magicScaling;
+
+        Location start = player.getEyeLocation().clone();
+        Vector dir = start.getDirection().normalize();
+
+        player.getWorld().playSound(start, Sound.ENTITY_BLAZE_SHOOT, 0.8f, 1.5f);
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            Location current = start.clone();
+            double traveled = 0;
+
+            @Override
+            public void run() {
+                for (int i = 0; i < 2; i++) {
+                    current.add(dir.clone().multiply(0.8));
+                    traveled += 0.8;
+
+                    if (traveled > range || current.getBlock().getType().isSolid()) {
+                        current.getWorld().spawnParticle(Particle.LAVA, current, 8, 0.3, 0.3, 0.3, 0);
+                        current.getWorld().playSound(current, Sound.BLOCK_FIRE_EXTINGUISH, 0.6f, 1.0f);
+                        cancel();
+                        return;
+                    }
+
+                    current.getWorld().spawnParticle(Particle.FLAME, current, 3, 0.1, 0.1, 0.1, 0.01);
+                    current.getWorld().spawnParticle(Particle.SMOKE, current, 1, 0.05, 0.05, 0.05, 0);
+
+                    for (org.bukkit.entity.Entity entity : current.getWorld().getNearbyEntities(current, 0.8, 0.8, 0.8)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        target.damage(damage, player);
+                        target.setFireTicks(40); // 2秒燃燒
+                        current.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0);
+                        current.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.6f, 1.0f);
+                        player.sendMessage("§6[火花] §f命中! 造成 §c" + String.format("%.0f", damage) + " §f傷害");
+                        cancel();
+                        return;
+                    }
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 毀滅之球 — 巨型火球緩慢前進，持續傷害觸碰敵人
+     */
+    private boolean executeDestructionOrb(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.4);
+        double range = talent.getEffectDouble(level, "range", 15);
+        double speed = talent.getEffectDouble(level, "speed", 0.3);
+        double radius = talent.getEffectDouble(level, "radius", 2.0);
+        int duration = (int) talent.getEffectDouble(level, "duration", 5);
+        double damage = stats.getMagic() * magicScaling;
+
+        Location start = player.getEyeLocation().clone();
+        Vector dir = start.getDirection().normalize();
+
+        player.getWorld().playSound(start, Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.5f);
+        player.sendMessage("§6[毀滅之球] §f召喚巨型火球！");
+
+        java.util.Set<java.util.UUID> hitCooldown = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            Location current = start.clone();
+            int ticks = 0;
+            final int maxTicks = duration * 20;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (ticks > maxTicks || current.getBlock().getType().isSolid()) {
+                    // 爆炸效果
+                    current.getWorld().spawnParticle(Particle.EXPLOSION, current, 3, 0.5, 0.5, 0.5, 0);
+                    current.getWorld().spawnParticle(Particle.LAVA, current, 30, 2, 2, 2, 0);
+                    current.getWorld().playSound(current, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
+                    cancel();
+                    return;
+                }
+
+                current.add(dir.clone().multiply(speed));
+
+                // 火球粒子 — 圓球
+                for (int i = 0; i < 15; i++) {
+                    double offsetX = (Math.random() - 0.5) * radius * 2;
+                    double offsetY = (Math.random() - 0.5) * radius * 2;
+                    double offsetZ = (Math.random() - 0.5) * radius * 2;
+                    if (offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ <= radius * radius) {
+                        current.getWorld().spawnParticle(Particle.FLAME, current.clone().add(offsetX, offsetY, offsetZ), 1, 0, 0, 0, 0);
+                    }
+                }
+                current.getWorld().spawnParticle(Particle.LAVA, current, 2, 0.3, 0.3, 0.3, 0);
+
+                // 每10 tick清除碰撞冷卻允許重複傷害
+                if (ticks % 10 == 0) {
+                    hitCooldown.clear();
+                }
+
+                // 碰撞檢測
+                for (org.bukkit.entity.Entity entity : current.getWorld().getNearbyEntities(current, radius, radius, radius)) {
+                    if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                    if (hitCooldown.contains(target.getUniqueId())) continue;
+                    hitCooldown.add(target.getUniqueId());
+                    target.damage(damage, player);
+                    target.setFireTicks(60);
+                    current.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0);
+                }
+
+                // 音效
+                if (ticks % 10 == 0) {
+                    current.getWorld().playSound(current, Sound.BLOCK_FIRE_AMBIENT, 0.5f, 0.5f);
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 烈焰風暴 — 範圍持續傷害
+     */
+    private boolean executeFlameStorm(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.2);
+        double radius = talent.getEffectDouble(level, "radius", 5);
+        int duration = (int) talent.getEffectDouble(level, "duration", 5);
+        double damagePerTick = stats.getMagic() * magicScaling / duration; // 分攤到每秒
+
+        // 目標位置：玩家看向的方向前方 10 格
+        Location target = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(10));
+        target.setY(player.getLocation().getY());
+
+        player.getWorld().playSound(target, Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.6f);
+        player.sendMessage("§6[烈焰風暴] §f召喚火焰風暴！");
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = duration * 20;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (ticks > maxTicks) {
+                    target.getWorld().spawnParticle(Particle.SMOKE, target, 30, radius / 2, 1, radius / 2, 0.02);
+                    cancel();
+                    return;
+                }
+
+                // 粒子：火焰圓柱
+                if (ticks % 2 == 0) {
+                    for (int i = 0; i < 10; i++) {
+                        double angle = Math.random() * Math.PI * 2;
+                        double r = Math.random() * radius;
+                        double x = Math.cos(angle) * r;
+                        double z = Math.sin(angle) * r;
+                        double y = Math.random() * 3;
+                        target.getWorld().spawnParticle(Particle.FLAME, target.clone().add(x, y, z), 1, 0, 0, 0, 0.02);
+                    }
+                }
+
+                // 每秒造成傷害
+                if (ticks % 20 == 0) {
+                    for (org.bukkit.entity.Entity entity : target.getWorld().getNearbyEntities(target, radius, 3, radius)) {
+                        if (entity == player || !(entity instanceof LivingEntity t) || t.isDead()) continue;
+                        t.damage(damagePerTick, player);
+                        t.setFireTicks(40);
+                    }
+                    target.getWorld().playSound(target, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.8f);
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 隕石術 — 召喚隕石
+     */
+    private boolean executeMeteor(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 5.0);
+        double radius = talent.getEffectDouble(level, "radius", 6);
+        int fallDelay = (int) talent.getEffectDouble(level, "fallDelay", 40);
+        int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 5);
+        double damage = stats.getMagic() * magicScaling;
+
+        // 落點：玩家前方 15 格
+        Location impactLoc = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(15));
+        impactLoc.setY(player.getLocation().getY());
+        Location spawnLoc = impactLoc.clone().add(0, 30, 0);
+
+        player.sendMessage("§6[隕石術] §f天空出現裂縫...隕石即將墜落！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.7f, 2.0f);
+
+        // 預警粒子：落點畫圓
+        org.bukkit.scheduler.BukkitRunnable warningTask = new org.bukkit.scheduler.BukkitRunnable() {
+            int ticks = 0;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (ticks >= fallDelay) {
+                    cancel();
+                    return;
+                }
+                for (int i = 0; i < 20; i++) {
+                    double angle = (Math.PI * 2 / 20) * i;
+                    double x = Math.cos(angle) * radius;
+                    double z = Math.sin(angle) * radius;
+                    impactLoc.getWorld().spawnParticle(Particle.DUST, impactLoc.clone().add(x, 0.1, z), 1, 0, 0, 0, 0,
+                        new Particle.DustOptions(org.bukkit.Color.RED, 1.5f));
+                }
+            }
+        };
+        warningTask.runTaskTimer(plugin, 0L, 2L);
+
+        // 隕石墜落
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            // 墜落動畫
+            org.bukkit.scheduler.BukkitRunnable fallTask = new org.bukkit.scheduler.BukkitRunnable() {
+                Location current = spawnLoc.clone();
+                int ticks = 0;
+
+                @Override
+                public void run() {
+                    ticks++;
+                    current.add(0, -2, 0);
+
+                    // 火焰尾跡
+                    current.getWorld().spawnParticle(Particle.FLAME, current, 20, 1, 1, 1, 0.05);
+                    current.getWorld().spawnParticle(Particle.LAVA, current, 5, 0.5, 0.5, 0.5, 0);
+                    current.getWorld().spawnParticle(Particle.SMOKE, current, 10, 0.8, 0.8, 0.8, 0.02);
+
+                    if (current.getY() <= impactLoc.getY() + 1 || ticks > 30) {
+                        // 撞擊！
+                        impactLoc.getWorld().spawnParticle(Particle.EXPLOSION, impactLoc, 5, 1, 1, 1, 0);
+                        impactLoc.getWorld().spawnParticle(Particle.FLAME, impactLoc, 100, radius, 2, radius, 0.1);
+                        impactLoc.getWorld().spawnParticle(Particle.LAVA, impactLoc, 50, radius, 1, radius, 0);
+                        impactLoc.getWorld().playSound(impactLoc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
+                        impactLoc.getWorld().playSound(impactLoc, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 1.5f, 0.5f);
+
+                        // 造成傷害
+                        for (org.bukkit.entity.Entity entity : impactLoc.getWorld().getNearbyEntities(impactLoc, radius, radius, radius)) {
+                            if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                            double dist = entity.getLocation().distance(impactLoc);
+                            double falloff = 1.0 - (dist / (radius * 1.5));
+                            if (falloff < 0.3) falloff = 0.3;
+                            target.damage(damage * falloff, player);
+                            target.setFireTicks(burnDuration * 20);
+                            // 擊飛
+                            Vector knockback = target.getLocation().toVector().subtract(impactLoc.toVector()).normalize().multiply(1.5).setY(0.8);
+                            target.setVelocity(knockback);
+                        }
+                        cancel();
+                    }
+                }
+            };
+            fallTask.runTaskTimer(plugin, 0L, 1L);
+        }, fallDelay);
+
+        return true;
+    }
+
+    /**
+     * 烈焰噴射 — 持續射出火焰
+     */
+    private boolean executeFlameJet(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.0);
+        double range = talent.getEffectDouble(level, "range", 8);
+        int duration = (int) talent.getEffectDouble(level, "duration", 3);
+        int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 3);
+        double damagePerHit = stats.getMagic() * magicScaling / (duration * 4); // 每tick/5 一次
+
+        player.sendMessage("§6[烈焰噴射] §f釋放烈焰！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.2f);
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = duration * 20;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (ticks > maxTicks || !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                // 取玩家當前方向（可以邊轉邊噴）
+                Location eyeLoc = player.getEyeLocation();
+                Vector direction = eyeLoc.getDirection().normalize();
+
+                // 噴射粒子
+                for (double d = 0.5; d <= range; d += 0.5) {
+                    Location particleLoc = eyeLoc.clone().add(direction.clone().multiply(d));
+                    particleLoc.getWorld().spawnParticle(Particle.FLAME, particleLoc, 1, 0.1, 0.1, 0.1, 0.01);
+                    if (d > range * 0.5) {
+                        particleLoc.getWorld().spawnParticle(Particle.SMOKE, particleLoc, 1, 0.1, 0.1, 0.1, 0);
+                    }
+                }
+
+                // 每5 tick造成傷害
+                if (ticks % 5 == 0) {
+                    for (double d = 1; d <= range; d += 1) {
+                        Location checkLoc = eyeLoc.clone().add(direction.clone().multiply(d));
+                        for (org.bukkit.entity.Entity entity : checkLoc.getWorld().getNearbyEntities(checkLoc, 1, 1, 1)) {
+                            if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                            target.damage(damagePerHit, player);
+                            target.setFireTicks(burnDuration * 20);
+                        }
+                    }
+                }
+
+                // 音效
+                if (ticks % 10 == 0) {
+                    player.getWorld().playSound(player.getLocation(), Sound.BLOCK_FIRE_AMBIENT, 0.5f, 1.5f);
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 熾熱波紋 — 發射火焰波紋
+     */
+    private boolean executeScorchingWave(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.1);
+        double range = talent.getEffectDouble(level, "range", 10);
+        double width = talent.getEffectDouble(level, "width", 3);
+        int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 3);
+        double damage = stats.getMagic() * magicScaling;
+
+        Location start = player.getLocation().add(0, 0.5, 0);
+        Vector dir = player.getEyeLocation().getDirection().normalize().setY(0).normalize();
+
+        player.getWorld().playSound(start, Sound.ENTITY_BLAZE_SHOOT, 0.8f, 0.8f);
+        player.sendMessage("§6[熾熱波紋] §f發出火焰波紋！");
+
+        java.util.Set<java.util.UUID> alreadyHit = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            double traveled = 0;
+
+            @Override
+            public void run() {
+                traveled += 1.0;
+                if (traveled > range) {
+                    cancel();
+                    return;
+                }
+
+                Location center = start.clone().add(dir.clone().multiply(traveled));
+
+                // 橫向粒子波紋
+                Vector perpendicular = new Vector(-dir.getZ(), 0, dir.getX()).normalize();
+                for (double w = -width / 2; w <= width / 2; w += 0.5) {
+                    Location particleLoc = center.clone().add(perpendicular.clone().multiply(w));
+                    particleLoc.getWorld().spawnParticle(Particle.FLAME, particleLoc, 2, 0.1, 0.2, 0.1, 0.01);
+                    particleLoc.getWorld().spawnParticle(Particle.SMOKE, particleLoc, 1, 0.1, 0.1, 0.1, 0);
+                }
+
+                // 碰撞
+                for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, width / 2, 1.5, 1)) {
+                    if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                    if (alreadyHit.contains(target.getUniqueId())) continue;
+                    alreadyHit.add(target.getUniqueId());
+                    target.damage(damage, player);
+                    target.setFireTicks(burnDuration * 20);
+                    center.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 8, 0.2, 0.2, 0.2, 0);
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 2L);
+        return true;
+    }
+
+    /**
+     * 熾焰之環 — 以自身為中心持續AOE燃燒
+     */
+    private boolean executeInfernoRing(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 0.8);
+        double radius = talent.getEffectDouble(level, "radius", 5);
+        int duration = (int) talent.getEffectDouble(level, "duration", 5);
+        int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 3);
+        double damagePerSecond = stats.getMagic() * magicScaling;
+
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.6f);
+        player.sendMessage("§6[熾焰之環] §f點燃周圍一切！");
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = duration * 20;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (ticks > maxTicks || !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                Location center = player.getLocation();
+
+                // 火焰環粒子
+                if (ticks % 2 == 0) {
+                    for (int i = 0; i < 20; i++) {
+                        double angle = (Math.PI * 2 / 20) * i + (ticks * 0.05);
+                        double x = Math.cos(angle) * radius;
+                        double z = Math.sin(angle) * radius;
+                        center.getWorld().spawnParticle(Particle.FLAME, center.clone().add(x, 0.3, z), 1, 0, 0, 0, 0.02);
+                    }
+                    // 內圈粒子
+                    for (int i = 0; i < 5; i++) {
+                        double angle = Math.random() * Math.PI * 2;
+                        double r = Math.random() * radius;
+                        center.getWorld().spawnParticle(Particle.FLAME, center.clone().add(Math.cos(angle) * r, Math.random() * 1.5, Math.sin(angle) * r), 1, 0, 0, 0, 0);
+                    }
+                }
+
+                // 每秒造成傷害
+                if (ticks % 20 == 0) {
+                    for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        target.damage(damagePerSecond, player);
+                        target.setFireTicks(burnDuration * 20);
+                    }
+                    center.getWorld().playSound(center, Sound.BLOCK_FIRE_AMBIENT, 0.6f, 0.8f);
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 地獄領域 — 大範圍地面火海
+     */
+    private boolean executeHellDomain(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 0.6);
+        double spiritScaling = talent.getEffectDouble(level, "spiritScaling", 0.3);
+        double radius = talent.getEffectDouble(level, "radius", 8);
+        int duration = (int) talent.getEffectDouble(level, "duration", 8);
+        int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 5);
+        double damagePerTick = stats.getMagic() * magicScaling + stats.getSpirit() * spiritScaling;
+
+        Location center = player.getLocation().clone();
+
+        player.getWorld().playSound(center, Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.5f);
+        player.getWorld().playSound(center, Sound.ENTITY_BLAZE_SHOOT, 1.5f, 0.3f);
+        player.sendMessage("§4[地獄領域] §c腳下化為灼熱的地獄！");
+
+        // 起始爆發粒子
+        for (int i = 0; i < 50; i++) {
+            double angle = Math.random() * Math.PI * 2;
+            double r = Math.random() * radius;
+            center.getWorld().spawnParticle(Particle.FLAME,
+                center.clone().add(Math.cos(angle) * r, 0.1, Math.sin(angle) * r),
+                1, 0, 0.5, 0, 0.05);
+        }
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = duration * 20;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (ticks > maxTicks) {
+                    // 結束效果
+                    center.getWorld().spawnParticle(Particle.SMOKE, center, 50, radius / 2, 1, radius / 2, 0.05);
+                    center.getWorld().playSound(center, Sound.BLOCK_FIRE_EXTINGUISH, 1.0f, 0.5f);
+                    cancel();
+                    return;
+                }
+
+                // 持續火海粒子
+                if (ticks % 3 == 0) {
+                    for (int i = 0; i < 15; i++) {
+                        double angle = Math.random() * Math.PI * 2;
+                        double r = Math.random() * radius;
+                        double x = Math.cos(angle) * r;
+                        double z = Math.sin(angle) * r;
+                        center.getWorld().spawnParticle(Particle.FLAME, center.clone().add(x, 0.1, z), 1, 0, 0.3, 0, 0.01);
+                    }
+                    // 邊界火焰
+                    for (int i = 0; i < 10; i++) {
+                        double angle = (Math.PI * 2 / 10) * i + (ticks * 0.03);
+                        double x = Math.cos(angle) * radius;
+                        double z = Math.sin(angle) * radius;
+                        center.getWorld().spawnParticle(Particle.FLAME, center.clone().add(x, 0.5, z), 2, 0, 0.5, 0, 0.02);
+                    }
+                    // 隨機岩漿飛濺
+                    center.getWorld().spawnParticle(Particle.LAVA, center, 3, radius / 2, 0.1, radius / 2, 0);
+                }
+
+                // 每半秒造成傷害
+                if (ticks % 10 == 0) {
+                    for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        target.damage(damagePerTick / 2, player); // 每0.5秒造成一半傷害
+                        target.setFireTicks(burnDuration * 20);
+                        // 緩速效果
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 1, false, false));
+                    }
+                }
+
+                // 環境音效
+                if (ticks % 20 == 0) {
+                    center.getWorld().playSound(center, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.5f);
+                    center.getWorld().playSound(center, Sound.BLOCK_LAVA_AMBIENT, 0.5f, 0.8f);
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    // ==================== 刺客系技能實作 ====================
+
+    /**
+     * 隱身 — 進入隱形狀態
+     */
+    private boolean executeStealth(Player player, Talent talent, int level, ItemStack item) {
+        int duration = (int) talent.getEffectDouble(level, "duration", 5);
+        int speedBoost = (int) talent.getEffectDouble(level, "speedBoost", 0);
+
+        // 隱形效果
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, duration * 20, 0, false, false));
+        if (speedBoost > 0) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration * 20, speedBoost - 1, false, false));
+        }
+
+        // 粒子：消失效果
+        Location loc = player.getLocation();
+        loc.getWorld().spawnParticle(Particle.SMOKE, loc.add(0, 1, 0), 30, 0.3, 0.5, 0.3, 0.05);
+        loc.getWorld().spawnParticle(Particle.ENCHANT, loc, 20, 0.5, 0.5, 0.5, 0.5);
+        loc.getWorld().playSound(loc, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 0.8f, 1.2f);
+
+        player.sendMessage("§8[隱身] §7你融入了暗影之中... (" + duration + "秒)");
+
+        // 移除附近敵對生物的目標
+        for (org.bukkit.entity.Entity entity : player.getNearbyEntities(20, 10, 20)) {
+            if (entity instanceof org.bukkit.entity.Mob mob) {
+                if (mob.getTarget() == player) {
+                    mob.setTarget(null);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 影襲 — 瞬移到敵人背後並背刺
+     */
+    private boolean executeShadowAssault(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 1.5);
+        double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 1.0);
+        double range = talent.getEffectDouble(level, "range", 10);
+
+        double weaponDamage = calculateBaseWeaponDamage(player, player.getInventory().getItemInMainHand());
+        double damage = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling;
+
+        // 找最近的目標
+        LivingEntity target = null;
+        double closestDist = range;
+        for (org.bukkit.entity.Entity entity : player.getNearbyEntities(range, range, range)) {
+            if (entity == player || !(entity instanceof LivingEntity le) || le.isDead()) continue;
+            double dist = entity.getLocation().distance(player.getLocation());
+            if (dist < closestDist) {
+                closestDist = dist;
+                target = le;
+            }
+        }
+
+        if (target == null) {
+            player.sendMessage("§c[影襲] 附近沒有目標！");
+            return false;
+        }
+
+        // 瞬移到目標背後
+        Location targetLoc = target.getLocation();
+        Vector behindDir = targetLoc.getDirection().normalize().multiply(-1.5);
+        Location teleportLoc = targetLoc.clone().add(behindDir);
+        teleportLoc.setY(targetLoc.getY());
+        teleportLoc.setYaw(targetLoc.getYaw()); // 面對目標的方向
+        teleportLoc.setPitch(0);
+
+        // 出發粒子
+        player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0.05);
+
+        // 瞬移
+        player.teleport(teleportLoc);
+
+        // 到達粒子
+        player.getWorld().spawnParticle(Particle.SMOKE, teleportLoc.clone().add(0, 1, 0), 15, 0.2, 0.3, 0.2, 0.03);
+        player.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 20, 0.3, 0.3, 0.3, 0.3);
+        player.getWorld().spawnParticle(Particle.SWEEP_ATTACK, target.getLocation().add(0, 1, 0), 3, 0.2, 0.2, 0.2, 0);
+        player.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f);
+
+        // 造成傷害
+        target.damage(damage, player);
+        player.sendMessage("§8[影襲] §7背刺！造成 §c" + String.format("%.0f", damage) + " §7傷害");
+
+        // 解除隱身
+        player.removePotionEffect(PotionEffectType.INVISIBILITY);
+
+        return true;
+    }
+
+    /**
+     * 鬼哭神嚎 — 連續背刺多名敵人
+     */
+    private boolean executePhantomMassacre(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.9);
+        double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 0.9);
+        int strikeCount = (int) talent.getEffectDouble(level, "strikeCount", 4);
+        double stealthAfter = talent.getEffectDouble(level, "stealthAfter", 2.5);
+        double searchRadius = talent.getEffectDouble(level, "searchRadius", 10);
+
+        double weaponDamage = calculateBaseWeaponDamage(player, player.getInventory().getItemInMainHand());
+        double damagePerStrike = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling;
+
+        // 收集附近目標
+        java.util.List<LivingEntity> targets = new java.util.ArrayList<>();
+        for (org.bukkit.entity.Entity entity : player.getNearbyEntities(searchRadius, searchRadius, searchRadius)) {
+            if (entity == player || !(entity instanceof LivingEntity le) || le.isDead()) continue;
+            targets.add(le);
+        }
+
+        if (targets.isEmpty()) {
+            player.sendMessage("§c[鬼哭神嚎] 附近沒有目標！");
+            return false;
+        }
+
+        player.sendMessage("§4[鬼哭神嚎] §c開始連續背刺！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SHOOT, 0.6f, 2.0f);
+
+        // 讓玩家無敵
+        player.setInvulnerable(true);
+
+        final int[] strikeIndex = {0};
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                if (strikeIndex[0] >= strikeCount || !player.isOnline()) {
+                    // 結束後進入隱身
+                    player.setInvulnerable(false);
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, (int)(stealthAfter * 20), 0, false, false));
+                    player.sendMessage("§8[鬼哭神嚎] §7結束！進入隱身 " + stealthAfter + " 秒");
+                    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 0.8f, 1.0f);
+                    cancel();
+                    return;
+                }
+
+                // 選擇目標（循環）
+                // 重新掃描存活目標
+                java.util.List<LivingEntity> aliveTargets = new java.util.ArrayList<>();
+                for (org.bukkit.entity.Entity entity : player.getNearbyEntities(searchRadius, searchRadius, searchRadius)) {
+                    if (entity == player || !(entity instanceof LivingEntity le) || le.isDead()) continue;
+                    aliveTargets.add(le);
+                }
+                if (aliveTargets.isEmpty()) {
+                    strikeIndex[0] = strikeCount; // 強制結束
+                    return;
+                }
+
+                LivingEntity target = aliveTargets.get(strikeIndex[0] % aliveTargets.size());
+
+                // 出發粒子
+                player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 10, 0.2, 0.3, 0.2, 0.05);
+
+                // 瞬移到目標背後
+                Location targetLoc = target.getLocation();
+                Vector behindDir = targetLoc.getDirection().normalize().multiply(-1.5);
+                Location teleportLoc = targetLoc.clone().add(behindDir);
+                teleportLoc.setY(targetLoc.getY());
+                teleportLoc.setYaw(targetLoc.getYaw());
+                player.teleport(teleportLoc);
+
+                // 攻擊
+                target.damage(damagePerStrike, player);
+
+                // 效果
+                player.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.3);
+                player.getWorld().spawnParticle(Particle.SWEEP_ATTACK, target.getLocation().add(0, 1, 0), 2, 0.2, 0.2, 0.2, 0);
+                player.getWorld().spawnParticle(Particle.SMOKE, target.getLocation().add(0, 1, 0), 10, 0.2, 0.2, 0.2, 0.03);
+                player.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.8f, 1.5f);
+
+                strikeIndex[0]++;
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 6L); // 每6 tick (0.3秒) 一次背刺
+
+        return true;
+    }
+
+    /**
+     * 快速斬擊 — 瞬間連續斬擊
+     */
+    private boolean executeRapidSlash(Player player, Talent talent, int level, ItemStack item) {
+        double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.5);
+        int hitCount = (int) talent.getEffectDouble(level, "hitCount", 3);
+        double range = talent.getEffectDouble(level, "range", 4);
+
+        double weaponDamage = calculateBaseWeaponDamage(player, player.getInventory().getItemInMainHand());
+        double damagePerHit = weaponDamage * weaponScaling;
+
+        Location origin = player.getLocation();
+        Vector dir = origin.getDirection().setY(0).normalize();
+
+        player.sendMessage("§c[快速斬擊] §f連續斬擊！");
+
+        final int[] hitIndex = {0};
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                if (hitIndex[0] >= hitCount || !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                Location currentLoc = player.getLocation();
+                Vector currentDir = currentLoc.getDirection().setY(0).normalize();
+
+                // 扇形檢測
+                for (org.bukkit.entity.Entity entity : currentLoc.getWorld().getNearbyEntities(currentLoc, range, 2, range)) {
+                    if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                    Vector toEntity = target.getLocation().toVector().subtract(currentLoc.toVector()).normalize();
+                    double dot = currentDir.dot(toEntity);
+                    if (dot > 0.3) { // 前方約120度
+                        target.damage(damagePerHit, player);
+                    }
+                }
+
+                // 粒子與音效
+                currentLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, currentLoc.clone().add(currentDir.clone().multiply(2)).add(0, 1, 0), 3, 0.5, 0.3, 0.5, 0);
+                currentLoc.getWorld().spawnParticle(Particle.CRIT, currentLoc.clone().add(currentDir.clone().multiply(2)).add(0, 1, 0), 8, 0.5, 0.3, 0.5, 0.2);
+                currentLoc.getWorld().playSound(currentLoc, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.8f, 1.2f + (hitIndex[0] * 0.15f));
+
+                hitIndex[0]++;
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 4L); // 每4 tick (0.2秒) 一次斬擊
+
+        return true;
+    }
+
+    /**
+     * 十字刃 — 發射十字形斬擊波
+     */
+    private boolean executeCrossBlade(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 1.2);
+        double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 0.8);
+        double range = talent.getEffectDouble(level, "range", 10);
+        double multiHitBonus = talent.getEffectDouble(level, "multiHitBonus", 0.15);
+
+        double weaponDamage = calculateBaseWeaponDamage(player, player.getInventory().getItemInMainHand());
+        double baseDamage = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling;
+
+        Location start = player.getEyeLocation().clone();
+        Vector dir = start.getDirection().normalize().setY(0).normalize();
+        Vector perpendicular = new Vector(-dir.getZ(), 0, dir.getX()).normalize();
+
+        player.getWorld().playSound(start, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f);
+        player.sendMessage("§c[十字刃] §f發射十字斬擊！");
+
+        java.util.Set<java.util.UUID> hitEntities = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        final int[] hitCount = {0};
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            double traveled = 0;
+
+            @Override
+            public void run() {
+                traveled += 1.2;
+                if (traveled > range) {
+                    cancel();
+                    return;
+                }
+
+                Location center = start.clone().add(dir.clone().multiply(traveled));
+                center.setY(player.getLocation().getY() + 1);
+
+                // 十字形粒子：水平 + 垂直
+                for (double w = -2; w <= 2; w += 0.5) {
+                    // 水平臂
+                    Location hLoc = center.clone().add(perpendicular.clone().multiply(w));
+                    hLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, hLoc, 1, 0, 0, 0, 0);
+                    hLoc.getWorld().spawnParticle(Particle.CRIT, hLoc, 1, 0.1, 0.1, 0.1, 0.05);
+                }
+                for (double h = -1.5; h <= 1.5; h += 0.5) {
+                    // 垂直臂
+                    Location vLoc = center.clone().add(0, h, 0);
+                    vLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, vLoc, 1, 0, 0, 0, 0);
+                }
+
+                // 碰撞：橫向3格
+                for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, 2.5, 2, 2.5)) {
+                    if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                    if (hitEntities.contains(target.getUniqueId())) continue;
+                    hitEntities.add(target.getUniqueId());
+                    hitCount[0]++;
+                    double finalDamage = baseDamage * (1.0 + (hitCount[0] - 1) * multiHitBonus);
+                    target.damage(finalDamage, player);
+                    center.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0.2);
+                    center.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.6f, 1.3f);
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
+
+        return true;
+    }
+
+    /**
+     * 幻影連斬 — 快速斬擊周圍敵人10次，可移動施放
+     */
+    private boolean executePhantomFlurry(Player player, Talent talent, int level, ItemStack item) {
+        double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.6);
+        int hitCount = (int) talent.getEffectDouble(level, "hitCount", 10);
+        double radius = talent.getEffectDouble(level, "radius", 5);
+        int duration = (int) talent.getEffectDouble(level, "duration", 3);
+
+        double weaponDamage = calculateBaseWeaponDamage(player, player.getInventory().getItemInMainHand());
+        double damagePerHit = weaponDamage * weaponScaling;
+
+        player.sendMessage("§5[幻影連斬] §d化為幻影！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SHOOT, 0.5f, 2.0f);
+
+        // 給予速度加成
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration * 20, 2, false, false));
+
+        int ticksPerHit = (duration * 20) / hitCount;
+        if (ticksPerHit < 2) ticksPerHit = 2;
+
+        final int[] hitIndex = {0};
+        final int finalTicksPerHit = ticksPerHit;
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            int ticks = 0;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (hitIndex[0] >= hitCount || !player.isOnline()) {
+                    player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0.05);
+                    cancel();
+                    return;
+                }
+
+                if (ticks % finalTicksPerHit == 0) {
+                    Location loc = player.getLocation();
+
+                    // 隨機斬擊方向的粒子
+                    double angle = Math.random() * Math.PI * 2;
+                    double x = Math.cos(angle) * 1.5;
+                    double z = Math.sin(angle) * 1.5;
+                    loc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, loc.clone().add(x, 1.2, z), 2, 0.3, 0.2, 0.3, 0);
+                    loc.getWorld().spawnParticle(Particle.CRIT, loc.clone().add(x, 1, z), 5, 0.3, 0.3, 0.3, 0.2);
+
+                    // 對範圍內敵人造成傷害
+                    for (org.bukkit.entity.Entity entity : loc.getWorld().getNearbyEntities(loc, radius, 3, radius)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        target.damage(damagePerHit, player);
+                    }
+
+                    loc.getWorld().playSound(loc, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.6f, 1.0f + (float)(Math.random() * 0.5));
+                    hitIndex[0]++;
+                }
+
+                // 幻影殘影
+                if (ticks % 3 == 0) {
+                    Location pLoc = player.getLocation().add(0, 1, 0);
+                    pLoc.getWorld().spawnParticle(Particle.DUST, pLoc, 3, 0.2, 0.4, 0.2, 0,
+                        new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 255), 1.0f));
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
+
+        return true;
+    }
+
+    /**
+     * 弧形斬 — 前方扇形範圍攻擊
+     */
+    private boolean executeArcSlash(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 1.0);
+        double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 0.5);
+        double radius = talent.getEffectDouble(level, "radius", 3);
+        double arcAngle = talent.getEffectDouble(level, "angle", 120);
+
+        double weaponDamage = calculateBaseWeaponDamage(player, player.getInventory().getItemInMainHand());
+        double damage = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling;
+
+        Location origin = player.getLocation();
+        Vector dir = origin.getDirection().setY(0).normalize();
+        double halfAngle = Math.toRadians(arcAngle / 2);
+
+        // 扇形粒子
+        for (double a = -halfAngle; a <= halfAngle; a += 0.15) {
+            double rx = dir.getX() * Math.cos(a) - dir.getZ() * Math.sin(a);
+            double rz = dir.getX() * Math.sin(a) + dir.getZ() * Math.cos(a);
+            for (double d = 1; d <= radius; d += 0.8) {
+                Location pLoc = origin.clone().add(rx * d, 1, rz * d);
+                pLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, pLoc, 1, 0, 0, 0, 0);
+            }
+        }
+        origin.getWorld().playSound(origin, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.8f);
+
+        // 扇形內敵人受傷
+        for (org.bukkit.entity.Entity entity : origin.getWorld().getNearbyEntities(origin, radius, 2, radius)) {
+            if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+            Vector toEntity = target.getLocation().toVector().subtract(origin.toVector()).setY(0).normalize();
+            double angle = Math.acos(Math.max(-1, Math.min(1, dir.dot(toEntity))));
+            if (angle <= halfAngle) {
+                target.damage(damage, player);
+                target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 8, 0.2, 0.2, 0.2, 0.2);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 次月影 — 月牙形範圍斬擊
+     */
+    private boolean executeCrescentShadow(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 1.3);
+        double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 1.0);
+        double radius = talent.getEffectDouble(level, "radius", 5);
+
+        double weaponDamage = calculateBaseWeaponDamage(player, player.getInventory().getItemInMainHand());
+        double damage = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling;
+
+        Location center = player.getLocation();
+        Vector dir = center.getDirection().setY(0).normalize();
+
+        // 月牙形粒子（前方半圓）
+        for (double a = -Math.PI / 2; a <= Math.PI / 2; a += 0.1) {
+            double rx = dir.getX() * Math.cos(a) - dir.getZ() * Math.sin(a);
+            double rz = dir.getX() * Math.sin(a) + dir.getZ() * Math.cos(a);
+            Location edgeLoc = center.clone().add(rx * radius, 0.5, rz * radius);
+            edgeLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, edgeLoc, 1, 0, 0, 0, 0);
+            edgeLoc.getWorld().spawnParticle(Particle.DUST, edgeLoc, 2, 0.1, 0.1, 0.1, 0,
+                new Particle.DustOptions(org.bukkit.Color.fromRGB(180, 0, 255), 1.5f));
+        }
+        // 填充內部
+        for (int i = 0; i < 20; i++) {
+            double a = (Math.random() - 0.5) * Math.PI;
+            double r = Math.random() * radius;
+            double rx = dir.getX() * Math.cos(a) - dir.getZ() * Math.sin(a);
+            double rz = dir.getX() * Math.sin(a) + dir.getZ() * Math.cos(a);
+            Location fillLoc = center.clone().add(rx * r, 0.5 + Math.random(), rz * r);
+            fillLoc.getWorld().spawnParticle(Particle.SMOKE, fillLoc, 1, 0, 0, 0, 0.02);
+        }
+
+        center.getWorld().playSound(center, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.5f);
+        center.getWorld().playSound(center, Sound.ENTITY_WITHER_SHOOT, 0.4f, 2.0f);
+
+        // 傷害前方半球內敵人
+        for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
+            if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+            Vector toEntity = target.getLocation().toVector().subtract(center.toVector()).setY(0).normalize();
+            if (dir.dot(toEntity) > 0) { // 前方
+                target.damage(damage, player);
+                target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.3);
+                target.getWorld().spawnParticle(Particle.EXPLOSION, target.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 死神降臨 — 大範圍旋轉攻擊 + 吸血
+     */
+    private boolean executeDeathGod(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.8);
+        double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 0.6);
+        double spiritScaling = talent.getEffectDouble(level, "spiritScaling", 0.3);
+        double radius = talent.getEffectDouble(level, "radius", 6);
+        int duration = (int) talent.getEffectDouble(level, "duration", 5);
+        double lifestealPercent = talent.getEffectDouble(level, "lifestealPercent", 0.15);
+
+        double weaponDamage = calculateBaseWeaponDamage(player, player.getInventory().getItemInMainHand());
+        double damagePerTick = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling + stats.getSpirit() * spiritScaling;
+
+        player.sendMessage("§4[死神降臨] §8死神的鐮刀降臨！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.6f, 0.5f);
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.5f);
+
+        // 開場黑暗粒子
+        Location startLoc = player.getLocation();
+        for (int i = 0; i < 40; i++) {
+            double angle = Math.random() * Math.PI * 2;
+            double r = Math.random() * radius;
+            startLoc.getWorld().spawnParticle(Particle.SMOKE, startLoc.clone().add(Math.cos(angle) * r, Math.random() * 2, Math.sin(angle) * r), 1, 0, 0, 0, 0.03);
+        }
+
+        org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = duration * 20;
+
+            @Override
+            public void run() {
+                ticks++;
+                if (ticks > maxTicks || !player.isOnline()) {
+                    // 結束效果
+                    player.getWorld().spawnParticle(Particle.EXPLOSION, player.getLocation().add(0, 1, 0), 3, 0.5, 0.5, 0.5, 0);
+                    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_DEATH, 0.4f, 1.5f);
+                    cancel();
+                    return;
+                }
+
+                Location center = player.getLocation();
+
+                // 旋轉鐮刀粒子
+                if (ticks % 2 == 0) {
+                    double spinAngle = ticks * 0.3;
+                    for (int i = 0; i < 3; i++) {
+                        double a = spinAngle + (Math.PI * 2 / 3) * i;
+                        for (double d = 1; d <= radius; d += 0.8) {
+                            double x = Math.cos(a) * d;
+                            double z = Math.sin(a) * d;
+                            Location pLoc = center.clone().add(x, 0.5, z);
+                            pLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, pLoc, 1, 0, 0, 0, 0);
+                            if (d > radius - 1) {
+                                pLoc.getWorld().spawnParticle(Particle.DUST, pLoc, 1, 0, 0, 0, 0,
+                                    new Particle.DustOptions(org.bukkit.Color.fromRGB(80, 0, 80), 1.2f));
+                            }
+                        }
+                    }
+                }
+
+                // 每秒造成傷害 + 吸血
+                if (ticks % 20 == 0) {
+                    double totalDamageDealt = 0;
+                    for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        target.damage(damagePerTick, player);
+                        totalDamageDealt += damagePerTick;
+                        target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, target.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0);
+                    }
+
+                    // 吸血
+                    if (totalDamageDealt > 0) {
+                        double healAmount = totalDamageDealt * lifestealPercent;
+                        double newHealth = Math.min(player.getMaxHealth(), player.getHealth() + healAmount);
+                        player.setHealth(newHealth);
+                        player.getWorld().spawnParticle(Particle.HEART, center.clone().add(0, 2, 0), 3, 0.3, 0.3, 0.3, 0);
+                    }
+
+                    center.getWorld().playSound(center, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.5f, 0.6f);
+                }
+
+                // 暗影環境音效
+                if (ticks % 40 == 0) {
+                    center.getWorld().playSound(center, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.3f, 0.5f);
+                }
+            }
+        };
+        task.runTaskTimer(plugin, 0L, 1L);
         return true;
     }
 }

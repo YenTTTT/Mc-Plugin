@@ -46,6 +46,8 @@ public class PlayerStats {
     private double bonusMaxHealth;
     private double bonusCritChance;
     private double bonusCritDamage;
+    private double bonusMaxMana;
+    private double bonusManaRegen;
 
     private int level;
     private long exp;
@@ -87,6 +89,8 @@ public class PlayerStats {
         this.bonusMaxHealth = 0.0;
         this.bonusCritChance = 0.0;
         this.bonusCritDamage = 0.0;
+        this.bonusMaxMana = 0.0;
+        this.bonusManaRegen = 0.0;
 
         this.level = 1;
         this.exp = 0;
@@ -346,6 +350,22 @@ public class PlayerStats {
 
     public void setBonusCritDamage(double bonusCritDamage) {
         this.bonusCritDamage = bonusCritDamage;
+    }
+
+    public double getBonusMaxMana() {
+        return bonusMaxMana;
+    }
+
+    public void setBonusMaxMana(double bonusMaxMana) {
+        this.bonusMaxMana = Math.max(0, bonusMaxMana);
+    }
+
+    public double getBonusManaRegen() {
+        return bonusManaRegen;
+    }
+
+    public void setBonusManaRegen(double bonusManaRegen) {
+        this.bonusManaRegen = Math.max(0, bonusManaRegen);
     }
 
     // ===== Level, Exp, Points =====

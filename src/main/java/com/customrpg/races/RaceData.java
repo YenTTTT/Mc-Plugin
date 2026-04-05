@@ -28,6 +28,8 @@ public class RaceData {
     private final int baseVitality;
     private final int baseDefense;
     private final int baseSpirit;
+    private final int baseMana;          // 基礎魔力加成
+    private final double baseManaRegen;  // 基礎魔力回復加成
 
     // 成長倍率 (每級屬性成長 = 基礎成長 * growthMultiplier)
     private final double growthStrength;
@@ -36,6 +38,8 @@ public class RaceData {
     private final double growthVitality;
     private final double growthDefense;
     private final double growthSpirit;
+    private final double growthMana;         // 每級魔力成長
+    private final double growthManaRegen;    // 每級魔力回復成長
 
     // 種族技能 (最多2個)
     private final List<String> skills;
@@ -62,6 +66,8 @@ public class RaceData {
         this.baseVitality = builder.baseVitality;
         this.baseDefense = builder.baseDefense;
         this.baseSpirit = builder.baseSpirit;
+        this.baseMana = builder.baseMana;
+        this.baseManaRegen = builder.baseManaRegen;
 
         this.growthStrength = builder.growthStrength;
         this.growthMagic = builder.growthMagic;
@@ -69,6 +75,8 @@ public class RaceData {
         this.growthVitality = builder.growthVitality;
         this.growthDefense = builder.growthDefense;
         this.growthSpirit = builder.growthSpirit;
+        this.growthMana = builder.growthMana;
+        this.growthManaRegen = builder.growthManaRegen;
 
         this.skills = builder.skills;
         this.weaponBonuses = builder.weaponBonuses;
@@ -92,6 +100,8 @@ public class RaceData {
     public int getBaseVitality() { return baseVitality; }
     public int getBaseDefense() { return baseDefense; }
     public int getBaseSpirit() { return baseSpirit; }
+    public int getBaseMana() { return baseMana; }
+    public double getBaseManaRegen() { return baseManaRegen; }
 
     public double getGrowthStrength() { return growthStrength; }
     public double getGrowthMagic() { return growthMagic; }
@@ -99,6 +109,8 @@ public class RaceData {
     public double getGrowthVitality() { return growthVitality; }
     public double getGrowthDefense() { return growthDefense; }
     public double getGrowthSpirit() { return growthSpirit; }
+    public double getGrowthMana() { return growthMana; }
+    public double getGrowthManaRegen() { return growthManaRegen; }
 
     public List<String> getSkills() { return skills; }
     public Map<String, Double> getWeaponBonuses() { return weaponBonuses; }
@@ -149,6 +161,20 @@ public class RaceData {
     }
 
     /**
+     * 根據玩家等級計算種族的魔力加成
+     */
+    public double calculateManaBonus(int level) {
+        return baseMana + (level * growthMana);
+    }
+
+    /**
+     * 根據玩家等級計算種族的魔力回復加成
+     */
+    public double calculateManaRegenBonus(int level) {
+        return baseManaRegen + (level * growthManaRegen);
+    }
+
+    /**
      * 獲取所有基礎屬性的總覽 Map (用於 GUI 顯示)
      */
     public Map<String, Integer> getBaseStatsMap() {
@@ -159,6 +185,7 @@ public class RaceData {
         map.put("體力", baseVitality);
         map.put("防禦", baseDefense);
         map.put("精神", baseSpirit);
+        map.put("魔力", baseMana);
         return map;
     }
 
@@ -173,6 +200,8 @@ public class RaceData {
         map.put("體力", growthVitality);
         map.put("防禦", growthDefense);
         map.put("精神", growthSpirit);
+        map.put("魔力", growthMana);
+        map.put("魔力回復", growthManaRegen);
         return map;
     }
 
@@ -189,6 +218,8 @@ public class RaceData {
         private int baseVitality = 5;
         private int baseDefense = 5;
         private int baseSpirit = 5;
+        private int baseMana = 0;
+        private double baseManaRegen = 0.0;
 
         private double growthStrength = 1.0;
         private double growthMagic = 1.0;
@@ -196,6 +227,8 @@ public class RaceData {
         private double growthVitality = 1.0;
         private double growthDefense = 1.0;
         private double growthSpirit = 1.0;
+        private double growthMana = 0.0;
+        private double growthManaRegen = 0.0;
 
         private List<String> skills = new ArrayList<>();
         private Map<String, Double> weaponBonuses = new LinkedHashMap<>();
@@ -219,6 +252,8 @@ public class RaceData {
         public Builder baseVitality(int v) { this.baseVitality = v; return this; }
         public Builder baseDefense(int v) { this.baseDefense = v; return this; }
         public Builder baseSpirit(int v) { this.baseSpirit = v; return this; }
+        public Builder baseMana(int v) { this.baseMana = v; return this; }
+        public Builder baseManaRegen(double v) { this.baseManaRegen = v; return this; }
 
         public Builder growthStrength(double v) { this.growthStrength = v; return this; }
         public Builder growthMagic(double v) { this.growthMagic = v; return this; }
@@ -226,6 +261,8 @@ public class RaceData {
         public Builder growthVitality(double v) { this.growthVitality = v; return this; }
         public Builder growthDefense(double v) { this.growthDefense = v; return this; }
         public Builder growthSpirit(double v) { this.growthSpirit = v; return this; }
+        public Builder growthMana(double v) { this.growthMana = v; return this; }
+        public Builder growthManaRegen(double v) { this.growthManaRegen = v; return this; }
 
         public Builder skills(List<String> skills) { this.skills = skills; return this; }
         public Builder weaponBonuses(Map<String, Double> bonuses) { this.weaponBonuses = bonuses; return this; }

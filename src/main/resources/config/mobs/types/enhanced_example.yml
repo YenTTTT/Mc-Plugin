@@ -160,114 +160,55 @@ aggressive_pig:
   special-behavior: "fast_movement"
   show-level-in-name: true
 
-# 範例 4: 史萊姆王
-slime_king:
-  name: "&a&l史萊姆之王"
-  type: SLIME
-
-  level-range:
-    min: 10
-    max: 20
-
-  base-stats:
-    health: 100.0
-    damage: 10.0
-
-  stat-scaling:
-    health-per-level: 10.0
-    damage-per-level: 2.0
-
-  equipment:
-    helmet:
-      material: GOLDEN_HELMET
-      enchantments:
-        - type: PROTECTION_ENVIRONMENTAL
-          level: 4
-        - type: THORNS
-          level: 2
-
-  exp:
-    base: 50
-    per-level: 15
-
-  drops:
-    vanilla-items:
-      - material: SLIME_BALL
-        amount: 10-20
-        chance: 1.0
-      - material: EMERALD
-        amount: 3-5
-        chance: 0.5
-      - material: DIAMOND
-        amount: 1-2
-        chance: 0.2
-    custom-weapons:
-      - weapon-key: "ice_sword"
-        chance: 0.08
-      - weapon-key: "thunder_axe"
-        chance: 0.05
-
-  special-behavior: "split_on_death"
-  show-level-in-name: true
 
 # 範例 5: 行走的仙人掌 - 外觀是一個被放置的仙人掌方塊
 # 原理：隱形靜音殭屍(AI核心) + BlockDisplay(仙人掌外觀) + ArmorStand(名稱標籤)
 # 使用 disguise.type: ARMOR_STAND 觸發 BlockDisplay 生成模式
 # 殭屍完全隱形且靜音，玩家只看到一個仙人掌方塊在移動
-walking_cactus:
-  name: "&2&l⚠ 行走的仙人掌 ⚠"
-  type: ZOMBIE
-
-  level-range:
-    min: 8
-    max: 18
-
-  base-stats:
-    health: 50.0
-    damage: 15.0
-
-  stat-scaling:
-    health-per-level: 5.0
-    damage-per-level: 2.0
-
-  # 使用 ARMOR_STAND 觸發 BlockDisplay 模式
-  # 實際生成的是隱形靜音殭屍 + 仙人掌 BlockDisplay
-  disguise:
-    enabled: true
-    type: ARMOR_STAND
-    baby-chance: 0.0
-
-  # helmet 設為 CACTUS → BlockDisplay 會顯示仙人掌方塊
-  equipment:
-    helmet:
-      material: CACTUS
-
-  exp:
-    base: 25
-    per-level: 10
-
-  drops:
-    vanilla-items:
-      - material: CACTUS
-        amount: 3-8
-        chance: 1.0
-      - material: GREEN_DYE
-        amount: 2-5
-        chance: 0.8
-      - material: EMERALD
-        amount: 1-2
-        chance: 0.15
-
-  special-behavior: "poison_attack"
-  show-level-in-name: true
-
-# 範例 6: 簡易配置（向後兼容）
-simple_zombie:
-  name: "&8簡易殭屍"
-  type: ZOMBIE
-  health: 40.0
-  damage: 6.0
-  special-behavior: "aggressive"
-  exp: 5
-
+#walking_cactus:
+#  name: "&2&l行走的仙人掌"
+#  type: WOLF
+#
+#  level-range:
+#    min: 8
+#    max: 18
+#
+#  base-stats:
+#    health: 50.0
+#    damage: 15.0
+#
+#  stat-scaling:
+#    health-per-level: 5.0
+#    damage-per-level: 2.0
+#
+#  # 使用 ARMOR_STAND 觸發 BlockDisplay 模式
+#  # 實際生成的是隱形靜音殭屍 + 仙人掌 BlockDisplay
+#  disguise:
+#    enabled: true
+#    type: ARMOR_STAND
+#    baby-chance: 0.0
+#
+#  # helmet 設為 CACTUS → BlockDisplay 會顯示仙人掌方塊
+#  equipment:
+#    helmet:
+#      material: CACTUS
+#
+#  exp:
+#    base: 25
+#    per-level: 10
+#
+#  drops:
+#    vanilla-items:
+#      - material: CACTUS
+#        amount: 3-8
+#        chance: 1.0
+#      - material: GREEN_DYE
+#        amount: 2-5
+#        chance: 0.8
+#      - material: EMERALD
+#        amount: 1-2
+#        chance: 0.15
+#
+#  special-behavior: "poison_attack"
+#  show-level-in-name: true
 

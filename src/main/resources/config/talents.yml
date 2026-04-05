@@ -1,3 +1,553 @@
+# ==================== 烈焰系 (Fire) ====================
+# 兩大分支：
+#   爆發流（火焰術士）— 右側  主屬性：Magic
+#   灼燒流（DOT流）  — 左側  主屬性：Magic + Spirit
+# GUI 佈局 (row, col) → slot = row * 9 + col
+fire:
+
+  # ═══════════════════════════════════════════
+  #  起始天賦（共用入口）
+  # ═══════════════════════════════════════════
+
+  # 火焰親和 (5,4) → slot 49 — 屬性加成：入門
+  fire_affinity:
+    name: "火焰親和"
+    description: "與火焰建立親和力，增加 Magic"
+    type: "PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "被動"
+    gui:
+      slot: 49
+      icon: "MAGMA_CREAM"
+    levels:
+      1:
+        effect:
+          statBonus:
+            magic: 10
+
+  # 火花 (5,6) → slot 51 — 主動：發射小火球
+  fire_spark:
+    name: "火花"
+    description: "發射一顆小型火球攻擊敵人"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "烈焰粉"
+    cooldown: 3
+    manaCost: 10
+    trigger:
+      type: "RIGHT_CLICK"
+    gui:
+      slot: 51
+      icon: "BLAZE_POWDER"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.2
+          damageType: "MAGIC"
+          range: 15
+
+  # 溫度上升 (5,2) → slot 47 — 被動：技能造成燃燒
+  heat_rising:
+    name: "溫度上升"
+    description: "你的火焰技能命中敵人時附加燃燒效果 (2秒)"
+    type: "PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "fire_affinity"
+      level: 1
+    gui:
+      slot: 47
+      icon: "CAMPFIRE"
+    levels:
+      1:
+        effect:
+          burnDuration: 2
+
+  # ═══════════════════════════════════════════
+  #  爆發流（火焰術士）— 右側
+  # ═══════════════════════════════════════════
+
+  # 炎熱 (4,6) → slot 42 — 屬性：+40 MANA
+  blazing_mana:
+    name: "炎熱"
+    description: "火焰的力量增幅你的魔力容量"
+    type: "PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "fire_spark"
+      level: 1
+    gui:
+      slot: 42
+      icon: "LAVA_BUCKET"
+    levels:
+      1:
+        effect:
+          manaBonus: 40
+
+  # 毀滅之球 (4,7) → slot 43 — 主動：巨型火球
+  destruction_orb:
+    name: "毀滅之球"
+    description: "召喚一顆巨型火球緩慢往前推進，碰觸的敵人持續受到傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "烈焰粉"
+    cooldown: 12
+    manaCost: 70
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "blazing_mana"
+      level: 1
+    gui:
+      slot: 43
+      icon: "FIRE_CHARGE"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.4
+          damageType: "MAGIC"
+          range: 15
+          speed: 0.3
+          radius: 2.0
+          duration: 5
+      2:
+        effect:
+          magicScaling: 1.8
+          damageType: "MAGIC"
+          range: 18
+          speed: 0.3
+          radius: 2.5
+          duration: 6
+      3:
+        effect:
+          magicScaling: 2.2
+          damageType: "MAGIC"
+          range: 20
+          speed: 0.3
+          radius: 3.0
+          duration: 7
+
+  # 烈焰風暴 (3,7) → slot 34 — 主動：範圍持續傷害
+  flame_storm:
+    name: "烈焰風暴"
+    description: "在指定位置召喚火焰風暴，每秒造成魔法傷害 (持續5秒)"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "烈焰粉"
+    cooldown: 15
+    manaCost: 55
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "destruction_orb"
+      level: 1
+    gui:
+      slot: 34
+      icon: "BLAZE_ROD"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.2
+          damageType: "MAGIC"
+          radius: 5
+          duration: 5
+          tickInterval: 20
+      2:
+        effect:
+          magicScaling: 1.5
+          damageType: "MAGIC"
+          radius: 6
+          duration: 6
+          tickInterval: 20
+      3:
+        effect:
+          magicScaling: 1.8
+          damageType: "MAGIC"
+          radius: 7
+          duration: 7
+          tickInterval: 20
+
+  # 連鎖爆炸 (3,6) → slot 33 — 被動：命中時機率爆炸
+  chain_explosion:
+    name: "連鎖爆炸"
+    description: "火焰技能擊中敵人時，有機率引發連鎖爆炸造成範圍傷害"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "destruction_orb"
+      level: 1
+    gui:
+      slot: 33
+      icon: "TNT"
+    levels:
+      1:
+        effect:
+          explosionChance: 0.2
+          explosionRadius: 3
+          explosionDamagePercent: 0.5
+      2:
+        effect:
+          explosionChance: 0.3
+          explosionRadius: 3.5
+          explosionDamagePercent: 0.65
+      3:
+        effect:
+          explosionChance: 0.4
+          explosionRadius: 4
+          explosionDamagePercent: 0.8
+
+  # 超載 (2,7) → slot 25 — 被動：技能傷害+30% 消耗增加
+  overcharge:
+    name: "超載"
+    description: "你的火焰技能傷害增加，但 MANA 消耗也增加"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "flame_storm"
+          level: 1
+        - skill: "chain_explosion"
+          level: 1
+    gui:
+      slot: 25
+      icon: "NETHER_STAR"
+    levels:
+      1:
+        effect:
+          skillDamageBonus: 0.15
+          manaCostIncrease: 0.10
+      2:
+        effect:
+          skillDamageBonus: 0.25
+          manaCostIncrease: 0.15
+      3:
+        effect:
+          skillDamageBonus: 0.35
+          manaCostIncrease: 0.20
+
+  # 隕石術 (2,6) → slot 24 — 終極：召喚隕石
+  meteor:
+    name: "隕石術"
+    description: "從天空召喚巨大隕石墜落，造成毀滅性範圍傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "烈焰粉"
+    cooldown: 30
+    manaCost: 120
+    trigger:
+      type: "LEFT_CLICK_SNEAK"
+    prerequisite:
+      skill: "overcharge"
+      level: 2
+    gui:
+      slot: 24
+      icon: "MAGMA_BLOCK"
+    levels:
+      1:
+        effect:
+          magicScaling: 5.0
+          damageType: "MAGIC"
+          radius: 6
+          fallDelay: 40
+          burnDuration: 5
+      2:
+        effect:
+          magicScaling: 6.5
+          damageType: "MAGIC"
+          radius: 7
+          fallDelay: 35
+          burnDuration: 6
+      3:
+        effect:
+          magicScaling: 8.0
+          damageType: "MAGIC"
+          radius: 8
+          fallDelay: 30
+          burnDuration: 8
+
+  # ═══════════════════════════════════════════
+  #  灼燒流（DOT流）— 左側
+  # ═══════════════════════════════════════════
+
+  # 烈焰噴射 (4,2) → slot 38 — 主動：連續射火焰3秒
+  flame_jet:
+    name: "烈焰噴射"
+    description: "連續射出烈焰持續3秒，灼燒前方敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "烈焰粉"
+    cooldown: 5
+    manaCost: 18
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "heat_rising"
+      level: 1
+    gui:
+      slot: 38
+      icon: "BLAZE_POWDER"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.0
+          damageType: "MAGIC"
+          range: 8
+          duration: 3
+          tickInterval: 5
+          burnDuration: 3
+      2:
+        effect:
+          magicScaling: 1.2
+          damageType: "MAGIC"
+          range: 9
+          duration: 4
+          tickInterval: 5
+          burnDuration: 4
+      3:
+        effect:
+          magicScaling: 1.4
+          damageType: "MAGIC"
+          range: 10
+          duration: 5
+          tickInterval: 5
+          burnDuration: 5
+
+  # 持續燃燒 (4,1) → slot 37 — 被動：燃燒時間+3秒
+  burn_extend:
+    name: "持續燃燒"
+    description: "你施加的燃燒效果持續時間延長"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "heat_rising"
+      level: 1
+    gui:
+      slot: 37
+      icon: "COAL"
+    levels:
+      1:
+        effect:
+          burnExtend: 2
+      2:
+        effect:
+          burnExtend: 3
+      3:
+        effect:
+          burnExtend: 5
+
+  # 灼熱擴散 (3,2) → slot 29 — 被動：燃燒會傳染附近敵人
+  burn_spread:
+    name: "灼熱擴散"
+    description: "燃燒中的敵人會將火焰傳染給附近的敵人"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "flame_jet"
+          level: 1
+        - skill: "burn_extend"
+          level: 1
+    gui:
+      slot: 29
+      icon: "FIRE_CORAL"
+    levels:
+      1:
+        effect:
+          spreadRadius: 3
+          spreadChance: 0.3
+      2:
+        effect:
+          spreadRadius: 4
+          spreadChance: 0.4
+      3:
+        effect:
+          spreadRadius: 5
+          spreadChance: 0.5
+
+  # 熾熱波紋 (3,1) → slot 28 — 主動：火焰波紋
+  scorching_wave:
+    name: "熾熱波紋"
+    description: "發出一道火焰波紋，灼燒路徑上的所有敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "烈焰粉"
+    cooldown: 6
+    manaCost: 25
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "burn_spread"
+      level: 1
+    gui:
+      slot: 28
+      icon: "BLAZE_ROD"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.1
+          damageType: "MAGIC"
+          range: 10
+          width: 3
+          burnDuration: 3
+      2:
+        effect:
+          magicScaling: 1.4
+          damageType: "MAGIC"
+          range: 12
+          width: 4
+          burnDuration: 4
+      3:
+        effect:
+          magicScaling: 1.7
+          damageType: "MAGIC"
+          range: 14
+          width: 5
+          burnDuration: 5
+
+  # 熾焰之環 (3,0) → slot 27 — 主動：以自身為中心AOE燃燒
+  inferno_ring:
+    name: "熾焰之環"
+    description: "以自身為中心釋放火焰環，持續灼燒範圍內的敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "烈焰粉"
+    cooldown: 10
+    manaCost: 35
+    trigger:
+      type: "LEFT_CLICK_SNEAK"
+    prerequisite:
+      anyOf:
+        - skill: "scorching_wave"
+          level: 1
+        - skill: "burn_spread"
+          level: 2
+    gui:
+      slot: 27
+      icon: "FIRE_CHARGE"
+    levels:
+      1:
+        effect:
+          magicScaling: 0.8
+          damageType: "MAGIC"
+          radius: 5
+          duration: 5
+          tickInterval: 20
+          burnDuration: 3
+      2:
+        effect:
+          magicScaling: 1.0
+          damageType: "MAGIC"
+          radius: 6
+          duration: 6
+          tickInterval: 20
+          burnDuration: 4
+      3:
+        effect:
+          magicScaling: 1.2
+          damageType: "MAGIC"
+          radius: 7
+          duration: 7
+          tickInterval: 20
+          burnDuration: 5
+
+  # 燃燒堆疊 (2,1) → slot 19 — 核心被動：每層燃燒+10%傷害
+  burn_stack:
+    name: "燃燒堆疊"
+    description: "燃燒中的目標每層燃燒受到額外傷害 (最多5層)"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "inferno_ring"
+          level: 1
+        - skill: "scorching_wave"
+          level: 1
+    gui:
+      slot: 19
+      icon: "MAGMA_CREAM"
+    levels:
+      1:
+        effect:
+          damagePerStack: 0.08
+          maxStacks: 5
+      2:
+        effect:
+          damagePerStack: 0.12
+          maxStacks: 5
+      3:
+        effect:
+          damagePerStack: 0.15
+          maxStacks: 5
+
+  # 地獄領域 (2,0) → slot 18 — 終極：地面火海
+  hell_domain:
+    name: "地獄領域"
+    description: "將腳下大片地面化為火海，持續灼燒所有踏入的敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "烈焰粉"
+    cooldown: 25
+    manaCost: 90
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "burn_stack"
+      level: 2
+    gui:
+      slot: 18
+      icon: "MAGMA_BLOCK"
+    levels:
+      1:
+        effect:
+          magicScaling: 0.6
+          spiritScaling: 0.3
+          damageType: "MAGIC"
+          radius: 8
+          duration: 8
+          tickInterval: 10
+          burnDuration: 5
+      2:
+        effect:
+          magicScaling: 0.8
+          spiritScaling: 0.4
+          damageType: "MAGIC"
+          radius: 10
+          duration: 10
+          tickInterval: 10
+          burnDuration: 6
+      3:
+        effect:
+          magicScaling: 1.0
+          spiritScaling: 0.5
+          damageType: "MAGIC"
+          radius: 12
+          duration: 12
+          tickInterval: 10
+          burnDuration: 8
+
 weapon:
   # 熱兵器 (5,2) -> slot = 5 * 9 + 2 = 47
   weapon_firearms_mastery:
@@ -105,7 +655,7 @@ weapon:
     cooldown: 3
     manaCost: 1
     trigger:
-      type: "RIGHT_CLICK_SNEAK"
+      type: "RIGHT_CLICK"
     prerequisite:
       skill: "weapon_melee_mastery"
       level: 3
@@ -147,7 +697,7 @@ weapon:
     cooldown: 2
     manaCost: 0
     trigger:
-      type: "RIGHT_CLICK_SNEAK"
+      type: "RIGHT_CLICK"
     prerequisite:
       skill: "weapon_magic_mastery"
       level: 3
@@ -450,59 +1000,6 @@ nature:
           stunDuration: 0.5
           stunEffect: "INSTANT_EFFECT"
           hitParticle: "ENCHANTED_HIT"
-
-  # 領域展開 - 影牢 (2,4) -> slot = 2 * 9 + 4 = 22
-  shadow_prison_domain:
-    name: "領域展開 - 影牢"
-    description: "以自身為中心展開影之領域，域內敵人持續受到魔法傷害並被減速，施術者獲得傷害增幅與抗性"
-    type: "ACTIVE"
-    max-level: 3
-    points-per-level: 1
-    mechanism: "地獄之星"
-    cooldown: 30
-    manaCost: 60
-    trigger:
-      type: "RIGHT_CLICK"
-    prerequisite:
-      anyOf:
-        - skill: "nature_doctrine"
-          level: 3
-        - skill: "stargazing"
-          level: 1
-    gui:
-      slot: 22
-      icon: "NETHER_STAR"
-    levels:
-      1:
-        effect:
-          baseDamage: 15
-          magicScaling: 0.3
-          radius: 6
-          duration: 8
-          slowLevel: 2
-          damageInterval: 10
-          damageBoostLevel: 1
-          resistanceLevel: 1
-      2:
-        effect:
-          baseDamage: 22
-          magicScaling: 0.45
-          radius: 7
-          duration: 10
-          slowLevel: 3
-          damageInterval: 8
-          damageBoostLevel: 2
-          resistanceLevel: 1
-      3:
-        effect:
-          baseDamage: 30
-          magicScaling: 0.6
-          radius: 8
-          duration: 12
-          slowLevel: 4
-          damageInterval: 6
-          damageBoostLevel: 2
-          resistanceLevel: 2
 
 
 # ==================== 宿儺系 (Sukuna) ====================
@@ -973,3 +1470,654 @@ blood:
           attackSpeedBoost: 0.4
           healthDrainPerSecond: 4
 
+
+# ==================== 刺客系 (Assassin) ====================
+# 三大分支：
+#   🟩 影襲流（隱身 / 背刺）— 右側  主屬性：AGILITY
+#   🟥 連擊流（高速攻擊 / 連段）— 中央  主屬性：AGILITY
+#   🟪 收割流（鐮刀 / 範圍 / 吸血）— 左側  主屬性：AGILITY + Spirit
+# GUI 佈局 (row, col) → slot = row * 9 + col
+assassin:
+
+  # ═══════════════════════════════════════════
+  #  起始天賦（共用入口）
+  # ═══════════════════════════════════════════
+
+  # 刺客本能 (5,4) → slot 49 — 被動：+15 AGILITY
+  assassin_instinct:
+    name: "刺客本能"
+    description: "喚醒刺客的本能，增加敏捷"
+    type: "PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "被動"
+    gui:
+      slot: 49
+      icon: "SPIDER_EYE"
+    levels:
+      1:
+        effect:
+          statBonus:
+            agility: 15
+
+  # 要害打擊 (5,6) → slot 51 — 被動：背後攻擊+30%傷害
+  vital_strike:
+    name: "要害打擊"
+    description: "從敵人背後攻擊時，傷害增加30%"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "assassin_instinct"
+      level: 1
+    gui:
+      slot: 51
+      icon: "IRON_SWORD"
+    levels:
+      1:
+        effect:
+          backstabBonus: 0.30
+      2:
+        effect:
+          backstabBonus: 0.45
+      3:
+        effect:
+          backstabBonus: 0.60
+
+  # 快速步伐 (5,2) → slot 47 — 被動：移動速度提升
+  swift_feet:
+    name: "快速步伐"
+    description: "移動速度永久提升"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "assassin_instinct"
+      level: 1
+    gui:
+      slot: 47
+      icon: "FEATHER"
+    levels:
+      1:
+        effect:
+          speed: 10
+      2:
+        effect:
+          speed: 15
+      3:
+        effect:
+          speed: 20
+
+  # ═══════════════════════════════════════════
+  #  🟩 影襲流（隱身 / 背刺）— 右側
+  # ═══════════════════════════════════════════
+
+  # 隱身 (4,7) → slot 43 — 主動：進入隱形5秒
+  stealth:
+    name: "隱身"
+    description: "進入隱形狀態，怪物無法鎖定你。攻擊會解除隱身"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "蜘蛛眼"
+    cooldown: 12
+    manaCost: 20
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "vital_strike"
+      level: 1
+    gui:
+      slot: 43
+      icon: "ENDER_EYE"
+    levels:
+      1:
+        effect:
+          duration: 5
+          speedBoost: 0
+      2:
+        effect:
+          duration: 7
+          speedBoost: 1
+      3:
+        effect:
+          duration: 10
+          speedBoost: 2
+
+  # 暗影步 (4,6) → slot 42 — 被動：隱身狀態移速提升
+  shadow_step:
+    name: "暗影步"
+    description: "隱身狀態下移動速度大幅提升"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "stealth"
+      level: 1
+    gui:
+      slot: 42
+      icon: "LEATHER_BOOTS"
+    levels:
+      1:
+        effect:
+          stealthSpeedBoost: 1
+      2:
+        effect:
+          stealthSpeedBoost: 2
+      3:
+        effect:
+          stealthSpeedBoost: 3
+
+  # 背刺強化 (3,7) → slot 34 — 被動：背刺傷害再+50%
+  backstab_mastery:
+    name: "背刺強化"
+    description: "背刺傷害大幅增加"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "stealth"
+          level: 1
+        - skill: "shadow_step"
+          level: 1
+    gui:
+      slot: 34
+      icon: "DIAMOND_SWORD"
+    levels:
+      1:
+        effect:
+          backstabExtraBonus: 0.30
+      2:
+        effect:
+          backstabExtraBonus: 0.50
+      3:
+        effect:
+          backstabExtraBonus: 0.70
+
+  # 影襲 (3,6) → slot 33 — 主動：瞬移到敵人背後
+  shadow_assault:
+    name: "影襲"
+    description: "瞬移到最近敵人的背後並發動背刺攻擊"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鐮刀"
+    cooldown: 6
+    manaCost: 25
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "backstab_mastery"
+      level: 1
+    gui:
+      slot: 33
+      icon: "ENDER_PEARL"
+    levels:
+      1:
+        effect:
+          weaponScaling: 1.5
+          agilityScaling: 1.0
+          range: 10
+      2:
+        effect:
+          weaponScaling: 1.8
+          agilityScaling: 1.2
+          range: 12
+      3:
+        effect:
+          weaponScaling: 2.1
+          agilityScaling: 1.5
+          range: 15
+
+  # 鬼哭神嚎 (2,7) → slot 25 — 終極：連續背刺4次
+  phantom_massacre:
+    name: "鬼哭神嚎"
+    description: "快速閃現到周圍敵人背後進行連續背刺，結束後進入隱身"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鐮刀"
+    cooldown: 25
+    manaCost: 60
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "shadow_assault"
+      level: 2
+    gui:
+      slot: 25
+      icon: "WITHER_SKELETON_SKULL"
+    levels:
+      1:
+        effect:
+          weaponScaling: 0.9
+          agilityScaling: 0.9
+          strikeCount: 4
+          stealthAfter: 2.5
+          searchRadius: 10
+      2:
+        effect:
+          weaponScaling: 1.1
+          agilityScaling: 1.1
+          strikeCount: 5
+          stealthAfter: 3.0
+          searchRadius: 12
+      3:
+        effect:
+          weaponScaling: 1.3
+          agilityScaling: 1.3
+          strikeCount: 6
+          stealthAfter: 4.0
+          searchRadius: 15
+
+  # ═══════════════════════════════════════════
+  #  🟥 連擊流（高速攻擊 / 連段）— 中間
+  # ═══════════════════════════════════════════
+
+  # 玩弄 (4,4) → slot 40 — 被動：爆擊倍率提升
+  trickster:
+    name: "玩弄"
+    description: "爆擊倍率與移動速度提升"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "vital_strike"
+          level: 1
+        - skill: "swift_feet"
+          level: 1
+    gui:
+      slot: 40
+      icon: "GOLDEN_SWORD"
+    levels:
+      1:
+        effect:
+          critDamageBonus: 0.15
+          speed: 5
+      2:
+        effect:
+          critDamageBonus: 0.25
+          speed: 10
+      3:
+        effect:
+          critDamageBonus: 0.40
+          speed: 15
+
+  # 快速斬擊 (4,3) → slot 39 — 主動：瞬間連續攻擊3次
+  rapid_slash:
+    name: "快速斬擊"
+    description: "瞬間連續斬擊前方敵人3次"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鐮刀"
+    cooldown: 4
+    manaCost: 15
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "trickster"
+      level: 1
+    gui:
+      slot: 39
+      icon: "IRON_SWORD"
+    levels:
+      1:
+        effect:
+          weaponScaling: 0.5
+          hitCount: 3
+          range: 4
+      2:
+        effect:
+          weaponScaling: 0.6
+          hitCount: 4
+          range: 5
+      3:
+        effect:
+          weaponScaling: 0.7
+          hitCount: 5
+          range: 5
+
+  # 連擊強化 (3,4) → slot 31 — 被動：每次攻擊疊傷害(最多5層)
+  combo_mastery:
+    name: "連擊強化"
+    description: "每次攻擊疊加傷害，最多5層"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "rapid_slash"
+      level: 1
+    gui:
+      slot: 31
+      icon: "BLAZE_POWDER"
+    levels:
+      1:
+        effect:
+          comboStackDamage: 0.05
+          maxComboStacks: 5
+      2:
+        effect:
+          comboStackDamage: 0.08
+          maxComboStacks: 5
+      3:
+        effect:
+          comboStackDamage: 0.12
+          maxComboStacks: 5
+
+  # 十字刃 (3,3) → slot 30 — 主動：發射十字斬擊
+  cross_blade:
+    name: "十字刃"
+    description: "發射十字形斬擊波，命中越多敵人傷害越高"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鐮刀"
+    cooldown: 5
+    manaCost: 22
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "combo_mastery"
+      level: 1
+    gui:
+      slot: 30
+      icon: "SPECTRAL_ARROW"
+    levels:
+      1:
+        effect:
+          weaponScaling: 1.2
+          agilityScaling: 0.8
+          range: 10
+          multiHitBonus: 0.15
+      2:
+        effect:
+          weaponScaling: 1.5
+          agilityScaling: 1.0
+          range: 12
+          multiHitBonus: 0.20
+      3:
+        effect:
+          weaponScaling: 1.8
+          agilityScaling: 1.2
+          range: 15
+          multiHitBonus: 0.25
+
+  # 速度極限 (2,4) → slot 22 — 被動：攻擊速度大幅提升
+  speed_limit:
+    name: "速度極限"
+    description: "攻擊速度大幅提升"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "cross_blade"
+          level: 1
+        - skill: "combo_mastery"
+          level: 2
+    gui:
+      slot: 22
+      icon: "SUGAR"
+    levels:
+      1:
+        effect:
+          attackSpeedBonus: 0.15
+      2:
+        effect:
+          attackSpeedBonus: 0.25
+      3:
+        effect:
+          attackSpeedBonus: 0.40
+
+  # 幻影連斬 (2,3) → slot 21 — 終極：快速斬擊10次
+  phantom_flurry:
+    name: "幻影連斬"
+    description: "化為幻影快速斬擊周圍敵人，可邊移動邊施放"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鐮刀"
+    cooldown: 20
+    manaCost: 55
+    trigger:
+      type: "LEFT_CLICK_SNEAK"
+    prerequisite:
+      skill: "speed_limit"
+      level: 2
+    gui:
+      slot: 21
+      icon: "NETHERITE_SWORD"
+    levels:
+      1:
+        effect:
+          weaponScaling: 0.6
+          hitCount: 10
+          radius: 5
+          duration: 3
+      2:
+        effect:
+          weaponScaling: 0.7
+          hitCount: 12
+          radius: 6
+          duration: 3
+      3:
+        effect:
+          weaponScaling: 0.8
+          hitCount: 15
+          radius: 7
+          duration: 4
+
+  # ═══════════════════════════════════════════
+  #  🟪 收割流（鐮刀 / 範圍 / 吸血）— 左側
+  # ═══════════════════════════════════════════
+
+  # 收割本能 (4,1) → slot 37 — 被動：擊殺回復生命
+  reaper_instinct:
+    name: "收割本能"
+    description: "擊殺敵人時回復生命值"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "swift_feet"
+      level: 1
+    gui:
+      slot: 37
+      icon: "GHAST_TEAR"
+    levels:
+      1:
+        effect:
+          killHealPercent: 0.05
+      2:
+        effect:
+          killHealPercent: 0.08
+      3:
+        effect:
+          killHealPercent: 0.12
+
+  # 弧形斬 (4,0) → slot 36 — 主動：小範圍攻擊
+  arc_slash:
+    name: "弧形斬"
+    description: "揮出弧形斬擊，攻擊前方扇形範圍的敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鐮刀"
+    cooldown: 3
+    manaCost: 10
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "reaper_instinct"
+      level: 1
+    gui:
+      slot: 36
+      icon: "IRON_HOE"
+    levels:
+      1:
+        effect:
+          weaponScaling: 1.0
+          agilityScaling: 0.5
+          radius: 3
+          angle: 120
+      2:
+        effect:
+          weaponScaling: 1.2
+          agilityScaling: 0.7
+          radius: 4
+          angle: 140
+      3:
+        effect:
+          weaponScaling: 1.4
+          agilityScaling: 0.9
+          radius: 5
+          angle: 160
+
+  # 次月影 (3,1) → slot 28 — 主動：月牙形範圍斬
+  crescent_shadow:
+    name: "次月影"
+    description: "揮出月牙形的巨大斬擊，以自身為中心造成範圍傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鐮刀"
+    cooldown: 8
+    manaCost: 35
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "arc_slash"
+      level: 1
+    gui:
+      slot: 28
+      icon: "NETHERITE_HOE"
+    levels:
+      1:
+        effect:
+          weaponScaling: 1.3
+          agilityScaling: 1.0
+          radius: 5
+      2:
+        effect:
+          weaponScaling: 1.6
+          agilityScaling: 1.3
+          radius: 6
+      3:
+        effect:
+          weaponScaling: 2.0
+          agilityScaling: 1.6
+          radius: 7
+
+  # 鮮血收割 (3,0) → slot 27 — 被動：對低血敵人傷害提升
+  blood_harvest:
+    name: "鮮血收割"
+    description: "對低於30%血量的敵人造成額外傷害"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "crescent_shadow"
+          level: 1
+        - skill: "arc_slash"
+          level: 2
+    gui:
+      slot: 27
+      icon: "REDSTONE"
+    levels:
+      1:
+        effect:
+          executeDamageBonus: 0.25
+          executeThreshold: 0.30
+      2:
+        effect:
+          executeDamageBonus: 0.40
+          executeThreshold: 0.35
+      3:
+        effect:
+          executeDamageBonus: 0.60
+          executeThreshold: 0.40
+
+  # 靈魂收割 (2,1) → slot 19 — 被動：擊殺提升攻速
+  soul_reap:
+    name: "靈魂收割"
+    description: "擊殺敵人後暫時提升攻擊速度"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "blood_harvest"
+      level: 1
+    gui:
+      slot: 19
+      icon: "SOUL_LANTERN"
+    levels:
+      1:
+        effect:
+          killAttackSpeedBoost: 1
+          killAttackSpeedDuration: 5
+      2:
+        effect:
+          killAttackSpeedBoost: 2
+          killAttackSpeedDuration: 6
+      3:
+        effect:
+          killAttackSpeedBoost: 3
+          killAttackSpeedDuration: 8
+
+  # 死神降臨 (2,0) → slot 18 — 終極：大範圍旋轉吸血
+  death_god:
+    name: "死神降臨"
+    description: "化身死神，大範圍旋轉攻擊並從敵人身上吸取生命"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "鐮刀"
+    cooldown: 30
+    manaCost: 70
+    trigger:
+      type: "LEFT_CLICK_SNEAK"
+    prerequisite:
+      skill: "soul_reap"
+      level: 2
+    gui:
+      slot: 18
+      icon: "NETHERITE_HOE"
+    levels:
+      1:
+        effect:
+          weaponScaling: 0.8
+          agilityScaling: 0.6
+          spiritScaling: 0.3
+          radius: 6
+          duration: 5
+          lifestealPercent: 0.15
+      2:
+        effect:
+          weaponScaling: 1.0
+          agilityScaling: 0.8
+          spiritScaling: 0.4
+          radius: 7
+          duration: 6
+          lifestealPercent: 0.20
+      3:
+        effect:
+          weaponScaling: 1.2
+          agilityScaling: 1.0
+          spiritScaling: 0.5
+          radius: 8
+          duration: 8
+          lifestealPercent: 0.25

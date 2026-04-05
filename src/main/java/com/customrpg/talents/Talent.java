@@ -83,6 +83,15 @@ public class Talent {
         return levelData.get(level);
     }
 
+    /**
+     * 便捷方法：從指定等級的效果中取得 double 值
+     */
+    public double getEffectDouble(int level, String key, double defaultValue) {
+        TalentLevelData data = levelData.get(level);
+        if (data == null) return defaultValue;
+        return data.effects.getOrDefault(key, defaultValue);
+    }
+
     public boolean canLearn(Map<String, Integer> playerTalents, int targetLevel) {
         if (targetLevel > maxLevel) return false;
 

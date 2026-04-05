@@ -1,408 +1,2767 @@
 # ============================================
 # MMORPG 裝甲系統配置文件
-# 包含三種裝甲類型的完整配置
+# 五大流派：戰士、法師、刺客、補師、坦克
+# 四個等級區間：Lv1-20、Lv21-50、Lv51-80、Lv81-100
+# 每套：頭盔、胸甲、護腿、靴子
 # ============================================
 
 armors:
-  # ==================== 輕甲系列（刺客專用）====================
-  # 特點：高敏捷、高暴擊、低防禦
 
-  leather_cap:
-    name: "皮革帽"
-    type: LIGHT
-    slot: HELMET
-    material: LEATHER_HELMET
-    required_level: 1
-    physical_defense: 5
-    magical_defense: 2
-    attributes:
-      agility: 10
-      vitality: 5
-      critical_chance: 2.0
-    rarity: COMMON
-    max_durability: 100
-    description: "輕便的皮革帽，適合快速移動"
+  # ═══════════════════════════════════════════
+  #  Lv.1~20 — 新手期
+  # ═══════════════════════════════════════════
 
-  leather_tunic:
-    name: "皮革外套"
-    type: LIGHT
-    slot: CHESTPLATE
-    material: LEATHER_CHESTPLATE
-    required_level: 1
-    physical_defense: 8
-    magical_defense: 3
-    attributes:
-      agility: 15
-      vitality: 8
-      critical_chance: 3.0
-      evasion: 2.0
-    rarity: COMMON
-    max_durability: 120
-    description: "靈活的皮革外套"
+  # ─── 🟥 戰士 (STRENGTH + VITALITY + DEFENSE) ───
 
-  leather_pants:
-    name: "皮革褲子"
-    type: LIGHT
-    slot: LEGGINGS
-    material: LEATHER_LEGGINGS
-    required_level: 1
-    physical_defense: 6
-    magical_defense: 2
-    attributes:
-      agility: 12
-      vitality: 6
-      critical_chance: 2.5
-    rarity: COMMON
-    max_durability: 110
-    description: "輕巧的皮革褲子"
-
-  leather_boots:
-    name: "皮革靴子"
-    type: LIGHT
-    slot: BOOTS
-    material: LEATHER_BOOTS
-    required_level: 1
-    physical_defense: 4
-    magical_defense: 2
-    attributes:
-      agility: 8
-      vitality: 4
-      evasion: 1.5
-    rarity: COMMON
-    max_durability: 90
-    description: "輕便的皮革靴子"
-
-  shadow_hood:
-    name: "暗影兜帽"
-    type: LIGHT
-    slot: HELMET
-    material: LEATHER_HELMET
-    required_level: 25
-    physical_defense: 12
-    magical_defense: 6
-    attributes:
-      agility: 25
-      vitality: 10
-      critical_chance: 5.0
-      critical_damage: 10.0
-      evasion: 3.0
-    rarity: RARE
-    max_durability: 200
-    description: "隱匿於暗影中的兜帽"
-
-  shadow_vest:
-    name: "暗影背心"
-    type: LIGHT
-    slot: CHESTPLATE
-    material: LEATHER_CHESTPLATE
-    required_level: 25
-    physical_defense: 18
-    magical_defense: 8
-    attributes:
-      agility: 35
-      vitality: 15
-      critical_chance: 6.0
-      critical_damage: 15.0
-      evasion: 5.0
-    rarity: RARE
-    max_durability: 250
-    description: "暗影能量環繞的背心"
-
-  assassin_master_hood:
-    name: "大師刺客兜帽"
-    type: LIGHT
-    slot: HELMET
-    material: LEATHER_HELMET
-    required_level: 40
-    physical_defense: 20
-    magical_defense: 10
-    attributes:
-      agility: 40
-      vitality: 20
-      critical_chance: 8.0
-      critical_damage: 20.0
-      evasion: 5.0
-      attack_damage: 10
-    rarity: EPIC
-    max_durability: 300
-    description: "傳奇刺客大師的專屬兜帽"
-
-
-  # ==================== 布甲系列（法師專用）====================
-  # 特點：高智慧、高魔力、低防禦
-
-  cloth_hat:
-    name: "布帽"
-    type: CLOTH
+  novice_warrior_helmet:
+    name: "新手戰盔"
+    type: MEDIUM
     slot: HELMET
     material: CHAINMAIL_HELMET
     required_level: 1
     physical_defense: 3
-    magical_defense: 8
+    magical_defense: 1
     attributes:
-      intelligence: 12
-      vitality: 5
-      max_mana: 20
+      defense: 3
+      strength: 2
     rarity: COMMON
-    max_durability: 90
-    description: "簡單的布製帽子"
+    max_durability: 120
+    description: "初出茅廬的戰士頭盔"
 
-  cloth_robe:
-    name: "布袍"
-    type: CLOTH
+  novice_warrior_chestplate:
+    name: "戰士胸甲"
+    type: MEDIUM
     slot: CHESTPLATE
     material: CHAINMAIL_CHESTPLATE
     required_level: 1
     physical_defense: 5
-    magical_defense: 12
+    magical_defense: 2
     attributes:
-      intelligence: 18
-      vitality: 8
-      max_mana: 30
-      magic_damage: 5
+      defense: 5
+      vitality: 5
     rarity: COMMON
-    max_durability: 110
-    description: "舒適的布製長袍"
+    max_durability: 150
+    description: "保護要害的基礎戰甲"
 
-  cloth_pants:
-    name: "布褲"
-    type: CLOTH
+  novice_warrior_leggings:
+    name: "戰士護腿"
+    type: MEDIUM
     slot: LEGGINGS
     material: CHAINMAIL_LEGGINGS
     required_level: 1
     physical_defense: 4
-    magical_defense: 10
+    magical_defense: 1
     attributes:
-      intelligence: 15
-      vitality: 6
-      max_mana: 25
+      vitality: 8
     rarity: COMMON
-    max_durability: 100
-    description: "輕便的布褲"
+    max_durability: 130
+    description: "堅固耐用的戰士護腿"
 
-  cloth_shoes:
-    name: "布鞋"
-    type: CLOTH
+  novice_warrior_boots:
+    name: "戰士靴"
+    type: MEDIUM
     slot: BOOTS
     material: CHAINMAIL_BOOTS
     required_level: 1
     physical_defense: 2
-    magical_defense: 6
+    magical_defense: 1
     attributes:
-      intelligence: 10
-      vitality: 4
-      max_mana: 15
+      strength: 2
+    rarity: COMMON
+    max_durability: 100
+    description: "輕便堅固的戰士靴"
+
+  # ─── 🟦 法師 (Magic + 少量 Spirit) ───
+
+  novice_mage_helmet:
+    name: "初學法帽"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 1
+    physical_defense: 1
+    magical_defense: 4
+    attributes:
+      intelligence: 5
+      max_mana: 10
     rarity: COMMON
     max_durability: 80
-    description: "柔軟的布鞋"
+    description: "魔法學院的入門法帽"
 
-  silk_robe:
-    name: "絲質法袍"
-    type: CLOTH
+  novice_mage_chestplate:
+    name: "法袍"
+    type: LIGHT
     slot: CHESTPLATE
-    material: CHAINMAIL_CHESTPLATE
-    required_level: 25
-    physical_defense: 8
-    magical_defense: 20
+    material: LEATHER_CHESTPLATE
+    required_level: 1
+    physical_defense: 2
+    magical_defense: 6
     attributes:
-      intelligence: 40
-      vitality: 15
-      max_mana: 50
-      magic_damage: 25
-      mana_regen: 2.0
-    rarity: EPIC
-    max_durability: 200
-    description: "魔法能量環繞的法袍"
+      intelligence: 8
+      max_mana: 15
+    rarity: COMMON
+    max_durability: 90
+    description: "附有簡單魔法紋路的法袍"
 
-  archmage_crown:
-    name: "大法師之冠"
-    type: CLOTH
+  novice_mage_leggings:
+    name: "法褲"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 1
+    physical_defense: 1
+    magical_defense: 3
+    attributes:
+      vitality: 5
+      max_mana: 8
+    rarity: COMMON
+    max_durability: 85
+    description: "輕巧的法師護腿"
+
+  novice_mage_boots:
+    name: "法靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 1
+    physical_defense: 1
+    magical_defense: 3
+    attributes:
+      intelligence: 3
+      max_mana: 8
+    rarity: COMMON
+    max_durability: 70
+    description: "散發微弱魔力的靴子"
+
+  # ─── 🟩 刺客 (AGILITY + 少量 STRENGTH) ───
+
+  novice_assassin_helmet:
+    name: "影行頭巾"
+    type: LIGHT
     slot: HELMET
-    material: CHAINMAIL_HELMET
-    required_level: 40
-    physical_defense: 10
-    magical_defense: 30
+    material: LEATHER_HELMET
+    required_level: 1
+    physical_defense: 2
+    magical_defense: 2
     attributes:
-      intelligence: 50
-      vitality: 20
-      max_mana: 80
-      magic_damage: 35
-      mana_regen: 3.0
-      critical_chance: 5.0
-    rarity: LEGENDARY
-    max_durability: 350
-    description: "只有大法師才能駕馭的王冠"
+      agility: 5
+    rarity: COMMON
+    max_durability: 80
+    description: "隱匿身形的暗色頭巾"
 
-  mystic_vestments:
-    name: "神秘長袍"
-    type: CLOTH
+  novice_assassin_chestplate:
+    name: "輕裝上衣"
+    type: LIGHT
     slot: CHESTPLATE
-    material: CHAINMAIL_CHESTPLATE
-    required_level: 35
-    physical_defense: 12
-    magical_defense: 25
+    material: LEATHER_CHESTPLATE
+    required_level: 1
+    physical_defense: 3
+    magical_defense: 2
     attributes:
-      intelligence: 45
-      vitality: 18
-      max_mana: 70
-      magic_damage: 30
-      mana_regen: 2.5
-    rarity: EPIC
-    max_durability: 280
-    description: "充滿神秘力量的長袍"
+      agility: 6
+    rarity: COMMON
+    max_durability: 90
+    description: "不妨礙行動的輕便上衣"
 
+  novice_assassin_leggings:
+    name: "輕裝褲"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 1
+    physical_defense: 2
+    magical_defense: 1
+    attributes:
+      agility: 5
+    rarity: COMMON
+    max_durability: 85
+    description: "靈活輕巧的護腿"
 
-  # ==================== 重甲系列（鬥士專用）====================
-  # 特點：高體力、高防禦、低敏捷
+  novice_assassin_boots:
+    name: "影行靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 1
+    physical_defense: 1
+    magical_defense: 1
+    attributes:
+      agility: 6
+    rarity: COMMON
+    max_durability: 70
+    description: "踏出無聲的暗影之靴"
 
-  iron_helmet:
-    name: "鐵頭盔"
+  # ─── 🟨 補師 (Spirit + VITALITY) ───
+
+  novice_healer_helmet:
+    name: "聖徒頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 1
+    physical_defense: 1
+    magical_defense: 4
+    attributes:
+      spirit: 5
+      max_mana: 8
+    rarity: COMMON
+    max_durability: 80
+    description: "散發神聖光輝的頭冠"
+
+  novice_healer_chestplate:
+    name: "治癒長袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 1
+    physical_defense: 2
+    magical_defense: 5
+    attributes:
+      spirit: 6
+      vitality: 5
+      max_mana: 12
+    rarity: COMMON
+    max_durability: 90
+    description: "蘊含治癒之力的長袍"
+
+  novice_healer_leggings:
+    name: "治療護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 1
+    physical_defense: 1
+    magical_defense: 3
+    attributes:
+      spirit: 6
+      max_mana: 6
+    rarity: COMMON
+    max_durability: 85
+    description: "護腿上刻有治癒符文"
+
+  novice_healer_boots:
+    name: "聖光靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 1
+    physical_defense: 1
+    magical_defense: 3
+    attributes:
+      spirit: 5
+      max_mana: 6
+    rarity: COMMON
+    max_durability: 70
+    description: "踏著聖光前行的靴子"
+
+  # ─── 🟫 坦克 (DEFENSE + VITALITY) ───
+
+  novice_tank_helmet:
+    name: "重型頭盔"
     type: HEAVY
     slot: HELMET
     material: IRON_HELMET
     required_level: 1
-    physical_defense: 10
-    magical_defense: 4
+    physical_defense: 8
+    magical_defense: 2
     attributes:
-      vitality: 12
-      defense: 8
-      max_health: 20
+      defense: 10
     rarity: COMMON
-    max_durability: 150
-    description: "堅固的鐵製頭盔"
+    max_durability: 180
+    description: "厚重的鐵製頭盔"
 
-  iron_chestplate:
-    name: "鐵胸甲"
+  novice_tank_chestplate:
+    name: "重甲胸甲"
     type: HEAVY
     slot: CHESTPLATE
     material: IRON_CHESTPLATE
     required_level: 1
-    physical_defense: 15
-    magical_defense: 6
+    physical_defense: 12
+    magical_defense: 3
     attributes:
-      vitality: 18
-      defense: 12
-      max_health: 30
+      defense: 15
+      vitality: 10
     rarity: COMMON
-    max_durability: 180
-    description: "厚重的鐵製胸甲"
+    max_durability: 200
+    description: "笨重但防禦極佳的鐵甲"
 
-  iron_leggings:
-    name: "鐵護腿"
+  novice_tank_leggings:
+    name: "重甲護腿"
     type: HEAVY
     slot: LEGGINGS
     material: IRON_LEGGINGS
     required_level: 1
-    physical_defense: 12
-    magical_defense: 5
+    physical_defense: 10
+    magical_defense: 2
     attributes:
       vitality: 15
-      defense: 10
-      max_health: 25
     rarity: COMMON
-    max_durability: 170
-    description: "保護腿部的鐵甲"
+    max_durability: 180
+    description: "厚實的鐵護腿"
 
-  iron_boots:
-    name: "鐵靴子"
+  novice_tank_boots:
+    name: "鋼鐵靴"
     type: HEAVY
     slot: BOOTS
     material: IRON_BOOTS
     required_level: 1
-    physical_defense: 8
-    magical_defense: 3
+    physical_defense: 6
+    magical_defense: 2
     attributes:
-      vitality: 10
-      defense: 6
-      max_health: 15
+      defense: 10
     rarity: COMMON
-    max_durability: 140
-    description: "沉重的鐵製靴子"
+    max_durability: 150
+    description: "沉重但穩固的鋼靴"
 
-  iron_plate_chestplate:
-    name: "鐵板胸甲"
-    type: HEAVY
-    slot: CHESTPLATE
-    material: IRON_CHESTPLATE
-    required_level: 33
-    physical_defense: 25
-    magical_defense: 10
-    attributes:
-      vitality: 30
-      defense: 20
-      max_health: 60
-      strength: 15
-    rarity: RARE
-    max_durability: 300
-    description: "堅固的鐵製板甲"
+  # ═══════════════════════════════════════════
+  #  Lv.21~50 — 成長期
+  # ═══════════════════════════════════════════
+
+  # ─── 🟥 戰士 ───
 
   knight_helmet:
     name: "騎士頭盔"
-    type: HEAVY
+    type: MEDIUM
     slot: HELMET
-    material: DIAMOND_HELMET
-    required_level: 30
+    material: IRON_HELMET
+    required_level: 21
+    physical_defense: 12
+    magical_defense: 5
+    attributes:
+      defense: 15
+      strength: 10
+    rarity: UNCOMMON
+    max_durability: 200
+    description: "騎士團標配的鐵製頭盔"
+
+  knight_chestplate:
+    name: "騎士胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: IRON_CHESTPLATE
+    required_level: 21
     physical_defense: 20
     magical_defense: 8
     attributes:
-      vitality: 25
-      defense: 18
-      max_health: 50
-      strength: 12
-    rarity: RARE
-    max_durability: 280
-    description: "騎士專用的精緻頭盔"
+      defense: 30
+      vitality: 40
+    rarity: UNCOMMON
+    max_durability: 250
+    description: "堅固的騎士鐵甲"
 
-  knight_armor:
-    name: "騎士鎧甲"
+  knight_leggings:
+    name: "騎士護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: IRON_LEGGINGS
+    required_level: 21
+    physical_defense: 15
+    magical_defense: 5
+    attributes:
+      vitality: 50
+    rarity: UNCOMMON
+    max_durability: 220
+    description: "保護下肢的騎士護腿"
+
+  knight_boots:
+    name: "騎士靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: IRON_BOOTS
+    required_level: 21
+    physical_defense: 8
+    magical_defense: 3
+    attributes:
+      strength: 10
+    rarity: UNCOMMON
+    max_durability: 180
+    description: "堅韌的騎士鐵靴"
+
+  # ─── 🟦 法師 ───
+
+  archmage_helmet:
+    name: "魔導頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 21
+    physical_defense: 3
+    magical_defense: 12
+    attributes:
+      intelligence: 20
+      max_mana: 30
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "魔導師的魔力頭冠"
+
+  archmage_chestplate:
+    name: "元素法袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 21
+    physical_defense: 5
+    magical_defense: 18
+    attributes:
+      intelligence: 35
+      max_mana: 50
+    rarity: UNCOMMON
+    max_durability: 140
+    description: "流動著元素能量的法袍"
+
+  archmage_leggings:
+    name: "法術護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 21
+    physical_defense: 3
+    magical_defense: 10
+    attributes:
+      vitality: 20
+      max_mana: 25
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "附魔過的法師護腿"
+
+  archmage_boots:
+    name: "秘法靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 21
+    physical_defense: 2
+    magical_defense: 8
+    attributes:
+      intelligence: 25
+      max_mana: 25
+    rarity: UNCOMMON
+    max_durability: 100
+    description: "秘法能量纏繞的靴子"
+
+  # ─── 🟩 刺客 ───
+
+  shadow_helmet:
+    name: "暗影頭罩"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 21
+    physical_defense: 5
+    magical_defense: 5
+    attributes:
+      agility: 20
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "融入黑暗的暗影頭罩"
+
+  shadow_chestplate:
+    name: "暗影皮甲"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 21
+    physical_defense: 8
+    magical_defense: 6
+    attributes:
+      agility: 30
+    rarity: UNCOMMON
+    max_durability: 140
+    description: "不發出聲響的特製皮甲"
+
+  shadow_leggings:
+    name: "暗影護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 21
+    physical_defense: 5
+    magical_defense: 4
+    attributes:
+      agility: 25
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "靈活輕巧的暗影護腿"
+
+  shadow_boots:
+    name: "疾風靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 21
+    physical_defense: 3
+    magical_defense: 3
+    attributes:
+      agility: 30
+    rarity: UNCOMMON
+    max_durability: 100
+    description: "如風般迅捷的疾風靴"
+
+  # ─── 🟨 補師 ───
+
+  holylight_helmet:
+    name: "聖光頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: GOLDEN_HELMET
+    required_level: 21
+    physical_defense: 3
+    magical_defense: 12
+    attributes:
+      spirit: 20
+      max_mana: 25
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "閃耀聖光的頭冠"
+
+  holylight_chestplate:
+    name: "神官長袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: GOLDEN_CHESTPLATE
+    required_level: 21
+    physical_defense: 5
+    magical_defense: 16
+    attributes:
+      spirit: 30
+      vitality: 40
+      max_mana: 40
+    rarity: UNCOMMON
+    max_durability: 140
+    description: "神官穿著的聖潔長袍"
+
+  holylight_leggings:
+    name: "祝福護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: GOLDEN_LEGGINGS
+    required_level: 21
+    physical_defense: 3
+    magical_defense: 10
+    attributes:
+      spirit: 25
+      max_mana: 20
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "被祝福過的護腿"
+
+  holylight_boots:
+    name: "治癒之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: GOLDEN_BOOTS
+    required_level: 21
+    physical_defense: 2
+    magical_defense: 8
+    attributes:
+      spirit: 25
+      max_mana: 20
+    rarity: UNCOMMON
+    max_durability: 100
+    description: "治癒能量流淌的靴子"
+
+  # ─── 🟫 坦克 ───
+
+  fortress_helmet:
+    name: "堡壘頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: DIAMOND_HELMET
+    required_level: 21
+    physical_defense: 25
+    magical_defense: 8
+    attributes:
+      defense: 40
+    rarity: UNCOMMON
+    max_durability: 300
+    description: "堡壘守衛的厚重頭盔"
+
+  fortress_chestplate:
+    name: "堡壘胸甲"
     type: HEAVY
     slot: CHESTPLATE
     material: DIAMOND_CHESTPLATE
-    required_level: 30
-    physical_defense: 30
+    required_level: 21
+    physical_defense: 40
     magical_defense: 12
     attributes:
-      vitality: 35
-      defense: 25
-      max_health: 70
-      strength: 18
-    rarity: RARE
-    max_durability: 350
-    description: "騎士的榮耀鎧甲"
+      defense: 80
+      vitality: 100
+    rarity: UNCOMMON
+    max_durability: 400
+    description: "銅牆鐵壁般的胸甲"
 
-  champion_helm:
-    name: "冠軍戰盔"
+  fortress_leggings:
+    name: "堡壘護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: DIAMOND_LEGGINGS
+    required_level: 21
+    physical_defense: 30
+    magical_defense: 10
+    attributes:
+      vitality: 120
+    rarity: UNCOMMON
+    max_durability: 350
+    description: "堅不可摧的護腿"
+
+  fortress_boots:
+    name: "堡壘靴"
+    type: HEAVY
+    slot: BOOTS
+    material: DIAMOND_BOOTS
+    required_level: 21
+    physical_defense: 18
+    magical_defense: 6
+    attributes:
+      defense: 50
+    rarity: UNCOMMON
+    max_durability: 280
+    description: "穩如泰山的鋼靴"
+
+  # ═══════════════════════════════════════════
+  #  Lv.51~80 — 高階期
+  # ═══════════════════════════════════════════
+
+  # ─── 🟥 戰士 ───
+
+  dragonwar_helmet:
+    name: "龍戰頭盔"
+    type: MEDIUM
+    slot: HELMET
+    material: DIAMOND_HELMET
+    required_level: 51
+    physical_defense: 28
+    magical_defense: 12
+    attributes:
+      defense: 40
+      strength: 30
+    rarity: EPIC
+    max_durability: 350
+    description: "以龍鱗強化的戰鬥頭盔"
+
+  dragonwar_chestplate:
+    name: "龍戰胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: DIAMOND_CHESTPLATE
+    required_level: 51
+    physical_defense: 45
+    magical_defense: 18
+    attributes:
+      defense: 80
+      vitality: 120
+    rarity: EPIC
+    max_durability: 450
+    description: "龍鱗鍛造的傳奇戰甲"
+
+  dragonwar_leggings:
+    name: "龍戰護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: DIAMOND_LEGGINGS
+    required_level: 51
+    physical_defense: 35
+    magical_defense: 14
+    attributes:
+      vitality: 150
+    rarity: EPIC
+    max_durability: 400
+    description: "龍鱗護腿，堅固無比"
+
+  dragonwar_boots:
+    name: "龍戰靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: DIAMOND_BOOTS
+    required_level: 51
+    physical_defense: 20
+    magical_defense: 8
+    attributes:
+      strength: 25
+    rarity: EPIC
+    max_durability: 300
+    description: "龍之力量灌注的戰靴"
+
+  # ─── 🟦 法師 ───
+
+  void_mage_helmet:
+    name: "虛空法冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 51
+    physical_defense: 5
+    magical_defense: 25
+    attributes:
+      intelligence: 60
+      max_mana: 80
+    rarity: EPIC
+    max_durability: 180
+    description: "連接虛空能量的法冠"
+
+  void_mage_chestplate:
+    name: "虛空長袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 51
+    physical_defense: 8
+    magical_defense: 35
+    attributes:
+      intelligence: 100
+      max_mana: 120
+    rarity: EPIC
+    max_durability: 220
+    description: "虛空力量環繞的長袍"
+
+  void_mage_leggings:
+    name: "魔能護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 51
+    physical_defense: 5
+    magical_defense: 20
+    attributes:
+      vitality: 50
+      max_mana: 60
+    rarity: EPIC
+    max_durability: 180
+    description: "充滿魔能的護腿"
+
+  void_mage_boots:
+    name: "空靈之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 51
+    physical_defense: 3
+    magical_defense: 18
+    attributes:
+      intelligence: 70
+      max_mana: 60
+    rarity: EPIC
+    max_durability: 150
+    description: "彷彿漂浮的空靈之靴"
+
+  # ─── 🟩 刺客 ───
+
+  phantom_helmet:
+    name: "幽影頭罩"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 51
+    physical_defense: 10
+    magical_defense: 10
+    attributes:
+      agility: 50
+    rarity: EPIC
+    max_durability: 180
+    description: "如幽靈般的暗影頭罩"
+
+  phantom_chestplate:
+    name: "幽影皮甲"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 51
+    physical_defense: 15
+    magical_defense: 12
+    attributes:
+      agility: 80
+    rarity: EPIC
+    max_durability: 220
+    description: "穿上後如同幽影一般"
+
+  phantom_leggings:
+    name: "幽影護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 51
+    physical_defense: 10
+    magical_defense: 8
+    attributes:
+      agility: 70
+    rarity: EPIC
+    max_durability: 180
+    description: "極度輕盈的幽影護腿"
+
+  phantom_boots:
+    name: "風行靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 51
+    physical_defense: 6
+    magical_defense: 6
+    attributes:
+      agility: 80
+    rarity: EPIC
+    max_durability: 150
+    description: "御風而行的高速靴子"
+
+  # ─── 🟨 補師 ───
+
+  divine_healer_helmet:
+    name: "神恩頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: GOLDEN_HELMET
+    required_level: 51
+    physical_defense: 5
+    magical_defense: 25
+    attributes:
+      spirit: 60
+      max_mana: 70
+    rarity: EPIC
+    max_durability: 180
+    description: "神的恩賜所化的頭冠"
+
+  divine_healer_chestplate:
+    name: "聖域長袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: GOLDEN_CHESTPLATE
+    required_level: 51
+    physical_defense: 8
+    magical_defense: 30
+    attributes:
+      spirit: 90
+      vitality: 120
+      max_mana: 100
+    rarity: EPIC
+    max_durability: 220
+    description: "聖域結界化為的長袍"
+
+  divine_healer_leggings:
+    name: "靈魂護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: GOLDEN_LEGGINGS
+    required_level: 51
+    physical_defense: 5
+    magical_defense: 20
+    attributes:
+      spirit: 70
+      max_mana: 50
+    rarity: EPIC
+    max_durability: 180
+    description: "靈魂之力護體的護腿"
+
+  divine_healer_boots:
+    name: "神佑之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: GOLDEN_BOOTS
+    required_level: 51
+    physical_defense: 3
+    magical_defense: 16
+    attributes:
+      spirit: 70
+      max_mana: 50
+    rarity: EPIC
+    max_durability: 150
+    description: "受到神佑的聖潔之靴"
+
+  # ─── 🟫 坦克 ───
+
+  indestructible_helmet:
+    name: "不滅頭盔"
     type: HEAVY
     slot: HELMET
     material: NETHERITE_HELMET
-    required_level: 45
-    physical_defense: 35
-    magical_defense: 15
+    required_level: 51
+    physical_defense: 50
+    magical_defense: 18
     attributes:
-      vitality: 45
-      defense: 30
-      max_health: 100
-      strength: 25
-      attack_damage: 15
-    rarity: LEGENDARY
+      defense: 100
+    rarity: EPIC
     max_durability: 500
-    description: "冠軍戰士的象徵"
+    description: "永不毀壞的不滅頭盔"
 
-  champion_plate:
-    name: "冠軍板甲"
+  indestructible_chestplate:
+    name: "不滅胸甲"
     type: HEAVY
     slot: CHESTPLATE
     material: NETHERITE_CHESTPLATE
-    required_level: 45
-    physical_defense: 50
+    required_level: 51
+    physical_defense: 80
+    magical_defense: 25
+    attributes:
+      defense: 180
+      vitality: 250
+    rarity: EPIC
+    max_durability: 650
+    description: "堅不可摧的不滅胸甲"
+
+  indestructible_leggings:
+    name: "不滅護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: NETHERITE_LEGGINGS
+    required_level: 51
+    physical_defense: 60
     magical_defense: 20
     attributes:
-      vitality: 60
-      defense: 40
-      max_health: 150
-      strength: 35
-      attack_damage: 20
+      vitality: 300
+    rarity: EPIC
+    max_durability: 550
+    description: "無法損壞的護腿"
+
+  indestructible_boots:
+    name: "巨盾靴"
+    type: HEAVY
+    slot: BOOTS
+    material: NETHERITE_BOOTS
+    required_level: 51
+    physical_defense: 35
+    magical_defense: 12
+    attributes:
+      defense: 120
+    rarity: EPIC
+    max_durability: 450
+    description: "如同盾牌般的鋼靴"
+
+  # ═══════════════════════════════════════════
+  #  Lv.81~100 — 終局裝備
+  # ═══════════════════════════════════════════
+
+  # ─── 🟥 戰士（輸出型坦） ───
+
+  genesis_warrior_helmet:
+    name: "§6創世戰盔"
+    type: MEDIUM
+    slot: HELMET
+    material: NETHERITE_HELMET
+    required_level: 81
+    physical_defense: 50
+    magical_defense: 22
+    attributes:
+      defense: 80
+      strength: 60
     rarity: LEGENDARY
     max_durability: 600
-    description: "傳說級的冠軍板甲"
+    description: "創世之力凝聚的戰盔"
+
+  genesis_warrior_chestplate:
+    name: "§6創世胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: NETHERITE_CHESTPLATE
+    required_level: 81
+    physical_defense: 80
+    magical_defense: 35
+    attributes:
+      defense: 150
+      vitality: 250
+    rarity: LEGENDARY
+    max_durability: 800
+    description: "創世神力鍛造的至高戰甲"
+
+  genesis_warrior_leggings:
+    name: "§6創世護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: NETHERITE_LEGGINGS
+    required_level: 81
+    physical_defense: 60
+    magical_defense: 25
+    attributes:
+      vitality: 300
+    rarity: LEGENDARY
+    max_durability: 700
+    description: "創世紀元遺留的護腿"
+
+  genesis_warrior_boots:
+    name: "§6創世戰靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: NETHERITE_BOOTS
+    required_level: 81
+    physical_defense: 35
+    magical_defense: 15
+    attributes:
+      strength: 50
+    rarity: LEGENDARY
+    max_durability: 550
+    description: "踏碎大地的創世戰靴"
+
+  # ─── 🟦 法師（爆發） ───
+
+  origin_mage_helmet:
+    name: "§6起源法冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 81
+    physical_defense: 8
+    magical_defense: 45
+    attributes:
+      intelligence: 120
+      max_mana: 200
+    rarity: LEGENDARY
+    max_durability: 300
+    description: "追溯魔法起源的法冠"
+
+  origin_mage_chestplate:
+    name: "§6起源法袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 81
+    physical_defense: 12
+    magical_defense: 60
+    attributes:
+      intelligence: 200
+      max_mana: 350
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "萬物起源之力編織的法袍"
+
+  origin_mage_leggings:
+    name: "§6星界護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 81
+    physical_defense: 8
+    magical_defense: 35
+    attributes:
+      vitality: 100
+      max_mana: 150
+    rarity: LEGENDARY
+    max_durability: 300
+    description: "星界能量凝聚的護腿"
+
+  origin_mage_boots:
+    name: "§6星辰法靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 81
+    physical_defense: 5
+    magical_defense: 30
+    attributes:
+      intelligence: 150
+      max_mana: 150
+    rarity: LEGENDARY
+    max_durability: 250
+    description: "踏著星辰之力的法靴"
+
+  # ─── 🟩 刺客（極致爆擊） ───
+
+  finality_assassin_helmet:
+    name: "§6終焉頭罩"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 81
+    physical_defense: 15
+    magical_defense: 15
+    attributes:
+      agility: 100
+    rarity: LEGENDARY
+    max_durability: 300
+    description: "終焉之刺的暗影頭罩"
+
+  finality_assassin_chestplate:
+    name: "§6終焉皮甲"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 81
+    physical_defense: 22
+    magical_defense: 20
+    attributes:
+      agility: 150
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "時間盡頭鍛造的暗殺皮甲"
+
+  finality_assassin_leggings:
+    name: "§6終焉護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 81
+    physical_defense: 15
+    magical_defense: 14
+    attributes:
+      agility: 120
+    rarity: LEGENDARY
+    max_durability: 300
+    description: "終焉之力灌注的護腿"
+
+  finality_assassin_boots:
+    name: "§6時空之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 81
+    physical_defense: 10
+    magical_defense: 10
+    attributes:
+      agility: 150
+    rarity: LEGENDARY
+    max_durability: 250
+    description: "扭曲時空的極速之靴"
+
+  # ─── 🟨 補師（最強回復） ───
+
+  sacred_healer_helmet:
+    name: "§6神聖頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: GOLDEN_HELMET
+    required_level: 81
+    physical_defense: 8
+    magical_defense: 45
+    attributes:
+      spirit: 120
+      max_mana: 180
+    rarity: LEGENDARY
+    max_durability: 300
+    description: "至高神聖的頭冠"
+
+  sacred_healer_chestplate:
+    name: "§6永恆聖袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: GOLDEN_CHESTPLATE
+    required_level: 81
+    physical_defense: 12
+    magical_defense: 55
+    attributes:
+      spirit: 180
+      vitality: 250
+      max_mana: 300
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "永恆之力編織的聖袍"
+
+  sacred_healer_leggings:
+    name: "§6起源護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: GOLDEN_LEGGINGS
+    required_level: 81
+    physical_defense: 8
+    magical_defense: 35
+    attributes:
+      spirit: 140
+      max_mana: 120
+    rarity: LEGENDARY
+    max_durability: 300
+    description: "回溯起源的治癒護腿"
+
+  sacred_healer_boots:
+    name: "§6神恩之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: GOLDEN_BOOTS
+    required_level: 81
+    physical_defense: 5
+    magical_defense: 30
+    attributes:
+      spirit: 150
+      max_mana: 120
+    rarity: LEGENDARY
+    max_durability: 250
+    description: "神恩傾瀉的至高之靴"
+
+  # ─── 🟫 坦克（不死流） ───
+
+  godking_tank_helmet:
+    name: "§6神域頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: NETHERITE_HELMET
+    required_level: 81
+    physical_defense: 80
+    magical_defense: 35
+    attributes:
+      defense: 200
+    rarity: LEGENDARY
+    max_durability: 800
+    description: "神域守護的不朽頭盔"
+
+  godking_tank_chestplate:
+    name: "§6神王胸甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: NETHERITE_CHESTPLATE
+    required_level: 81
+    physical_defense: 120
+    magical_defense: 50
+    attributes:
+      defense: 350
+      vitality: 500
+    rarity: LEGENDARY
+    max_durability: 1000
+    description: "神王鍛造的究極胸甲"
+
+  godking_tank_leggings:
+    name: "§6永恆護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: NETHERITE_LEGGINGS
+    required_level: 81
+    physical_defense: 90
+    magical_defense: 40
+    attributes:
+      vitality: 600
+    rarity: LEGENDARY
+    max_durability: 900
+    description: "超越永恆的護腿"
+
+  godking_tank_boots:
+    name: "§6不朽之靴"
+    type: HEAVY
+    slot: BOOTS
+    material: NETHERITE_BOOTS
+    required_level: 81
+    physical_defense: 55
+    magical_defense: 25
+    attributes:
+      defense: 200
+    rarity: LEGENDARY
+    max_durability: 700
+    description: "不朽的神域鋼靴"
+
+  # ═══════════════════════════════════════════════════════════════
+  #  擴展裝甲 — 每種類型追加 5 套 (Lv5 / Lv15 / Lv35 / Lv65 / Lv95)
+  # ═══════════════════════════════════════════════════════════════
+
+  # ╔═══════════════════════════════════════╗
+  # ║  🟥 戰士 追加 5 套                    ║
+  # ╚═══════════════════════════════════════╝
+
+  # ── Lv5 民兵套裝 ──
+
+  militia_helmet:
+    name: "民兵頭盔"
+    type: MEDIUM
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 5
+    physical_defense: 2
+    magical_defense: 1
+    attributes:
+      defense: 2
+      strength: 1
+    rarity: COMMON
+    max_durability: 100
+    description: "民兵配發的簡易頭盔"
+
+  militia_chestplate:
+    name: "民兵胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 5
+    physical_defense: 4
+    magical_defense: 1
+    attributes:
+      defense: 3
+      vitality: 3
+    rarity: COMMON
+    max_durability: 120
+    description: "民兵穿著的皮製護甲"
+
+  militia_leggings:
+    name: "民兵護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 5
+    physical_defense: 3
+    magical_defense: 1
+    attributes:
+      vitality: 5
+    rarity: COMMON
+    max_durability: 110
+    description: "保護腿部的皮護腿"
+
+  militia_boots:
+    name: "民兵靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 5
+    physical_defense: 2
+    magical_defense: 1
+    attributes:
+      strength: 1
+    rarity: COMMON
+    max_durability: 90
+    description: "民兵穿著的堅韌靴子"
+
+  # ── Lv15 衛兵套裝 ──
+
+  guard_helmet:
+    name: "衛兵頭盔"
+    type: MEDIUM
+    slot: HELMET
+    material: CHAINMAIL_HELMET
+    required_level: 15
+    physical_defense: 8
+    magical_defense: 3
+    attributes:
+      defense: 8
+      strength: 5
+    rarity: COMMON
+    max_durability: 160
+    description: "城門衛兵佩戴的頭盔"
+
+  guard_chestplate:
+    name: "衛兵胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: CHAINMAIL_CHESTPLATE
+    required_level: 15
+    physical_defense: 14
+    magical_defense: 5
+    attributes:
+      defense: 12
+      vitality: 20
+    rarity: COMMON
+    max_durability: 190
+    description: "衛兵的鎖子甲胸甲"
+
+  guard_leggings:
+    name: "衛兵護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: CHAINMAIL_LEGGINGS
+    required_level: 15
+    physical_defense: 10
+    magical_defense: 3
+    attributes:
+      vitality: 25
+    rarity: COMMON
+    max_durability: 170
+    description: "堅固的鎖甲護腿"
+
+  guard_boots:
+    name: "衛兵靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: CHAINMAIL_BOOTS
+    required_level: 15
+    physical_defense: 5
+    magical_defense: 2
+    attributes:
+      strength: 5
+    rarity: COMMON
+    max_durability: 140
+    description: "衛兵巡邏穿的鐵靴"
+
+  # ── Lv35 鬥士套裝 ──
+
+  gladiator_helmet:
+    name: "鬥士頭盔"
+    type: MEDIUM
+    slot: HELMET
+    material: IRON_HELMET
+    required_level: 35
+    physical_defense: 18
+    magical_defense: 7
+    attributes:
+      defense: 22
+      strength: 15
+    rarity: UNCOMMON
+    max_durability: 250
+    description: "競技場鬥士的威嚇頭盔"
+
+  gladiator_chestplate:
+    name: "鬥士胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: IRON_CHESTPLATE
+    required_level: 35
+    physical_defense: 28
+    magical_defense: 10
+    attributes:
+      defense: 45
+      vitality: 60
+    rarity: UNCOMMON
+    max_durability: 300
+    description: "血戰中淬鍊出的戰甲"
+
+  gladiator_leggings:
+    name: "鬥士護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: IRON_LEGGINGS
+    required_level: 35
+    physical_defense: 22
+    magical_defense: 7
+    attributes:
+      vitality: 75
+    rarity: UNCOMMON
+    max_durability: 270
+    description: "競技場上千錘百鍊的護腿"
+
+  gladiator_boots:
+    name: "鬥士靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: IRON_BOOTS
+    required_level: 35
+    physical_defense: 12
+    magical_defense: 4
+    attributes:
+      strength: 15
+    rarity: UNCOMMON
+    max_durability: 220
+    description: "踏碎骨骼的鬥士戰靴"
+
+  # ── Lv65 征服者套裝 ──
+
+  conqueror_helmet:
+    name: "征服者頭盔"
+    type: MEDIUM
+    slot: HELMET
+    material: DIAMOND_HELMET
+    required_level: 65
+    physical_defense: 35
+    magical_defense: 15
+    attributes:
+      defense: 55
+      strength: 40
+    rarity: EPIC
+    max_durability: 420
+    description: "征服萬國的霸者頭盔"
+
+  conqueror_chestplate:
+    name: "征服者胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: DIAMOND_CHESTPLATE
+    required_level: 65
+    physical_defense: 55
+    magical_defense: 22
+    attributes:
+      defense: 100
+      vitality: 160
+    rarity: EPIC
+    max_durability: 520
+    description: "征服者的榮耀戰甲"
+
+  conqueror_leggings:
+    name: "征服者護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: DIAMOND_LEGGINGS
+    required_level: 65
+    physical_defense: 42
+    magical_defense: 16
+    attributes:
+      vitality: 200
+    rarity: EPIC
+    max_durability: 470
+    description: "百戰百勝的護腿"
+
+  conqueror_boots:
+    name: "征服者戰靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: DIAMOND_BOOTS
+    required_level: 65
+    physical_defense: 25
+    magical_defense: 10
+    attributes:
+      strength: 35
+    rarity: EPIC
+    max_durability: 380
+    description: "踏遍四方的征服者戰靴"
+
+  # ── Lv95 §6神戰套裝 ──
+
+  godwar_helmet:
+    name: "§6神戰頭盔"
+    type: MEDIUM
+    slot: HELMET
+    material: NETHERITE_HELMET
+    required_level: 95
+    physical_defense: 65
+    magical_defense: 28
+    attributes:
+      defense: 110
+      strength: 80
+    rarity: LEGENDARY
+    max_durability: 750
+    description: "弒神之戰中鍛造的頭盔"
+
+  godwar_chestplate:
+    name: "§6神戰胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: NETHERITE_CHESTPLATE
+    required_level: 95
+    physical_defense: 100
+    magical_defense: 42
+    attributes:
+      defense: 200
+      vitality: 350
+    rarity: LEGENDARY
+    max_durability: 950
+    description: "弒神之戰的終極戰甲"
+
+  godwar_leggings:
+    name: "§6神戰護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: NETHERITE_LEGGINGS
+    required_level: 95
+    physical_defense: 75
+    magical_defense: 30
+    attributes:
+      vitality: 420
+    rarity: LEGENDARY
+    max_durability: 850
+    description: "蘊含神力的戰鬥護腿"
+
+  godwar_boots:
+    name: "§6神戰戰靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: NETHERITE_BOOTS
+    required_level: 95
+    physical_defense: 45
+    magical_defense: 18
+    attributes:
+      strength: 70
+    rarity: LEGENDARY
+    max_durability: 680
+    description: "踏碎神域的至高戰靴"
+
+  # ╔═══════════════════════════════════════╗
+  # ║  🟦 法師 追加 5 套                    ║
+  # ╚═══════════════════════════════════════╝
+
+  # ── Lv5 見習法師套裝 ──
+
+  trainee_mage_helmet:
+    name: "見習法帽"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 3
+    attributes:
+      intelligence: 3
+      max_mana: 8
+    rarity: COMMON
+    max_durability: 70
+    description: "見習生的法帽"
+
+  trainee_mage_chestplate:
+    name: "見習法袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 4
+    attributes:
+      intelligence: 5
+      max_mana: 12
+    rarity: COMMON
+    max_durability: 80
+    description: "見習法師的布袍"
+
+  trainee_mage_leggings:
+    name: "見習法褲"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 2
+    attributes:
+      vitality: 3
+      max_mana: 6
+    rarity: COMMON
+    max_durability: 75
+    description: "見習法師的護腿"
+
+  trainee_mage_boots:
+    name: "見習法靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 2
+    attributes:
+      intelligence: 2
+      max_mana: 6
+    rarity: COMMON
+    max_durability: 65
+    description: "見習法師的步行靴"
+
+  # ── Lv15 咒術師套裝 ──
+
+  sorcerer_helmet:
+    name: "咒術師法冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 15
+    physical_defense: 2
+    magical_defense: 8
+    attributes:
+      intelligence: 12
+      max_mana: 20
+    rarity: COMMON
+    max_durability: 100
+    description: "咒術師佩戴的法冠"
+
+  sorcerer_chestplate:
+    name: "咒術師法袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 15
+    physical_defense: 3
+    magical_defense: 12
+    attributes:
+      intelligence: 18
+      max_mana: 30
+    rarity: COMMON
+    max_durability: 110
+    description: "刻有咒文的法師長袍"
+
+  sorcerer_leggings:
+    name: "咒術師護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 15
+    physical_defense: 2
+    magical_defense: 6
+    attributes:
+      vitality: 10
+      max_mana: 15
+    rarity: COMMON
+    max_durability: 100
+    description: "附有魔法紋路的護腿"
+
+  sorcerer_boots:
+    name: "咒術師靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 15
+    physical_defense: 1
+    magical_defense: 5
+    attributes:
+      intelligence: 10
+      max_mana: 15
+    rarity: COMMON
+    max_durability: 85
+    description: "輕飄飄的魔法靴子"
+
+  # ── Lv35 秘法師套裝 ──
+
+  arcanist_helmet:
+    name: "秘法師頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 35
+    physical_defense: 4
+    magical_defense: 16
+    attributes:
+      intelligence: 28
+      max_mana: 45
+    rarity: UNCOMMON
+    max_durability: 150
+    description: "秘法能量凝聚的頭冠"
+
+  arcanist_chestplate:
+    name: "秘法師長袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 35
+    physical_defense: 6
+    magical_defense: 22
+    attributes:
+      intelligence: 45
+      max_mana: 65
+    rarity: UNCOMMON
+    max_durability: 170
+    description: "閃爍秘法光芒的長袍"
+
+  arcanist_leggings:
+    name: "秘法師護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 35
+    physical_defense: 4
+    magical_defense: 12
+    attributes:
+      vitality: 30
+      max_mana: 35
+    rarity: UNCOMMON
+    max_durability: 150
+    description: "秘法能量流動的護腿"
+
+  arcanist_boots:
+    name: "秘法師靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 35
+    physical_defense: 3
+    magical_defense: 10
+    attributes:
+      intelligence: 30
+      max_mana: 35
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "浮游秘法能量的靴子"
+
+  # ── Lv65 大魔導師套裝 ──
+
+  grandmage_helmet:
+    name: "大魔導師法冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 65
+    physical_defense: 7
+    magical_defense: 32
+    attributes:
+      intelligence: 80
+      max_mana: 100
+    rarity: EPIC
+    max_durability: 230
+    description: "大魔導師的至高法冠"
+
+  grandmage_chestplate:
+    name: "大魔導師長袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 65
+    physical_defense: 10
+    magical_defense: 45
+    attributes:
+      intelligence: 130
+      max_mana: 160
+    rarity: EPIC
+    max_durability: 280
+    description: "大魔導師的元素長袍"
+
+  grandmage_leggings:
+    name: "大魔導師護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 65
+    physical_defense: 6
+    magical_defense: 25
+    attributes:
+      vitality: 70
+      max_mana: 80
+    rarity: EPIC
+    max_durability: 230
+    description: "充盈魔力的護腿"
+
+  grandmage_boots:
+    name: "大魔導師靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 65
+    physical_defense: 4
+    magical_defense: 22
+    attributes:
+      intelligence: 90
+      max_mana: 80
+    rarity: EPIC
+    max_durability: 190
+    description: "大魔導師的浮空靴"
+
+  # ── Lv95 §6至高魔神套裝 ──
+
+  archmagus_helmet:
+    name: "§6至高魔神法冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 95
+    physical_defense: 10
+    magical_defense: 55
+    attributes:
+      intelligence: 160
+      max_mana: 280
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "超越凡人的至高法冠"
+
+  archmagus_chestplate:
+    name: "§6至高魔神法袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 95
+    physical_defense: 15
+    magical_defense: 75
+    attributes:
+      intelligence: 260
+      max_mana: 450
+    rarity: LEGENDARY
+    max_durability: 460
+    description: "魔神之力編織的法袍"
+
+  archmagus_leggings:
+    name: "§6至高魔神護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 95
+    physical_defense: 10
+    magical_defense: 45
+    attributes:
+      vitality: 140
+      max_mana: 200
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "魔神的結界護腿"
+
+  archmagus_boots:
+    name: "§6至高魔神靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 95
+    physical_defense: 7
+    magical_defense: 38
+    attributes:
+      intelligence: 200
+      max_mana: 200
+    rarity: LEGENDARY
+    max_durability: 320
+    description: "踏破虛空的魔神之靴"
+
+  # ╔═══════════════════════════════════════╗
+  # ║  🟩 刺客 追加 5 套                    ║
+  # ╚═══════════════════════════════════════╝
+
+  # ── Lv5 遊蕩者套裝 ──
+
+  wanderer_helmet:
+    name: "遊蕩者頭巾"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 1
+    attributes:
+      agility: 3
+    rarity: COMMON
+    max_durability: 70
+    description: "流浪者的破舊頭巾"
+
+  wanderer_chestplate:
+    name: "遊蕩者皮衣"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 5
+    physical_defense: 2
+    magical_defense: 1
+    attributes:
+      agility: 4
+    rarity: COMMON
+    max_durability: 80
+    description: "破損但靈活的皮衣"
+
+  wanderer_leggings:
+    name: "遊蕩者褲"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 1
+    attributes:
+      agility: 3
+    rarity: COMMON
+    max_durability: 75
+    description: "方便行動的短褲"
+
+  wanderer_boots:
+    name: "遊蕩者靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 1
+    attributes:
+      agility: 4
+    rarity: COMMON
+    max_durability: 65
+    description: "踏遍荒野的輕便靴"
+
+  # ── Lv15 盜賊套裝 ──
+
+  thief_helmet:
+    name: "盜賊面罩"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 15
+    physical_defense: 3
+    magical_defense: 3
+    attributes:
+      agility: 10
+    rarity: COMMON
+    max_durability: 100
+    description: "隱藏身份的黑色面罩"
+
+  thief_chestplate:
+    name: "盜賊皮甲"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 15
+    physical_defense: 5
+    magical_defense: 3
+    attributes:
+      agility: 15
+    rarity: COMMON
+    max_durability: 110
+    description: "不會發出聲響的皮甲"
+
+  thief_leggings:
+    name: "盜賊護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 15
+    physical_defense: 3
+    magical_defense: 2
+    attributes:
+      agility: 12
+    rarity: COMMON
+    max_durability: 100
+    description: "行動自如的彈性護腿"
+
+  thief_boots:
+    name: "盜賊短靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 15
+    physical_defense: 2
+    magical_defense: 2
+    attributes:
+      agility: 15
+    rarity: COMMON
+    max_durability: 85
+    description: "無聲無息的盜賊靴"
+
+  # ── Lv35 疾風套裝 ──
+
+  gale_helmet:
+    name: "疾風頭罩"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 35
+    physical_defense: 7
+    magical_defense: 6
+    attributes:
+      agility: 25
+    rarity: UNCOMMON
+    max_durability: 150
+    description: "風之刺客的特製頭罩"
+
+  gale_chestplate:
+    name: "疾風皮甲"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 35
+    physical_defense: 10
+    magical_defense: 8
+    attributes:
+      agility: 40
+    rarity: UNCOMMON
+    max_durability: 170
+    description: "風元素編織的輕甲"
+
+  gale_leggings:
+    name: "疾風護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 35
+    physical_defense: 7
+    magical_defense: 5
+    attributes:
+      agility: 35
+    rarity: UNCOMMON
+    max_durability: 150
+    description: "如風般輕盈的護腿"
+
+  gale_boots:
+    name: "疾風之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 35
+    physical_defense: 4
+    magical_defense: 4
+    attributes:
+      agility: 40
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "踏風而行的疾風靴"
+
+  # ── Lv65 夜刃套裝 ──
+
+  nightblade_helmet:
+    name: "夜刃頭罩"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 65
+    physical_defense: 12
+    magical_defense: 12
+    attributes:
+      agility: 65
+    rarity: EPIC
+    max_durability: 230
+    description: "夜之刺客的暗影頭罩"
+
+  nightblade_chestplate:
+    name: "夜刃皮甲"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 65
+    physical_defense: 18
+    magical_defense: 15
+    attributes:
+      agility: 100
+    rarity: EPIC
+    max_durability: 280
+    description: "夜幕中消失的暗殺皮甲"
+
+  nightblade_leggings:
+    name: "夜刃護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 65
+    physical_defense: 12
+    magical_defense: 10
+    attributes:
+      agility: 85
+    rarity: EPIC
+    max_durability: 230
+    description: "無聲的暗影護腿"
+
+  nightblade_boots:
+    name: "夜刃之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 65
+    physical_defense: 8
+    magical_defense: 8
+    attributes:
+      agility: 100
+    rarity: EPIC
+    max_durability: 190
+    description: "暗殺者的無聲之靴"
+
+  # ── Lv95 §6虛影套裝 ──
+
+  voidphantom_helmet:
+    name: "§6虛影頭罩"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 95
+    physical_defense: 18
+    magical_defense: 18
+    attributes:
+      agility: 130
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "化為虛影的終極頭罩"
+
+  voidphantom_chestplate:
+    name: "§6虛影皮甲"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 95
+    physical_defense: 28
+    magical_defense: 25
+    attributes:
+      agility: 200
+    rarity: LEGENDARY
+    max_durability: 460
+    description: "存在與虛無之間的暗殺甲"
+
+  voidphantom_leggings:
+    name: "§6虛影護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 95
+    physical_defense: 18
+    magical_defense: 16
+    attributes:
+      agility: 160
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "超越肉眼可見的護腿"
+
+  voidphantom_boots:
+    name: "§6虛影之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 95
+    physical_defense: 12
+    magical_defense: 12
+    attributes:
+      agility: 200
+    rarity: LEGENDARY
+    max_durability: 320
+    description: "踏碎虛空的極速之靴"
+
+  # ╔═══════════════════════════════════════╗
+  # ║  🟨 補師 追加 5 套                    ║
+  # ╚═══════════════════════════════════════╝
+
+  # ── Lv5 禱告者套裝 ──
+
+  acolyte_helmet:
+    name: "禱告者頭巾"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 3
+    attributes:
+      spirit: 3
+      max_mana: 6
+    rarity: COMMON
+    max_durability: 70
+    description: "神殿修行者的頭巾"
+
+  acolyte_chestplate:
+    name: "禱告者長袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 4
+    attributes:
+      spirit: 4
+      vitality: 3
+      max_mana: 10
+    rarity: COMMON
+    max_durability: 80
+    description: "神殿修行者的布袍"
+
+  acolyte_leggings:
+    name: "禱告者護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 2
+    attributes:
+      spirit: 4
+      max_mana: 5
+    rarity: COMMON
+    max_durability: 75
+    description: "修行者的簡素護腿"
+
+  acolyte_boots:
+    name: "禱告者靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 5
+    physical_defense: 1
+    magical_defense: 2
+    attributes:
+      spirit: 3
+      max_mana: 5
+    rarity: COMMON
+    max_durability: 65
+    description: "修行者踏出聖地的步履"
+
+  # ── Lv15 祈禱者套裝 ──
+
+  priest_helmet:
+    name: "祈禱者頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 15
+    physical_defense: 2
+    magical_defense: 8
+    attributes:
+      spirit: 10
+      max_mana: 18
+    rarity: COMMON
+    max_durability: 100
+    description: "祈禱時散發光輝的頭冠"
+
+  priest_chestplate:
+    name: "祈禱者長袍"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 15
+    physical_defense: 3
+    magical_defense: 10
+    attributes:
+      spirit: 15
+      vitality: 15
+      max_mana: 25
+    rarity: COMMON
+    max_durability: 110
+    description: "神殿祭司的白色長袍"
+
+  priest_leggings:
+    name: "祈禱者護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 15
+    physical_defense: 2
+    magical_defense: 6
+    attributes:
+      spirit: 12
+      max_mana: 12
+    rarity: COMMON
+    max_durability: 100
+    description: "附有祈禱符文的護腿"
+
+  priest_boots:
+    name: "祈禱者靴"
+    type: LIGHT
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 15
+    physical_defense: 1
+    magical_defense: 5
+    attributes:
+      spirit: 12
+      max_mana: 12
+    rarity: COMMON
+    max_durability: 85
+    description: "輕步在聖地的祈禱之靴"
+
+  # ── Lv35 聖職者套裝 ──
+
+  cleric_helmet:
+    name: "聖職者頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: GOLDEN_HELMET
+    required_level: 35
+    physical_defense: 4
+    magical_defense: 14
+    attributes:
+      spirit: 25
+      max_mana: 40
+    rarity: UNCOMMON
+    max_durability: 150
+    description: "聖職者的金色頭冠"
+
+  cleric_chestplate:
+    name: "聖職者法衣"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: GOLDEN_CHESTPLATE
+    required_level: 35
+    physical_defense: 6
+    magical_defense: 20
+    attributes:
+      spirit: 40
+      vitality: 55
+      max_mana: 55
+    rarity: UNCOMMON
+    max_durability: 170
+    description: "高階聖職者的純白法衣"
+
+  cleric_leggings:
+    name: "聖職者護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: GOLDEN_LEGGINGS
+    required_level: 35
+    physical_defense: 4
+    magical_defense: 12
+    attributes:
+      spirit: 35
+      max_mana: 30
+    rarity: UNCOMMON
+    max_durability: 150
+    description: "刻有治癒符文的護腿"
+
+  cleric_boots:
+    name: "聖職者靴"
+    type: LIGHT
+    slot: BOOTS
+    material: GOLDEN_BOOTS
+    required_level: 35
+    physical_defense: 3
+    magical_defense: 10
+    attributes:
+      spirit: 35
+      max_mana: 30
+    rarity: UNCOMMON
+    max_durability: 120
+    description: "聖職者的祝福之靴"
+
+  # ── Lv65 大司教套裝 ──
+
+  archbishop_helmet:
+    name: "大司教頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: GOLDEN_HELMET
+    required_level: 65
+    physical_defense: 6
+    magical_defense: 30
+    attributes:
+      spirit: 75
+      max_mana: 90
+    rarity: EPIC
+    max_durability: 230
+    description: "大司教的神聖頭冠"
+
+  archbishop_chestplate:
+    name: "大司教聖衣"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: GOLDEN_CHESTPLATE
+    required_level: 65
+    physical_defense: 10
+    magical_defense: 40
+    attributes:
+      spirit: 120
+      vitality: 160
+      max_mana: 140
+    rarity: EPIC
+    max_durability: 280
+    description: "大司教的聖潔法衣"
+
+  archbishop_leggings:
+    name: "大司教護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: GOLDEN_LEGGINGS
+    required_level: 65
+    physical_defense: 6
+    magical_defense: 25
+    attributes:
+      spirit: 90
+      max_mana: 70
+    rarity: EPIC
+    max_durability: 230
+    description: "蘊含神力的護腿"
+
+  archbishop_boots:
+    name: "大司教靴"
+    type: LIGHT
+    slot: BOOTS
+    material: GOLDEN_BOOTS
+    required_level: 65
+    physical_defense: 4
+    magical_defense: 20
+    attributes:
+      spirit: 90
+      max_mana: 70
+    rarity: EPIC
+    max_durability: 190
+    description: "大司教的聖光之靴"
+
+  # ── Lv95 §6聖母套裝 ──
+
+  saintmother_helmet:
+    name: "§6聖母頭冠"
+    type: LIGHT
+    slot: HELMET
+    material: GOLDEN_HELMET
+    required_level: 95
+    physical_defense: 10
+    magical_defense: 55
+    attributes:
+      spirit: 160
+      max_mana: 250
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "至高聖母的神聖頭冠"
+
+  saintmother_chestplate:
+    name: "§6聖母聖衣"
+    type: LIGHT
+    slot: CHESTPLATE
+    material: GOLDEN_CHESTPLATE
+    required_level: 95
+    physical_defense: 15
+    magical_defense: 70
+    attributes:
+      spirit: 240
+      vitality: 350
+      max_mana: 400
+    rarity: LEGENDARY
+    max_durability: 460
+    description: "聖母之力編織的永恆聖衣"
+
+  saintmother_leggings:
+    name: "§6聖母護腿"
+    type: LIGHT
+    slot: LEGGINGS
+    material: GOLDEN_LEGGINGS
+    required_level: 95
+    physical_defense: 10
+    magical_defense: 42
+    attributes:
+      spirit: 190
+      max_mana: 180
+    rarity: LEGENDARY
+    max_durability: 380
+    description: "聖母的神聖護腿"
+
+  saintmother_boots:
+    name: "§6聖母之靴"
+    type: LIGHT
+    slot: BOOTS
+    material: GOLDEN_BOOTS
+    required_level: 95
+    physical_defense: 7
+    magical_defense: 36
+    attributes:
+      spirit: 200
+      max_mana: 180
+    rarity: LEGENDARY
+    max_durability: 320
+    description: "聖母的慈悲之靴"
+
+  # ╔═══════════════════════════════════════╗
+  # ║  🟫 坦克 追加 5 套                    ║
+  # ╚═══════════════════════════════════════╝
+
+  # ── Lv5 守門人套裝 ──
+
+  gatekeeper_helmet:
+    name: "守門人頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: LEATHER_HELMET
+    required_level: 5
+    physical_defense: 5
+    magical_defense: 1
+    attributes:
+      defense: 5
+    rarity: COMMON
+    max_durability: 130
+    description: "守門人的皮製頭盔"
+
+  gatekeeper_chestplate:
+    name: "守門人胸甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: LEATHER_CHESTPLATE
+    required_level: 5
+    physical_defense: 8
+    magical_defense: 2
+    attributes:
+      defense: 8
+      vitality: 5
+    rarity: COMMON
+    max_durability: 150
+    description: "守門人的厚皮甲"
+
+  gatekeeper_leggings:
+    name: "守門人護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: LEATHER_LEGGINGS
+    required_level: 5
+    physical_defense: 6
+    magical_defense: 1
+    attributes:
+      vitality: 8
+    rarity: COMMON
+    max_durability: 140
+    description: "守門人的護腿"
+
+  gatekeeper_boots:
+    name: "守門人靴"
+    type: HEAVY
+    slot: BOOTS
+    material: LEATHER_BOOTS
+    required_level: 5
+    physical_defense: 4
+    magical_defense: 1
+    attributes:
+      defense: 5
+    rarity: COMMON
+    max_durability: 110
+    description: "守門人的厚底靴"
+
+  # ── Lv15 城塞衛士套裝 ──
+
+  rampart_helmet:
+    name: "城塞衛士頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: IRON_HELMET
+    required_level: 15
+    physical_defense: 14
+    magical_defense: 4
+    attributes:
+      defense: 20
+    rarity: COMMON
+    max_durability: 220
+    description: "城塞衛士的鐵製頭盔"
+
+  rampart_chestplate:
+    name: "城塞衛士胸甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: IRON_CHESTPLATE
+    required_level: 15
+    physical_defense: 22
+    magical_defense: 6
+    attributes:
+      defense: 30
+      vitality: 40
+    rarity: COMMON
+    max_durability: 280
+    description: "城塞衛士的重型鐵甲"
+
+  rampart_leggings:
+    name: "城塞衛士護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: IRON_LEGGINGS
+    required_level: 15
+    physical_defense: 18
+    magical_defense: 4
+    attributes:
+      vitality: 50
+    rarity: COMMON
+    max_durability: 250
+    description: "堅固的城塞護腿"
+
+  rampart_boots:
+    name: "城塞衛士靴"
+    type: HEAVY
+    slot: BOOTS
+    material: IRON_BOOTS
+    required_level: 15
+    physical_defense: 10
+    magical_defense: 3
+    attributes:
+      defense: 20
+    rarity: COMMON
+    max_durability: 200
+    description: "城塞衛士的沉重靴子"
+
+  # ── Lv35 鐵壁套裝 ──
+
+  ironwall_helmet:
+    name: "鐵壁頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: DIAMOND_HELMET
+    required_level: 35
+    physical_defense: 32
+    magical_defense: 10
+    attributes:
+      defense: 55
+    rarity: UNCOMMON
+    max_durability: 360
+    description: "如鐵壁般的厚重頭盔"
+
+  ironwall_chestplate:
+    name: "鐵壁胸甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: DIAMOND_CHESTPLATE
+    required_level: 35
+    physical_defense: 50
+    magical_defense: 14
+    attributes:
+      defense: 100
+      vitality: 130
+    rarity: UNCOMMON
+    max_durability: 460
+    description: "銅牆鐵壁的堅固胸甲"
+
+  ironwall_leggings:
+    name: "鐵壁護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: DIAMOND_LEGGINGS
+    required_level: 35
+    physical_defense: 38
+    magical_defense: 12
+    attributes:
+      vitality: 160
+    rarity: UNCOMMON
+    max_durability: 400
+    description: "無法穿透的鐵壁護腿"
+
+  ironwall_boots:
+    name: "鐵壁靴"
+    type: HEAVY
+    slot: BOOTS
+    material: DIAMOND_BOOTS
+    required_level: 35
+    physical_defense: 22
+    magical_defense: 8
+    attributes:
+      defense: 60
+    rarity: UNCOMMON
+    max_durability: 330
+    description: "穩如磐石的鐵壁戰靴"
+
+  # ── Lv65 聖盾套裝 ──
+
+  aegis_helmet:
+    name: "聖盾頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: NETHERITE_HELMET
+    required_level: 65
+    physical_defense: 60
+    magical_defense: 22
+    attributes:
+      defense: 130
+    rarity: EPIC
+    max_durability: 580
+    description: "聖盾騎士團的頭盔"
+
+  aegis_chestplate:
+    name: "聖盾胸甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: NETHERITE_CHESTPLATE
+    required_level: 65
+    physical_defense: 95
+    magical_defense: 30
+    attributes:
+      defense: 220
+      vitality: 320
+    rarity: EPIC
+    max_durability: 750
+    description: "神聖結界護衛的胸甲"
+
+  aegis_leggings:
+    name: "聖盾護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: NETHERITE_LEGGINGS
+    required_level: 65
+    physical_defense: 72
+    magical_defense: 25
+    attributes:
+      vitality: 400
+    rarity: EPIC
+    max_durability: 650
+    description: "聖盾之力護佑的護腿"
+
+  aegis_boots:
+    name: "聖盾靴"
+    type: HEAVY
+    slot: BOOTS
+    material: NETHERITE_BOOTS
+    required_level: 65
+    physical_defense: 42
+    magical_defense: 16
+    attributes:
+      defense: 150
+    rarity: EPIC
+    max_durability: 520
+    description: "堅若金湯的聖盾戰靴"
+
+  # ── Lv95 §6不朽守護者套裝 ──
+
+  immortal_guardian_helmet:
+    name: "§6不朽守護者頭盔"
+    type: HEAVY
+    slot: HELMET
+    material: NETHERITE_HELMET
+    required_level: 95
+    physical_defense: 100
+    magical_defense: 42
+    attributes:
+      defense: 260
+    rarity: LEGENDARY
+    max_durability: 950
+    description: "不朽守護者的至高頭盔"
+
+  immortal_guardian_chestplate:
+    name: "§6不朽守護者胸甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: NETHERITE_CHESTPLATE
+    required_level: 95
+    physical_defense: 150
+    magical_defense: 60
+    attributes:
+      defense: 450
+      vitality: 650
+    rarity: LEGENDARY
+    max_durability: 1200
+    description: "神都無法擊穿的終極胸甲"
+
+  immortal_guardian_leggings:
+    name: "§6不朽守護者護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: NETHERITE_LEGGINGS
+    required_level: 95
+    physical_defense: 110
+    magical_defense: 48
+    attributes:
+      vitality: 780
+    rarity: LEGENDARY
+    max_durability: 1050
+    description: "超越永恆的不朽護腿"
+
+  immortal_guardian_boots:
+    name: "§6不朽守護者靴"
+    type: HEAVY
+    slot: BOOTS
+    material: NETHERITE_BOOTS
+    required_level: 95
+    physical_defense: 68
+    magical_defense: 30
+    attributes:
+      defense: 260
+    rarity: LEGENDARY
+    max_durability: 850
+    description: "永恆不朽的守護者戰靴"
 

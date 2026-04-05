@@ -163,10 +163,12 @@ public class MobManager {
         // 掉落物
         List<DropItem> vanillaDrops = new ArrayList<>();
         List<WeaponDrop> weaponDrops = new ArrayList<>();
+        List<EquipmentDrop> equipmentDrops = new ArrayList<>();
         if (config.containsKey("drops")) {
             Map<String, Object> drops = (Map<String, Object>) config.get("drops");
             vanillaDrops = parseVanillaDrops(drops);
             weaponDrops = parseWeaponDrops(drops);
+            equipmentDrops = parseEquipmentDrops(drops);
         }
 
         // 偽裝
@@ -175,10 +177,22 @@ public class MobManager {
         // 其他設定
         boolean showLevelInName = (boolean) config.getOrDefault("show-level-in-name", false);
 
+        // 生態域標籤
+        List<String> tags = new ArrayList<>();
+        Object tagsObj = config.get("tags");
+        if (tagsObj instanceof List) {
+            for (Object t : (List<?>) tagsObj) {
+                if (t != null) tags.add(t.toString().toLowerCase());
+            }
+        }
+
+        // 是否為 Boss 怪物
+        boolean isBoss = Boolean.TRUE.equals(config.get("boss"));
+
         return new MobData(key, name, entityType, minLevel, maxLevel,
                           baseHealth, baseDamage, healthPerLevel, damagePerLevel,
                           baseExp, expPerLevel, equipment, vanillaDrops, weaponDrops,
-                          disguise, specialBehavior, showLevelInName);
+                          equipmentDrops, disguise, specialBehavior, showLevelInName, tags, isBoss);
     }
 
     /**
@@ -230,6 +244,32 @@ public class MobManager {
                     }
                 }
                 item.setItemMeta(meta);
+            }
+
+            // 玩家頭顱 (skull-owner)
+            if (material == Material.PLAYER_HEAD && config.containsKey("skull-owner")) {
+                String owner = (String) config.get("skull-owner");
+                org.bukkit.inventory.meta.SkullMeta skullMeta = (org.bukkit.inventory.meta.SkullMeta) item.getItemMeta();
+                if (skullMeta != null) {
+                    skullMeta.setOwner(owner);
+                    item.setItemMeta(skullMeta);
+                }
+            }
+
+            // 皮革裝甲染色 (color)
+            if (config.containsKey("color") && item.getItemMeta() instanceof org.bukkit.inventory.meta.LeatherArmorMeta leatherMeta) {
+                String colorStr = (String) config.get("color");
+                try {
+                    String[] rgb = colorStr.split(",");
+                    org.bukkit.Color color = org.bukkit.Color.fromRGB(
+                            Integer.parseInt(rgb[0].trim()),
+                            Integer.parseInt(rgb[1].trim()),
+                            Integer.parseInt(rgb[2].trim()));
+                    leatherMeta.setColor(color);
+                    item.setItemMeta(leatherMeta);
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Failed to parse leather color: " + colorStr);
+                }
             }
 
             return item;
@@ -295,6 +335,28 @@ public class MobManager {
         }
 
         return weaponDrops;
+    }
+
+    /**
+     * Parse equipment drops (accessories & armor) from config
+     */
+    @SuppressWarnings("unchecked")
+    private List<EquipmentDrop> parseEquipmentDrops(Map<String, Object> drops) {
+        List<EquipmentDrop> equipmentDrops = new ArrayList<>();
+
+        if (!drops.containsKey("custom-equipment")) {
+            return equipmentDrops;
+        }
+
+        List<Map<String, Object>> equipList = (List<Map<String, Object>>) drops.get("custom-equipment");
+        for (Map<String, Object> equipConfig : equipList) {
+            String equipKey = (String) equipConfig.get("equipment-key");
+            String type = (String) equipConfig.getOrDefault("type", "accessory"); // "accessory" 或 "armor"
+            double chance = getDouble(equipConfig, "chance", 0.01);
+            equipmentDrops.add(new EquipmentDrop(equipKey, type, chance));
+        }
+
+        return equipmentDrops;
     }
 
     /**
@@ -1015,6 +1077,34 @@ public class MobManager {
     }
 
     /**
+     * Get all boss mob keys (mobs with boss: true in config)
+     * @return List of boss mob keys
+     */
+    public List<String> getBossMobKeys() {
+        List<String> bossKeys = new ArrayList<>();
+        for (Map.Entry<String, MobData> entry : mobTypes.entrySet()) {
+            if (entry.getValue().isBoss()) {
+                bossKeys.add(entry.getKey());
+            }
+        }
+        return bossKeys;
+    }
+
+    /**
+     * Get all non-boss mob keys (normal mobs)
+     * @return List of non-boss mob keys
+     */
+    public List<String> getNormalMobKeys() {
+        List<String> normalKeys = new ArrayList<>();
+        for (Map.Entry<String, MobData> entry : mobTypes.entrySet()) {
+            if (!entry.getValue().isBoss()) {
+                normalKeys.add(entry.getKey());
+            }
+        }
+        return normalKeys;
+    }
+
+    /**
      * Inner class to store custom mob data
      */
     public static class MobData {
@@ -1045,6 +1135,7 @@ public class MobManager {
         // 掉落物
         private final List<DropItem> vanillaDrops;
         private final List<WeaponDrop> weaponDrops;
+        private final List<EquipmentDrop> equipmentDrops;
 
         // 偽裝
         private final DisguiseConfig disguise;
@@ -1052,6 +1143,8 @@ public class MobManager {
         // 其他
         private final String specialBehavior;
         private final boolean showLevelInName;
+        private final List<String> tags; // 生態域標籤 (如 "ice", "fire", "forest")
+        private final boolean isBoss; // 是否為 Boss 怪物（只會在 Boss 生成機制中被選擇）
 
         // 向後兼容的構造函數 (舊格式)
         public MobData(String key, String name, EntityType entityType, double health, double damage, String specialBehavior) {
@@ -1079,8 +1172,11 @@ public class MobManager {
             this.equipment = new HashMap<>();
             this.vanillaDrops = new ArrayList<>();
             this.weaponDrops = new ArrayList<>();
+            this.equipmentDrops = new ArrayList<>();
             this.disguise = null;
             this.showLevelInName = false;
+            this.tags = new ArrayList<>();
+            this.isBoss = false;
         }
 
         // 新格式的完整構造函數
@@ -1091,8 +1187,10 @@ public class MobManager {
                        int baseExp, int expPerLevel,
                        Map<String, ItemStack> equipment,
                        List<DropItem> vanillaDrops, List<WeaponDrop> weaponDrops,
+                       List<EquipmentDrop> equipmentDrops,
                        DisguiseConfig disguise,
-                       String specialBehavior, boolean showLevelInName) {
+                       String specialBehavior, boolean showLevelInName,
+                       List<String> tags, boolean isBoss) {
             this.key = key;
             this.name = name;
             this.entityType = entityType;
@@ -1107,9 +1205,12 @@ public class MobManager {
             this.equipment = equipment;
             this.vanillaDrops = vanillaDrops;
             this.weaponDrops = weaponDrops;
+            this.equipmentDrops = equipmentDrops != null ? equipmentDrops : new ArrayList<>();
             this.disguise = disguise;
             this.specialBehavior = specialBehavior;
             this.showLevelInName = showLevelInName;
+            this.tags = tags != null ? tags : new ArrayList<>();
+            this.isBoss = isBoss;
 
             // 計算舊格式的值（向後兼容）
             this.health = baseHealth;
@@ -1138,8 +1239,11 @@ public class MobManager {
         public Map<String, ItemStack> getEquipment() { return equipment; }
         public List<DropItem> getVanillaDrops() { return vanillaDrops; }
         public List<WeaponDrop> getWeaponDrops() { return weaponDrops; }
+        public List<EquipmentDrop> getEquipmentDrops() { return equipmentDrops; }
         public DisguiseConfig getDisguise() { return disguise; }
         public boolean shouldShowLevelInName() { return showLevelInName; }
+        public List<String> getTags() { return tags; }
+        public boolean isBoss() { return isBoss; }
 
         // 計算等級化屬性
         public double calculateHealth(int level) {
@@ -1194,6 +1298,26 @@ public class MobManager {
         }
 
         public String getWeaponKey() { return weaponKey; }
+        public double getChance() { return chance; }
+    }
+
+    /**
+     * 自定義裝備/飾品/裝甲掉落配置
+     * type: "accessory" / "armor"
+     */
+    public static class EquipmentDrop {
+        private final String equipmentKey;
+        private final String type; // "accessory" 或 "armor"
+        private final double chance;
+
+        public EquipmentDrop(String equipmentKey, String type, double chance) {
+            this.equipmentKey = equipmentKey;
+            this.type = type;
+            this.chance = chance;
+        }
+
+        public String getEquipmentKey() { return equipmentKey; }
+        public String getType() { return type; }
         public double getChance() { return chance; }
     }
 

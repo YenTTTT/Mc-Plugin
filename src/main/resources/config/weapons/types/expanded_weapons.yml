@@ -1,0 +1,1708 @@
+# ============================================
+# MMORPG 擴展武器庫
+# 每種武器類別追加 5 把
+# 類別：SWORD, TWO_HAND_SWORD, AXE, TWO_HAND_AXE,
+#        SCYTHE, TWO_HAND_SCYTHE, SPEAR, BOW, STAFF
+# ============================================
+
+# ═══════════════════════════════════════════
+#  單手劍 (SWORD) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv5 — 銅短劍
+copper_shortsword:
+  basic:
+    name: "銅短劍"
+    material: STONE_SWORD
+    rarity: "普通"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&7&l銅短劍"
+    lore:
+      - "&7用銅礦冶煉的短劍"
+      - "&7比木劍可靠一些"
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 8
+    attack-speed: 1.7
+    crit-chance: 6.0
+    crit-damage-multiplier: 1.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 5
+
+# 2. Lv18 — 荊棘之劍
+thorn_blade:
+  basic:
+    name: "荊棘之劍"
+    material: IRON_SWORD
+    rarity: "優良"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&2&l荊棘之劍"
+    lore:
+      - "&7纏繞荊棘的利劍"
+      - "&7命中時有機率使敵人中毒"
+  stats:
+    damage-multiplier: 1.3
+    base-damage: 18
+    attack-speed: 1.6
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "毒棘"
+    condition: "hit"
+    chance: 0.2
+    effect: "burn_on_hit"
+    value: 12.0
+  element:
+    element: "毒"
+    poison-duration-ticks: 40
+    poison-level: 1
+  limits:
+    droppable: true
+    required-level: 18
+
+# 3. Lv35 — 白銀聖劍
+silver_holy_sword:
+  basic:
+    name: "白銀聖劍"
+    material: IRON_SWORD
+    rarity: "稀有"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l白銀聖劍"
+    lore:
+      - "&7以白銀鍛造的神聖之劍"
+      - "&7對亡靈特別有效"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.7
+    base-damage: 32
+    attack-speed: 1.6
+    crit-chance: 14.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "神聖審判"
+    condition: "hit"
+    chance: 0.1
+    effect: "holy_smite"
+    value: 25.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 35
+
+# 4. Lv55 — 猩紅之刃
+crimson_edge:
+  basic:
+    name: "猩紅之刃"
+    material: DIAMOND_SWORD
+    rarity: "史詩"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&4&l猩紅之刃"
+    lore:
+      - "&7浸染深紅鮮血的魔劍"
+      - "&7擊殺敵人時能汲取生命力"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.2
+    base-damage: 50
+    attack-speed: 1.7
+    crit-chance: 16.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+    life-steal: 4.0
+  passive:
+    name: "血之渴望"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 12.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 55
+
+# 5. Lv78 — 暴風之刃
+stormfang_blade:
+  basic:
+    name: "暴風之刃"
+    material: NETHERITE_SWORD
+    rarity: "傳說"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&b&l暴風之刃"
+    lore:
+      - "&7凝聚風暴之力的利劍"
+      - "&7每次揮擊都伴隨雷鳴"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.9
+    base-damage: 75
+    attack-speed: 1.7
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.5
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "雷暴之怒"
+    condition: "hit"
+    chance: 0.2
+    effect: "holy_smite"
+    value: 85.0
+  element:
+    element: "雷"
+    lightning-chance: 0.25
+  limits:
+    droppable: false
+    required-level: 78
+
+# ═══════════════════════════════════════════
+#  雙手劍 (TWO_HAND_SWORD) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv8 — 石製闊劍
+stone_claymore:
+  basic:
+    name: "石製闊劍"
+    material: STONE_SWORD
+    rarity: "普通"
+    category: "TWO_HAND_SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&7&l石製闊劍"
+    lore:
+      - "&7沉重的石製巨劍"
+      - "&7雖然粗糙但威力不俗"
+      - "&c雙手武器"
+  stats:
+    damage-multiplier: 1.3
+    base-damage: 12
+    attack-speed: 1.0
+    crit-chance: 7.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 1.5
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 8
+    two-handed: true
+
+# 2. Lv25 — 蒼穹巨劍
+skyreach_greatsword:
+  basic:
+    name: "蒼穹巨劍"
+    material: IRON_SWORD
+    rarity: "稀有"
+    category: "TWO_HAND_SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l蒼穹巨劍"
+    lore:
+      - "&7劍鋒直指天際"
+      - "&7揮砍帶來藍色衝擊波"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.8
+    base-damage: 30
+    attack-speed: 1.1
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 2.5
+  passive:
+    name: "蒼穹衝擊"
+    condition: "hit"
+    chance: 0.15
+    effect: "knockback_bonus"
+    value: 25.0
+  element:
+    element: "冰"
+    ice-chance: 0.1
+    ice-duration-ticks: 20
+  limits:
+    droppable: true
+    required-level: 25
+    two-handed: true
+
+# 3. Lv45 — 烈焰巨劍
+blazing_greatsword:
+  basic:
+    name: "烈焰巨劍"
+    material: DIAMOND_SWORD
+    rarity: "史詩"
+    category: "TWO_HAND_SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&c&l烈焰巨劍"
+    lore:
+      - "&7燃燒著永不熄滅的火焰"
+      - "&7揮砍時火焰四散"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.4
+    base-damage: 52
+    attack-speed: 1.0
+    crit-chance: 14.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 3.5
+  passive:
+    name: "灼燒之痕"
+    condition: "hit"
+    chance: 0.3
+    effect: "burn_on_hit"
+    value: 35.0
+  element:
+    element: "火"
+    duration-ticks: 100
+  limits:
+    droppable: false
+    required-level: 45
+    two-handed: true
+
+# 4. Lv68 — 黃昏裁決者
+twilight_arbiter:
+  basic:
+    name: "黃昏裁決者"
+    material: NETHERITE_SWORD
+    rarity: "傳說"
+    category: "TWO_HAND_SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l黃昏裁決者"
+    lore:
+      - "&7在黃昏中降下審判的巨劍"
+      - "&7正義與毀滅的化身"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.0
+    base-damage: 70
+    attack-speed: 1.0
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 4.0
+  passive:
+    name: "神聖審判"
+    condition: "hit"
+    chance: 0.12
+    effect: "holy_smite"
+    value: 90.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 68
+    two-handed: true
+
+# 5. Lv88 — 深淵巨劍·墮落
+abyss_greatsword:
+  basic:
+    name: "深淵巨劍·墮落"
+    material: NETHERITE_SWORD
+    rarity: "神話"
+    category: "TWO_HAND_SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l深淵巨劍·墮落"
+    lore:
+      - "&7墮入深淵的天使遺留的巨劍"
+      - "&7蘊含毀天滅地的黑暗力量"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.6
+    base-damage: 100
+    attack-speed: 1.0
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 5.0
+    life-steal: 6.0
+  passive:
+    name: "深淵吞噬"
+    condition: "hit"
+    chance: 0.1
+    effect: "holy_smite"
+    value: 160.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 88
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  單手斧 (AXE) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv7 — 石斧
+stone_hatchet:
+  basic:
+    name: "石斧"
+    material: STONE_AXE
+    rarity: "普通"
+    category: "AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&7&l石斧"
+    lore:
+      - "&7粗糙但鋒利的石斧"
+      - "&7能有效削弱敵人防禦"
+  stats:
+    damage-multiplier: 1.1
+    base-damage: 7
+    attack-speed: 1.4
+    crit-chance: 6.0
+    crit-damage-multiplier: 1.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 7
+
+# 2. Lv20 — 劊子手斧
+executioner_axe:
+  basic:
+    name: "劊子手之斧"
+    material: IRON_AXE
+    rarity: "優良"
+    category: "AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&c&l劊子手之斧"
+    lore:
+      - "&7劊子手專用的行刑之斧"
+      - "&7對低血量目標造成更多傷害"
+  stats:
+    damage-multiplier: 1.4
+    base-damage: 20
+    attack-speed: 1.4
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.7
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    armor-pierce: 8.0
+  passive:
+    name: "處刑者"
+    condition: "hit"
+    chance: 0.2
+    effect: "armor_break"
+    value: 15.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 20
+
+# 3. Lv38 — 雷鳴戰斧
+thunderstrike_axe:
+  basic:
+    name: "雷鳴戰斧"
+    material: DIAMOND_AXE
+    rarity: "稀有"
+    category: "AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&e&l雷鳴戰斧"
+    lore:
+      - "&7刻有雷電符文的精鍛戰斧"
+      - "&7命中時有機率召喚落雷"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.6
+    base-damage: 30
+    attack-speed: 1.5
+    crit-chance: 14.0
+    crit-damage-multiplier: 1.8
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    armor-pierce: 12.0
+  passive:
+    name: "雷擊"
+    condition: "hit"
+    chance: 0.15
+    effect: "holy_smite"
+    value: 30.0
+  element:
+    element: "雷"
+    lightning-chance: 0.15
+  limits:
+    droppable: true
+    required-level: 38
+
+# 4. Lv58 — 噬魂戰斧
+souleater_axe:
+  basic:
+    name: "噬魂戰斧"
+    material: DIAMOND_AXE
+    rarity: "史詩"
+    category: "AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l噬魂戰斧"
+    lore:
+      - "&7吞噬靈魂為力量的邪惡戰斧"
+      - "&7每次擊殺都讓它更加強大"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 44
+    attack-speed: 1.5
+    crit-chance: 16.0
+    crit-damage-multiplier: 1.9
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    armor-pierce: 15.0
+  passive:
+    name: "噬魂"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 10.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 58
+
+# 5. Lv82 — 神裂戰斧
+divine_rend_axe:
+  basic:
+    name: "神裂戰斧"
+    material: NETHERITE_AXE
+    rarity: "傳說"
+    category: "AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l神裂戰斧"
+    lore:
+      - "&7能劈開神盾的至高戰斧"
+      - "&7無視一切防禦的絕對之力"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 70
+    attack-speed: 1.5
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.3
+    knockback: 2
+  special:
+    backstab-enabled: false
+    effect: "none"
+    armor-pierce: 25.0
+  passive:
+    name: "絕對粉碎"
+    condition: "hit"
+    chance: 0.3
+    effect: "armor_break"
+    value: 55.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 82
+
+# ═══════════════════════════════════════════
+#  雙手斧 (TWO_HAND_AXE) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv15 — 蠻族巨斧
+barbarian_greataxe:
+  basic:
+    name: "蠻族巨斧"
+    material: IRON_AXE
+    rarity: "優良"
+    category: "TWO_HAND_AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&6&l蠻族巨斧"
+    lore:
+      - "&7北方蠻族使用的巨型戰斧"
+      - "&7揮砍帶有野蠻的破壞力"
+      - "&c雙手武器"
+  stats:
+    damage-multiplier: 1.6
+    base-damage: 24
+    attack-speed: 0.9
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.7
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 2.5
+  passive:
+    name: "狂戰士"
+    condition: "low_health"
+    chance: 1.0
+    effect: "berserker"
+    value: 12.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 15
+    two-handed: true
+
+# 2. Lv30 — 火山巨斧
+volcanic_greataxe:
+  basic:
+    name: "火山巨斧"
+    material: IRON_AXE
+    rarity: "稀有"
+    category: "TWO_HAND_AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&c&l火山巨斧"
+    lore:
+      - "&7以火山岩鍛造的灼熱巨斧"
+      - "&7斬擊時岩漿飛濺"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.2
+    base-damage: 38
+    attack-speed: 0.9
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.9
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 3.0
+  passive:
+    name: "灼燒之痕"
+    condition: "hit"
+    chance: 0.25
+    effect: "burn_on_hit"
+    value: 25.0
+  element:
+    element: "火"
+    duration-ticks: 80
+  limits:
+    droppable: true
+    required-level: 30
+    two-handed: true
+
+# 3. Lv48 — 冰封巨斧
+frostbound_greataxe:
+  basic:
+    name: "冰封巨斧"
+    material: DIAMOND_AXE
+    rarity: "史詩"
+    category: "TWO_HAND_AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&b&l冰封巨斧"
+    lore:
+      - "&7永凍之地鍛造的冰霜巨斧"
+      - "&7命中敵人會凍結周圍空氣"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.6
+    base-damage: 55
+    attack-speed: 0.9
+    crit-chance: 14.0
+    crit-damage-multiplier: 2.1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 3.5
+  passive:
+    name: "冰封打擊"
+    condition: "hit"
+    chance: 0.2
+    effect: "freeze_on_hit"
+    value: 30.0
+  element:
+    element: "冰"
+    ice-chance: 0.3
+    ice-duration-ticks: 50
+  limits:
+    droppable: false
+    required-level: 48
+    two-handed: true
+
+# 4. Lv70 — 災厄之斧
+calamity_greataxe:
+  basic:
+    name: "災厄之斧"
+    material: NETHERITE_AXE
+    rarity: "傳說"
+    category: "TWO_HAND_AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&4&l災厄之斧"
+    lore:
+      - "&7帶來災厄的詛咒巨斧"
+      - "&7每一擊都撕裂現實的結構"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.0
+    base-damage: 75
+    attack-speed: 0.9
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 4.5
+  passive:
+    name: "災厄之力"
+    condition: "hit"
+    chance: 0.3
+    effect: "armor_break"
+    value: 45.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 70
+    two-handed: true
+
+# 5. Lv95 — §6諸神黃昏之斧
+ragnarok_greataxe:
+  basic:
+    name: "諸神黃昏之斧"
+    material: NETHERITE_AXE
+    rarity: "神話"
+    category: "TWO_HAND_AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l諸神黃昏之斧"
+    lore:
+      - "&7終結諸神時代的末日戰斧"
+      - "&7世界的終焉在此一擊"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 4.2
+    base-damage: 125
+    attack-speed: 0.9
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 5.5
+  passive:
+    name: "終末審判"
+    condition: "hit"
+    chance: 0.35
+    effect: "armor_break"
+    value: 65.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 95
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  單手鐮刀 (SCYTHE) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv10 — 鐵鐮刀
+iron_sickle:
+  basic:
+    name: "鐵鐮刀"
+    material: IRON_HOE
+    rarity: "普通"
+    category: "SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&7&l鐵鐮刀"
+    lore:
+      - "&7鍛造過的鐵質鐮刀"
+      - "&7背刺效果更為顯著"
+  stats:
+    damage-multiplier: 1.1
+    base-damage: 10
+    attack-speed: 1.5
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.7
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.4
+    effect: "backstab"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 10
+
+# 2. Lv28 — 毒牙鐮
+venomfang_scythe:
+  basic:
+    name: "毒牙鐮"
+    material: IRON_HOE
+    rarity: "稀有"
+    category: "SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&2&l毒牙鐮"
+    lore:
+      - "&7淬了蜘蛛毒液的鐮刀"
+      - "&7割傷的傷口會不斷侵蝕"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.4
+    base-damage: 18
+    attack-speed: 1.6
+    crit-chance: 18.0
+    crit-damage-multiplier: 1.9
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.6
+    effect: "backstab"
+  passive:
+    name: "毒蝕"
+    condition: "hit"
+    chance: 0.25
+    effect: "burn_on_hit"
+    value: 15.0
+  element:
+    element: "毒"
+    poison-duration-ticks: 60
+    poison-level: 1
+  limits:
+    droppable: true
+    required-level: 28
+
+# 3. Lv48 — 暗影鐮
+shadow_crescent:
+  basic:
+    name: "暗影鐮"
+    material: DIAMOND_HOE
+    rarity: "史詩"
+    category: "SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&8&l暗影鐮"
+    lore:
+      - "&7融入暗影的弧形鐮刀"
+      - "&7從黑暗中出擊的致命武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.9
+    base-damage: 35
+    attack-speed: 1.6
+    crit-chance: 24.0
+    crit-damage-multiplier: 2.3
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.9
+    effect: "backstab"
+  passive:
+    name: "暗殺強化"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 40.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 48
+
+# 4. Lv65 — 蝕月鐮
+eclipse_scythe:
+  basic:
+    name: "蝕月鐮"
+    material: NETHERITE_HOE
+    rarity: "傳說"
+    category: "SCYTHE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l蝕月鐮"
+    lore:
+      - "&7月蝕降臨時覺醒的鐮刀"
+      - "&7在月光下閃耀著不祥的光芒"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.2
+    base-damage: 48
+    attack-speed: 1.5
+    crit-chance: 26.0
+    crit-damage-multiplier: 2.5
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 2.1
+    effect: "backstab"
+  passive:
+    name: "月蝕之力"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 14.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 65
+
+# 5. Lv90 — 無常之鐮
+impermanence_scythe:
+  basic:
+    name: "無常之鐮"
+    material: NETHERITE_HOE
+    rarity: "神話"
+    category: "SCYTHE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l無常之鐮"
+    lore:
+      - "&7掌管生死無常的鐮刀"
+      - "&7觸碰者的命運就此改寫"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 78
+    attack-speed: 1.6
+    crit-chance: 30.0
+    crit-damage-multiplier: 2.8
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 2.4
+    effect: "backstab"
+  passive:
+    name: "無常收割"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 22.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 90
+
+# ═══════════════════════════════════════════
+#  雙手鐮刀 (TWO_HAND_SCYTHE) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv20 — 收割者之鐮
+reaper_scythe:
+  basic:
+    name: "收割者之鐮"
+    material: IRON_HOE
+    rarity: "優良"
+    category: "TWO_HAND_SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&7&l收割者之鐮"
+    lore:
+      - "&7大型鐮刀，範圍收割"
+      - "&c雙手武器"
+  stats:
+    damage-multiplier: 1.5
+    base-damage: 22
+    attack-speed: 1.2
+    crit-chance: 14.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.5
+    effect: "backstab"
+    aoe-range: 2.0
+  passive:
+    name: "殺戮激勵"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 20.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 20
+    two-handed: true
+
+# 2. Lv35 — 噬骨大鐮
+bonegnaw_scythe:
+  basic:
+    name: "噬骨大鐮"
+    material: DIAMOND_HOE
+    rarity: "稀有"
+    category: "TWO_HAND_SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&4&l噬骨大鐮"
+    lore:
+      - "&7以骨頭為柄的恐怖大鐮"
+      - "&7揮砍時骨頭發出碎裂聲"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 35
+    attack-speed: 1.2
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.1
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.7
+    effect: "backstab"
+    aoe-range: 2.5
+  passive:
+    name: "骨蝕"
+    condition: "hit"
+    chance: 0.2
+    effect: "armor_break"
+    value: 20.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 35
+    two-handed: true
+
+# 3. Lv55 — 血色大鐮
+sanguine_warscythe:
+  basic:
+    name: "血色大鐮"
+    material: NETHERITE_HOE
+    rarity: "史詩"
+    category: "TWO_HAND_SCYTHE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&4&l血色大鐮"
+    lore:
+      - "&7被無數鮮血浸透的大鐮"
+      - "&7揮砍時血霧蔓延"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.4
+    base-damage: 48
+    attack-speed: 1.2
+    crit-chance: 24.0
+    crit-damage-multiplier: 2.3
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.9
+    effect: "backstab"
+    aoe-range: 3.0
+  passive:
+    name: "血之渴望"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 12.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 55
+    two-handed: true
+
+# 4. Lv75 — 虛空大鐮
+void_warscythe:
+  basic:
+    name: "虛空大鐮"
+    material: NETHERITE_HOE
+    rarity: "傳說"
+    category: "TWO_HAND_SCYTHE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l虛空大鐮"
+    lore:
+      - "&7從虛空裂縫中拉出的大鐮"
+      - "&7切割空間本身"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 65
+    attack-speed: 1.2
+    crit-chance: 28.0
+    crit-damage-multiplier: 2.6
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 2.2
+    effect: "backstab"
+    aoe-range: 3.5
+  passive:
+    name: "虛空斬"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 16.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 75
+    two-handed: true
+
+# 5. Lv97 — §6終焉之鐮·末世
+endscythe_apocalypse:
+  basic:
+    name: "終焉之鐮·末世"
+    material: NETHERITE_HOE
+    rarity: "神話"
+    category: "TWO_HAND_SCYTHE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l終焉之鐮·末世"
+    lore:
+      - "&7末世降臨時揮舞的最終之鐮"
+      - "&7一切生命在其面前皆歸於虛無"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.4
+    base-damage: 95
+    attack-speed: 1.3
+    crit-chance: 32.0
+    crit-damage-multiplier: 3.0
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 2.5
+    effect: "backstab"
+    aoe-range: 4.5
+  passive:
+    name: "末世收割"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 25.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 97
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  矛 (SPEAR) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv6 — 木製長矛
+wooden_spear:
+  basic:
+    name: "木製長矛"
+    material: FISHING_ROD
+    rarity: "普通"
+    category: "SPEAR"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l木製長矛"
+    lore:
+      - "&7削尖的木棒，最原始的長矛"
+      - "&c雙手武器"
+    custom-model-data: 1
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 6
+    attack-speed: 1.3
+    crit-chance: 6.0
+    crit-damage-multiplier: 1.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 1.0
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 6
+    two-handed: true
+
+# 2. Lv25 — 獵龍槍
+dragonhunter_spear:
+  basic:
+    name: "獵龍槍"
+    material: FISHING_ROD
+    rarity: "稀有"
+    category: "SPEAR"
+    bind-type: "無"
+  appearance:
+    display-name: "&c&l獵龍槍"
+    lore:
+      - "&7專門獵殺巨龍的長槍"
+      - "&7槍尖帶有龍血塗層"
+      - "&c雙手武器"
+    custom-model-data: 2
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.6
+    base-damage: 26
+    attack-speed: 1.3
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.7
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 2.0
+  passive:
+    name: "龍息"
+    condition: "hit"
+    chance: 0.15
+    effect: "burn_on_hit"
+    value: 18.0
+  element:
+    element: "火"
+    duration-ticks: 60
+  limits:
+    droppable: true
+    required-level: 25
+    two-handed: true
+
+# 3. Lv50 — 冰晶戰矛
+icecrystal_lance:
+  basic:
+    name: "冰晶戰矛"
+    material: TRIDENT
+    rarity: "史詩"
+    category: "SPEAR"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&b&l冰晶戰矛"
+    lore:
+      - "&7以永凍冰晶打造的戰矛"
+      - "&7刺中目標會凝結冰霜"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.2
+    base-damage: 45
+    attack-speed: 1.3
+    crit-chance: 16.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 2.5
+  passive:
+    name: "冰封突刺"
+    condition: "hit"
+    chance: 0.2
+    effect: "freeze_on_hit"
+    value: 30.0
+  element:
+    element: "冰"
+    ice-chance: 0.25
+    ice-duration-ticks: 40
+  limits:
+    droppable: false
+    required-level: 50
+    two-handed: true
+
+# 4. Lv72 — 天穹戰戟
+celestial_halberd:
+  basic:
+    name: "天穹戰戟"
+    material: TRIDENT
+    rarity: "傳說"
+    category: "SPEAR"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l天穹戰戟"
+    lore:
+      - "&7直達天穹的聖光戰戟"
+      - "&7突刺時聖光傾瀉而下"
+      - "&c雙手武器"
+    custom-model-data: 3
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.7
+    base-damage: 62
+    attack-speed: 1.3
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 3.0
+  passive:
+    name: "天罰突刺"
+    condition: "hit"
+    chance: 0.15
+    effect: "holy_smite"
+    value: 75.0
+  element:
+    element: "雷"
+    lightning-chance: 0.25
+  limits:
+    droppable: false
+    required-level: 72
+    two-handed: true
+
+# 5. Lv96 — §6創世神槍·輪迴
+genesis_lance_reincarnation:
+  basic:
+    name: "創世神槍·輪迴"
+    material: TRIDENT
+    rarity: "神話"
+    category: "SPEAR"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l創世神槍·輪迴"
+    lore:
+      - "&7掌管輪迴的至高神槍"
+      - "&7刺穿一切因果的力量"
+      - "&c雙手武器"
+    custom-model-data: 5
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.2
+    base-damage: 98
+    attack-speed: 1.3
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 4.0
+  passive:
+    name: "輪迴突刺"
+    condition: "hit"
+    chance: 0.15
+    effect: "dragon_aoe"
+    value: 130.0
+  element:
+    element: "雷"
+    lightning-chance: 0.35
+  limits:
+    droppable: false
+    required-level: 96
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  弓/弩 (BOW) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv8 — 輕巧短弓
+light_shortbow:
+  basic:
+    name: "輕巧短弓"
+    material: BOW
+    rarity: "普通"
+    category: "BOW"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l輕巧短弓"
+    lore:
+      - "&7輕巧好拉的短弓"
+      - "&7射速較快但射程有限"
+      - "&c雙手武器"
+  stats:
+    damage-multiplier: 1.1
+    base-damage: 9
+    attack-speed: 1.2
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 8
+    two-handed: true
+
+# 2. Lv28 — 毒霧弓
+miasma_bow:
+  basic:
+    name: "毒霧弓"
+    material: BOW
+    rarity: "稀有"
+    category: "BOW"
+    bind-type: "無"
+  appearance:
+    display-name: "&2&l毒霧弓"
+    lore:
+      - "&7弓弦塗有毒液"
+      - "&7射出的箭矢帶有毒性"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.4
+    base-damage: 22
+    attack-speed: 1.0
+    crit-chance: 16.0
+    crit-damage-multiplier: 1.9
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "毒蝕箭"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 30.0
+  element:
+    element: "毒"
+    poison-duration-ticks: 60
+    poison-level: 1
+  limits:
+    droppable: true
+    required-level: 28
+    two-handed: true
+
+# 3. Lv48 — 烈焰弩
+inferno_crossbow:
+  basic:
+    name: "烈焰弩"
+    material: CROSSBOW
+    rarity: "史詩"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&c&l烈焰弩"
+    lore:
+      - "&7以烈焰核心驅動的魔法弩"
+      - "&7弩矢在飛行中自燃"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 40
+    attack-speed: 0.8
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "烈焰射擊"
+    condition: "hit"
+    chance: 0.3
+    effect: "burn_on_hit"
+    value: 30.0
+  element:
+    element: "火"
+    duration-ticks: 80
+  limits:
+    droppable: false
+    required-level: 48
+    two-handed: true
+
+# 4. Lv70 — 月影弓
+moonshade_bow:
+  basic:
+    name: "月影弓"
+    material: BOW
+    rarity: "傳說"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&9&l月影弓"
+    lore:
+      - "&7在月光下閃耀的精靈弓"
+      - "&7每一箭都精準無比"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.6
+    base-damage: 58
+    attack-speed: 1.1
+    crit-chance: 26.0
+    crit-damage-multiplier: 2.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "月光穿透"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 65.0
+  element:
+    element: "冰"
+    ice-chance: 0.2
+    ice-duration-ticks: 40
+  limits:
+    droppable: false
+    required-level: 70
+    two-handed: true
+
+# 5. Lv92 — §6破曉之弓·曙光
+dawnbreaker_bow:
+  basic:
+    name: "破曉之弓·曙光"
+    material: BOW
+    rarity: "神話"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l破曉之弓·曙光"
+    lore:
+      - "&7劃破黎明的第一道曙光"
+      - "&7射出的箭矢如流星般耀眼"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.2
+    base-damage: 88
+    attack-speed: 1.2
+    crit-chance: 32.0
+    crit-damage-multiplier: 3.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "曙光審判"
+    condition: "hit"
+    chance: 0.15
+    effect: "holy_smite"
+    value: 150.0
+  element:
+    element: "雷"
+    lightning-chance: 0.3
+  limits:
+    droppable: false
+    required-level: 92
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  法杖/長棍 (STAFF) × 5
+# ═══════════════════════════════════════════
+
+# 1. Lv5 — 魔法新芽杖
+sprout_wand:
+  basic:
+    name: "魔法新芽杖"
+    material: STICK
+    rarity: "普通"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&2&l魔法新芽杖"
+    lore:
+      - "&7生長出新芽的魔法小杖"
+      - "&7殘留著大自然的魔力"
+    custom-model-data: 1
+  stats:
+    damage-multiplier: 0.9
+    base-damage: 5
+    attack-speed: 1.4
+    crit-chance: 4.0
+    crit-damage-multiplier: 1.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "魔力回復"
+    condition: "hit"
+    chance: 0.2
+    effect: "mana_restore"
+    value: 4.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 5
+
+# 2. Lv22 — 赤焰法杖
+scarlet_flame_staff:
+  basic:
+    name: "赤焰法杖"
+    material: BLAZE_ROD
+    rarity: "優良"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&c&l赤焰法杖"
+    lore:
+      - "&7以火焰精華注入的法杖"
+      - "&7施法時紅焰環繞"
+    custom-model-data: 2
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 16
+    attack-speed: 1.4
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "灼燒之痕"
+    condition: "hit"
+    chance: 0.25
+    effect: "burn_on_hit"
+    value: 15.0
+  element:
+    element: "火"
+    duration-ticks: 60
+  limits:
+    droppable: true
+    required-level: 22
+
+# 3. Lv40 — 冰霜權杖
+frost_scepter:
+  basic:
+    name: "冰霜權杖"
+    material: STICK
+    rarity: "稀有"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l冰霜權杖"
+    lore:
+      - "&7鑲嵌冰晶的魔法權杖"
+      - "&7施法時冷氣環繞"
+    custom-model-data: 5
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.6
+    base-damage: 28
+    attack-speed: 1.4
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "冰封之觸"
+    condition: "hit"
+    chance: 0.2
+    effect: "freeze_on_hit"
+    value: 20.0
+  element:
+    element: "冰"
+    ice-chance: 0.2
+    ice-duration-ticks: 30
+  limits:
+    droppable: true
+    required-level: 40
+
+# 4. Lv60 — 暗黑權杖
+dark_scepter:
+  basic:
+    name: "暗黑權杖"
+    material: BLAZE_ROD
+    rarity: "史詩"
+    category: "STAFF"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l暗黑權杖"
+    lore:
+      - "&7散發黑暗氣息的禁忌法杖"
+      - "&7施法時暗影蔓延"
+    custom-model-data: 6
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 42
+    attack-speed: 1.4
+    crit-chance: 14.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "暗黑共鳴"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 28.0
+  element:
+    element: "雷"
+    lightning-chance: 0.25
+  limits:
+    droppable: false
+    required-level: 60
+
+# 5. Lv86 — 聖光法典
+radiance_codex:
+  basic:
+    name: "聖光法典"
+    material: BLAZE_ROD
+    rarity: "傳說"
+    category: "STAFF"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l聖光法典"
+    lore:
+      - "&7記載聖光禱言的法典"
+      - "&7翻開時神聖光芒閃耀"
+    custom-model-data: 8
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 65
+    attack-speed: 1.4
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "聖光共鳴"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 40.0
+  element:
+    element: "雷"
+    lightning-chance: 0.3
+  limits:
+    droppable: false
+    required-level: 86
+

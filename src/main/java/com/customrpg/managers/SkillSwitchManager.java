@@ -24,8 +24,8 @@ public class SkillSwitchManager {
     // 玩家當前選擇的技能索引 Map<UUID, Map<Material, Integer>>
     private final Map<UUID, Map<Material, Integer>> playerSkillSelection = new ConcurrentHashMap<>();
 
-    // 機制物品對應的材質
-    private final Map<String, Material> mechanismMaterials = new HashMap<>();
+    // 機制物品對應的材質 (一個機制名可對應多個材質)
+    private final Map<String, Set<Material>> mechanismMaterials = new HashMap<>();
 
     public SkillSwitchManager(CustomRPG plugin) {
         this.plugin = plugin;
@@ -37,14 +37,30 @@ public class SkillSwitchManager {
      * 初始化機制物品材質映射
      */
     private void initMechanismMaterials() {
-        mechanismMaterials.put("金粒", Material.GOLD_NUGGET);
-        mechanismMaterials.put("骨頭", Material.BONE);
-        mechanismMaterials.put("木棒", Material.STICK);
-        mechanismMaterials.put("海靈晶體", Material.PRISMARINE_CRYSTALS);
-        mechanismMaterials.put("海磷碎片", Material.PRISMARINE_SHARD);
-        mechanismMaterials.put("地獄之星", Material.NETHER_STAR);
-        mechanismMaterials.put("鑽石劍", Material.DIAMOND_SWORD);
-        mechanismMaterials.put("紅石粉", Material.REDSTONE);
+        addMechanism("金粒", Material.GOLD_NUGGET);
+        addMechanism("骨頭", Material.BONE);
+        addMechanism("木棒", Material.STICK);
+        addMechanism("海靈晶體", Material.PRISMARINE_CRYSTALS);
+        addMechanism("海磷碎片", Material.PRISMARINE_SHARD);
+        addMechanism("地獄之星", Material.NETHER_STAR);
+        addMechanism("鑽石劍", Material.DIAMOND_SWORD);
+        addMechanism("紅石粉", Material.REDSTONE);
+        addMechanism("蜘蛛眼", Material.SPIDER_EYE);
+        addMechanism("烈焰粉", Material.BLAZE_POWDER);
+        // 鐮刀 → 所有 HOE 類型
+        addMechanism("鐮刀", Material.WOODEN_HOE);
+        addMechanism("鐮刀", Material.STONE_HOE);
+        addMechanism("鐮刀", Material.IRON_HOE);
+        addMechanism("鐮刀", Material.GOLDEN_HOE);
+        addMechanism("鐮刀", Material.DIAMOND_HOE);
+        addMechanism("鐮刀", Material.NETHERITE_HOE);
+    }
+
+    /**
+     * 添加機制名稱對應的材質（支援一對多）
+     */
+    private void addMechanism(String name, Material material) {
+        mechanismMaterials.computeIfAbsent(name, k -> new HashSet<>()).add(material);
     }
 
     /**
@@ -144,9 +160,9 @@ public class SkillSwitchManager {
 
             Talent talent = talentManager.findTalent(talentId);
             if (talent != null && talent.getMechanism() != null) {
-                // 檢查機制是否匹配
-                Material talentMaterial = getMaterialFromMechanism(talent.getMechanism());
-                if (talentMaterial == material) {
+                // 檢查機制是否匹配（支援一對多材質，例如鐮刀對應所有 HOE）
+                Set<Material> talentMaterials = getMaterialsFromMechanism(talent.getMechanism());
+                if (talentMaterials != null && talentMaterials.contains(material)) {
                     skills.add(talent);
                 }
             }
@@ -159,12 +175,12 @@ public class SkillSwitchManager {
     }
 
     /**
-     * 從機制描述獲取對應的材質
+     * 從機制描述獲取對應的材質集合
      * @param mechanism 機制描述
-     * @return 對應材質
+     * @return 對應材質集合
      */
-    private Material getMaterialFromMechanism(String mechanism) {
-        for (Map.Entry<String, Material> entry : mechanismMaterials.entrySet()) {
+    private Set<Material> getMaterialsFromMechanism(String mechanism) {
+        for (Map.Entry<String, Set<Material>> entry : mechanismMaterials.entrySet()) {
             if (mechanism.contains(entry.getKey())) {
                 return entry.getValue();
             }

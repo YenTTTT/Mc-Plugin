@@ -11,6 +11,7 @@ public enum EquipmentAttribute {
     INTELLIGENCE("智力", "INT", "§9", "增加魔法攻擊力和魔力值"),
     VITALITY("體力", "VIT", "§6", "增加生命值和生命回復"),
     DEFENSE("防禦", "DEF", "§7", "減少受到的物理傷害"),
+    SPIRIT("精神", "SPI", "§d", "增加技能效果和魔力回復"),
 
     // 戰鬥屬性
     ATTACK_DAMAGE("攻擊力", "ATK", "§c", "增加造成的傷害"),
@@ -78,7 +79,7 @@ public enum EquipmentAttribute {
      */
     public boolean isBasicAttribute() {
         return this == STRENGTH || this == AGILITY || this == INTELLIGENCE ||
-               this == VITALITY || this == DEFENSE;
+               this == VITALITY || this == DEFENSE || this == SPIRIT;
     }
 
     /**

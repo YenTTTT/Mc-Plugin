@@ -1,0 +1,1877 @@
+# ============================================
+# MMORPG 分級武器系統配置文件
+# 每 10 等級一個階段，每階段 5 種武器
+# 涵蓋：單手劍、雙手劍、單手斧、雙手斧、
+#        鐮刀、矛、弓/弩、法杖、長棍系列
+# ============================================
+
+# ═══════════════════════════════════════════
+#  Tier 1 — Lv.1~10 (新手)
+# ═══════════════════════════════════════════
+
+# T1-1 單手劍 — 木劍
+wooden_sword_t1:
+  basic:
+    name: "木劍"
+    material: WOODEN_SWORD
+    rarity: "普通"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l木劍"
+    lore:
+      - "&7初冒險者的第一把武器"
+      - "&7雖然簡陋但足以防身"
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 5
+    attack-speed: 1.6
+    crit-chance: 5.0
+    crit-damage-multiplier: 1.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# T1-2 單手斧 — 伐木斧
+logging_axe_t1:
+  basic:
+    name: "伐木斧"
+    material: WOODEN_AXE
+    rarity: "普通"
+    category: "AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l伐木斧"
+    lore:
+      - "&7拿來砍樹的斧頭"
+      - "&7意外地適合戰鬥"
+  stats:
+    damage-multiplier: 1.1
+    base-damage: 6
+    attack-speed: 1.4
+    crit-chance: 5.0
+    crit-damage-multiplier: 1.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# T1-3 弓 — 簡易短弓
+crude_shortbow_t1:
+  basic:
+    name: "簡易短弓"
+    material: BOW
+    rarity: "普通"
+    category: "BOW"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l簡易短弓"
+    lore:
+      - "&7用樹枝和繩子做成的弓"
+      - "&c雙手武器"
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 7
+    attack-speed: 1.0
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+    two-handed: true
+
+# T1-4 法杖 — 朽木杖
+rotten_staff_t1:
+  basic:
+    name: "朽木杖"
+    material: STICK
+    rarity: "普通"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l朽木杖"
+    lore:
+      - "&7殘留微弱魔力的枯木"
+      - "&7勉強能引導法術"
+  stats:
+    damage-multiplier: 0.8
+    base-damage: 4
+    attack-speed: 1.4
+    crit-chance: 3.0
+    crit-damage-multiplier: 1.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "魔力回復"
+    condition: "hit"
+    chance: 0.15
+    effect: "mana_restore"
+    value: 3.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# T1-5 鐮刀 — 農用鐮刀
+farm_sickle_t1:
+  basic:
+    name: "農用鐮刀"
+    material: WOODEN_HOE
+    rarity: "普通"
+    category: "SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l農用鐮刀"
+    lore:
+      - "&7原本是割草用的"
+      - "&7從背後攻擊似乎更有效"
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 5
+    attack-speed: 1.5
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.6
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.3
+    effect: "backstab"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# ═══════════════════════════════════════════
+#  Tier 2 — Lv.11~20 (成長初期)
+# ═══════════════════════════════════════════
+
+# T2-1 單手劍 — 鐵製闊劍
+iron_broadsword_t2:
+  basic:
+    name: "鐵製闊劍"
+    material: IRON_SWORD
+    rarity: "普通"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l鐵製闊劍"
+    lore:
+      - "&7鍛造精良的鐵製闊劍"
+      - "&7手感均衡，攻守兼備"
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 14
+    attack-speed: 1.6
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 11
+
+# T2-2 雙手劍 — 騎士巨劍
+knight_greatsword_t2:
+  basic:
+    name: "騎士巨劍"
+    material: IRON_SWORD
+    rarity: "優良"
+    category: "TWO_HAND_SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l騎士巨劍"
+    lore:
+      - "&7騎士團的制式雙手劍"
+      - "&c雙手武器"
+  stats:
+    damage-multiplier: 1.5
+    base-damage: 22
+    attack-speed: 1.1
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.7
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 2.0
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 12
+    two-handed: true
+
+# T2-3 弓 — 獵手長弓
+hunter_longbow_t2:
+  basic:
+    name: "獵手長弓"
+    material: BOW
+    rarity: "優良"
+    category: "BOW"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l獵手長弓"
+    lore:
+      - "&7獵人公會配發的長弓"
+      - "&c雙手武器"
+  stats:
+    damage-multiplier: 1.3
+    base-damage: 18
+    attack-speed: 1.0
+    crit-chance: 14.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "精準射擊"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 20.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 11
+    two-handed: true
+
+# T2-4 法杖 — 學徒法杖
+apprentice_wand_t2:
+  basic:
+    name: "學徒之杖"
+    material: STICK
+    rarity: "優良"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l學徒之杖"
+    lore:
+      - "&7魔法學院的入門法杖"
+      - "&7能穩定引導魔力"
+    custom-model-data: 1
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 10
+    attack-speed: 1.4
+    crit-chance: 6.0
+    crit-damage-multiplier: 1.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "魔力回復"
+    condition: "hit"
+    chance: 0.2
+    effect: "mana_restore"
+    value: 5.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 11
+
+# T2-5 矛 — 步兵長矛
+infantry_spear_t2:
+  basic:
+    name: "步兵長矛"
+    material: FISHING_ROD
+    rarity: "普通"
+    category: "SPEAR"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l步兵長矛"
+    lore:
+      - "&7步兵標配的長矛"
+      - "&7擁有優秀的攻擊距離"
+      - "&c雙手武器"
+    custom-model-data: 1
+  stats:
+    damage-multiplier: 1.3
+    base-damage: 16
+    attack-speed: 1.3
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 1.5
+  passive:
+    name: "突刺精通"
+    condition: "hit"
+    chance: 1.0
+    effect: "knockback_bonus"
+    value: 10.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 13
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  Tier 3 — Lv.21~30 (成長期)
+# ═══════════════════════════════════════════
+
+# T3-1 單手劍 — 精鋼彎刀
+steel_scimitar_t3:
+  basic:
+    name: "精鋼彎刀"
+    material: IRON_SWORD
+    rarity: "優良"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l精鋼彎刀"
+    lore:
+      - "&7沙漠商隊偏好的彎刀"
+      - "&7揮砍流暢，適合連擊"
+  stats:
+    damage-multiplier: 1.4
+    base-damage: 22
+    attack-speed: 1.7
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "連擊強化"
+    condition: "hit"
+    chance: 1.0
+    effect: "combo_boost"
+    value: 8.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 21
+
+# T3-2 雙手斧 — 裂地重斧
+earthsplitter_axe_t3:
+  basic:
+    name: "裂地重斧"
+    material: IRON_AXE
+    rarity: "稀有"
+    category: "TWO_HAND_AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&6&l裂地重斧"
+    lore:
+      - "&7沉重到能劈裂大地的巨斧"
+      - "&c雙手武器"
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 35
+    attack-speed: 0.9
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 3.0
+  passive:
+    name: "粉碎打擊"
+    condition: "hit"
+    chance: 0.25
+    effect: "armor_break"
+    value: 20.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 22
+    two-handed: true
+
+# T3-3 鐮刀 — 暗月鐮
+darkmoon_scythe_t3:
+  basic:
+    name: "暗月鐮"
+    material: IRON_HOE
+    rarity: "稀有"
+    category: "SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&5&l暗月鐮"
+    lore:
+      - "&7月蝕之夜鍛造的鐮刀"
+      - "&7背刺效果極為致命"
+  stats:
+    damage-multiplier: 1.5
+    base-damage: 20
+    attack-speed: 1.5
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.6
+    effect: "backstab"
+  passive:
+    name: "殺戮激勵"
+    condition: "kill"
+    chance: 1.0
+    effect: "kill_crit_boost"
+    value: 30.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 23
+
+# T3-4 弓 — 風鷹弓
+windhawk_bow_t3:
+  basic:
+    name: "風鷹弓"
+    material: BOW
+    rarity: "稀有"
+    category: "BOW"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l風鷹弓"
+    lore:
+      - "&7以風鷹羽毛為弦的輕弓"
+      - "&7箭矢如風般迅捷"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.5
+    base-damage: 25
+    attack-speed: 1.1
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "疾風連射"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 35.0
+  element:
+    element: "冰"
+    ice-chance: 0.1
+    ice-duration-ticks: 20
+  limits:
+    droppable: true
+    required-level: 21
+    two-handed: true
+
+# T3-5 長棍(木棒) — 橡木長棍
+oak_quarterstaff_t3:
+  basic:
+    name: "橡木長棍"
+    material: STICK
+    rarity: "優良"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&2&l橡木長棍"
+    lore:
+      - "&7堅硬的橡木長棍"
+      - "&7既能施法也能近戰"
+    custom-model-data: 3
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 18
+    attack-speed: 1.5
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "自然回復"
+    condition: "hit"
+    chance: 0.2
+    effect: "mana_restore"
+    value: 8.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 21
+
+# ═══════════════════════════════════════════
+#  Tier 4 — Lv.31~40 (進階)
+# ═══════════════════════════════════════════
+
+# T4-1 單手劍 — 狂戰之刃
+warblade_t4:
+  basic:
+    name: "狂戰之刃"
+    material: DIAMOND_SWORD
+    rarity: "稀有"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&6&l狂戰之刃"
+    lore:
+      - "&7被無數戰鬥淬鍊的利刃"
+      - "&7揮舞時空氣都在顫抖"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.6
+    base-damage: 30
+    attack-speed: 1.6
+    crit-chance: 14.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "狂戰士"
+    condition: "low_health"
+    chance: 1.0
+    effect: "berserker"
+    value: 15.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 31
+
+# T4-2 單手斧 — 碎骨戰斧
+bonebreaker_axe_t4:
+  basic:
+    name: "碎骨戰斧"
+    material: DIAMOND_AXE
+    rarity: "稀有"
+    category: "AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&6&l碎骨戰斧"
+    lore:
+      - "&7沉重的斧刃能碎裂骨骼"
+      - "&7削弱敵方防禦"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.5
+    base-damage: 28
+    attack-speed: 1.4
+    crit-chance: 12.0
+    crit-damage-multiplier: 1.7
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    armor-pierce: 10.0
+  passive:
+    name: "粉碎打擊"
+    condition: "hit"
+    chance: 0.2
+    effect: "armor_break"
+    value: 30.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 32
+
+# T4-3 矛 — 龍牙槍
+dragonfang_spear_t4:
+  basic:
+    name: "龍牙槍"
+    material: FISHING_ROD
+    rarity: "稀有"
+    category: "SPEAR"
+    bind-type: "無"
+  appearance:
+    display-name: "&c&l龍牙槍"
+    lore:
+      - "&7以龍牙打造的穿刺長槍"
+      - "&7貫穿一切的銳利槍尖"
+      - "&c雙手武器"
+    custom-model-data: 2
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.8
+    base-damage: 32
+    attack-speed: 1.3
+    crit-chance: 14.0
+    crit-damage-multiplier: 1.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 2.0
+  passive:
+    name: "龍息"
+    condition: "hit"
+    chance: 0.15
+    effect: "burn_on_hit"
+    value: 20.0
+  element:
+    element: "火"
+    duration-ticks: 60
+  limits:
+    droppable: true
+    required-level: 33
+    two-handed: true
+
+# T4-4 法杖(烈焰桿) — 烈焰法杖
+flame_staff_t4:
+  basic:
+    name: "烈焰法杖"
+    material: BLAZE_ROD
+    rarity: "稀有"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&c&l烈焰法杖"
+    lore:
+      - "&7以烈焰之核鍛造的法杖"
+      - "&7觸碰之物皆化為灰燼"
+    custom-model-data: 2
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.4
+    base-damage: 24
+    attack-speed: 1.4
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.7
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "灼燒之痕"
+    condition: "hit"
+    chance: 0.3
+    effect: "burn_on_hit"
+    value: 25.0
+  element:
+    element: "火"
+    duration-ticks: 80
+  limits:
+    droppable: true
+    required-level: 31
+
+# T4-5 弓 — 穿雲弩
+skypiercer_crossbow_t4:
+  basic:
+    name: "穿雲弩"
+    material: CROSSBOW
+    rarity: "稀有"
+    category: "BOW"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l穿雲弩"
+    lore:
+      - "&7精密打造的重型弩"
+      - "&7箭矢能穿透重甲"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.8
+    base-damage: 34
+    attack-speed: 0.8
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.2
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "穿甲射擊"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 45.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 34
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  Tier 5 — Lv.41~50 (中堅)
+# ═══════════════════════════════════════════
+
+# T5-1 雙手劍 — 斷鋼巨劍
+steelbreaker_t5:
+  basic:
+    name: "斷鋼巨劍"
+    material: DIAMOND_SWORD
+    rarity: "史詩"
+    category: "TWO_HAND_SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&5&l斷鋼巨劍"
+    lore:
+      - "&7能斬斷精鋼的巨型劍"
+      - "&7揮砍帶有強大的衝擊波"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.2
+    base-damage: 48
+    attack-speed: 1.0
+    crit-chance: 15.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 3.5
+  passive:
+    name: "鋼之意志"
+    condition: "low_health"
+    chance: 1.0
+    effect: "berserker"
+    value: 25.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 41
+    two-handed: true
+
+# T5-2 單手斧 — 寒冰戰斧
+frostbite_axe_t5:
+  basic:
+    name: "寒冰戰斧"
+    material: DIAMOND_AXE
+    rarity: "史詩"
+    category: "AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l寒冰戰斧"
+    lore:
+      - "&7以永凍冰核鍛造的戰斧"
+      - "&7命中敵人會附帶冰凍效果"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.8
+    base-damage: 38
+    attack-speed: 1.4
+    crit-chance: 14.0
+    crit-damage-multiplier: 1.8
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    armor-pierce: 12.0
+  passive:
+    name: "冰封打擊"
+    condition: "hit"
+    chance: 0.2
+    effect: "freeze_on_hit"
+    value: 30.0
+  element:
+    element: "冰"
+    ice-chance: 0.25
+    ice-duration-ticks: 40
+  limits:
+    droppable: true
+    required-level: 42
+
+# T5-3 鐮刀 — 血月鐮
+bloodmoon_scythe_t5:
+  basic:
+    name: "血月鐮"
+    material: DIAMOND_HOE
+    rarity: "史詩"
+    category: "SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&4&l血月鐮"
+    lore:
+      - "&7血月之夜覺醒的鐮刀"
+      - "&7每次擊殺都能汲取生命"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.8
+    base-damage: 32
+    attack-speed: 1.5
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.2
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 1.8
+    effect: "backstab"
+  passive:
+    name: "生命汲取"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 10.0
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 43
+
+# T5-4 法杖(旋風棍) — 旋風法棍
+cyclone_staff_t5:
+  basic:
+    name: "旋風法棍"
+    material: STICK
+    rarity: "史詩"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l旋風法棍"
+    lore:
+      - "&7蘊含風元素的長棍"
+      - "&7揮動時捲起旋風"
+    custom-model-data: 4
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 1.5
+    base-damage: 30
+    attack-speed: 1.5
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 2.5
+  passive:
+    name: "旋風打擊"
+    condition: "hit"
+    chance: 0.25
+    effect: "knockback_bonus"
+    value: 30.0
+  element:
+    element: "冰"
+    ice-chance: 0.15
+    ice-duration-ticks: 20
+  limits:
+    droppable: true
+    required-level: 44
+
+# T5-5 矛 — 雷霆戰戟
+thunder_halberd_t5:
+  basic:
+    name: "雷霆戰戟"
+    material: TRIDENT
+    rarity: "史詩"
+    category: "SPEAR"
+    bind-type: "無"
+  appearance:
+    display-name: "&e&l雷霆戰戟"
+    lore:
+      - "&7刻有雷電符文的戰戟"
+      - "&7突刺時閃電四射"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 40
+    attack-speed: 1.3
+    crit-chance: 14.0
+    crit-damage-multiplier: 1.9
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 2.5
+  passive:
+    name: "雷電突刺"
+    condition: "hit"
+    chance: 0.2
+    effect: "knockback_bonus"
+    value: 35.0
+  element:
+    element: "雷"
+    lightning-chance: 0.2
+  limits:
+    droppable: true
+    required-level: 45
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  Tier 6 — Lv.51~60 (高階前段)
+# ═══════════════════════════════════════════
+
+# T6-1 單手劍 — 獄炎之劍
+infernal_blade_t6:
+  basic:
+    name: "獄炎之劍"
+    material: NETHERITE_SWORD
+    rarity: "史詩"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&c&l獄炎之劍"
+    lore:
+      - "&7從地獄熔岩中打造的劍"
+      - "&7斬擊時火焰纏繞"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 45
+    attack-speed: 1.6
+    crit-chance: 16.0
+    crit-damage-multiplier: 2.0
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "灼燒之痕"
+    condition: "hit"
+    chance: 0.3
+    effect: "burn_on_hit"
+    value: 35.0
+  element:
+    element: "火"
+    duration-ticks: 80
+  limits:
+    droppable: false
+    required-level: 51
+
+# T6-2 雙手斧 — 泰坦裂斧
+titan_cleaver_t6:
+  basic:
+    name: "泰坦裂斧"
+    material: NETHERITE_AXE
+    rarity: "史詩"
+    category: "TWO_HAND_AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&4&l泰坦裂斧"
+    lore:
+      - "&7泰坦巨人使用的戰斧"
+      - "&7每一擊都能震裂大地"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 60
+    attack-speed: 0.9
+    crit-chance: 16.0
+    crit-damage-multiplier: 2.2
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 4.0
+  passive:
+    name: "粉碎打擊"
+    condition: "hit"
+    chance: 0.3
+    effect: "armor_break"
+    value: 40.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 53
+    two-handed: true
+
+# T6-3 法杖 — 深淵法杖
+abyss_staff_t6:
+  basic:
+    name: "深淵法杖"
+    material: BLAZE_ROD
+    rarity: "史詩"
+    category: "STAFF"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l深淵法杖"
+    lore:
+      - "&7從深淵裂縫中汲取力量"
+      - "&7魔法威力極為強大"
+    custom-model-data: 5
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 38
+    attack-speed: 1.4
+    crit-chance: 14.0
+    crit-damage-multiplier: 2.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "奧術共鳴"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 25.0
+  element:
+    element: "雷"
+    lightning-chance: 0.2
+  limits:
+    droppable: false
+    required-level: 52
+
+# T6-4 弓 — 蒼穹弓
+azure_bow_t6:
+  basic:
+    name: "蒼穹弓"
+    material: BOW
+    rarity: "史詩"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&b&l蒼穹弓"
+    lore:
+      - "&7以天空之石製成的神弓"
+      - "&7箭矢帶有冰霜之力"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 42
+    attack-speed: 1.1
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "冰霜箭"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 55.0
+  element:
+    element: "冰"
+    ice-chance: 0.3
+    ice-duration-ticks: 40
+  limits:
+    droppable: false
+    required-level: 54
+    two-handed: true
+
+# T6-5 鐮刀 — 魂斷鐮
+soulreaver_scythe_t6:
+  basic:
+    name: "魂斷鐮"
+    material: NETHERITE_HOE
+    rarity: "史詩"
+    category: "SCYTHE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l魂斷鐮"
+    lore:
+      - "&7收割靈魂的恐怖鐮刀"
+      - "&7擊殺時吸取目標靈魂"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.0
+    base-damage: 40
+    attack-speed: 1.5
+    crit-chance: 24.0
+    crit-damage-multiplier: 2.4
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 2.0
+    effect: "backstab"
+  passive:
+    name: "靈魂收割"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 15.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 55
+
+# ═══════════════════════════════════════════
+#  Tier 7 — Lv.61~70 (高階中段)
+# ═══════════════════════════════════════════
+
+# T7-1 單手劍 — 龍鱗劍
+dragonscale_sword_t7:
+  basic:
+    name: "龍鱗劍"
+    material: NETHERITE_SWORD
+    rarity: "傳說"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l龍鱗劍"
+    lore:
+      - "&7以龍鱗鍛造的傳說之劍"
+      - "&7劍鋒閃耀龍炎之光"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.4
+    base-damage: 58
+    attack-speed: 1.6
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.2
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    life-steal: 5.0
+  passive:
+    name: "龍之祝福"
+    condition: "hit"
+    chance: 0.15
+    effect: "dragon_aoe"
+    value: 60.0
+  element:
+    element: "火"
+    duration-ticks: 100
+  limits:
+    droppable: false
+    required-level: 61
+
+# T7-2 雙手劍 — 審判巨劍
+judgment_greatsword_t7:
+  basic:
+    name: "審判巨劍"
+    material: NETHERITE_SWORD
+    rarity: "傳說"
+    category: "TWO_HAND_SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l審判巨劍"
+    lore:
+      - "&7裁決罪惡的神聖巨劍"
+      - "&7揮砍帶有淨化之力"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 65
+    attack-speed: 1.0
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.3
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 4.0
+  passive:
+    name: "神聖審判"
+    condition: "hit"
+    chance: 0.1
+    effect: "holy_smite"
+    value: 80.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 63
+    two-handed: true
+
+# T7-3 矛 — 蒼龍槍
+azure_dragon_lance_t7:
+  basic:
+    name: "蒼龍槍"
+    material: TRIDENT
+    rarity: "傳說"
+    category: "SPEAR"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&b&l蒼龍槍"
+    lore:
+      - "&7封印蒼龍之力的長槍"
+      - "&7刺出時龍氣環繞"
+      - "&c雙手武器"
+    custom-model-data: 3
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.5
+    base-damage: 55
+    attack-speed: 1.3
+    crit-chance: 16.0
+    crit-damage-multiplier: 2.1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 3.0
+  passive:
+    name: "龍之祝福"
+    condition: "hit"
+    chance: 0.15
+    effect: "dragon_aoe"
+    value: 80.0
+  element:
+    element: "冰"
+    ice-chance: 0.2
+    ice-duration-ticks: 50
+  limits:
+    droppable: false
+    required-level: 64
+    two-handed: true
+
+# T7-4 法杖 — 虛空法典
+void_codex_t7:
+  basic:
+    name: "虛空法典"
+    material: BLAZE_ROD
+    rarity: "傳說"
+    category: "STAFF"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&5&l虛空法典"
+    lore:
+      - "&7記載虛空禁術的法典"
+      - "&7翻開時異界能量傾洩而出"
+    custom-model-data: 6
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.2
+    base-damage: 48
+    attack-speed: 1.4
+    crit-chance: 16.0
+    crit-damage-multiplier: 2.2
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "奧術共鳴"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 30.0
+  element:
+    element: "雷"
+    lightning-chance: 0.3
+  limits:
+    droppable: false
+    required-level: 62
+
+# T7-5 弓 — 星辰弓
+starfall_bow_t7:
+  basic:
+    name: "星辰弓"
+    material: BOW
+    rarity: "傳說"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l星辰弓"
+    lore:
+      - "&7以墜落星辰鍛造的神弓"
+      - "&7每一箭都帶著星光"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.4
+    base-damage: 52
+    attack-speed: 1.1
+    crit-chance: 25.0
+    crit-damage-multiplier: 2.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "星辰審判"
+    condition: "hit"
+    chance: 0.15
+    effect: "holy_smite"
+    value: 90.0
+  element:
+    element: "雷"
+    lightning-chance: 0.2
+  limits:
+    droppable: false
+    required-level: 65
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  Tier 8 — Lv.71~80 (高階後段)
+# ═══════════════════════════════════════════
+
+# T8-1 單手劍 — 天罰之劍
+divine_punishment_sword_t8:
+  basic:
+    name: "天罰之劍"
+    material: NETHERITE_SWORD
+    rarity: "傳說"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l天罰之劍"
+    lore:
+      - "&7降下天罰的神聖之劍"
+      - "&7被選中者方能握起"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 72
+    attack-speed: 1.6
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.5
+    knockback: 2
+  special:
+    backstab-enabled: false
+    effect: "none"
+    life-steal: 6.0
+  passive:
+    name: "神聖審判"
+    condition: "hit"
+    chance: 0.12
+    effect: "holy_smite"
+    value: 100.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 71
+
+# T8-2 雙手斧 — 末日裂斧
+doomsplitter_t8:
+  basic:
+    name: "末日裂斧"
+    material: NETHERITE_AXE
+    rarity: "傳說"
+    category: "TWO_HAND_AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&4&l末日裂斧"
+    lore:
+      - "&7傳說末日降臨時使用的戰斧"
+      - "&7劈裂天地的恐怖力量"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.2
+    base-damage: 80
+    attack-speed: 0.9
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 4.5
+  passive:
+    name: "粉碎打擊"
+    condition: "hit"
+    chance: 0.35
+    effect: "armor_break"
+    value: 50.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 73
+    two-handed: true
+
+# T8-3 鐮刀 — 冥王鐮
+hades_scythe_t8:
+  basic:
+    name: "冥王鐮"
+    material: NETHERITE_HOE
+    rarity: "傳說"
+    category: "SCYTHE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&8&l冥王鐮"
+    lore:
+      - "&7冥界之王使用的鐮刀"
+      - "&7一揮之間收割萬千靈魂"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.4
+    base-damage: 55
+    attack-speed: 1.5
+    crit-chance: 28.0
+    crit-damage-multiplier: 2.6
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 2.2
+    effect: "backstab"
+  passive:
+    name: "靈魂收割"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 18.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 74
+
+# T8-4 法杖 — 混沌法杖
+chaos_staff_t8:
+  basic:
+    name: "混沌法杖"
+    material: BLAZE_ROD
+    rarity: "傳說"
+    category: "STAFF"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&d&l混沌法杖"
+    lore:
+      - "&7混沌能量具現化的法杖"
+      - "&7扭曲現實的禁忌之力"
+    custom-model-data: 7
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.6
+    base-damage: 58
+    attack-speed: 1.4
+    crit-chance: 18.0
+    crit-damage-multiplier: 2.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "混沌共鳴"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 35.0
+  element:
+    element: "雷"
+    lightning-chance: 0.35
+  limits:
+    droppable: false
+    required-level: 72
+
+# T8-5 弓 — 天穹裂弓
+skybreaker_bow_t8:
+  basic:
+    name: "天穹裂弓"
+    material: BOW
+    rarity: "傳說"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l天穹裂弓"
+    lore:
+      - "&7能射穿天穹的極限之弓"
+      - "&7箭矢帶有撕裂空間之力"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 65
+    attack-speed: 1.1
+    crit-chance: 28.0
+    crit-damage-multiplier: 2.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "空間撕裂"
+    condition: "hit"
+    chance: 1.0
+    effect: "distance_bonus"
+    value: 75.0
+  element:
+    element: "冰"
+    ice-chance: 0.3
+    ice-duration-ticks: 50
+  limits:
+    droppable: false
+    required-level: 75
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  Tier 9 — Lv.81~90 (終局前段)
+# ═══════════════════════════════════════════
+
+# T9-1 單手劍 — 創世之劍
+genesis_sword_t9:
+  basic:
+    name: "創世之劍"
+    material: NETHERITE_SWORD
+    rarity: "神話"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l創世之劍"
+    lore:
+      - "&7創世之初的神劍"
+      - "&7蘊含開天闢地的力量"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.0
+    base-damage: 88
+    attack-speed: 1.6
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.7
+    knockback: 2
+  special:
+    backstab-enabled: false
+    effect: "none"
+    life-steal: 7.0
+  passive:
+    name: "神聖審判"
+    condition: "hit"
+    chance: 0.12
+    effect: "holy_smite"
+    value: 130.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 81
+
+# T9-2 矛 — 天命神槍
+destiny_lance_t9:
+  basic:
+    name: "天命神槍"
+    material: TRIDENT
+    rarity: "神話"
+    category: "SPEAR"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l天命神槍"
+    lore:
+      - "&7命運女神賜予的神聖長槍"
+      - "&7刺穿命運之壁的力量"
+      - "&c雙手武器"
+    custom-model-data: 4
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 75
+    attack-speed: 1.3
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+    reach-bonus: 3.5
+  passive:
+    name: "命運之刺"
+    condition: "hit"
+    chance: 0.15
+    effect: "dragon_aoe"
+    value: 100.0
+  element:
+    element: "雷"
+    lightning-chance: 0.3
+  limits:
+    droppable: false
+    required-level: 83
+    two-handed: true
+
+# T9-3 法杖 — 星界法杖
+astral_staff_t9:
+  basic:
+    name: "星界法杖"
+    material: BLAZE_ROD
+    rarity: "神話"
+    category: "STAFF"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&d&l星界法杖"
+    lore:
+      - "&7來自星界的至高法杖"
+      - "&7掌控星辰之力"
+    custom-model-data: 8
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 2.8
+    base-damage: 68
+    attack-speed: 1.4
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "星界共鳴"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 40.0
+  element:
+    element: "雷"
+    lightning-chance: 0.35
+  limits:
+    droppable: false
+    required-level: 82
+
+# T9-4 雙手劍 — 世界斷裂者
+worldbreaker_t9:
+  basic:
+    name: "世界斷裂者"
+    material: NETHERITE_SWORD
+    rarity: "神話"
+    category: "TWO_HAND_SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&4&l世界斷裂者"
+    lore:
+      - "&7斬斷世界之壁的禁忌巨劍"
+      - "&7揮動時維度都在震顫"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.5
+    base-damage: 95
+    attack-speed: 1.0
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 5.0
+  passive:
+    name: "次元斬擊"
+    condition: "hit"
+    chance: 0.1
+    effect: "holy_smite"
+    value: 150.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 85
+    two-handed: true
+
+# T9-5 弓 — 永恆星弓
+eternal_starbow_t9:
+  basic:
+    name: "永恆星弓"
+    material: BOW
+    rarity: "神話"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&e&l永恆星弓"
+    lore:
+      - "&7以永恆星辰為弦的神弓"
+      - "&7每一箭都蘊含毀滅之力"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.0
+    base-damage: 78
+    attack-speed: 1.1
+    crit-chance: 30.0
+    crit-damage-multiplier: 3.0
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "星辰審判"
+    condition: "hit"
+    chance: 0.15
+    effect: "holy_smite"
+    value: 120.0
+  element:
+    element: "冰"
+    ice-chance: 0.3
+    ice-duration-ticks: 60
+  limits:
+    droppable: false
+    required-level: 84
+    two-handed: true
+
+# ═══════════════════════════════════════════
+#  Tier 10 — Lv.91~100 (頂級終局)
+# ═══════════════════════════════════════════
+
+# T10-1 單手劍 — §6神之劍·終焉
+god_sword_t10:
+  basic:
+    name: "神之劍·終焉"
+    material: NETHERITE_SWORD
+    rarity: "神話"
+    category: "SWORD"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l神之劍·終焉"
+    lore:
+      - "&7終焉之日出現的神劍"
+      - "&7斬盡一切的至上力量"
+      - "&6&o只有抵達巔峰者才能觸碰"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.5
+    base-damage: 110
+    attack-speed: 1.7
+    crit-chance: 25.0
+    crit-damage-multiplier: 3.0
+    knockback: 2
+  special:
+    backstab-enabled: false
+    effect: "none"
+    life-steal: 8.0
+  passive:
+    name: "終焉審判"
+    condition: "hit"
+    chance: 0.1
+    effect: "holy_smite"
+    value: 200.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 91
+
+# T10-2 雙手斧 — §6破界巨斧
+worldcleaver_t10:
+  basic:
+    name: "破界巨斧"
+    material: NETHERITE_AXE
+    rarity: "神話"
+    category: "TWO_HAND_AXE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l破界巨斧"
+    lore:
+      - "&7劈裂世界之壁的終極戰斧"
+      - "&7粉碎一切防禦的暴力具現"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 4.0
+    base-damage: 120
+    attack-speed: 0.9
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+    aoe-range: 5.0
+  passive:
+    name: "絕對粉碎"
+    condition: "hit"
+    chance: 0.35
+    effect: "armor_break"
+    value: 60.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 93
+    two-handed: true
+
+# T10-3 法杖 — §6起源法典
+origin_codex_t10:
+  basic:
+    name: "起源法典"
+    material: BLAZE_ROD
+    rarity: "神話"
+    category: "STAFF"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l起源法典"
+    lore:
+      - "&7記載萬物起源的至高法典"
+      - "&7翻開之時，世界法則為之扭曲"
+    custom-model-data: 9
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.2
+    base-damage: 90
+    attack-speed: 1.4
+    crit-chance: 22.0
+    crit-damage-multiplier: 2.8
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "起源共鳴"
+    condition: "hit"
+    chance: 1.0
+    effect: "element_mastery"
+    value: 50.0
+  element:
+    element: "雷"
+    lightning-chance: 0.4
+  limits:
+    droppable: false
+    required-level: 92
+
+# T10-4 鐮刀 — §6死神鐮·永恆
+death_scythe_eternal_t10:
+  basic:
+    name: "死神鐮·永恆"
+    material: NETHERITE_HOE
+    rarity: "神話"
+    category: "TWO_HAND_SCYTHE"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l死神鐮·永恆"
+    lore:
+      - "&7超越死神的永恆之鐮"
+      - "&7收割一切生命的終極存在"
+      - "&c雙手武器"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.0
+    base-damage: 85
+    attack-speed: 1.4
+    crit-chance: 32.0
+    crit-damage-multiplier: 3.0
+  special:
+    backstab-enabled: true
+    backstab-multiplier: 2.5
+    effect: "backstab"
+    aoe-range: 4.0
+  passive:
+    name: "永恆收割"
+    condition: "kill"
+    chance: 1.0
+    effect: "life_steal"
+    value: 25.0
+  element:
+    element: "無"
+  limits:
+    droppable: false
+    required-level: 95
+    two-handed: true
+
+# T10-5 弓 — §6天命星弓·終焉
+destiny_bow_t10:
+  basic:
+    name: "天命星弓·終焉"
+    material: BOW
+    rarity: "神話"
+    category: "BOW"
+    bind-type: "綁定玩家"
+  appearance:
+    display-name: "&6&l天命星弓·終焉"
+    lore:
+      - "&7命運盡頭的至高神弓"
+      - "&7每一箭都是審判的裁決"
+      - "&c雙手武器"
+      - "&6&o只有命運的寵兒才能拉開此弦"
+    enchanted-glow: true
+  stats:
+    damage-multiplier: 3.5
+    base-damage: 100
+    attack-speed: 1.2
+    crit-chance: 35.0
+    crit-damage-multiplier: 3.2
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "命運審判"
+    condition: "hit"
+    chance: 0.15
+    effect: "holy_smite"
+    value: 180.0
+  element:
+    element: "雷"
+    lightning-chance: 0.35
+  limits:
+    droppable: false
+    required-level: 94
+    two-handed: true
+

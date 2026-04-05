@@ -5,6 +5,7 @@ import com.customrpg.players.PlayerTalents;
 import com.customrpg.talents.Talent;
 import com.customrpg.talents.TalentBranch;
 import com.customrpg.talents.TalentTree;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -149,6 +150,16 @@ public class TalentPassiveEffectManager implements Listener {
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, amplifier - 1, true, false));
             }
         }
+
+        // 應用 MANA 加成（烈焰系 - 炎熱等）
+        double manaBonus = bonuses.getOrDefault("manaBonus", 0.0);
+        if (manaBonus > 0) {
+            ManaManager manaManager = plugin.getManaManager();
+            if (manaManager != null) {
+                double currentMax = statsManager.getStats(player).getMaxMana();
+                manaManager.setMaxMana(player, currentMax + manaBonus);
+            }
+        }
     }
 
     /**
@@ -184,15 +195,42 @@ public class TalentPassiveEffectManager implements Listener {
             finalDamage *= (1.0 + damageBonus / 100.0);
         }
 
+        // ===== 刺客系：背刺加成 =====
+        double backstabBonus = bonuses.getOrDefault("backstabBonus", 0.0);
+        double backstabExtraBonus = bonuses.getOrDefault("backstabExtraBonus", 0.0);
+        if ((backstabBonus > 0 || backstabExtraBonus > 0) && event.getEntity() instanceof LivingEntity target) {
+            // 判斷是否為背刺（攻擊者在目標背後）
+            org.bukkit.util.Vector targetDir = target.getLocation().getDirection().normalize();
+            org.bukkit.util.Vector attackerDir = attacker.getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
+            double dot = targetDir.dot(attackerDir);
+            if (dot > 0.5) { // 攻擊者在目標背後（面朝同方向）
+                double totalBackstab = backstabBonus + backstabExtraBonus;
+                finalDamage *= (1.0 + totalBackstab);
+                attacker.sendMessage("§8§l背刺！ §7(+" + String.format("%.0f", totalBackstab * 100) + "% 傷害)");
+                target.getWorld().spawnParticle(org.bukkit.Particle.CRIT, target.getLocation().add(0, 1.5, 0), 10, 0.2, 0.2, 0.2, 0.3);
+            }
+        }
+
+        // ===== 刺客系：鮮血收割（對低血敵人額外傷害）=====
+        double executeDamageBonus = bonuses.getOrDefault("executeDamageBonus", 0.0);
+        double executeThreshold = bonuses.getOrDefault("executeThreshold", 0.30);
+        if (executeDamageBonus > 0 && event.getEntity() instanceof LivingEntity target) {
+            double healthPercent = target.getHealth() / target.getMaxHealth();
+            if (healthPercent <= executeThreshold) {
+                finalDamage *= (1.0 + executeDamageBonus);
+                attacker.sendMessage("§4收割！ §c(+" + String.format("%.0f", executeDamageBonus * 100) + "% 傷害)");
+            }
+        }
+
         // 暴擊檢查
         double critChance = bonuses.getOrDefault("crit-chance", 0.0);
+        // 刺客系：爆擊倍率加成
+        double critDamageBonus = bonuses.getOrDefault("critDamageBonus", 0.0);
         boolean isCritical = Math.random() * 100 < critChance;
 
         if (isCritical) {
-            double critDamage = bonuses.getOrDefault("crit-damage", 50.0); // 預設50%暴擊傷害
+            double critDamage = bonuses.getOrDefault("crit-damage", 50.0) + (critDamageBonus * 100);
             finalDamage *= (1.0 + critDamage / 100.0);
-
-            // 顯示暴擊效果
             attacker.sendMessage("§c§l暴擊！");
         }
 
@@ -241,6 +279,36 @@ public class TalentPassiveEffectManager implements Listener {
                 player.sendMessage("§a§l第二春發動！血量回復！");
                 event.setCancelled(true);
             }
+        }
+    }
+
+    /**
+     * 處理擊殺事件的天賦效果（刺客系：收割本能 + 靈魂收割）
+     */
+    @EventHandler
+    public void onEntityDeath(org.bukkit.event.entity.EntityDeathEvent event) {
+        Player killer = event.getEntity().getKiller();
+        if (killer == null) return;
+
+        Map<String, Double> bonuses = playerBonusCache.getOrDefault(killer.getUniqueId(), new HashMap<>());
+
+        // 刺客系：收割本能 — 擊殺回復生命
+        double killHealPercent = bonuses.getOrDefault("killHealPercent", 0.0);
+        if (killHealPercent > 0) {
+            double healAmount = killer.getMaxHealth() * killHealPercent;
+            double newHealth = Math.min(killer.getMaxHealth(), killer.getHealth() + healAmount);
+            killer.setHealth(newHealth);
+            killer.getWorld().spawnParticle(org.bukkit.Particle.HEART, killer.getLocation().add(0, 2, 0), 3, 0.3, 0.3, 0.3, 0);
+        }
+
+        // 刺客系：靈魂收割 — 擊殺後提升攻速
+        double killAtkSpeedBoost = bonuses.getOrDefault("killAttackSpeedBoost", 0.0);
+        double killAtkSpeedDuration = bonuses.getOrDefault("killAttackSpeedDuration", 5.0);
+        if (killAtkSpeedBoost > 0) {
+            killer.addPotionEffect(new PotionEffect(
+                PotionEffectType.HASTE, (int)(killAtkSpeedDuration * 20),
+                (int) killAtkSpeedBoost - 1, false, false));
+            killer.getWorld().spawnParticle(org.bukkit.Particle.SOUL, killer.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0.02);
         }
     }
 

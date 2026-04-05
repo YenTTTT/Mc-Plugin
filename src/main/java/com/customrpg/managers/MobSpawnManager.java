@@ -230,13 +230,26 @@ public class MobSpawnManager {
 
         // ===== Zone-Based 檢查 =====
         ZoneManager zoneManager = plugin.getZoneManager();
-        if (zoneManager != null && zoneManager.getZoneCount() > 0) {
-            // 玩家在安全區域內 → 不生成
-            if (zoneManager.isInsideAnyZone(player.getLocation())) {
+        if (zoneManager == null || zoneManager.getZoneCount() == 0) {
+            // 尚未設置任何 zone → 完全不生成自訂怪物
+            if (debug) log.info("[MobSpawn] 跳過 " + pName + ": 尚未設定任何怪物區域 (/setmob)");
+            lastSkipReason = "尚未設定怪物區域";
+            return;
+        }
+
+        // 玩家在安全區域內 → 檢查是否為純安全區域（無生態域標籤）
+        // 有生態域標籤的區域不阻止生成（怪物會生成在區域外）
+        if (zoneManager.isInsideAnyZone(player.getLocation())) {
+            // 檢查玩家所在的 zone 是否有 biome tag
+            ZoneManager.MobZone playerZone = zoneManager.getZoneAt(player.getLocation());
+            if (playerZone == null || playerZone.biomeTag == null) {
+                // 純安全區域（無生態域標籤）→ 不生成
                 if (debug) log.info("[MobSpawn] 跳過 " + pName + ": 在怪物安全區域內");
                 lastSkipReason = "怪物安全區域";
                 return;
             }
+            // 有生態域標籤 → 允許生成（怪物生成在區域外）
+            if (debug) log.info("[MobSpawn] " + pName + " 在生態域區域 '" + playerZone.name + "' [" + playerZone.biomeTag + "] 內，允許在區域外生成怪物");
         }
 
         // 保護區域 — 原有的 ProtectionArea 系統也繼續生效
@@ -255,10 +268,10 @@ public class MobSpawnManager {
             return;
         }
 
-        // 檢查可用怪物
-        List<String> mobKeys = mobManager.getMobKeys();
+        // 檢查可用怪物 (普通怪物池，不包含 Boss)
+        List<String> mobKeys = mobManager.getNormalMobKeys();
         if (mobKeys.isEmpty()) {
-            if (debug) log.info("[MobSpawn] 跳過 " + pName + ": 沒有已註冊的怪物類型！");
+            if (debug) log.info("[MobSpawn] 跳過 " + pName + ": 沒有已註冊的普通怪物類型！");
             lastSkipReason = "無可用怪物類型";
             return;
         }
@@ -317,29 +330,65 @@ public class MobSpawnManager {
         // ===== Zone-Based 等級計算 =====
         ZoneManager zoneManager = plugin.getZoneManager();
         int mobLevel;
-        if (zoneManager != null && zoneManager.getZoneCount() > 0) {
-            // 使用 zone 系統計算等級
-            int[] levelRange = zoneManager.calculateMobLevelRange(spawnLoc);
-            int baseLevel = levelRange[0] + random.nextInt(Math.max(1, levelRange[1] - levelRange[0] + 1));
+        // Zone 一定存在 (processPlayer 已檢查過)
+        int[] levelRange = zoneManager.calculateMobLevelRange(spawnLoc);
+        int baseLevel = levelRange[0] + random.nextInt(Math.max(1, levelRange[1] - levelRange[0] + 1));
 
-            // 再疊加階級偏移
-            int tierOffset = calculateTierLevelOffset(tier);
-            mobLevel = Math.max(1, baseLevel + tierOffset);
+        // 再疊加階級偏移
+        int tierOffset = calculateTierLevelOffset(tier);
+        mobLevel = Math.max(1, baseLevel + tierOffset);
 
-            if (debug) {
-                int zoneTier = zoneManager.calculateTier(spawnLoc);
-                log.info("[MobSpawn]   Zone等級: " + levelRange[0] + "~" + levelRange[1]
-                        + " (Tier " + zoneTier + "), 基礎=" + baseLevel + " + 階級偏移=" + tierOffset
-                        + " → 最終等級=" + mobLevel);
-            }
-        } else {
-            // 沒有 zone → 使用原有的玩家等級方式
-            PlayerStats stats = statsManager.getStats(player);
-            int playerLevel = stats.getLevel();
-            mobLevel = calculateLevelLegacy(playerLevel, tier, player.getLocation());
+        if (debug) {
+            int zoneTier = zoneManager.calculateTier(spawnLoc);
+            log.info("[MobSpawn]   Zone等級: " + levelRange[0] + "~" + levelRange[1]
+                    + " (Tier " + zoneTier + "), 基礎=" + baseLevel + " + 階級偏移=" + tierOffset
+                    + " → 最終等級=" + mobLevel);
         }
 
-        String mobKey = selectMobType(mobKeys);
+        // ===== 根據等級篩選合適的怪物 =====
+        // Boss 階級使用獨立的 Boss 怪物池
+        List<String> candidateMobKeys;
+        if (tier == MobTier.BOSS) {
+            candidateMobKeys = mobManager.getBossMobKeys();
+            if (candidateMobKeys.isEmpty()) {
+                if (debug) log.info("[MobSpawn]   Boss 怪物池為空，跳過 Boss 生成");
+                return false;
+            }
+        } else {
+            candidateMobKeys = mobKeys;
+        }
+
+        // 檢查最近的zone是否有生態域標籤，如果有則過濾怪物
+        List<String> filteredMobKeys = candidateMobKeys;
+        ZoneManager.MobZone nearestZone = zoneManager.getNearestZone(spawnLoc);
+        if (nearestZone != null && nearestZone.biomeTag != null) {
+            String biomeTag = nearestZone.biomeTag.toLowerCase();
+            filteredMobKeys = new ArrayList<>();
+            for (String key : candidateMobKeys) {
+                MobManager.MobData data = mobManager.getMobData(key);
+                if (data == null) continue;
+                List<String> mobTags = data.getTags();
+                // 包含該生態域標籤的怪物，或沒有設定任何標籤的怪物（通用怪物）
+                if (mobTags.isEmpty() || mobTags.contains(biomeTag)) {
+                    filteredMobKeys.add(key);
+                }
+            }
+            if (debug) {
+                log.info("[MobSpawn]   生態域標籤: " + biomeTag + " → 過濾後可用怪物: " + filteredMobKeys.size() + "/" + candidateMobKeys.size());
+            }
+            // 如果過濾後沒有任何怪物，回退到候選池
+            if (filteredMobKeys.isEmpty()) {
+                if (debug) log.info("[MobSpawn]   生態域過濾後無怪物可用，回退到候選池");
+                filteredMobKeys = candidateMobKeys;
+            }
+        }
+
+        String mobKey = selectMobTypeForLevel(filteredMobKeys, mobLevel);
+
+        if (mobKey == null) {
+            if (debug) log.info("[MobSpawn]   找不到符合等級 " + mobLevel + " 的怪物類型");
+            return false;
+        }
 
         if (debug) {
             log.info("[MobSpawn]   生成: " + mobKey + " [" + tier.getDisplayName() + "] Lv." + mobLevel
@@ -534,6 +583,56 @@ public class MobSpawnManager {
         return mobKeys.get(random.nextInt(mobKeys.size()));
     }
 
+    /**
+     * 根據等級篩選合適的怪物類型
+     * 只選擇其 level-range 包含（或接近）指定等級的怪物
+     *
+     * @param mobKeys 所有可用的怪物 key
+     * @param level   目標等級
+     * @return 選中的 mob key，或 null（沒有符合的）
+     */
+    private String selectMobTypeForLevel(List<String> mobKeys, int level) {
+        // 第一輪：嚴格匹配 — 怪物的 level-range 包含目標等級
+        List<String> exactMatches = new ArrayList<>();
+        for (String key : mobKeys) {
+            MobManager.MobData data = mobManager.getMobData(key);
+            if (data == null) continue;
+            if (level >= data.getMinLevel() && level <= data.getMaxLevel()) {
+                exactMatches.add(key);
+            }
+        }
+        if (!exactMatches.isEmpty()) {
+            return exactMatches.get(random.nextInt(exactMatches.size()));
+        }
+
+        // 第二輪：寬鬆匹配 — 允許 ±5 等級的容差
+        List<String> nearMatches = new ArrayList<>();
+        for (String key : mobKeys) {
+            MobManager.MobData data = mobManager.getMobData(key);
+            if (data == null) continue;
+            if (level >= data.getMinLevel() - 5 && level <= data.getMaxLevel() + 5) {
+                nearMatches.add(key);
+            }
+        }
+        if (!nearMatches.isEmpty()) {
+            return nearMatches.get(random.nextInt(nearMatches.size()));
+        }
+
+        // 第三輪：找最接近的怪物
+        String closest = null;
+        int closestDist = Integer.MAX_VALUE;
+        for (String key : mobKeys) {
+            MobManager.MobData data = mobManager.getMobData(key);
+            if (data == null) continue;
+            int dist = Math.min(Math.abs(level - data.getMinLevel()), Math.abs(level - data.getMaxLevel()));
+            if (dist < closestDist) {
+                closestDist = dist;
+                closest = key;
+            }
+        }
+        return closest;
+    }
+
     private boolean spawnTieredMob(String mobKey, Location location, int level, MobTier tier) {
         LivingEntity mob = mobManager.spawnCustomMobWithLevel(mobKey, location, level);
         if (mob == null) {
@@ -545,6 +644,22 @@ public class MobSpawnManager {
         spawnedMobs.add(mob.getUniqueId());
 
         MobManager.MobData mobData = mobManager.getMobData(mobKey);
+
+        // 群體生成（如草原狼 pack_passive）
+        if (mobData != null && "pack_passive".equalsIgnoreCase(mobData.getSpecialBehavior())) {
+            int packSize = 2 + random.nextInt(4); // 額外 2~5 隻（加上原本的 1 隻 = 3~6 隻）
+            for (int i = 0; i < packSize; i++) {
+                double ox = (random.nextDouble() - 0.5) * 4;
+                double oz = (random.nextDouble() - 0.5) * 4;
+                Location packLoc = location.clone().add(ox, 0, oz);
+                packLoc.setY(packLoc.getWorld().getHighestBlockYAt(packLoc) + 1);
+                LivingEntity packMob = mobManager.spawnCustomMobWithLevel(mobKey, packLoc, level);
+                if (packMob != null) {
+                    mobManager.setMobTier(packMob, tier.name());
+                    spawnedMobs.add(packMob.getUniqueId());
+                }
+            }
+        }
 
         switch (tier) {
             case ELITE:
@@ -721,9 +836,15 @@ public class MobSpawnManager {
 
         // 怪物類型
         List<String> mobKeys = mobManager.getMobKeys();
-        lines.add(ChatColor.YELLOW + "已註冊怪物類型: " + ChatColor.WHITE + mobKeys.size());
+        List<String> bossMobKeys = mobManager.getBossMobKeys();
+        List<String> normalMobKeys = mobManager.getNormalMobKeys();
+        lines.add(ChatColor.YELLOW + "已註冊怪物類型: " + ChatColor.WHITE + mobKeys.size()
+                + ChatColor.GRAY + " (普通: " + normalMobKeys.size() + ", Boss: " + bossMobKeys.size() + ")");
         if (mobKeys.size() <= 20) {
             lines.add(ChatColor.GRAY + "  " + String.join(", ", mobKeys));
+        }
+        if (!bossMobKeys.isEmpty()) {
+            lines.add(ChatColor.RED + "  Boss: " + String.join(", ", bossMobKeys));
         }
         lines.add("");
 

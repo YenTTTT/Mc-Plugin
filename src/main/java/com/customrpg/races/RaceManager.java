@@ -95,6 +95,8 @@ public class RaceManager {
             builder.baseVitality(baseStats.getInt("vitality", 5));
             builder.baseDefense(baseStats.getInt("defense", 5));
             builder.baseSpirit(baseStats.getInt("spirit", 5));
+            builder.baseMana(baseStats.getInt("mana", 0));
+            builder.baseManaRegen(baseStats.getDouble("mana-regen", 0.0));
         }
 
         // 成長倍率
@@ -106,6 +108,8 @@ public class RaceManager {
             builder.growthVitality(growth.getDouble("vitality", 1.0));
             builder.growthDefense(growth.getDouble("defense", 1.0));
             builder.growthSpirit(growth.getDouble("spirit", 1.0));
+            builder.growthMana(growth.getDouble("mana", 0.0));
+            builder.growthManaRegen(growth.getDouble("mana-regen", 0.0));
         }
 
         // 技能
@@ -267,6 +271,18 @@ public class RaceManager {
         stats.setRaceVitality(raceData.calculateVitalityBonus(level));
         stats.setRaceDefense(raceData.calculateDefenseBonus(level));
         stats.setRaceSpirit(raceData.calculateSpiritBonus(level));
+
+        // 設定種族魔力加成 (基礎魔力 100 + 種族基礎 + 等級成長)
+        double raceManaBonus = raceData.calculateManaBonus(level);
+        double raceManaRegenBonus = raceData.calculateManaRegenBonus(level);
+
+        // 計算最終最大魔力：基礎100 + 種族加成 + 裝備加成
+        double baseMaxMana = 100.0 + raceManaBonus + stats.getBonusMaxMana();
+        stats.setMaxMana(baseMaxMana);
+
+        // 計算最終魔力回復：基礎1.0 + 種族加成 + 裝備加成
+        double baseManaRegen = 1.0 + raceManaRegenBonus + stats.getBonusManaRegen();
+        stats.setManaRegen(baseManaRegen);
 
         // 更新血量
         plugin.getPlayerStatsManager().updateMaxHealth(player);

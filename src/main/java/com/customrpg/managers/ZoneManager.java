@@ -23,6 +23,9 @@ import java.util.logging.Logger;
  */
 public class ZoneManager {
 
+    /** 每個 tier 分配的等級數量 (每 radiusStep 格距離增加這麼多等級) */
+    private static final int LEVELS_PER_TIER = 5;
+
     private final CustomRPG plugin;
     private final File dataFile;
     private final Logger log;
@@ -73,6 +76,10 @@ public class ZoneManager {
      * @return true 如果成功
      */
     public boolean createZone(UUID playerUUID, String zoneId, int minLevel, int maxLevel) {
+        return createZone(playerUUID, zoneId, minLevel, maxLevel, null);
+    }
+
+    public boolean createZone(UUID playerUUID, String zoneId, int minLevel, int maxLevel, String biomeTag) {
         Selection sel = selections.get(playerUUID);
         if (sel == null || sel.pos1 == null || sel.pos2 == null) {
             return false;
@@ -89,7 +96,7 @@ public class ZoneManager {
         int maxY = Math.max(sel.pos1.getBlockY(), sel.pos2.getBlockY());
         int maxZ = Math.max(sel.pos1.getBlockZ(), sel.pos2.getBlockZ());
 
-        MobZone zone = new MobZone(zoneId, worldName, minX, minY, minZ, maxX, maxY, maxZ, minLevel, maxLevel, 150);
+        MobZone zone = new MobZone(zoneId, worldName, minX, minY, minZ, maxX, maxY, maxZ, minLevel, maxLevel, 300, biomeTag);
         zones.put(zoneId.toLowerCase(), zone);
         save();
         clearSelection(playerUUID);
@@ -135,6 +142,24 @@ public class ZoneManager {
             }
         }
         return false;
+    }
+
+    /**
+     * 取得包含某個位置的 zone (2D)
+     * @return 包含該位置的 MobZone，或 null
+     */
+    public MobZone getZoneAt(Location loc) {
+        if (loc == null || loc.getWorld() == null) return null;
+        String worldName = loc.getWorld().getName();
+        int x = loc.getBlockX();
+        int z = loc.getBlockZ();
+
+        for (MobZone zone : zones.values()) {
+            if (zone.contains2D(worldName, x, z)) {
+                return zone;
+            }
+        }
+        return null;
     }
 
     /**
@@ -197,18 +222,27 @@ public class ZoneManager {
     /**
      * 依據距離計算當前 tier (每 radiusStep 格升一級)
      *
-     * @return tier 等級 (0 = zone 內; 1 = 第一圈; 2 = 第二圈 ...)
+     * @return tier 等級 (0 = zone 內或第一圈; 1 = 第二圈; 2 = 第三圈 ...)
      */
     public int calculateTier(Location loc) {
         MobZone nearest = getNearestZone(loc);
-        if (nearest == null) return 1; // 沒有zone 預設 tier 1
+        if (nearest == null) return 0; // 沒有zone 預設 tier 0
         double distance = nearest.getDistance2D(loc.getX(), loc.getZ());
         if (distance <= 0) return 0; // 在 zone 內
-        return Math.max(1, (int) Math.ceil(distance / nearest.radiusStep));
+        return (int) (distance / nearest.radiusStep);
     }
 
     /**
      * 根據玩家位置計算怪物等級範圍
+     *
+     * 機制：將 zone 的總等級範圍 (minLevel ~ maxLevel) 依距離分段
+     * 每 radiusStep 格為一個 tier，每個 tier 分配 LEVELS_PER_TIER 個等級
+     *
+     * 範例：/setmob 1 14 id (radiusStep=300)
+     *   Tier 1 (0~300格):   Lv.1~5
+     *   Tier 2 (300~600格): Lv.6~10
+     *   Tier 3 (600~900格): Lv.11~14
+     *   Tier 4+ (900格+):   Lv.11~14 (不再增長，鎖定最高段)
      *
      * @return int[2] = {levelMin, levelMax}
      */
@@ -221,18 +255,29 @@ public class ZoneManager {
 
         double distance = nearest.getDistance2D(loc.getX(), loc.getZ());
         if (distance <= 0) {
-            // 在 zone 內，不該生成，但以防萬一
-            return new int[]{nearest.minLevel, nearest.maxLevel};
+            // 在 zone 內，回傳最低等級段
+            int segMax = Math.min(nearest.minLevel + LEVELS_PER_TIER - 1, nearest.maxLevel);
+            return new int[]{nearest.minLevel, segMax};
         }
 
-        int tier = Math.max(1, (int) Math.ceil(distance / nearest.radiusStep));
-        int levelRange = nearest.maxLevel - nearest.minLevel;
+        // tier 從 0 開始 (0 = 第一圈 0~radiusStep)
+        int tier = (int) (distance / nearest.radiusStep);
 
-        // 每升一個 tier，等級範圍往上疊加
-        int levelMin = nearest.minLevel + ((tier - 1) * levelRange);
-        int levelMax = nearest.maxLevel + ((tier - 1) * levelRange);
+        // 計算此 tier 的等級範圍
+        int segMin = nearest.minLevel + (tier * LEVELS_PER_TIER);
+        int segMax = segMin + LEVELS_PER_TIER - 1;
 
-        return new int[]{Math.max(1, levelMin), Math.max(1, levelMax)};
+        // 確保不超過 zone 設定的最大等級
+        if (segMin > nearest.maxLevel) {
+            // 已超過最高等級段 → 鎖定在最後一段
+            segMin = nearest.maxLevel - LEVELS_PER_TIER + 1;
+            segMin = Math.max(segMin, nearest.minLevel);
+            segMax = nearest.maxLevel;
+        } else if (segMax > nearest.maxLevel) {
+            segMax = nearest.maxLevel;
+        }
+
+        return new int[]{Math.max(1, segMin), Math.max(1, segMax)};
     }
 
     /**
@@ -264,12 +309,18 @@ public class ZoneManager {
      * 取得 tier 的顯示名稱和顏色
      */
     public String getTierDisplayName(int tier) {
-        if (tier <= 0) return ChatColor.GREEN + "安全區域";
-        if (tier == 1) return ChatColor.WHITE + "低危區域 (Tier 1)";
-        if (tier == 2) return ChatColor.YELLOW + "中危區域 (Tier 2)";
-        if (tier == 3) return ChatColor.GOLD + "高危區域 (Tier 3)";
-        if (tier == 4) return ChatColor.RED + "極危區域 (Tier 4)";
-        return ChatColor.DARK_RED + "煉獄區域 (Tier " + tier + ")";
+        ChatColor color = getTierColor(tier);
+        return color + "Tier " + (tier + 1) + " 區域";
+    }
+
+    /**
+     * 取得 tier 的顯示名稱，含等級範圍
+     */
+    public String getTierDisplayNameWithLevel(Location loc) {
+        int tier = calculateTier(loc);
+        int[] range = calculateMobLevelRange(loc);
+        ChatColor color = getTierColor(tier);
+        return color + "Tier " + (tier + 1) + " (Lv." + range[0] + "~" + range[1] + ")";
     }
 
     /**
@@ -277,10 +328,9 @@ public class ZoneManager {
      */
     public ChatColor getTierColor(int tier) {
         if (tier <= 0) return ChatColor.GREEN;
-        if (tier == 1) return ChatColor.WHITE;
-        if (tier == 2) return ChatColor.YELLOW;
-        if (tier == 3) return ChatColor.GOLD;
-        if (tier == 4) return ChatColor.RED;
+        if (tier == 1) return ChatColor.YELLOW;
+        if (tier == 2) return ChatColor.GOLD;
+        if (tier == 3) return ChatColor.RED;
         return ChatColor.DARK_RED;
     }
 
@@ -312,9 +362,10 @@ public class ZoneManager {
             int maxZ = zoneSec.getInt("maxZ");
             int minLevel = zoneSec.getInt("min-level", 1);
             int maxLevel = zoneSec.getInt("max-level", 5);
-            int radiusStep = zoneSec.getInt("radius-step", 150);
+            int radiusStep = zoneSec.getInt("radius-step", 300);
+            String biomeTag = zoneSec.getString("biome-tag", null);
 
-            zones.put(key, new MobZone(name, world, minX, minY, minZ, maxX, maxY, maxZ, minLevel, maxLevel, radiusStep));
+            zones.put(key, new MobZone(name, world, minX, minY, minZ, maxX, maxY, maxZ, minLevel, maxLevel, radiusStep, biomeTag));
         }
         log.info("[ZoneManager] 已載入 " + zones.size() + " 個怪物區域");
     }
@@ -336,6 +387,9 @@ public class ZoneManager {
             config.set(path + ".min-level", z.minLevel);
             config.set(path + ".max-level", z.maxLevel);
             config.set(path + ".radius-step", z.radiusStep);
+            if (z.biomeTag != null) {
+                config.set(path + ".biome-tag", z.biomeTag);
+            }
         }
         try {
             dataFile.getParentFile().mkdirs();
@@ -378,11 +432,13 @@ public class ZoneManager {
         public final int minLevel;    // 基礎最小等級
         public final int maxLevel;    // 基礎最大等級
         public final int radiusStep;  // 每幾格升一個 tier
+        public final String biomeTag; // 生態域標籤 (如 "ice", "fire", "forest"；null = 不限制)
 
         public MobZone(String name, String worldName,
                        int minX, int minY, int minZ,
                        int maxX, int maxY, int maxZ,
-                       int minLevel, int maxLevel, int radiusStep) {
+                       int minLevel, int maxLevel, int radiusStep,
+                       String biomeTag) {
             this.name = name;
             this.worldName = worldName;
             this.minX = minX;
@@ -394,6 +450,7 @@ public class ZoneManager {
             this.minLevel = minLevel;
             this.maxLevel = maxLevel;
             this.radiusStep = radiusStep;
+            this.biomeTag = biomeTag;
         }
 
         /**
