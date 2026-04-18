@@ -162,6 +162,7 @@ public class TalentManager {
         String mechanism = section.getString("mechanism", "被動");
         double cooldown = section.getDouble("cooldown", 0);
         double manaCost = section.getDouble("manaCost", 0);
+        double hpCost = section.getDouble("hpCost", 0);
         String triggerType = section.getString("trigger.type", "NONE");
 
         // 載入前置
@@ -210,7 +211,7 @@ public class TalentManager {
 
         Talent talent = new Talent(talentId, name, description, type, branch,
                 maxLevel, pointsPerLevel, prerequisites, prerequisiteMode, guiSlot, icon,
-                mechanism, cooldown, manaCost, triggerType);
+                mechanism, cooldown, manaCost, hpCost, triggerType);
 
         // 載入等級數據
         ConfigurationSection levelsSection = section.getConfigurationSection("levels");

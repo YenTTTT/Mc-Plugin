@@ -270,17 +270,74 @@ public class MobListener implements Listener {
                 }
             }
 
-            // 給予經驗值（基於等級）
-            int expReward = mobData.calculateExp(mobLevel);
-            if (expReward > 0) {
-                statsManager.addExp(killer, expReward);
-                killer.sendMessage(ChatColor.YELLOW + "擊敗 [Lv." + mobLevel + "] " +
-                    ChatColor.stripColor(mobData.getName()) + " 獲得 " + expReward + " 經驗值");
+            // 給予經驗值（基於等級 + 階級倍率 + 等級差距調整）
+            int baseExpReward = mobData.calculateExp(mobLevel);
+
+            // 階級經驗倍率：普通 x1, 精英 x2.5, Boss x5
+            String mobTier = mobManager.getMobTier(event.getEntity());
+            double tierMultiplier = switch (mobTier) {
+                case "ELITE" -> 2.5;
+                case "BOSS" -> 5.0;
+                default -> 1.0;
+            };
+
+            // 等級差距調整：怪物等級比玩家高 → 加成，比玩家低太多 → 減少
+            com.customrpg.players.PlayerStats killerStats = statsManager.getStats(killer);
+            int playerLevel = killerStats.getLevel();
+            int levelDiff = mobLevel - playerLevel;
+            double levelMultiplier;
+            if (levelDiff >= 5) {
+                levelMultiplier = 1.5;  // 怪物比玩家高 5 級以上 → +50%
+            } else if (levelDiff >= 0) {
+                levelMultiplier = 1.0 + (levelDiff * 0.05); // 每高 1 級 +5%
+            } else if (levelDiff >= -5) {
+                levelMultiplier = 1.0;  // 低 1~5 級 → 正常
+            } else if (levelDiff >= -10) {
+                levelMultiplier = 0.5;  // 低 6~10 級 → 50%
+            } else {
+                levelMultiplier = 0.1;  // 低 10 級以上 → 10%（防止刷低等怪）
+            }
+
+            int finalExp = Math.max(1, (int) (baseExpReward * tierMultiplier * levelMultiplier));
+            if (finalExp > 0) {
+                statsManager.addExp(killer, finalExp);
+
+                // 根據階級顯示不同顏色的訊息
+                String tierTag = switch (mobTier) {
+                    case "ELITE" -> ChatColor.GOLD + "[精英] ";
+                    case "BOSS" -> ChatColor.RED + "[BOSS] ";
+                    default -> "";
+                };
+
+                killer.sendMessage(ChatColor.YELLOW + "擊敗 " + tierTag +
+                    ChatColor.YELLOW + "[Lv." + mobLevel + "] " +
+                    ChatColor.stripColor(mobData.getName()) + " 獲得 " +
+                    ChatColor.GREEN + finalExp + ChatColor.YELLOW + " 經驗值" +
+                    (tierMultiplier > 1.0 ? ChatColor.GOLD + " (x" + tierMultiplier + ")" : ""));
+            }
+
+            // 移除 BossBar
+            com.customrpg.managers.BossBarManager bossBarMgr = plugin.getBossBarManager();
+            if (bossBarMgr != null) {
+                bossBarMgr.onMobDeath(event.getEntity().getUniqueId());
             }
         } else {
-            // 如果是普通怪物，給予 2 點經驗值
-            statsManager.addExp(killer, 2);
-            killer.sendMessage(ChatColor.YELLOW + "獲得 2 經驗值");
+            // 普通原版怪物：依類型給予不同經驗值
+            int vanillaExp = switch (event.getEntity().getType()) {
+                case ENDER_DRAGON -> 500;
+                case WITHER -> 300;
+                case ELDER_GUARDIAN -> 80;
+                case WARDEN -> 100;
+                case RAVAGER -> 50;
+                case EVOKER, VINDICATOR -> 20;
+                case GHAST, BLAZE, GUARDIAN -> 15;
+                case ENDERMAN, PIGLIN_BRUTE -> 10;
+                case CREEPER, SKELETON, ZOMBIE, SPIDER -> 5;
+                case SLIME, MAGMA_CUBE -> 3;
+                default -> 2;
+            };
+            statsManager.addExp(killer, vanillaExp);
+            killer.sendMessage(ChatColor.YELLOW + "獲得 " + vanillaExp + " 經驗值");
         }
     }
 
@@ -377,6 +434,20 @@ public class MobListener implements Listener {
                             player.sendMessage(ChatColor.YELLOW + "🛡 南瓜騎士格擋了你的攻擊！");
                         }
                     }
+                }
+
+                // BossBar 顯示：玩家攻擊自訂怪物時顯示血量條
+                com.customrpg.managers.BossBarManager bossBarMgr = plugin.getBossBarManager();
+                if (bossBarMgr != null) {
+                    // 延遲1tick更新，讓傷害先生效
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (!target.isDead()) {
+                                bossBarMgr.onMobDamaged(target);
+                            }
+                        }
+                    }.runTaskLater(plugin, 1L);
                 }
             }
         }

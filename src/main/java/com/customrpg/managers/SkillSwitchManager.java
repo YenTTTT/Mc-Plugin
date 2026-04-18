@@ -46,6 +46,7 @@ public class SkillSwitchManager {
         addMechanism("鑽石劍", Material.DIAMOND_SWORD);
         addMechanism("紅石粉", Material.REDSTONE);
         addMechanism("蜘蛛眼", Material.SPIDER_EYE);
+        addMechanism("凋零玫瑰", Material.WITHER_ROSE);
         addMechanism("烈焰粉", Material.BLAZE_POWDER);
         // 鐮刀 → 所有 HOE 類型
         addMechanism("鐮刀", Material.WOODEN_HOE);

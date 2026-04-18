@@ -20,8 +20,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.entity.EntityType;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * TalentSkillManager - 處理天賦主動技能的執行邏輯
@@ -99,6 +102,28 @@ public class TalentSkillManager {
         if (!manaManager.hasMana(player, talent.getManaCost())) {
             player.sendMessage("§c魔力不足！需要 " + (int)talent.getManaCost() + " MANA");
             return false;
+        }
+
+        // 2.5 檢查 HP 消耗（暗黑系技能）
+        double hpCostPercent = talent.getHpCost();
+        if (hpCostPercent > 0) {
+            // 檢查暗黑韌性被動減免
+            PlayerTalents pt2 = talentManager.getPlayerTalents(player);
+            int resilienceLevel = pt2.getTalentLevel("dark_resilience");
+            if (resilienceLevel > 0) {
+                // 每級減免15%的HP消耗
+                double reduction = resilienceLevel * 0.15;
+                hpCostPercent *= (1.0 - reduction);
+            }
+            // 檢查暗黑神化 buff（免除HP消耗）
+            if (player.hasMetadata("dark_apotheosis")) {
+                hpCostPercent = 0;
+            }
+            double hpCost = player.getMaxHealth() * hpCostPercent;
+            if (hpCost > 0 && player.getHealth() - hpCost < 2.0) {
+                player.sendMessage("§4血量不足！此技能需要消耗 §c" + (int)(talent.getHpCost() * 100) + "% §4生命值");
+                return false;
+            }
         }
 
         // 3. 執行具體技能邏輯
@@ -220,11 +245,123 @@ public class TalentSkillManager {
             case "death_god":
                 success = executeDeathGod(player, talent, level, item);
                 break;
+            // ==================== 科技系技能 ====================
+            case "shock_gun":
+                success = executeShockGun(player, talent, level, item);
+                break;
+            case "grenade":
+                success = executeGrenade(player, talent, level, item);
+                break;
+            case "mini_turret":
+                success = executeMiniTurret(player, talent, level, item);
+                break;
+            case "energy_shield":
+                success = executeEnergyShield(player, talent, level, item);
+                break;
+            case "tracking_drone":
+                success = executeTrackingDrone(player, talent, level, item);
+                break;
+            case "orbital_strike":
+                success = executeOrbitalStrike(player, talent, level, item);
+                break;
+            case "proximity_mine":
+                success = executeProximityMine(player, talent, level, item);
+                break;
+            case "slow_trap":
+                success = executeSlowTrap(player, talent, level, item);
+                break;
+            case "cluster_bomb":
+                success = executeClusterBomb(player, talent, level, item);
+                break;
+            case "annihilation_barrage":
+                success = executeAnnihilationBarrage(player, talent, level, item);
+                break;
+            // ==================== 暗黑系技能 ====================
+            case "shadow_bolt":
+                success = executeShadowBolt(player, talent, level, item);
+                break;
+            case "soul_drain":
+                success = executeSoulDrain(player, talent, level, item);
+                break;
+            case "curse_mark":
+                success = executeCurseMark(player, talent, level, item);
+                break;
+            case "blood_sacrifice":
+                success = executeBloodSacrifice(player, talent, level, item);
+                break;
+            case "dark_flame":
+                success = executeDarkFlame(player, talent, level, item);
+                break;
+            case "weakening_curse":
+                success = executeWeakeningCurse(player, talent, level, item);
+                break;
+            case "soul_burn":
+                success = executeSoulBurn(player, talent, level, item);
+                break;
+            case "dark_shield":
+                success = executeDarkShield(player, talent, level, item);
+                break;
+            case "death_mark":
+                success = executeDeathMark(player, talent, level, item);
+                break;
+            case "void_eruption":
+                success = executeVoidEruption(player, talent, level, item);
+                break;
+            case "reaper_domain":
+                success = executeReaperDomain(player, talent, level, item);
+                break;
+            case "dark_apotheosis":
+                success = executeDarkApotheosis(player, talent, level, item);
+                break;
+            // ==================== 野獸系技能 ====================
+            case "call_of_wild":
+                success = executeCallOfWild(player, talent, level, item);
+                break;
+            case "pack_leader":
+                success = executePackLeader(player, talent, level, item);
+                break;
+            case "beast_frenzy":
+                success = executeBeastFrenzy(player, talent, level, item);
+                break;
+            case "savage_summon":
+                success = executeSavageSummon(player, talent, level, item);
+                break;
+            case "beast_army":
+                success = executeBeastArmy(player, talent, level, item);
+                break;
+            case "beast_master":
+                success = executeBeastMaster(player, talent, level, item);
+                break;
+            case "wolf_form":
+                success = executeWolfForm(player, talent, level, item);
+                break;
+            case "bear_form":
+                success = executeBearForm(player, talent, level, item);
+                break;
+            case "predator_dash":
+                success = executePredatorDash(player, talent, level, item);
+                break;
+            case "fox_form":
+                success = executeFoxForm(player, talent, level, item);
+                break;
+            case "apex_predator":
+                success = executeApexPredator(player, talent, level, item);
+                break;
+            case "primal_wrath":
+                success = executePrimalWrath(player, talent, level, item);
+                break;
         }
 
         // 4. 消耗資源與套用冷卻
         if (success) {
             manaManager.consumeMana(player, talent.getManaCost());
+            // 暗黑系 HP 消耗
+            if (hpCostPercent > 0) {
+                double hpToDeduct = player.getMaxHealth() * hpCostPercent;
+                player.setHealth(Math.max(2.0, player.getHealth() - hpToDeduct));
+                player.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, player.getLocation().add(0, 1, 0), 8, 0.3, 0.5, 0.3, 0.01);
+                player.sendMessage("§4[暗黑] §c消耗了 " + (int)(hpToDeduct) + " 生命值");
+            }
             if (talent.getCooldown() > 0) {
                 cooldownManager.applyCooldown(player, cdKey, (long)(talent.getCooldown() * 1000));
             }
@@ -1796,7 +1933,7 @@ public class TalentSkillManager {
         loc.getWorld().playSound(loc, Sound.ENTITY_WITHER_AMBIENT, 1.0f, 0.5f);
         loc.getWorld().playSound(loc, Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.5f);
 
-        // 血液爆發粒子
+        // 血液爆发粒子
         loc.getWorld().spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 50, 1, 1, 1, 0.1,
             new Particle.DustOptions(org.bukkit.Color.RED, 2.0f));
 
@@ -1901,7 +2038,7 @@ public class TalentSkillManager {
 
                     for (org.bukkit.entity.Entity entity : current.getWorld().getNearbyEntities(current, 0.8, 0.8, 0.8)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        target.damage(damage, player);
+                        damageManager.dealSkillDamage(player, target, damage);
                         target.setFireTicks(40); // 2秒燃燒
                         current.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0);
                         current.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.6f, 1.0f);
@@ -1945,10 +2082,11 @@ public class TalentSkillManager {
             public void run() {
                 ticks++;
                 if (ticks > maxTicks || current.getBlock().getType().isSolid()) {
-                    // 爆炸效果
+                    // 爆炸！
                     current.getWorld().spawnParticle(Particle.EXPLOSION, current, 3, 0.5, 0.5, 0.5, 0);
-                    current.getWorld().spawnParticle(Particle.LAVA, current, 30, 2, 2, 2, 0);
-                    current.getWorld().playSound(current, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
+                    current.getWorld().spawnParticle(Particle.FLAME, current, 30, radius * 0.5, 0.5, radius * 0.5, 0.1);
+                    current.getWorld().spawnParticle(Particle.SMOKE, current, 20, radius * 0.3, 0.3, radius * 0.3, 0.05);
+                    current.getWorld().playSound(current, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 1.0f);
                     cancel();
                     return;
                 }
@@ -2085,6 +2223,11 @@ public class TalentSkillManager {
                     impactLoc.getWorld().spawnParticle(Particle.DUST, impactLoc.clone().add(x, 0.1, z), 1, 0, 0, 0, 0,
                         new Particle.DustOptions(org.bukkit.Color.RED, 1.5f));
                 }
+                // 向上的光柱
+                for (double y = 0; y < 15; y += 0.5) {
+                    impactLoc.getWorld().spawnParticle(Particle.DUST, impactLoc.clone().add(0, y, 0), 1, 0.1, 0, 0.1, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 100, 100), 0.8f));
+                }
+                impactLoc.getWorld().playSound(impactLoc, Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 0.5f + (ticks / (float) fallDelay) * 1.5f);
             }
         };
         warningTask.runTaskTimer(plugin, 0L, 2L);
@@ -2115,17 +2258,14 @@ public class TalentSkillManager {
                         impactLoc.getWorld().playSound(impactLoc, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 1.5f, 0.5f);
 
                         // 造成傷害
-                        for (org.bukkit.entity.Entity entity : impactLoc.getWorld().getNearbyEntities(impactLoc, radius, radius, radius)) {
-                            if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                            double dist = entity.getLocation().distance(impactLoc);
-                            double falloff = 1.0 - (dist / (radius * 1.5));
-                            if (falloff < 0.3) falloff = 0.3;
-                            target.damage(damage * falloff, player);
+                        for (org.bukkit.entity.Entity e : impactLoc.getWorld().getNearbyEntities(impactLoc, radius, radius, radius)) {
+                            if (e == player || !(e instanceof LivingEntity target) || target.isDead()) continue;
+                            double dist = target.getLocation().distance(impactLoc);
+                            double falloff = Math.max(0.3, 1.0 - (dist / radius) * 0.5);
+                            damageManager.dealSkillDamage(player, target, damage * falloff);
                             target.setFireTicks(burnDuration * 20);
-                            // 擊飛
-                            Vector knockback = target.getLocation().toVector().subtract(impactLoc.toVector()).normalize().multiply(1.5).setY(0.8);
-                            target.setVelocity(knockback);
                         }
+
                         cancel();
                     }
                 }
@@ -2333,9 +2473,7 @@ public class TalentSkillManager {
         for (int i = 0; i < 50; i++) {
             double angle = Math.random() * Math.PI * 2;
             double r = Math.random() * radius;
-            center.getWorld().spawnParticle(Particle.FLAME,
-                center.clone().add(Math.cos(angle) * r, 0.1, Math.sin(angle) * r),
-                1, 0, 0.5, 0, 0.05);
+            center.getWorld().spawnParticle(Particle.FLAME, center.clone().add(Math.cos(angle) * r, 0.1, Math.sin(angle) * r), 1, 0, 0.5, 0, 0.05);
         }
 
         org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
@@ -2346,9 +2484,7 @@ public class TalentSkillManager {
             public void run() {
                 ticks++;
                 if (ticks > maxTicks) {
-                    // 結束效果
-                    center.getWorld().spawnParticle(Particle.SMOKE, center, 50, radius / 2, 1, radius / 2, 0.05);
-                    center.getWorld().playSound(center, Sound.BLOCK_FIRE_EXTINGUISH, 1.0f, 0.5f);
+                    center.getWorld().spawnParticle(Particle.SMOKE, center, 30, radius / 2, 1, radius / 2, 0.02);
                     cancel();
                     return;
                 }
@@ -2546,7 +2682,6 @@ public class TalentSkillManager {
                     strikeIndex[0] = strikeCount; // 強制結束
                     return;
                 }
-
                 LivingEntity target = aliveTargets.get(strikeIndex[0] % aliveTargets.size());
 
                 // 出發粒子
@@ -2656,7 +2791,7 @@ public class TalentSkillManager {
 
             @Override
             public void run() {
-                traveled += 1.2;
+                traveled += 1.0;
                 if (traveled > range) {
                     cancel();
                     return;
@@ -2686,8 +2821,8 @@ public class TalentSkillManager {
                     hitCount[0]++;
                     double finalDamage = baseDamage * (1.0 + (hitCount[0] - 1) * multiHitBonus);
                     target.damage(finalDamage, player);
-                    center.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0.2);
-                    center.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.6f, 1.3f);
+                    target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0.2);
+                    target.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.6f, 1.3f);
                 }
             }
         };
@@ -2697,7 +2832,7 @@ public class TalentSkillManager {
     }
 
     /**
-     * 幻影連斬 — 快速斬擊周圍敵人10次，可移動施放
+     * 幻影連斬 — 快速斬擊周圍敵人
      */
     private boolean executePhantomFlurry(Player player, Talent talent, int level, ItemStack item) {
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.6);
@@ -2788,6 +2923,7 @@ public class TalentSkillManager {
             for (double d = 1; d <= radius; d += 0.8) {
                 Location pLoc = origin.clone().add(rx * d, 1, rz * d);
                 pLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, pLoc, 1, 0, 0, 0, 0);
+                pLoc.getWorld().spawnParticle(Particle.CRIT, pLoc, 1, 0.1, 0.1, 0.1, 0.05);
             }
         }
         origin.getWorld().playSound(origin, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.8f);
@@ -2836,7 +2972,7 @@ public class TalentSkillManager {
             double rx = dir.getX() * Math.cos(a) - dir.getZ() * Math.sin(a);
             double rz = dir.getX() * Math.sin(a) + dir.getZ() * Math.cos(a);
             Location fillLoc = center.clone().add(rx * r, 0.5 + Math.random(), rz * r);
-            fillLoc.getWorld().spawnParticle(Particle.SMOKE, fillLoc, 1, 0, 0, 0, 0.02);
+            fillLoc.getWorld().spawnParticle(Particle.SMOKE, fillLoc, 1, 0.1, 0.1, 0.1, 0.02);
         }
 
         center.getWorld().playSound(center, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.5f);
@@ -2879,7 +3015,7 @@ public class TalentSkillManager {
         for (int i = 0; i < 40; i++) {
             double angle = Math.random() * Math.PI * 2;
             double r = Math.random() * radius;
-            startLoc.getWorld().spawnParticle(Particle.SMOKE, startLoc.clone().add(Math.cos(angle) * r, Math.random() * 2, Math.sin(angle) * r), 1, 0, 0, 0, 0.03);
+            startLoc.getWorld().spawnParticle(Particle.SMOKE, startLoc.clone().add(Math.cos(angle) * r, Math.random() * 2, Math.sin(angle) * r), 1, 0, 0.5, 0, 0.05);
         }
 
         org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
@@ -2889,15 +3025,10 @@ public class TalentSkillManager {
             @Override
             public void run() {
                 ticks++;
-                if (ticks > maxTicks || !player.isOnline()) {
-                    // 結束效果
-                    player.getWorld().spawnParticle(Particle.EXPLOSION, player.getLocation().add(0, 1, 0), 3, 0.5, 0.5, 0.5, 0);
-                    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_DEATH, 0.4f, 1.5f);
+                if (ticks > maxTicks || player.isDead()) {
                     cancel();
                     return;
                 }
-
-                Location center = player.getLocation();
 
                 // 旋轉鐮刀粒子
                 if (ticks % 2 == 0) {
@@ -2907,11 +3038,11 @@ public class TalentSkillManager {
                         for (double d = 1; d <= radius; d += 0.8) {
                             double x = Math.cos(a) * d;
                             double z = Math.sin(a) * d;
-                            Location pLoc = center.clone().add(x, 0.5, z);
+                            Location pLoc = player.getLocation().clone().add(x, 0.5, z);
                             pLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, pLoc, 1, 0, 0, 0, 0);
                             if (d > radius - 1) {
                                 pLoc.getWorld().spawnParticle(Particle.DUST, pLoc, 1, 0, 0, 0, 0,
-                                    new Particle.DustOptions(org.bukkit.Color.fromRGB(80, 0, 80), 1.2f));
+                                    new Particle.DustOptions(org.bukkit.Color.fromRGB(80, 0, 80), 1.5f));
                             }
                         }
                     }
@@ -2920,31 +3051,1045 @@ public class TalentSkillManager {
                 // 每秒造成傷害 + 吸血
                 if (ticks % 20 == 0) {
                     double totalDamageDealt = 0;
-                    for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
+                    for (org.bukkit.entity.Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        target.damage(damagePerTick, player);
-                        totalDamageDealt += damagePerTick;
-                        target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, target.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0);
+                        damageManager.dealSkillDamage(player, target, damagePerTick);
+                        double heal = damagePerTick * lifestealPercent;
+                        totalDamageDealt += heal;
+                        // 汲取視覺效果
+                        target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 10, 0.3, 0.5, 0.3, 0,
+                                new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 180, 0), 0.8f));
                     }
-
-                    // 吸血
                     if (totalDamageDealt > 0) {
-                        double healAmount = totalDamageDealt * lifestealPercent;
-                        double newHealth = Math.min(player.getMaxHealth(), player.getHealth() + healAmount);
+                        double newHealth = Math.min(player.getMaxHealth(), player.getHealth() + totalDamageDealt);
                         player.setHealth(newHealth);
-                        player.getWorld().spawnParticle(Particle.HEART, center.clone().add(0, 2, 0), 3, 0.3, 0.3, 0.3, 0);
+                        player.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0, 2, 0), 3, 0.3, 0.3, 0.3, 0);
                     }
-
-                    center.getWorld().playSound(center, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.5f, 0.6f);
                 }
 
                 // 暗影環境音效
                 if (ticks % 40 == 0) {
-                    center.getWorld().playSound(center, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.3f, 0.5f);
+                    player.getWorld().playSound(player.getLocation(), Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.3f, 0.5f);
                 }
             }
         };
         task.runTaskTimer(plugin, 0L, 1L);
         return true;
     }
+
+    // ==================== 暗黑系技能實作 ====================
+
+    /**
+     * 暗影彈 — 發射暗影投射物
+     */
+    private boolean executeShadowBolt(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.5);
+        double range = talent.getEffectDouble(level, "range", 20);
+        double damage = stats.getMagic() * magicScaling;
+
+        Location start = player.getEyeLocation().clone();
+        Vector dir = start.getDirection().normalize();
+
+        player.getWorld().playSound(start, Sound.ENTITY_WITHER_SHOOT, 0.8f, 1.5f);
+
+        new BukkitRunnable() {
+            Location current = start.clone();
+            double traveled = 0;
+            @Override
+            public void run() {
+                for (int i = 0; i < 2; i++) {
+                    current.add(dir.clone().multiply(1.0));
+                    traveled += 1.0;
+                    if (traveled > range || current.getBlock().getType().isSolid()) {
+                        cancel(); return;
+                    }
+                    current.getWorld().spawnParticle(Particle.DUST, current, 3, 0.1, 0.1, 0.1, 0,
+                            new Particle.DustOptions(org.bukkit.Color.fromRGB(80, 0, 120), 1.2f));
+                    current.getWorld().spawnParticle(Particle.SMOKE, current, 1, 0.05, 0.05, 0.05, 0);
+
+                    for (org.bukkit.entity.Entity entity : current.getWorld().getNearbyEntities(current, 0.8, 0.8, 0.8)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        damageManager.dealSkillDamage(player, target, damage);
+                        target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0,
+                                new Particle.DustOptions(org.bukkit.Color.fromRGB(100, 0, 150), 1.5f));
+                        cancel(); return;
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 靈魂汲取 — 對目標造成傷害並回復自身生命
+     */
+    private boolean executeSoulDrain(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.2);
+        double leechPercent = talent.getEffectDouble(level, "leechPercent", 0.3);
+        double range = talent.getEffectDouble(level, "range", 10);
+        double damage = stats.getMagic() * magicScaling;
+
+        LivingEntity target = getTargetEntity(player, range);
+        if (target == null) { player.sendMessage("§c未找到目標！"); return false; }
+
+        damageManager.dealSkillDamage(player, target, damage);
+        double heal = damage * leechPercent;
+        player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + heal));
+
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.7f, 1.2f);
+        target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0,
+                new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 180, 0), 1.0f));
+        player.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0, 2, 0), 5, 0.3, 0.3, 0.3, 0);
+        player.sendMessage("§5[靈魂汲取] §f吸取了 §a" + String.format("%.0f", heal) + " §f生命值");
+        return true;
+    }
+
+    /**
+     * 詛咒標記 — 標記敵人使其受到更多傷害
+     */
+    private boolean executeCurseMark(Player player, Talent talent, int level, ItemStack item) {
+        double range = talent.getEffectDouble(level, "range", 15);
+        double duration = talent.getEffectDouble(level, "duration", 8);
+        double damageAmp = talent.getEffectDouble(level, "damageAmplify", 0.2);
+
+        LivingEntity target = getTargetEntity(player, range);
+        if (target == null) { player.sendMessage("§c未找到目標！"); return false; }
+
+        int durationTicks = (int)(duration * 20);
+        target.setMetadata("curse_mark", new org.bukkit.metadata.FixedMetadataValue(plugin, damageAmp));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, durationTicks, 0, false, false));
+
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SHOOT, 0.6f, 0.5f);
+        target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 2.3, 0), 10, 0.2, 0.1, 0.2, 0,
+                new Particle.DustOptions(org.bukkit.Color.fromRGB(200, 0, 200), 1.5f));
+        player.sendMessage("§5[詛咒標記] §f標記了 " + target.getName() + "§f！受到傷害增加 §c" + (int)(damageAmp * 100) + "%");
+
+        // 定時移除標記
+        new BukkitRunnable() {
+            @Override public void run() { if (target.isValid()) target.removeMetadata("curse_mark", plugin); }
+        }.runTaskLater(plugin, durationTicks);
+        return true;
+    }
+
+    /**
+     * 鮮血獻祭 — 消耗自身HP提升傷害
+     */
+    private boolean executeBloodSacrifice(Player player, Talent talent, int level, ItemStack item) {
+        double hpCostPercent = talent.getEffectDouble(level, "hpCost", 0.2);
+        double damageBoost = talent.getEffectDouble(level, "damageBoost", 0.3);
+        double duration = talent.getEffectDouble(level, "duration", 10);
+
+        double hpCost = player.getMaxHealth() * hpCostPercent;
+        if (player.getHealth() - hpCost < 2.0) { player.sendMessage("§c血量不足！"); return false; }
+
+        player.setHealth(player.getHealth() - hpCost);
+        int durationTicks = (int)(duration * 20);
+        int strengthLevel = Math.max(0, (int)(damageBoost * 5));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, strengthLevel, false, false, true));
+
+        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_SLIME_BLOCK_BREAK, 1.0f, 0.5f);
+        player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(0, 1, 0), 30, 0.5, 1, 0.5, 0,
+                new Particle.DustOptions(org.bukkit.Color.RED, 1.5f));
+        player.sendMessage("§4[鮮血獻祭] §c以鮮血換取力量！攻擊提升 " + (int)(duration) + " 秒");
+        return true;
+    }
+
+    /**
+     * 暗焰 — 釋放暗黑火焰AoE
+     */
+    private boolean executeDarkFlame(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.8);
+        double radius = talent.getEffectDouble(level, "radius", 5);
+        double burnDuration = talent.getEffectDouble(level, "burnDuration", 3);
+        double damage = stats.getMagic() * magicScaling;
+
+        Location targetLoc = player.getTargetBlock(null, 15).getLocation().add(0, 1, 0);
+
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.5f);
+        player.sendMessage("§4[暗焰] §c釋放暗黑火焰！");
+
+        // 暗焰爆發粒子
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= 40) {
+                    cancel();
+                    return;
+                }
+                if (ticks % 5 == 0) {
+                    for (int i = 0; i < 360; i += 20) {
+                        double rad = Math.toRadians(i + ticks * 9);
+                        double x = Math.cos(rad) * radius;
+                        double z = Math.sin(rad) * radius;
+                        Location pLoc = targetLoc.clone().add(x, 0.2, z);
+                        pLoc.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, pLoc, 2, 0.1, 0.1, 0.1, 0.02);
+                        pLoc.getWorld().spawnParticle(Particle.DUST, pLoc, 1, 0.1, 0.1, 0.1, 0,
+                                new Particle.DustOptions(org.bukkit.Color.fromRGB(80, 0, 120), 1.5f));
+                    }
+                    // 每波傷害
+                    for (org.bukkit.entity.Entity entity : targetLoc.getWorld().getNearbyEntities(targetLoc, radius, 3, radius)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        damageManager.dealSkillDamage(player, target, damage * 0.25);
+                        target.setFireTicks((int)(burnDuration * 20));
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 虛弱詛咒 — AoE降低敵人攻擊力和移動速度
+     */
+    private boolean executeWeakeningCurse(Player player, Talent talent, int level, ItemStack item) {
+        double radius = talent.getEffectDouble(level, "radius", 6);
+        double duration = talent.getEffectDouble(level, "duration", 6);
+        int weaknessLevel = (int) talent.getEffectDouble(level, "weaknessLevel", 1) - 1;
+        int slownessLevel = (int) talent.getEffectDouble(level, "slownessLevel", 1) - 1;
+
+        Location origin = player.getLocation();
+        player.getWorld().playSound(origin, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.8f, 0.8f);
+        player.sendMessage("§5[虛弱詛咒] §f釋放詛咒波！");
+
+        // 詛咒擴散效果
+        new BukkitRunnable() {
+            double currentRadius = 0;
+            @Override
+            public void run() {
+                if (currentRadius > radius) {
+                    cancel();
+                    return;
+                }
+                for (int i = 0; i < 360; i += 15) {
+                    double rad = Math.toRadians(i);
+                    double x = Math.cos(rad) * currentRadius;
+                    double z = Math.sin(rad) * currentRadius;
+                    Location pLoc = origin.clone().add(x, 0.3, z);
+                    pLoc.getWorld().spawnParticle(Particle.DUST, pLoc, 1, 0, 0, 0, 0,
+                            new Particle.DustOptions(org.bukkit.Color.fromRGB(60, 0, 90), 1.2f));
+                }
+                currentRadius += 0.8;
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
+
+        // 對範圍內敵人施加效果
+        int durationTicks = (int)(duration * 20);
+        for (org.bukkit.entity.Entity entity : origin.getWorld().getNearbyEntities(origin, radius, 3, radius)) {
+            if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+            target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, durationTicks, weaknessLevel));
+            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, durationTicks, slownessLevel));
+            target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 10, 0.3, 0.5, 0.3, 0,
+                    new Particle.DustOptions(org.bukkit.Color.fromRGB(80, 0, 120), 1.0f));
+        }
+        return true;
+    }
+
+    /**
+     * 靈魂燃燒 — 點燃自身靈魂，持續對周圍造成傷害
+     */
+    private boolean executeSoulBurn(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 0.8);
+        double radius = talent.getEffectDouble(level, "radius", 4);
+        double duration = talent.getEffectDouble(level, "duration", 6);
+        double damagePerTick = stats.getMagic() * magicScaling * 0.2; // 每0.5秒的傷害
+
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BLAZE_AMBIENT, 0.8f, 0.5f);
+        player.sendMessage("§4[靈魂燃燒] §c點燃靈魂！周圍敵人持續受傷！");
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = (int)(duration * 20);
+            @Override
+            public void run() {
+                if (ticks >= maxTicks || player.isDead()) {
+                    cancel();
+                    return;
+                }
+                // 靈魂火焰粒子
+                if (ticks % 5 == 0) {
+                    Location loc = player.getLocation();
+                    for (int i = 0; i < 360; i += 30) {
+                        double rad = Math.toRadians(i + ticks * 6);
+                        double x = Math.cos(rad) * radius * 0.7;
+                        double z = Math.sin(rad) * radius * 0.7;
+                        loc.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, loc.clone().add(x, 0.5, z), 1, 0, 0.2, 0, 0.01);
+                    }
+                    loc.getWorld().spawnParticle(Particle.DUST, loc.add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0,
+                            new Particle.DustOptions(org.bukkit.Color.fromRGB(100, 0, 150), 1.0f));
+                }
+                // 每10 tick (0.5秒) 造成一次傷害
+                if (ticks % 10 == 0) {
+                    Location loc = player.getLocation();
+                    for (org.bukkit.entity.Entity entity : loc.getWorld().getNearbyEntities(loc, radius, 3, radius)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        damageManager.dealSkillDamage(player, target, damagePerTick);
+                    }
+                    // 每秒消耗少量HP
+                    if (ticks % 20 == 0) {
+                        double selfDamage = player.getMaxHealth() * 0.03;
+                        if (player.getHealth() - selfDamage > 2.0) {
+                            player.setHealth(player.getHealth() - selfDamage);
+                            player.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, player.getLocation().add(0, 1, 0), 3, 0.2, 0.2, 0.2, 0);
+                        }
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 暗黑護盾 — 消耗HP轉化為吸收護盾
+     */
+    private boolean executeDarkShield(Player player, Talent talent, int level, ItemStack item) {
+        double shieldPercent = talent.getEffectDouble(level, "shieldPercent", 0.15);
+        double duration = talent.getEffectDouble(level, "duration", 10);
+
+        double shieldAmount = player.getMaxHealth() * shieldPercent;
+
+        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 0.5f);
+        player.sendMessage("§5[暗黑護盾] §f將生命轉化為護盾！獲得 §e" + String.format("%.0f", shieldAmount) + " §f吸收量");
+
+        // 給予吸收效果
+        int durationTicks = (int)(duration * 20);
+        int absorptionLevel = Math.max(0, (int)(shieldAmount / 4) - 1);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, durationTicks, absorptionLevel, false, false, true));
+
+        // 護盾粒子效果
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= durationTicks || player.isDead()) {
+                    cancel();
+                    return;
+                }
+                if (ticks % 10 == 0) {
+                    Location loc = player.getLocation().add(0, 1, 0);
+                    for (int i = 0; i < 360; i += 45) {
+                        double rad = Math.toRadians(i + ticks * 3);
+                        double x = Math.cos(rad) * 0.8;
+                        double z = Math.sin(rad) * 0.8;
+                        loc.getWorld().spawnParticle(Particle.DUST, loc.clone().add(x, 0, z), 1, 0, 0, 0, 0,
+                                new Particle.DustOptions(org.bukkit.Color.fromRGB(50, 0, 80), 1.0f));
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 死亡標記 — 標記敵人，4秒後引爆造成巨額傷害
+     */
+    private boolean executeDeathMark(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 3.0);
+        double range = talent.getEffectDouble(level, "range", 15);
+        double delay = talent.getEffectDouble(level, "delay", 4);
+        double damage = stats.getMagic() * magicScaling;
+
+        Location start = player.getEyeLocation().clone();
+        Vector dir = start.getDirection().normalize();
+
+        player.getWorld().playSound(start, Sound.ENTITY_WITHER_SHOOT, 0.6f, 0.5f);
+
+        // 射線找目標
+        for (double d = 0; d < range; d += 0.5) {
+            Location point = start.clone().add(dir.clone().multiply(d));
+            for (org.bukkit.entity.Entity entity : point.getWorld().getNearbyEntities(point, 1.0, 1.0, 1.0)) {
+                if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+
+                player.sendMessage("§4[死亡標記] §f標記了 " + target.getName() + "§f！§c" + (int)delay + " §f秒後引爆！");
+
+                // 倒計時粒子
+                new BukkitRunnable() {
+                    int ticks = 0;
+                    final int detonationTick = (int)(delay * 20);
+                    @Override
+                    public void run() {
+                        if (target.isDead()) {
+                            cancel();
+                            return;
+                        }
+                        // 標記粒子
+                        if (ticks % 5 == 0) {
+                            target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 2.3, 0), 5, 0.2, 0.1, 0.2, 0,
+                                    new Particle.DustOptions(org.bukkit.Color.fromRGB(200, 0, 0), 1.5f));
+                            target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 2.5, 0), 3, 0.1, 0.05, 0.1, 0,
+                                    new Particle.DustOptions(org.bukkit.Color.BLACK, 1.0f));
+                        }
+                        // 引爆
+                        if (ticks >= detonationTick) {
+                            target.getWorld().playSound(target.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.6f);
+                            target.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, target.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
+                            target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 30, 1, 1, 1, 0,
+                                    new Particle.DustOptions(org.bukkit.Color.fromRGB(100, 0, 0), 2.0f));
+                            damageManager.dealSkillDamage(player, target, damage);
+                            player.sendMessage("§4[死亡標記] §f引爆！造成 §c" + String.format("%.0f", damage) + " §f傷害！");
+                            cancel();
+                            return;
+                        }
+                        ticks++;
+                    }
+                }.runTaskTimer(plugin, 0L, 1L);
+                return true;
+            }
+        }
+        player.sendMessage("§4[死亡標記] §7未命中目標");
+        return true;
+    }
+
+    /**
+     * 虛空爆發 — 巨大AoE爆發，消耗大量HP
+     */
+    private boolean executeVoidEruption(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 2.5);
+        double strengthScaling = talent.getEffectDouble(level, "strengthScaling", 1.5);
+        double radius = talent.getEffectDouble(level, "radius", 8);
+        double damage = (stats.getMagic() * magicScaling) + (stats.getStrength() * strengthScaling);
+
+        Location origin = player.getLocation();
+        player.getWorld().playSound(origin, Sound.ENTITY_WARDEN_SONIC_BOOM, 0.8f, 0.5f);
+        player.sendMessage("§4[虛空爆發] §c以生命為代價，引爆虛空之力！");
+
+        // 虛空爆發動畫
+        new BukkitRunnable() {
+            double r = 0;
+            @Override
+            public void run() {
+                if (r > radius) {
+                    cancel();
+                    return;
+                }
+                for (int i = 0; i < 360; i += 10) {
+                    double rad = Math.toRadians(i);
+                    double x = Math.cos(rad) * r;
+                    double z = Math.sin(rad) * r;
+                    Location pLoc = origin.clone().add(x, 0.3, z);
+                    pLoc.getWorld().spawnParticle(Particle.DUST, pLoc, 1, 0, 0, 0, 0,
+                            new Particle.DustOptions(org.bukkit.Color.fromRGB(20, 0, 40), 2.0f));
+                    pLoc.getWorld().spawnParticle(Particle.PORTAL, pLoc, 1, 0, 0.5, 0, 0.5);
+                }
+                r += 1.0;
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
+
+        // 延遲一點造成傷害讓粒子先擴散
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                origin.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, origin.clone().add(0, 1, 0), 3, 2, 1, 2, 0);
+                List<LivingEntity> targets = aoeUtil.getRadiusTargets(player, origin, radius);
+                for (LivingEntity target : targets) {
+                    damageManager.dealSkillDamage(player, target, damage);
+                    target.setVelocity(target.getLocation().toVector().subtract(origin.toVector()).normalize().multiply(1.2).setY(0.6));
+                }
+                if (!targets.isEmpty()) {
+                    player.sendMessage("§4[虛空爆發] §f命中 §c" + targets.size() + " §f個目標，造成 §c" + String.format("%.0f", damage) + " §f傷害！");
+                }
+            }
+        }.runTaskLater(plugin, 10L);
+        return true;
+    }
+
+    /**
+     * 死神領域 — 終極技能：建立死亡領域，持續汲取範圍內所有敵人生命
+     */
+    private boolean executeReaperDomain(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.0);
+        double radius = talent.getEffectDouble(level, "radius", 8);
+        double duration = talent.getEffectDouble(level, "duration", 10);
+        double leechPercent = talent.getEffectDouble(level, "leechPercent", 0.2);
+        double damagePerSecond = stats.getMagic() * magicScaling;
+
+        Location origin = player.getLocation().clone();
+        player.getWorld().playSound(origin, Sound.ENTITY_WARDEN_ROAR, 0.8f, 0.3f);
+        player.sendMessage("§4[死神領域] §c展開死亡領域！所有敵人的生命都將被汲取！");
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = (int)(duration * 20);
+            @Override
+            public void run() {
+                if (ticks >= maxTicks || player.isDead()) {
+                    player.sendMessage("§5[死神領域] §7領域消散");
+                    cancel();
+                    return;
+                }
+                // 領域邊界粒子
+                if (ticks % 5 == 0) {
+                    for (int i = 0; i < 360; i += 10) {
+                        double rad = Math.toRadians(i + ticks * 2);
+                        double x = Math.cos(rad) * radius;
+                        double z = Math.sin(rad) * radius;
+                        Location pLoc = origin.clone().add(x, 0.1, z);
+                        pLoc.getWorld().spawnParticle(Particle.DUST, pLoc, 1, 0, 0, 0, 0,
+                                new Particle.DustOptions(org.bukkit.Color.fromRGB(30, 0, 50), 1.5f));
+                    }
+                    // 領域內漂浮粒子
+                    origin.getWorld().spawnParticle(Particle.DUST, origin.clone().add(0, 1.5, 0), 15, radius * 0.6, 1, radius * 0.6, 0,
+                            new Particle.DustOptions(org.bukkit.Color.fromRGB(80, 0, 120), 0.8f));
+                    origin.getWorld().spawnParticle(Particle.SOUL, origin.clone().add(0, 0.5, 0), 3, radius * 0.5, 0.5, radius * 0.5, 0.02);
+                }
+                // 每秒造成傷害和回復
+                if (ticks % 20 == 0) {
+                    double totalHealed = 0;
+                    for (org.bukkit.entity.Entity entity : origin.getWorld().getNearbyEntities(origin, radius, 4, radius)) {
+                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                        damageManager.dealSkillDamage(player, target, damagePerSecond);
+                        double heal = damagePerSecond * leechPercent;
+                        totalHealed += heal;
+                        // 汲取視覺效果
+                        target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 10, 0.3, 0.5, 0.3, 0,
+                                new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 180, 0), 0.8f));
+                    }
+                    if (totalHealed > 0) {
+                        double newHealth = Math.min(player.getMaxHealth(), player.getHealth() + totalHealed);
+                        player.setHealth(newHealth);
+                        player.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0, 2, 0), 3, 0.3, 0.3, 0.3, 0);
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    /**
+     * 暗黑神化 — 終極技能：變身暗黑形態，所有技能不消耗HP
+     */
+    private boolean executeDarkApotheosis(Player player, Talent talent, int level, ItemStack item) {
+        double duration = talent.getEffectDouble(level, "duration", 10);
+        double damageBoost = talent.getEffectDouble(level, "damageBoost", 0.3);
+        double speedBoost = talent.getEffectDouble(level, "speedBoost", 1);
+
+        int durationTicks = (int)(duration * 20);
+
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.8f, 0.5f);
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.5f);
+        player.sendMessage("§4§l[暗黑神化] §c§l化身為暗黑之力的容器！技能不再消耗生命值！");
+
+        // 設定暗黑神化狀態
+        player.setMetadata("dark_apotheosis", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
+
+        // 增益效果
+        player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, (int)damageBoost, false, false, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, (int)speedBoost, false, false, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, durationTicks, 0, false, false, true));
+
+        // 暗黑光環粒子
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= durationTicks || player.isDead()) {
+                    player.removeMetadata("dark_apotheosis", plugin);
+                    player.sendMessage("§5[暗黑神化] §7暗黑之力消退...");
+                    player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 0.6f, 0.8f);
+                    cancel();
+                    return;
+                }
+                if (ticks % 4 == 0) {
+                    Location loc = player.getLocation();
+                    // 雙螺旋上升粒子
+                    double angle = ticks * 0.3;
+                    for (int j = 0; j < 2; j++) {
+                        double offsetAngle = angle + (j * Math.PI);
+                        double x = Math.cos(offsetAngle) * 0.8;
+                        double z = Math.sin(offsetAngle) * 0.8;
+                        double y = (ticks % 40) * 0.05;
+                        loc.getWorld().spawnParticle(Particle.DUST, loc.clone().add(x, y, z), 1, 0, 0, 0, 0,
+                                new Particle.DustOptions(org.bukkit.Color.fromRGB(120, 0, 200), 1.3f));
+                    }
+                    // 腳下暗影
+                    loc.getWorld().spawnParticle(Particle.DUST, loc.clone().add(0, 0.1, 0), 3, 0.4, 0, 0.4, 0,
+                            new Particle.DustOptions(org.bukkit.Color.BLACK, 2.0f));
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  科技系技能
+    // ═══════════════════════════════════════════════════════════
+
+    private boolean executeShockGun(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double damage = talent.getEffectDouble(level, "baseDamage", 40) + stats.getMagic() * 0.3;
+        Location eye = player.getEyeLocation();
+        Vector dir = eye.getDirection().normalize();
+
+        player.getWorld().playSound(eye, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1.0f, 1.5f);
+        player.sendMessage("§b[電擊槍] §f發射電擊！");
+        for (double d = 0; d < 15; d += 0.5) {
+            Location loc = eye.clone().add(dir.clone().multiply(d));
+            loc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, loc, 2, 0.05, 0.05, 0.05, 0);
+            List<LivingEntity> targets = aoeUtil.getRadiusTargets(player, loc, 0.8);
+            if (!targets.isEmpty()) {
+                damageManager.dealSkillDamage(player, targets.get(0), damage);
+                targets.get(0).getWorld().spawnParticle(Particle.ELECTRIC_SPARK, targets.get(0).getLocation().add(0,1,0), 20, 0.3, 0.3, 0.3, 0.1);
+                break;
+            }
+        }
+        return true;
+    }
+
+    private boolean executeGrenade(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double damage = talent.getEffectDouble(level, "baseDamage", 60) + stats.getMagic() * 0.4;
+        double radius = talent.getEffectDouble(level, "radius", 4);
+        Location target = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(10));
+        target.setY(player.getLocation().getY());
+
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0f, 0.5f);
+        player.sendMessage("§b[手榴彈] §f投擲手榴彈！");
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            target.getWorld().spawnParticle(Particle.EXPLOSION, target, 3, 0.5, 0.5, 0.5, 0);
+            target.getWorld().playSound(target, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 1.0f);
+            for (LivingEntity e : aoeUtil.getRadiusTargets(player, target, radius)) {
+                damageManager.dealSkillDamage(player, e, damage);
+            }
+        }, 20L);
+        return true;
+    }
+
+    private boolean executeMiniTurret(Player player, Talent talent, int level, ItemStack item) {
+        double damage = talent.getEffectDouble(level, "baseDamage", 15);
+        int duration = (int) talent.getEffectDouble(level, "duration", 10);
+        Location loc = player.getLocation().clone();
+        player.sendMessage("§b[迷你砲塔] §f部署砲塔！持續 " + duration + " 秒");
+        player.getWorld().playSound(loc, Sound.BLOCK_ANVIL_PLACE, 1.0f, 1.5f);
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= duration * 20) { cancel(); return; }
+                if (ticks % 20 == 0) {
+                    loc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, loc.clone().add(0, 1.5, 0), 5, 0.2, 0.2, 0.2, 0);
+                    for (org.bukkit.entity.Entity e : loc.getWorld().getNearbyEntities(loc, 10, 5, 10)) {
+                        if (e instanceof LivingEntity le && !(e instanceof Player) && !le.isDead()) {
+                            damageManager.dealSkillDamage(player, le, damage);
+                            loc.getWorld().playSound(loc, Sound.ENTITY_ARROW_SHOOT, 0.5f, 2.0f);
+                            break;
+                        }
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    private boolean executeEnergyShield(Player player, Talent talent, int level, ItemStack item) {
+        double duration = talent.getEffectDouble(level, "duration", 8);
+        int absorptionLevel = (int) talent.getEffectDouble(level, "absorptionLevel", 2);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, (int)(duration * 20), absorptionLevel, false, false, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, (int)(duration * 20), 0, false, false, true));
+        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
+        player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, player.getLocation().add(0, 1, 0), 30, 0.5, 1, 0.5, 0.1);
+        player.sendMessage("§b[能量護盾] §f啟動護盾！持續 " + (int)duration + " 秒");
+        return true;
+    }
+
+    private boolean executeTrackingDrone(Player player, Talent talent, int level, ItemStack item) {
+        double damage = talent.getEffectDouble(level, "baseDamage", 20);
+        int duration = (int) talent.getEffectDouble(level, "duration", 15);
+        player.sendMessage("§b[追蹤無人機] §f部署追蹤無人機！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BEE_LOOP, 0.6f, 2.0f);
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= duration * 20 || !player.isOnline()) { cancel(); return; }
+                if (ticks % 30 == 0) {
+                    Location pLoc = player.getLocation().add(0, 3, 0);
+                    pLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, pLoc, 3, 0.2, 0.1, 0.2, 0);
+                    for (org.bukkit.entity.Entity e : pLoc.getWorld().getNearbyEntities(pLoc, 12, 6, 12)) {
+                        if (e instanceof LivingEntity le && !(e instanceof Player) && !le.isDead()) {
+                            damageManager.dealSkillDamage(player, le, damage);
+                            le.getWorld().spawnParticle(Particle.CRIT, le.getLocation().add(0,1,0), 10, 0.2, 0.2, 0.2, 0.1);
+                            break;
+                        }
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    private boolean executeOrbitalStrike(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double damage = talent.getEffectDouble(level, "baseDamage", 150) + stats.getMagic() * 1.0;
+        double radius = talent.getEffectDouble(level, "radius", 6);
+        Location target = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(15));
+        target.setY(player.getLocation().getY());
+
+        player.sendMessage("§b[軌道打擊] §f鎖定目標...3秒後打擊！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 2.0f);
+
+        final Location impactLoc = target.clone();
+        new BukkitRunnable() {
+            int t = 0;
+            @Override
+            public void run() {
+                if (t >= 60) { cancel(); return; }
+                for (int i = 0; i < 24; i++) {
+                    double a = Math.toRadians(i * 15);
+                    impactLoc.getWorld().spawnParticle(Particle.DUST, impactLoc.clone().add(Math.cos(a)*radius, 0.1, Math.sin(a)*radius), 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.AQUA, 1.2f));
+                }
+                t++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            impactLoc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, impactLoc.clone().add(0, 1, 0), 3, 1, 1, 1, 0);
+            impactLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, impactLoc.clone().add(0, 10, 0), 100, 1, 8, 1, 0.1);
+            impactLoc.getWorld().playSound(impactLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 0.5f);
+            for (LivingEntity e : aoeUtil.getRadiusTargets(player, impactLoc, radius)) {
+                damageManager.dealSkillDamage(player, e, damage);
+            }
+        }, 60L);
+        return true;
+    }
+
+    private boolean executeProximityMine(Player player, Talent talent, int level, ItemStack item) {
+        double damage = talent.getEffectDouble(level, "baseDamage", 80);
+        double radius = talent.getEffectDouble(level, "radius", 3);
+        Location mineLoc = player.getLocation().clone();
+
+        player.sendMessage("§b[感應地雷] §f已部署地雷！");
+        player.getWorld().playSound(mineLoc, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f);
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= 600) { cancel(); return; }
+                mineLoc.getWorld().spawnParticle(Particle.DUST, mineLoc.clone().add(0, 0.2, 0), 1, 0, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.RED, 0.5f));
+                for (org.bukkit.entity.Entity e : mineLoc.getWorld().getNearbyEntities(mineLoc, radius, 2, radius)) {
+                    if (e instanceof LivingEntity le && !(e instanceof Player) && !le.isDead()) {
+                        mineLoc.getWorld().spawnParticle(Particle.EXPLOSION, mineLoc, 3, 0.5, 0.5, 0.5, 0);
+                        mineLoc.getWorld().playSound(mineLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 1.0f);
+                        for (LivingEntity t : aoeUtil.getRadiusTargets(player, mineLoc, radius)) {
+                            damageManager.dealSkillDamage(player, t, damage);
+                        }
+                        cancel();
+                        return;
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 20L, 5L);
+        return true;
+    }
+
+    private boolean executeSlowTrap(Player player, Talent talent, int level, ItemStack item) {
+        double radius = talent.getEffectDouble(level, "radius", 4);
+        int duration = (int) talent.getEffectDouble(level, "duration", 5);
+        Location trapLoc = player.getLocation().clone();
+
+        player.sendMessage("§b[減速陷阱] §f已部署陷阱！");
+        player.getWorld().playSound(trapLoc, Sound.BLOCK_TRIPWIRE_CLICK_ON, 1.0f, 1.0f);
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= duration * 20) { cancel(); return; }
+                if (ticks % 10 == 0) {
+                    trapLoc.getWorld().spawnParticle(Particle.DUST, trapLoc.clone().add(0, 0.1, 0), 5, radius * 0.5, 0, radius * 0.5, 0, new Particle.DustOptions(org.bukkit.Color.BLUE, 0.8f));
+                    for (org.bukkit.entity.Entity e : trapLoc.getWorld().getNearbyEntities(trapLoc, radius, 2, radius)) {
+                        if (e instanceof LivingEntity le && !(e instanceof Player)) {
+                            le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 2, false, false));
+                        }
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        return true;
+    }
+
+    private boolean executeClusterBomb(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double damage = talent.getEffectDouble(level, "baseDamage", 40) + stats.getMagic() * 0.3;
+        int bombCount = (int) talent.getEffectDouble(level, "bombCount", 5);
+        Location target = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(10));
+        target.setY(player.getLocation().getY());
+
+        player.sendMessage("§b[集束炸彈] §f發射集束炸彈！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1.0f, 0.8f);
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            for (int i = 0; i < bombCount; i++) {
+                Location bombLoc = target.clone().add((Math.random()-0.5)*6, 0, (Math.random()-0.5)*6);
+                bombLoc.getWorld().spawnParticle(Particle.EXPLOSION, bombLoc, 1, 0, 0, 0, 0);
+                bombLoc.getWorld().spawnParticle(Particle.FLAME, bombLoc, 10, 0.5, 0.5, 0.5, 0.05);
+                for (LivingEntity e : aoeUtil.getRadiusTargets(player, bombLoc, 2.5)) {
+                    damageManager.dealSkillDamage(player, e, damage);
+                }
+            }
+            target.getWorld().playSound(target, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 1.2f);
+        }, 15L);
+        return true;
+    }
+
+    private boolean executeAnnihilationBarrage(Player player, Talent talent, int level, ItemStack item) {
+        PlayerStats stats = statsManager.getStats(player);
+        double damage = talent.getEffectDouble(level, "baseDamage", 30) + stats.getMagic() * 0.5;
+        int salvos = (int) talent.getEffectDouble(level, "salvos", 8);
+        double radius = talent.getEffectDouble(level, "radius", 10);
+
+        player.sendMessage("§b§l[殲滅彈幕] §f展開全面火力壓制！");
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 2.0f);
+
+        Location center = player.getLocation().clone();
+        new BukkitRunnable() {
+            int count = 0;
+            @Override
+            public void run() {
+                if (count >= salvos) { cancel(); return; }
+                Location bombLoc = center.clone().add((Math.random()-0.5)*radius*2, 0, (Math.random()-0.5)*radius*2);
+                bombLoc.getWorld().spawnParticle(Particle.EXPLOSION, bombLoc, 2, 0.3, 0.3, 0.3, 0);
+                bombLoc.getWorld().spawnParticle(Particle.FLAME, bombLoc, 15, 0.5, 1, 0.5, 0.05);
+                bombLoc.getWorld().playSound(bombLoc, Sound.ENTITY_GENERIC_EXPLODE, 0.8f, 1.2f);
+                for (LivingEntity e : aoeUtil.getRadiusTargets(player, bombLoc, 3)) {
+                    damageManager.dealSkillDamage(player, e, damage);
+                }
+                count++;
+            }
+        }.runTaskTimer(plugin, 0L, 5L);
+        return true;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  野獸系技能 — 馴服野獸支線
+    // ═══════════════════════════════════════════════════════════
+
+    private boolean executeCallOfWild(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        double baseDmg = talent.getEffectDouble(level, "baseDamage", 5);
+        double hp = talent.getEffectDouble(level, "beastHealth", 30);
+        int duration = (int) talent.getEffectDouble(level, "duration", 30);
+
+        boolean ok = bm.summonBeast(player, EntityType.WOLF, "戰狼", hp, baseDmg, duration, 1);
+        if (ok) {
+            player.sendMessage("§6§l[野獸召喚] §a你召喚了一隻 §f戰狼§a！");
+            player.playSound(player.getLocation(), Sound.ENTITY_WOLF_AMBIENT, 1.2f, 1.0f);
+        }
+        return ok;
+    }
+
+    private boolean executePackLeader(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        double baseDmg = talent.getEffectDouble(level, "baseDamage", 8);
+        double hp = talent.getEffectDouble(level, "beastHealth", 50);
+        int duration = (int) talent.getEffectDouble(level, "duration", 40);
+        int count = (int) talent.getEffectDouble(level, "summonCount", 2);
+
+        boolean ok = bm.summonBeast(player, EntityType.WOLF, "精銳戰狼", hp, baseDmg, duration, count);
+        if (ok) {
+            player.sendMessage("§6§l[狼群首領] §a你召喚了 §f" + count + " §a隻 §f精銳戰狼§a！");
+            player.playSound(player.getLocation(), Sound.ENTITY_WOLF_AMBIENT, 1.5f, 0.8f);
+        }
+        return ok;
+    }
+
+    private boolean executeBeastFrenzy(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        int count = bm.getBeastCount(player);
+        if (count == 0) { player.sendMessage("§c你沒有召喚中的野獸！"); return false; }
+
+        double healPercent = talent.getEffectDouble(level, "healPercent", 0.3);
+        int buffDuration = (int) talent.getEffectDouble(level, "duration", 15);
+
+        UUID pid = player.getUniqueId();
+        for (org.bukkit.entity.Entity e : player.getWorld().getEntities()) {
+            if (e instanceof LivingEntity le && e.hasMetadata("beast_owner")) {
+                String owner = e.getMetadata("beast_owner").get(0).asString();
+                if (owner.equals(pid.toString())) {
+                    double maxHp = le.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getBaseValue();
+                    le.setHealth(Math.min(maxHp, le.getHealth() + maxHp * healPercent));
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, buffDuration * 20, 1, true, false));
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, buffDuration * 20, 1, true, false));
+                    le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, le.getLocation().add(0, 1, 0), 8, 0.3, 0.3, 0.3, 0);
+                }
+            }
+        }
+        player.sendMessage("§6§l[野獸狂熱] §c你的野獸進入狂暴狀態！傷害提升 " + buffDuration + " 秒");
+        player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.2f);
+        return true;
+    }
+
+    private boolean executeSavageSummon(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        double baseDmg = talent.getEffectDouble(level, "baseDamage", 12);
+        double hp = talent.getEffectDouble(level, "beastHealth", 80);
+        int duration = (int) talent.getEffectDouble(level, "duration", 45);
+
+        boolean ok = bm.summonBeast(player, EntityType.POLAR_BEAR, "巨熊", hp, baseDmg, duration, 1);
+        if (ok) {
+            player.sendMessage("§6§l[野獸召喚] §a你召喚了一隻 §f巨熊§a！");
+            player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.8f);
+            player.getWorld().spawnParticle(Particle.CLOUD, player.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5, 0.05);
+        }
+        return ok;
+    }
+
+    private boolean executeBeastArmy(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        double wolfDmg = talent.getEffectDouble(level, "wolfDamage", 10);
+        double wolfHp = talent.getEffectDouble(level, "wolfHealth", 60);
+        double bearDmg = talent.getEffectDouble(level, "bearDamage", 15);
+        double bearHp = talent.getEffectDouble(level, "bearHealth", 100);
+        int duration = (int) talent.getEffectDouble(level, "duration", 50);
+        int wolfCount = (int) talent.getEffectDouble(level, "wolfCount", 2);
+
+        boolean ok1 = bm.summonBeast(player, EntityType.WOLF, "精銳戰狼", wolfHp, wolfDmg, duration, wolfCount);
+        boolean ok2 = bm.summonBeast(player, EntityType.POLAR_BEAR, "猛獸", bearHp, bearDmg, duration, 1);
+
+        if (ok1 || ok2) {
+            player.sendMessage("§6§l[野獸軍團] §a你召喚了一支野獸部隊！");
+            player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.8f, 1.5f);
+            player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0, 1, 0), 30, 1, 1, 1, 0.3);
+        }
+        return ok1 || ok2;
+    }
+
+    private boolean executeBeastMaster(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        bm.removeAllBeasts(player);
+
+        double baseDmg = talent.getEffectDouble(level, "baseDamage", 25);
+        double hp = talent.getEffectDouble(level, "beastHealth", 200);
+        int duration = (int) talent.getEffectDouble(level, "duration", 60);
+
+        boolean ok = bm.summonBeast(player, EntityType.RAVAGER, "§4§l野獸之王", hp, baseDmg, duration, 1);
+        if (ok) {
+            bm.summonBeast(player, EntityType.WOLF, "護衛狼", 80, 12, duration, 2);
+            player.sendMessage("§6§l[野獸之王] §c§l你召喚了 §4§l野獸之王 §c§l及其護衛！");
+            player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.6f);
+            player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0, 1.5, 0), 50, 1, 1.5, 1, 0.5);
+            player.getWorld().spawnParticle(Particle.LAVA, player.getLocation(), 30, 1, 1, 1, 0);
+        }
+        return ok;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  野獸系技能 — 化身野獸支線
+    // ═══════════════════════════════════════════════════════════
+
+    private boolean executeWolfForm(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        int duration = (int) talent.getEffectDouble(level, "duration", 20);
+        double strengthBonus = talent.getEffectDouble(level, "strengthBonus", 5);
+        double healthBonus = talent.getEffectDouble(level, "healthBonus", 10);
+        int speedLevel = (int) talent.getEffectDouble(level, "speedLevel", 2);
+        return bm.activateBeastForm(player, "wolf", duration, strengthBonus, healthBonus, speedLevel, 0);
+    }
+
+    private boolean executeBearForm(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        int duration = (int) talent.getEffectDouble(level, "duration", 25);
+        double strengthBonus = talent.getEffectDouble(level, "strengthBonus", 15);
+        double healthBonus = talent.getEffectDouble(level, "healthBonus", 40);
+        int damageBoost = (int) talent.getEffectDouble(level, "damageBoost", 1);
+        return bm.activateBeastForm(player, "polar_bear", duration, strengthBonus, healthBonus, 0, damageBoost);
+    }
+
+    private boolean executePredatorDash(Player player, Talent talent, int level, ItemStack item) {
+        double dashDmg = talent.getEffectDouble(level, "baseDamage", 15);
+        PlayerStats stats = statsManager.getStats(player);
+        BeastManager bm = plugin.getBeastManager();
+        double bonusMult = bm.isInBeastForm(player) ? 1.5 : 1.0;
+
+        Vector dir = player.getLocation().getDirection().setY(0).normalize();
+        player.setVelocity(dir.multiply(1.8).setY(0.3));
+        player.playSound(player.getLocation(), Sound.ENTITY_WOLF_AMBIENT, 1.5f, 1.0f);
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= 10) { cancel(); return; }
+                Location loc = player.getLocation();
+                loc.getWorld().spawnParticle(Particle.CRIT, loc, 5, 0.3, 0.3, 0.3, 0.1);
+                for (org.bukkit.entity.Entity e : loc.getWorld().getNearbyEntities(loc, 2, 2, 2)) {
+                    if (e instanceof LivingEntity le && e != player && !e.hasMetadata("beast_owner")) {
+                        double totalDmg = (dashDmg + stats.getStrength() * 0.5) * bonusMult;
+                        damageManager.dealSkillDamage(player, le, totalDmg);
+                    }
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
+        return true;
+    }
+
+    private boolean executeFoxForm(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        int duration = (int) talent.getEffectDouble(level, "duration", 20);
+        double strengthBonus = talent.getEffectDouble(level, "strengthBonus", 8);
+        double healthBonus = talent.getEffectDouble(level, "healthBonus", 5);
+        int speedLevel = (int) talent.getEffectDouble(level, "speedLevel", 3);
+
+        boolean ok = bm.activateBeastForm(player, "fox", duration, strengthBonus, healthBonus, speedLevel, 0);
+        if (ok) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, duration * 20, 0, true, false));
+        }
+        return ok;
+    }
+
+    private boolean executeApexPredator(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        int duration = (int) talent.getEffectDouble(level, "duration", 30);
+        double strengthBonus = talent.getEffectDouble(level, "strengthBonus", 25);
+        double healthBonus = talent.getEffectDouble(level, "healthBonus", 50);
+        int speedLevel = (int) talent.getEffectDouble(level, "speedLevel", 2);
+        int damageBoost = (int) talent.getEffectDouble(level, "damageBoost", 2);
+        return bm.activateBeastForm(player, "ravager", duration, strengthBonus, healthBonus, speedLevel, damageBoost);
+    }
+
+    private boolean executePrimalWrath(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+        int duration = (int) talent.getEffectDouble(level, "duration", 35);
+        double strengthBonus = talent.getEffectDouble(level, "strengthBonus", 40);
+        double healthBonus = talent.getEffectDouble(level, "healthBonus", 80);
+        bm.activateBeastForm(player, "apex", duration, strengthBonus, healthBonus, 3, 3);
+        bm.summonBeast(player, EntityType.WOLF, "原始戰狼", 100, 15, duration, 2);
+
+        double radius = talent.getEffectDouble(level, "radius", 10);
+        int fearDuration = (int) talent.getEffectDouble(level, "fearDuration", 5);
+
+        for (org.bukkit.entity.Entity e : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius)) {
+            if (e instanceof LivingEntity le && e != player && !e.hasMetadata("beast_owner")) {
+                le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, fearDuration * 20, 2, true, false));
+                le.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, fearDuration * 20, 1, true, false));
+            }
+        }
+
+        player.sendMessage("§6§l[原始怒吼] §c§l你釋放了原始之力！所有敵人陷入恐懼！");
+        player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
+        player.getWorld().spawnParticle(Particle.EXPLOSION, player.getLocation(), 3, 1, 1, 1, 0);
+        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0, 2, 0), 60, 2, 2, 2, 0.5);
+        return true;
+    }
 }
+
+

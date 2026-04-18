@@ -2121,3 +2121,1794 @@ assassin:
           radius: 8
           duration: 8
           lifestealPercent: 0.25
+
+
+# ==================== 科技系 (Tech) ====================
+# 兩大分支：
+#   機械構裝流（砲塔 / 無人機）— 右側  主屬性：Magic + Agility
+#   爆破工程流（地雷 / 炸藥）  — 左側  主屬性：Strength + Agility
+# GUI 佈局 (row, col) → slot = row * 9 + col
+tech:
+
+  # ═══════════════════════════════════════════
+  #  起始天賦（共用入口）
+  # ═══════════════════════════════════════════
+
+  # 工程學基礎 (5,4) → slot 49 — 屬性加成：入門
+  tech_fundamentals:
+    name: "工程學基礎"
+    description: "掌握基礎工程學知識，提升敏捷與智慧"
+    type: "PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "被動"
+    gui:
+      slot: 49
+      icon: "REDSTONE"
+    levels:
+      1:
+        effect:
+          statBonus:
+            agility: 10
+            magic: 5
+
+  # 電擊槍 (5,6) → slot 51 — 主動：發射電擊彈
+  shock_gun:
+    name: "電擊槍"
+    description: "發射一枚高速電擊彈，命中目標造成魔法傷害並短暫麻痺"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 2
+    manaCost: 8
+    trigger:
+      type: "RIGHT_CLICK"
+    gui:
+      slot: 51
+      icon: "REDSTONE_TORCH"
+    levels:
+      1:
+        effect:
+          baseDamage: 40
+          magicScaling: 0.3
+          agilityScaling: 0.2
+          range: 15
+          slowDuration: 1
+      2:
+        effect:
+          baseDamage: 65
+          magicScaling: 0.4
+          agilityScaling: 0.25
+          range: 18
+          slowDuration: 1.5
+      3:
+        effect:
+          baseDamage: 90
+          magicScaling: 0.5
+          agilityScaling: 0.3
+          range: 20
+          slowDuration: 2
+
+  # 手榴彈 (5,2) → slot 47 — 主動：投擲爆炸物
+  grenade:
+    name: "手榴彈"
+    description: "投擲一枚手榴彈，延遲1秒後爆炸造成範圍物理傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 4
+    manaCost: 12
+    trigger:
+      type: "LEFT_CLICK"
+    gui:
+      slot: 47
+      icon: "FIRE_CHARGE"
+    levels:
+      1:
+        effect:
+          baseDamage: 55
+          strengthScaling: 0.2
+          agilityScaling: 0.15
+          radius: 3
+          fuseTime: 20
+      2:
+        effect:
+          baseDamage: 85
+          strengthScaling: 0.3
+          agilityScaling: 0.2
+          radius: 3.5
+          fuseTime: 20
+      3:
+        effect:
+          baseDamage: 120
+          strengthScaling: 0.4
+          agilityScaling: 0.25
+          radius: 4
+          fuseTime: 15
+
+  # ════════════════════════════════════════════
+  #  機械構裝流 — 右側（砲塔 / 無人機 / 護盾）
+  # ═══════════════════════════════════════════
+
+  # 迷你砲塔 (4,6) → slot 42 — 主動：放置自動砲塔
+  mini_turret:
+    name: "迷你砲塔"
+    description: "在腳下部署一座迷你砲塔，自動攻擊附近敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 15
+    manaCost: 35
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "shock_gun"
+      level: 1
+    gui:
+      slot: 42
+      icon: "DISPENSER"
+    levels:
+      1:
+        effect:
+          turretDamage: 15
+          magicScaling: 0.2
+          turretRange: 8
+          turretDuration: 10
+          fireRate: 15
+      2:
+        effect:
+          turretDamage: 25
+          magicScaling: 0.3
+          turretRange: 10
+          turretDuration: 12
+          fireRate: 12
+      3:
+        effect:
+          turretDamage: 40
+          magicScaling: 0.4
+          turretRange: 12
+          turretDuration: 15
+          fireRate: 10
+
+  # 能量護盾 (4,7) → slot 43 — 主動：生成護盾吸收傷害
+  energy_shield:
+    name: "能量護盾"
+    description: "啟動能量護盾，吸收一定量的傷害持續數秒"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 20
+    manaCost: 30
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "shock_gun"
+      level: 1
+    gui:
+      slot: 43
+      icon: "SHIELD"
+    levels:
+      1:
+        effect:
+          shieldAmount: 50
+          magicScaling: 0.5
+          duration: 6
+      2:
+        effect:
+          shieldAmount: 100
+          magicScaling: 0.7
+          duration: 8
+      3:
+        effect:
+          shieldAmount: 200
+          magicScaling: 1.0
+          duration: 10
+
+  # 機械強化 (3,7) → slot 34 — 被動：提升砲塔與無人機性能
+  mech_enhancement:
+    name: "機械強化"
+    description: "強化所有機械裝置的性能，提升傷害與持續時間"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "mini_turret"
+          level: 1
+        - skill: "energy_shield"
+          level: 1
+    gui:
+      slot: 34
+      icon: "IRON_BLOCK"
+    levels:
+      1:
+        effect:
+          mechDamageBonus: 0.15
+          mechDurationBonus: 0.10
+      2:
+        effect:
+          mechDamageBonus: 0.25
+          mechDurationBonus: 0.20
+      3:
+        effect:
+          mechDamageBonus: 0.40
+          mechDurationBonus: 0.30
+
+  # 追蹤無人機 (3,6) → slot 33 — 主動：派出追蹤無人機
+  tracking_drone:
+    name: "追蹤無人機"
+    description: "派出一架追蹤無人機，自動追蹤最近的敵人並連續射擊"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 18
+    manaCost: 40
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "mini_turret"
+      level: 2
+    gui:
+      slot: 33
+      icon: "PHANTOM_MEMBRANE"
+    levels:
+      1:
+        effect:
+          droneDamage: 12
+          magicScaling: 0.15
+          agilityScaling: 0.1
+          droneRange: 12
+          droneDuration: 8
+          droneFireRate: 10
+      2:
+        effect:
+          droneDamage: 20
+          magicScaling: 0.2
+          agilityScaling: 0.15
+          droneRange: 15
+          droneDuration: 10
+          droneFireRate: 8
+      3:
+        effect:
+          droneDamage: 30
+          magicScaling: 0.3
+          agilityScaling: 0.2
+          droneRange: 18
+          droneDuration: 12
+          droneFireRate: 6
+
+  # 超載核心 (2,7) → slot 25 — 被動：暴擊率+科技傷害
+  overload_core:
+    name: "超載核心"
+    description: "核心超載運轉，大幅提升暴擊率與所有科技技能傷害"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "mech_enhancement"
+          level: 2
+        - skill: "tracking_drone"
+          level: 1
+    gui:
+      slot: 25
+      icon: "NETHER_STAR"
+    levels:
+      1:
+        effect:
+          statBonus:
+            agility: 20
+            magic: 15
+          techDamageBonus: 0.10
+      2:
+        effect:
+          statBonus:
+            agility: 40
+            magic: 30
+          techDamageBonus: 0.20
+      3:
+        effect:
+          statBonus:
+            agility: 60
+            magic: 50
+          techDamageBonus: 0.30
+
+  # 軌道轟炸 (2,6) → slot 24 — 終極：天降能量束
+  orbital_strike:
+    name: "軌道轟炸"
+    description: "呼叫衛星軌道砲，在指定地點降下毀滅性能量束，造成巨大範圍傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 45
+    manaCost: 100
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "overload_core"
+      level: 2
+    gui:
+      slot: 24
+      icon: "END_CRYSTAL"
+    levels:
+      1:
+        effect:
+          baseDamage: 200
+          magicScaling: 2.0
+          agilityScaling: 0.5
+          radius: 6
+          chargeTime: 40
+      2:
+        effect:
+          baseDamage: 350
+          magicScaling: 3.0
+          agilityScaling: 0.8
+          radius: 7
+          chargeTime: 35
+      3:
+        effect:
+          baseDamage: 500
+          magicScaling: 4.0
+          agilityScaling: 1.0
+          radius: 8
+          chargeTime: 30
+
+  # ═══════════════════════════════════════════
+  #  爆破工程流 — 左側（地雷 / 陷阱 / 連環爆破）
+  # ═══════════════════════════════════════════
+
+  # 感應地雷 (4,2) → slot 38 — 主動：放置地雷
+  proximity_mine:
+    name: "感應地雷"
+    description: "在腳下放置一枚隱形感應地雷，敵人靠近時引爆造成範圍傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 8
+    manaCost: 15
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "grenade"
+      level: 1
+    gui:
+      slot: 38
+      icon: "STONE_PRESSURE_PLATE"
+    levels:
+      1:
+        effect:
+          baseDamage: 70
+          strengthScaling: 0.3
+          agilityScaling: 0.2
+          radius: 3
+          triggerRadius: 2
+          mineDuration: 30
+      2:
+        effect:
+          baseDamage: 110
+          strengthScaling: 0.4
+          agilityScaling: 0.25
+          radius: 3.5
+          triggerRadius: 2.5
+          mineDuration: 45
+      3:
+        effect:
+          baseDamage: 160
+          strengthScaling: 0.5
+          agilityScaling: 0.3
+          radius: 4
+          triggerRadius: 3
+          mineDuration: 60
+
+  # 減速陷阱 (4,1) → slot 37 — 主動：放置減速區域
+  slow_trap:
+    name: "減速陷阱"
+    description: "放置一個減速力場，踏入的敵人受到持續減速與少量傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 10
+    manaCost: 18
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "grenade"
+      level: 1
+    gui:
+      slot: 37
+      icon: "COBWEB"
+    levels:
+      1:
+        effect:
+          damagePerSecond: 8
+          agilityScaling: 0.1
+          radius: 3
+          duration: 6
+          slowLevel: 1
+      2:
+        effect:
+          damagePerSecond: 15
+          agilityScaling: 0.15
+          radius: 4
+          duration: 8
+          slowLevel: 2
+      3:
+        effect:
+          damagePerSecond: 25
+          agilityScaling: 0.2
+          radius: 5
+          duration: 10
+          slowLevel: 3
+
+  # 爆破專精 (3,2) → slot 29 — 被動：爆炸傷害與範圍增加
+  demolition_expert:
+    name: "爆破專精"
+    description: "精通爆破技術，所有爆炸類技能傷害與範圍提升"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "proximity_mine"
+          level: 1
+        - skill: "slow_trap"
+          level: 1
+    gui:
+      slot: 29
+      icon: "TNT"
+    levels:
+      1:
+        effect:
+          explosionDamageBonus: 0.15
+          explosionRadiusBonus: 0.10
+      2:
+        effect:
+          explosionDamageBonus: 0.25
+          explosionRadiusBonus: 0.20
+      3:
+        effect:
+          explosionDamageBonus: 0.40
+          explosionRadiusBonus: 0.30
+
+  # 集束炸彈 (3,1) → slot 28 — 主動：大範圍多段爆炸
+  cluster_bomb:
+    name: "集束炸彈"
+    description: "投擲集束炸彈，炸開後分裂成多個小炸彈散佈爆炸"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 12
+    manaCost: 45
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "demolition_expert"
+      level: 1
+    gui:
+      slot: 28
+      icon: "FIRE_CHARGE"
+    levels:
+      1:
+        effect:
+          baseDamage: 40
+          strengthScaling: 0.2
+          agilityScaling: 0.15
+          bombCount: 4
+          bombRadius: 2.5
+          spreadRadius: 5
+      2:
+        effect:
+          baseDamage: 60
+          strengthScaling: 0.3
+          agilityScaling: 0.2
+          bombCount: 6
+          bombRadius: 3
+          spreadRadius: 6
+      3:
+        effect:
+          baseDamage: 85
+          strengthScaling: 0.4
+          agilityScaling: 0.25
+          bombCount: 8
+          bombRadius: 3.5
+          spreadRadius: 7
+
+  # 彈藥補給 (3,0) → slot 27 — 被動：技能冷卻減少
+  ammo_supply:
+    name: "彈藥補給"
+    description: "最佳化彈藥補給線，減少所有科技系技能冷卻時間"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "demolition_expert"
+      level: 1
+    gui:
+      slot: 27
+      icon: "CHEST"
+    levels:
+      1:
+        effect:
+          cooldownReduction: 0.10
+      2:
+        effect:
+          cooldownReduction: 0.18
+      3:
+        effect:
+          cooldownReduction: 0.25
+
+  # 戰術核彈 (2,1) → slot 19 — 被動：爆炸附帶灼燒與破甲
+  tactical_warhead:
+    name: "戰術核彈"
+    description: "爆炸附帶灼燒與破甲效果，降低敵人防禦"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      anyOf:
+        - skill: "cluster_bomb"
+          level: 1
+        - skill: "ammo_supply"
+          level: 1
+    gui:
+      slot: 19
+      icon: "TNT_MINECART"
+    levels:
+      1:
+        effect:
+          burnOnExplosion: 2
+          armorReduction: 0.10
+      2:
+        effect:
+          burnOnExplosion: 3
+          armorReduction: 0.20
+      3:
+        effect:
+          burnOnExplosion: 5
+          armorReduction: 0.30
+
+  # 毀滅轟炸 (2,0) → slot 18 — 終極：連續爆破覆蓋
+  annihilation_barrage:
+    name: "毀滅轟炸"
+    description: "呼叫大規模連續地毯式轟炸，在指定區域降下密集爆破，持續摧毀一切"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "紅石粉"
+    cooldown: 40
+    manaCost: 90
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "tactical_warhead"
+      level: 2
+    gui:
+      slot: 18
+      icon: "RESPAWN_ANCHOR"
+    levels:
+      1:
+        effect:
+          baseDamage: 60
+          strengthScaling: 0.5
+          agilityScaling: 0.3
+          radius: 8
+          waveCount: 5
+          waveInterval: 10
+          burnDuration: 3
+      2:
+        effect:
+          baseDamage: 90
+          strengthScaling: 0.7
+          agilityScaling: 0.4
+          radius: 10
+          waveCount: 7
+          waveInterval: 8
+          burnDuration: 4
+      3:
+        effect:
+          baseDamage: 130
+          strengthScaling: 1.0
+          agilityScaling: 0.6
+          radius: 12
+          waveCount: 9
+          waveInterval: 6
+          burnDuration: 5
+
+
+# ==================== 暗黑系 (Dark) ====================
+# 核心機制：施放技能消耗自身血量（hpCost），高風險高回報
+# 兩大分支：
+#   詛咒流 — 左側  削弱敵人 / 吸血 / 延遲爆發
+#   獻祭流 — 右側  燃燒生命換取極高傷害
+# GUI 佈局 (row, col) → slot = row * 9 + col
+dark:
+
+  # ═══════════════════════════════════════════
+  #  Tier 5 — 起始天賦（共用入口）
+  # ═══════════════════════════════════════════
+
+  # 暗黑親和 (5,4) → slot 49 — 被動：入門屬性加成
+  dark_affinity:
+    name: "暗黑親和"
+    description: "與暗黑力量建立連結，增加 Magic 與最大生命值"
+    type: "PASSIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "被動"
+    gui:
+      slot: 49
+      icon: "WITHER_SKELETON_SKULL"
+    levels:
+      1:
+        effect:
+          statBonus:
+            magic: 15
+          hpBonus: 20
+
+  # 暗影彈 (5,6) → slot 51 — 主動：基礎暗影投射物
+  shadow_bolt:
+    name: "暗影彈"
+    description: "消耗少量血量，發射一顆暗影彈攻擊敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "凋零玫瑰"
+    cooldown: 3
+    manaCost: 10
+    hpCost: 0.05
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "dark_affinity"
+      level: 1
+    gui:
+      slot: 51
+      icon: "ENDER_PEARL"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.5
+          range: 20
+      2:
+        effect:
+          magicScaling: 2.0
+          range: 25
+      3:
+        effect:
+          magicScaling: 2.8
+          range: 30
+
+  # 暗黑韌性 (5,2) → slot 47 — 被動：降低HP消耗
+  dark_resilience:
+    name: "暗黑韌性"
+    description: "強化身體承受暗黑力量的能力，降低技能的HP消耗"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "dark_affinity"
+      level: 1
+    gui:
+      slot: 47
+      icon: "NETHERITE_SCRAP"
+    levels:
+      1:
+        effect:
+          hpCostReduction: 0.15
+      2:
+        effect:
+          hpCostReduction: 0.25
+      3:
+        effect:
+          hpCostReduction: 0.35
+
+  # ═══════════════════════════════════════════
+  #  Tier 4 — 詛咒流（左側）
+  # ═══════════════════════════════════════════
+
+  # 靈魂汲取 (4,2) → slot 38 — 主動：射線吸血
+  soul_drain:
+    name: "靈魂汲取"
+    description: "消耗血量汲取敵人靈魂，造成傷害並回復自身生命"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "凋零玫瑰"
+    cooldown: 6
+    manaCost: 15
+    hpCost: 0.08
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "dark_resilience"
+      level: 1
+    gui:
+      slot: 38
+      icon: "GHAST_TEAR"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.2
+          leechPercent: 0.30
+          range: 12
+      2:
+        effect:
+          magicScaling: 1.6
+          leechPercent: 0.40
+          range: 14
+      3:
+        effect:
+          magicScaling: 2.2
+          leechPercent: 0.50
+          range: 16
+
+  # 詛咒印記 (4,1) → slot 37 — 主動：標記敵人增傷
+  curse_mark:
+    name: "詛咒印記"
+    description: "消耗血量在敵人身上刻下詛咒印記，被標記者受到額外傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "凋零玫瑰"
+    cooldown: 12
+    manaCost: 20
+    hpCost: 0.10
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "soul_drain"
+      level: 1
+    gui:
+      slot: 37
+      icon: "ENCHANTED_BOOK"
+    levels:
+      1:
+        effect:
+          bonusDamagePercent: 0.25
+          duration: 6
+          range: 15
+      2:
+        effect:
+          bonusDamagePercent: 0.35
+          duration: 8
+          range: 18
+      3:
+        effect:
+          bonusDamagePercent: 0.50
+          duration: 10
+          range: 20
+
+  # ═══════════════════════════════════════════
+  #  Tier 4 — 獻祭流（右側）
+  # ═══════════════════════════════════════════
+
+  # 血之獻祭 (4,6) → slot 42 — 主動：消耗20%HP巨額傷害
+  blood_sacrifice:
+    name: "血之獻祭"
+    description: "以鮮血為代價，對前方釋放毀滅性的暗黑能量"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "凋零玫瑰"
+    cooldown: 10
+    manaCost: 20
+    hpCost: 0.20
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "shadow_bolt"
+      level: 1
+    gui:
+      slot: 42
+      icon: "REDSTONE"
+    levels:
+      1:
+        effect:
+          strengthScaling: 2.0
+          magicScaling: 2.0
+          range: 5
+      2:
+        effect:
+          strengthScaling: 2.8
+          magicScaling: 2.8
+          range: 6
+      3:
+        effect:
+          strengthScaling: 3.5
+          magicScaling: 3.5
+          range: 8
+
+  # 暗黑烈焰 (4,7) → slot 43 — 主動：暗焰AoE
+  dark_flame:
+    name: "暗黑烈焰"
+    description: "消耗血量召喚暗黑之火，持續灼燒區域內敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "凋零玫瑰"
+    cooldown: 8
+    manaCost: 25
+    hpCost: 0.12
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "blood_sacrifice"
+      level: 1
+    gui:
+      slot: 43
+      icon: "SOUL_LANTERN"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.6
+          radius: 4
+          burnDuration: 3
+      2:
+        effect:
+          magicScaling: 2.2
+          radius: 5
+          burnDuration: 4
+      3:
+        effect:
+          magicScaling: 3.0
+          radius: 6
+          burnDuration: 5
+
+  # ═══════════════════════════════════════════
+  #  Tier 3 — 詛咒流（左側）
+  # ═══════════════════════════════════════════
+
+  # 生命虹吸 (3,2) → slot 29 — 被動：攻擊吸血
+  life_leech:
+    name: "生命虹吸"
+    description: "每次攻擊都會吸取敵人部分生命力回復自身"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "soul_drain"
+      level: 1
+    gui:
+      slot: 29
+      icon: "GLISTERING_MELON_SLICE"
+    levels:
+      1:
+        effect:
+          lifeStealPercent: 0.05
+      2:
+        effect:
+          lifeStealPercent: 0.08
+      3:
+        effect:
+          lifeStealPercent: 0.12
+
+  # 虛弱詛咒 (3,1) → slot 28 — 主動：AoE削弱
+  weakening_curse:
+    name: "虛弱詛咒"
+    description: "消耗血量釋放詛咒波，大幅削弱範圍內敵人的戰鬥力"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "凋零玫瑰"
+    cooldown: 15
+    manaCost: 30
+    hpCost: 0.10
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "curse_mark"
+      level: 1
+    gui:
+      slot: 28
+      icon: "FERMENTED_SPIDER_EYE"
+    levels:
+      1:
+        effect:
+          radius: 5
+          duration: 5
+          weaknessLevel: 1
+          slownessLevel: 1
+      2:
+        effect:
+          radius: 6
+          duration: 7
+          weaknessLevel: 2
+          slownessLevel: 1
+      3:
+        effect:
+          radius: 8
+          duration: 10
+          weaknessLevel: 2
+          slownessLevel: 2
+
+  # ═══════════════════════════════════════════
+  #  Tier 3 — 獻祭流（右側）
+  # ═══════════════════════════════════════════
+
+  # 靈魂燃燒 (3,6) → slot 33 — 主動：點燃靈魂持續傷害
+  soul_burn:
+    name: "靈魂燃燒"
+    description: "點燃自身靈魂，持續對周圍敵人造成暗黑傷害，同時每秒消耗少量HP"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "凋零玫瑰"
+    cooldown: 18
+    manaCost: 30
+    hpCost: 0.10
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "dark_flame"
+      level: 1
+    gui:
+      slot: 33
+      icon: "SOUL_TORCH"
+    levels:
+      1:
+        effect:
+          magicScaling: 0.8
+          radius: 4
+          duration: 5
+      2:
+        effect:
+          magicScaling: 1.2
+          radius: 5
+          duration: 7
+      3:
+        effect:
+          magicScaling: 1.8
+          radius: 6
+          duration: 10
+
+  # 暗黑護盾 (3,7) → slot 34 — 主動：HP轉護盾
+  dark_shield:
+    name: "暗黑護盾"
+    description: "將生命力轉化為暗黑護盾，吸收傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "凋零玫瑰"
+    cooldown: 20
+    manaCost: 15
+    hpCost: 0.15
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "blood_sacrifice"
+      level: 1
+    gui:
+      slot: 34
+      icon: "SHIELD"
+    levels:
+      1:
+        effect:
+          shieldPercent: 0.15
+          duration: 8
+      2:
+        effect:
+          shieldPercent: 0.25
+          duration: 10
+      3:
+        effect:
+          shieldPercent: 0.40
+          duration: 12
+
+  # ═══════════════════════════════════════════
+  #  Tier 2 — 進階天賦
+  # ═══════════════════════════════════════════
+
+  # 死亡標記 (2,1) → slot 19 — 主動：延遲引爆巨額傷害
+  death_mark:
+    name: "死亡標記"
+    description: "消耗血量在敵人身上刻下死亡標記，數秒後引爆造成毀滅性傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 2
+    mechanism: "凋零玫瑰"
+    cooldown: 20
+    manaCost: 40
+    hpCost: 0.15
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "weakening_curse"
+      level: 1
+    gui:
+      slot: 19
+      icon: "WITHER_ROSE"
+    levels:
+      1:
+        effect:
+          magicScaling: 3.0
+          range: 15
+          delay: 4
+      2:
+        effect:
+          magicScaling: 4.5
+          range: 18
+          delay: 3
+      3:
+        effect:
+          magicScaling: 6.0
+          range: 20
+          delay: 2
+
+  # 虛空爆發 (2,7) → slot 25 — 主動：超大AoE
+  void_eruption:
+    name: "虛空爆發"
+    description: "燃燒大量生命力，引爆虛空能量造成大範圍毀滅"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 2
+    mechanism: "凋零玫瑰"
+    cooldown: 25
+    manaCost: 50
+    hpCost: 0.30
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "soul_burn"
+      level: 1
+    gui:
+      slot: 25
+      icon: "END_CRYSTAL"
+    levels:
+      1:
+        effect:
+          magicScaling: 2.5
+          strengthScaling: 1.5
+          radius: 7
+      2:
+        effect:
+          magicScaling: 3.5
+          strengthScaling: 2.0
+          radius: 9
+      3:
+        effect:
+          magicScaling: 5.0
+          strengthScaling: 3.0
+          radius: 12
+
+  # ═══════════════════════════════════════════
+  #  Tier 1 — 終極天賦
+  # ═══════════════════════════════════════════
+
+  # 死神領域 (1,1) → slot 10 — 終極：AoE持續汲取
+  reaper_domain:
+    name: "死神領域"
+    description: "展開死亡領域，持續汲取範圍內所有敵人的生命力回復自身"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 3
+    mechanism: "凋零玫瑰"
+    cooldown: 60
+    manaCost: 80
+    hpCost: 0.25
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "death_mark"
+      level: 1
+    gui:
+      slot: 10
+      icon: "DRAGON_HEAD"
+    levels:
+      1:
+        effect:
+          magicScaling: 1.0
+          radius: 8
+          duration: 8
+          leechPercent: 0.20
+      2:
+        effect:
+          magicScaling: 1.5
+          radius: 10
+          duration: 10
+          leechPercent: 0.30
+      3:
+        effect:
+          magicScaling: 2.0
+          radius: 12
+          duration: 12
+          leechPercent: 0.40
+
+  # 暗黑神化 (1,7) → slot 16 — 終極：變身形態
+  dark_apotheosis:
+    name: "暗黑神化"
+    description: "燃燒大量生命力化身暗黑形態，期間所有暗黑技能不再消耗HP，並獲得攻擊與速度加成"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 3
+    mechanism: "凋零玫瑰"
+    cooldown: 90
+    manaCost: 100
+    hpCost: 0.35
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "void_eruption"
+      level: 1
+    gui:
+      slot: 16
+      icon: "NETHER_STAR"
+    levels:
+      1:
+        effect:
+          duration: 8
+          damageBoost: 1
+          speedBoost: 1
+      2:
+        effect:
+          duration: 12
+          damageBoost: 2
+          speedBoost: 1
+      3:
+        effect:
+          duration: 15
+          damageBoost: 2
+          speedBoost: 2
+
+# ==================== 野獸系 (BEAST) — 馴服野獸 / 化身野獸 ====================
+#
+#  GUI 佈局 (54 格箱子):
+#
+#  Row 0 (slots 0-8):   [終極] beast_master(4)                primal_wrath(4)
+#  Row 1 (slots 9-17):  beast_army(11)  shared_vitality(13)   apex_predator(15) nature_armor(17)
+#  Row 2 (slots 18-26): savage_summon(20) beast_frenzy(22)     bear_form(24)  predator_dash(26)
+#  Row 3 (slots 27-35): pack_leader(29)  alpha_command(31)     wolf_form(33)  bear_strength(35)
+#  Row 4 (slots 36-44): — — —           beast_instinct(40)    feral_senses(44) — —
+#  Row 5 (slots 45-53): — — —            call_of_wild(49)      — —           [玩家資訊53]
+#
+# ═══════════════════════════════════════════════════════════════
+beast:
+
+  # ═══════════════════════════════════════
+  #  共通基礎 (Tier 5 — 入門)
+  # ═══════════════════════════════════════
+
+  # 野獸本能 (5,5) → slot 49 — 入口主動：召喚一隻狼
+  call_of_wild:
+    name: "野性呼喚"
+    description: "呼喚一隻戰狼為你而戰"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 20
+    manaCost: 15
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    gui:
+      slot: 49
+      icon: "BONE"
+    levels:
+      1:
+        effect:
+          baseDamage: 5
+          beastHealth: 30
+          duration: 25
+      2:
+        effect:
+          baseDamage: 8
+          beastHealth: 45
+          duration: 30
+      3:
+        effect:
+          baseDamage: 12
+          beastHealth: 60
+          duration: 40
+
+  # 野獸本能 (5,5) → slot 40 — 被動：+力量
+  beast_instinct:
+    name: "野獸本能"
+    description: "與野獸的連結增強你的力量"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "call_of_wild"
+      level: 1
+    gui:
+      slot: 40
+      icon: "LEATHER"
+    levels:
+      1:
+        effect:
+          statBonus_STRENGTH: 5
+          statBonus_VITALITY: 3
+      2:
+        effect:
+          statBonus_STRENGTH: 10
+          statBonus_VITALITY: 6
+      3:
+        effect:
+          statBonus_STRENGTH: 15
+          statBonus_VITALITY: 10
+
+  # 野性感知 (5,9) → slot 44 — 被動：+敏捷
+  feral_senses:
+    name: "野性感知"
+    description: "敏銳的野獸直覺提升你的敏捷"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "call_of_wild"
+      level: 1
+    gui:
+      slot: 44
+      icon: "SPIDER_EYE"
+    levels:
+      1:
+        effect:
+          statBonus_AGILITY: 5
+          statBonus_LUCK: 3
+      2:
+        effect:
+          statBonus_AGILITY: 10
+          statBonus_LUCK: 6
+      3:
+        effect:
+          statBonus_AGILITY: 15
+          statBonus_LUCK: 10
+
+  # ═══════════════════════════════════════
+  #  馴服野獸支線（左側）
+  # ═══════════════════════════════════════
+
+  # 狼群領袖 (4,3) → slot 29 — 主動：召喚2隻狼
+  pack_leader:
+    name: "狼群領袖"
+    description: "召喚一群精銳戰狼為你而戰"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 25
+    manaCost: 20
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "beast_instinct"
+      level: 1
+    gui:
+      slot: 29
+      icon: "WOLF_SPAWN_EGG"
+    levels:
+      1:
+        effect:
+          baseDamage: 8
+          beastHealth: 50
+          duration: 35
+          summonCount: 2
+      2:
+        effect:
+          baseDamage: 12
+          beastHealth: 70
+          duration: 40
+          summonCount: 2
+      3:
+        effect:
+          baseDamage: 16
+          beastHealth: 90
+          duration: 50
+          summonCount: 3
+
+  # 首領號令 (4,5) → slot 31 — 被動：召喚物傷害加成
+  alpha_command:
+    name: "首領號令"
+    description: "你的野獸受到你的鼓舞，攻擊力提升"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "beast_instinct"
+      level: 1
+    gui:
+      slot: 31
+      icon: "LEAD"
+    levels:
+      1:
+        effect:
+          beastDamageBonus: 0.15
+      2:
+        effect:
+          beastDamageBonus: 0.30
+      3:
+        effect:
+          beastDamageBonus: 0.50
+
+  # 猛獸召喚 (3,3) → slot 20 — 主動：召喚北極熊
+  savage_summon:
+    name: "猛獸召喚"
+    description: "召喚一隻強大的巨熊為你衝鋒"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 30
+    manaCost: 30
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "pack_leader"
+      level: 1
+    gui:
+      slot: 20
+      icon: "POLAR_BEAR_SPAWN_EGG"
+    levels:
+      1:
+        effect:
+          baseDamage: 12
+          beastHealth: 80
+          duration: 40
+      2:
+        effect:
+          baseDamage: 18
+          beastHealth: 120
+          duration: 50
+      3:
+        effect:
+          baseDamage: 25
+          beastHealth: 160
+          duration: 60
+
+  # 野獸狂熱 (3,5) → slot 22 — 主動：強化所有野獸
+  beast_frenzy:
+    name: "野獸狂熱"
+    description: "讓所有召喚的野獸進入狂暴狀態，大幅提升攻擊力"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 25
+    manaCost: 25
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "alpha_command"
+      level: 1
+    gui:
+      slot: 22
+      icon: "FERMENTED_SPIDER_EYE"
+    levels:
+      1:
+        effect:
+          damageBoost: 3
+          healPercent: 0.20
+          duration: 10
+      2:
+        effect:
+          damageBoost: 5
+          healPercent: 0.35
+          duration: 15
+      3:
+        effect:
+          damageBoost: 8
+          healPercent: 0.50
+          duration: 20
+
+  # 野獸軍團 (2,3) → slot 11 — 主動：同時召喚狼+熊
+  beast_army:
+    name: "野獸軍團"
+    description: "同時召喚戰狼群與巨熊，組成野獸軍團"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 2
+    mechanism: "骨頭"
+    cooldown: 40
+    manaCost: 40
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "savage_summon"
+      level: 2
+    gui:
+      slot: 11
+      icon: "SPAWNER"
+    levels:
+      1:
+        effect:
+          wolfDamage: 10
+          wolfHealth: 60
+          bearDamage: 15
+          bearHealth: 100
+          wolfCount: 2
+          duration: 45
+      2:
+        effect:
+          wolfDamage: 14
+          wolfHealth: 80
+          bearDamage: 20
+          bearHealth: 140
+          wolfCount: 2
+          duration: 55
+      3:
+        effect:
+          wolfDamage: 18
+          wolfHealth: 100
+          bearDamage: 28
+          bearHealth: 180
+          wolfCount: 3
+          duration: 60
+
+  # 共生活力 (2,5) → slot 13 — 被動：野獸擊殺回復主人HP
+  shared_vitality:
+    name: "共生活力"
+    description: "你的野獸擊殺敵人時，你會回復生命值"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "beast_frenzy"
+      level: 1
+    gui:
+      slot: 13
+      icon: "GOLDEN_APPLE"
+    levels:
+      1:
+        effect:
+          healOnKill: 0.05
+      2:
+        effect:
+          healOnKill: 0.10
+      3:
+        effect:
+          healOnKill: 0.15
+
+  # 野獸之王 (1,5) → slot 4 — 終極主動：召喚劫獸
+  beast_master:
+    name: "野獸之王"
+    description: "召喚傳說中的野獸之王與其護衛，為你征戰沙場"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 3
+    mechanism: "骨頭"
+    cooldown: 90
+    manaCost: 60
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "beast_army"
+      level: 2
+    gui:
+      slot: 4
+      icon: "RAVAGER_SPAWN_EGG"
+    levels:
+      1:
+        effect:
+          baseDamage: 20
+          beastHealth: 180
+          duration: 50
+      2:
+        effect:
+          baseDamage: 30
+          beastHealth: 280
+          duration: 60
+      3:
+        effect:
+          baseDamage: 40
+          beastHealth: 400
+          duration: 75
+
+  # ═══════════════════════════════════════
+  #  化身野獸支線（右側）
+  # ═══════════════════════════════════════
+
+  # 狼之化身 (4,7) → slot 33 — 主動：變身為狼
+  wolf_form:
+    name: "狼之化身"
+    description: "化身為狂狼，獲得極高的速度與敏捷"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 30
+    manaCost: 20
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "feral_senses"
+      level: 1
+    gui:
+      slot: 33
+      icon: "BONE"
+    levels:
+      1:
+        effect:
+          duration: 15
+          strengthBonus: 5
+          healthBonus: 10
+          speedLevel: 2
+      2:
+        effect:
+          duration: 20
+          strengthBonus: 10
+          healthBonus: 20
+          speedLevel: 2
+      3:
+        effect:
+          duration: 25
+          strengthBonus: 15
+          healthBonus: 30
+          speedLevel: 3
+
+  # 熊之力量 (4,9) → slot 35 — 被動：+力量+防禦
+  bear_strength:
+    name: "熊之力量"
+    description: "蘊含巨熊的力量，提升力量與防禦"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "feral_senses"
+      level: 1
+    gui:
+      slot: 35
+      icon: "IRON_CHESTPLATE"
+    levels:
+      1:
+        effect:
+          statBonus_STRENGTH: 8
+          statBonus_DEFENSE: 5
+      2:
+        effect:
+          statBonus_STRENGTH: 15
+          statBonus_DEFENSE: 10
+      3:
+        effect:
+          statBonus_STRENGTH: 25
+          statBonus_DEFENSE: 15
+
+  # 熊之化身 (3,7) → slot 24 — 主動：變身為巨熊
+  bear_form:
+    name: "熊之化身"
+    description: "化身為巨熊，獲得強大的力量與生命值"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 35
+    manaCost: 25
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "wolf_form"
+      level: 1
+    gui:
+      slot: 24
+      icon: "DIAMOND_CHESTPLATE"
+    levels:
+      1:
+        effect:
+          duration: 20
+          strengthBonus: 12
+          healthBonus: 30
+          damageBoost: 1
+      2:
+        effect:
+          duration: 25
+          strengthBonus: 20
+          healthBonus: 50
+          damageBoost: 1
+      3:
+        effect:
+          duration: 30
+          strengthBonus: 30
+          healthBonus: 70
+          damageBoost: 2
+
+  # 掠食者衝刺 (3,9) → slot 26 — 主動：前衝攻擊
+  predator_dash:
+    name: "掠食者衝刺"
+    description: "朝前方猛衝，對路徑上的敵人造成傷害。化身狀態下傷害提升50%"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 10
+    manaCost: 15
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "bear_strength"
+      level: 1
+    gui:
+      slot: 26
+      icon: "FEATHER"
+    levels:
+      1:
+        effect:
+          baseDamage: 12
+          range: 8
+          strengthScaling: 0.5
+      2:
+        effect:
+          baseDamage: 20
+          range: 10
+          strengthScaling: 0.8
+      3:
+        effect:
+          baseDamage: 30
+          range: 12
+          strengthScaling: 1.2
+
+  # 靈狐化身 (2,7) → slot 15 — 主動：變身為狐狸 (隱身+暴擊)
+  fox_form:
+    name: "靈狐化身"
+    description: "化身為靈狐，獲得隱身、超高速度與暴擊加成"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "骨頭"
+    cooldown: 35
+    manaCost: 25
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "bear_form"
+      level: 1
+    gui:
+      slot: 15
+      icon: "SWEET_BERRIES"
+    levels:
+      1:
+        effect:
+          duration: 15
+          strengthBonus: 8
+          healthBonus: 5
+          speedLevel: 3
+      2:
+        effect:
+          duration: 20
+          strengthBonus: 12
+          healthBonus: 10
+          speedLevel: 3
+      3:
+        effect:
+          duration: 25
+          strengthBonus: 18
+          healthBonus: 15
+          speedLevel: 4
+
+  # 自然護甲 (2,9) → slot 17 — 被動：化身狀態傷害減免
+  nature_armor:
+    name: "自然護甲"
+    description: "化身狀態下受到的傷害降低"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "predator_dash"
+      level: 1
+    gui:
+      slot: 17
+      icon: "TURTLE_HELMET"
+    levels:
+      1:
+        effect:
+          damageReduction: 0.10
+      2:
+        effect:
+          damageReduction: 0.18
+      3:
+        effect:
+          damageReduction: 0.25
+
+  # 極致掠食者 (2,7) → slot 6 — 主動：強化變身
+  apex_predator:
+    name: "極致掠食者"
+    description: "化身為狂暴掠食者，獲得壓倒性的全屬性提升"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 2
+    mechanism: "骨頭"
+    cooldown: 50
+    manaCost: 45
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "fox_form"
+      level: 2
+    gui:
+      slot: 6
+      icon: "NETHERITE_CHESTPLATE"
+    levels:
+      1:
+        effect:
+          duration: 25
+          strengthBonus: 20
+          healthBonus: 40
+          speedLevel: 2
+          damageBoost: 1
+      2:
+        effect:
+          duration: 30
+          strengthBonus: 30
+          healthBonus: 60
+          speedLevel: 2
+          damageBoost: 2
+      3:
+        effect:
+          duration: 35
+          strengthBonus: 40
+          healthBonus: 80
+          speedLevel: 3
+          damageBoost: 2
+
+  # 原始怒吼 (1,9) → slot 8 — 終極主動：變身+召喚+恐懼
+  primal_wrath:
+    name: "原始怒吼"
+    description: "釋放遠古野獸之力，化身為極致掠食者、召喚護衛狼群、並讓周圍敵人陷入恐懼"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 3
+    mechanism: "骨頭"
+    cooldown: 90
+    manaCost: 70
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "apex_predator"
+      level: 2
+    gui:
+      slot: 8
+      icon: "DRAGON_HEAD"
+    levels:
+      1:
+        effect:
+          duration: 30
+          strengthBonus: 35
+          healthBonus: 60
+          radius: 8
+          fearDuration: 4
+      2:
+        effect:
+          duration: 35
+          strengthBonus: 50
+          healthBonus: 80
+          radius: 10
+          fearDuration: 5
+      3:
+        effect:
+          duration: 40
+          strengthBonus: 70
+          healthBonus: 100
+          radius: 12
+          fearDuration: 6
+

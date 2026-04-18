@@ -54,11 +54,15 @@ public class CustomRPG extends JavaPlugin {
     private HealthDisplayManager healthDisplayManager;
     private DamageDisplayManager damageDisplayManager;
     private ManaManager manaManager;
+    private com.customrpg.commands.ManaCommand manaCommand;
     private ManaDisplayManager manaDisplayManager;
     private com.customrpg.managers.BloodManager bloodManager;
     private com.customrpg.managers.MobSpawnManager mobSpawnManager;
     private com.customrpg.managers.ProtectionAreaManager protectionAreaManager;
     private com.customrpg.managers.ZoneManager zoneManager;
+
+    // BossBar system
+    private com.customrpg.managers.BossBarManager bossBarManager;
 
     // Race system
     private com.customrpg.races.RaceManager raceManager;
@@ -74,6 +78,9 @@ public class CustomRPG extends JavaPlugin {
     private com.customrpg.managers.TalentPassiveEffectManager talentPassiveEffectManager;
     private com.customrpg.managers.SkillSwitchManager skillSwitchManager;
     private com.customrpg.managers.TalentSkillManager activeTalentSkillManager;
+
+    // Beast system
+    private com.customrpg.managers.BeastManager beastManager;
 
     // New skill system (weapon skills)
     private SkillManager newSkillManager;
@@ -177,6 +184,12 @@ public class CustomRPG extends JavaPlugin {
 
         // New skill system cooldowns are in-memory; stopping the plugin clears them.
 
+        // 停止 BossBar 管理器
+        if (bossBarManager != null) {
+            bossBarManager.shutdown();
+            getLogger().info("- BossBarManager shutdown");
+        }
+
         // Cleanup managers
         configManager = null;
         weaponManager = null;
@@ -274,6 +287,7 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("- SkillSwitchManager initialized");
 
         activeTalentSkillManager = new com.customrpg.managers.TalentSkillManager(this);
+        beastManager = new com.customrpg.managers.BeastManager(this);
         getLogger().info("- TalentSkillManager initialized");
 
         // ===== New skill system (manager/service pattern) =====
@@ -316,6 +330,10 @@ public class CustomRPG extends JavaPlugin {
         // Initialize MenuGUI
         menuGUI = new com.customrpg.gui.MenuGUI(this);
         getLogger().info("- MenuGUI initialized");
+
+        // Initialize BossBarManager
+        bossBarManager = new com.customrpg.managers.BossBarManager(this, mobManager);
+        getLogger().info("- BossBarManager initialized");
     }
 
     /**
@@ -527,6 +545,18 @@ public class CustomRPG extends JavaPlugin {
         } else {
             getLogger().warning("- Failed to register /menu command: command not defined in plugin.yml");
         }
+
+        // Mana command
+        org.bukkit.command.PluginCommand manaCmd = getCommand("mana");
+        if (manaCmd != null) {
+            com.customrpg.commands.ManaCommand manaCommand = new com.customrpg.commands.ManaCommand(this, manaManager);
+            manaCmd.setExecutor(manaCommand);
+            manaCmd.setTabCompleter(manaCommand);
+            this.manaCommand = manaCommand;
+            getLogger().info("- /mana command registered");
+        } else {
+            getLogger().warning("- Failed to register /mana command: command not defined in plugin.yml");
+        }
     }
 
     /**
@@ -585,6 +615,10 @@ public class CustomRPG extends JavaPlugin {
         return talentManager;
     }
 
+    public com.customrpg.commands.ManaCommand getManaCommand() {
+        return manaCommand;
+    }
+
     public com.customrpg.gui.TalentMainMenuGUI getTalentMainMenuGUI() {
         return talentMainMenuGUI;
     }
@@ -607,6 +641,10 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.managers.SkillSwitchManager getSkillSwitchManager() {
         return skillSwitchManager;
+    }
+
+    public com.customrpg.managers.BeastManager getBeastManager() {
+        return beastManager;
     }
 
     public com.customrpg.weaponSkills.managers.SkillManager getNewSkillManager() {
@@ -638,6 +676,10 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.gui.MenuGUI getMenuGUI() {
         return menuGUI;
+    }
+
+    public com.customrpg.managers.BossBarManager getBossBarManager() {
+        return bossBarManager;
     }
 
     public StatsGUI getStatsGUI() {

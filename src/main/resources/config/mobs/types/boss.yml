@@ -77,6 +77,7 @@ boss_pumpkin_knight:
   special-behavior: "boss_pumpkin_knight"
   show-level-in-name: true
   tags: [plains, forest]
+  spawn-time: all
 
 # Boss: 瘋狂剪刀手 — 攻擊速度快
 boss_crazy_scissor:
@@ -153,6 +154,7 @@ boss_crazy_scissor:
   special-behavior: "boss_scissor_frenzy"
   show-level-in-name: true
   tags: [plains, cave]
+  spawn-time: all
 
 # Boss: 豬屍獸 — 衝撞攻擊
 boss_zombie_beast:
@@ -221,6 +223,7 @@ boss_zombie_beast:
   special-behavior: "boss_zombie_beast"
   show-level-in-name: true
   tags: [plains, nether]
+  spawn-time: all
 
 # ───────────────────────────────
 #  Lv.40~60 中期 Boss
@@ -293,6 +296,7 @@ boss_skull_general:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, plains]
+  spawn-time: all
 
 # Boss: 煉獄魔女 — 強力魔法攻擊
 boss_infernal_queen:
@@ -349,6 +353,7 @@ boss_infernal_queen:
   special-behavior: "none"
   show-level-in-name: true
   tags: [fire, nether, forest]
+  spawn-time: all
 
 # ───────────────────────────────
 #  Lv.60~80 高階 Boss
@@ -424,6 +429,7 @@ boss_abyss_dragon_rider:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, nether, mountain]
+  spawn-time: all
 
 # Boss: 暗影君王 — 高傷快速攻擊
 boss_shadow_lord:
@@ -493,6 +499,7 @@ boss_shadow_lord:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, nether]
+  spawn-time: all
 
 # ───────────────────────────────
 #  Lv.80~100 終盤 Boss
@@ -573,6 +580,7 @@ boss_doomsday_judge:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, nether, mountain]
+  spawn-time: all
 
 # Boss: 虛空大法師 — 魔法型 Boss
 boss_void_archmage:
@@ -638,6 +646,7 @@ boss_void_archmage:
   special-behavior: "none"
   show-level-in-name: true
   tags: [cave, forest]
+  spawn-time: all
 
 # Boss: 世界終結者 — 最強 Boss
 boss_world_ender:
@@ -738,4 +747,4 @@ boss_world_ender:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, nether, mountain, fire]
-
+  spawn-time: all

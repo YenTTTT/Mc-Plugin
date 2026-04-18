@@ -73,6 +73,7 @@ public class ConfigManager {
         ensureDefaultConfigExists("config/mobs/types/tier2_intermediate.yml");     // 中級怪物配置
         ensureDefaultConfigExists("config/mobs/types/tier3_advanced.yml");     // 高級怪物配置
         ensureDefaultConfigExists("config/mobs/types/tier4_endgame.yml");     // 終級怪物配置
+        ensureDefaultConfigExists("config/mobs/types/boss.yml");               // Boss 怪物配置
         ensureDefaultConfigExists("config/mobs/skills/skill1.yml");
         ensureDefaultConfigExists("config/skills/example.yml");
         ensureDefaultConfigExists("config/equipment/armors.yml");  // MMORPG 裝甲配置

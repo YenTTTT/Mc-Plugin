@@ -383,6 +383,31 @@ public class MobSpawnManager {
             }
         }
 
+        // ===== 日夜時段過濾 =====
+        long worldTime = spawnLoc.getWorld().getTime(); // 0~24000
+        boolean isNight = worldTime >= 13000 && worldTime < 23000;
+        List<String> timeFilteredKeys = new ArrayList<>();
+        for (String key : filteredMobKeys) {
+            MobManager.MobData data = mobManager.getMobData(key);
+            if (data == null) continue;
+            String spawnTime = data.getSpawnTime();
+            if (spawnTime.equals("all")) {
+                timeFilteredKeys.add(key);
+            } else if (spawnTime.equals("night") && isNight) {
+                timeFilteredKeys.add(key);
+            } else if (spawnTime.equals("day") && !isNight) {
+                timeFilteredKeys.add(key);
+            }
+        }
+        if (debug && timeFilteredKeys.size() != filteredMobKeys.size()) {
+            log.info("[MobSpawn]   日夜過濾: " + (isNight ? "夜晚" : "白天") + " → " + timeFilteredKeys.size() + "/" + filteredMobKeys.size());
+        }
+        if (timeFilteredKeys.isEmpty()) {
+            if (debug) log.info("[MobSpawn]   日夜過濾後無怪物可用，回退");
+            timeFilteredKeys = filteredMobKeys;
+        }
+        filteredMobKeys = timeFilteredKeys;
+
         String mobKey = selectMobTypeForLevel(filteredMobKeys, mobLevel);
 
         if (mobKey == null) {
@@ -733,6 +758,12 @@ public class MobSpawnManager {
         }
 
         announceBossSpawn(mob, location, level);
+
+        // 為 Boss 創建 BossBar
+        BossBarManager bossBarMgr = plugin.getBossBarManager();
+        if (bossBarMgr != null) {
+            bossBarMgr.createBossBossBar(mob, level);
+        }
     }
 
     private void announceBossSpawn(LivingEntity mob, Location location, int level) {

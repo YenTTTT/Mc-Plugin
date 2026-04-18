@@ -48,6 +48,7 @@ wasteland_raider:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [plains, desert]
+  spawn-time: all
 
 # 2. 沙漠木乃伊 — 緩速攻擊
 desert_mummy:
@@ -76,6 +77,7 @@ desert_mummy:
   special-behavior: "none"
   show-level-in-name: true
   tags: [desert]
+  spawn-time: night
 
 # 3. 毒沼蜘蛛 — 毒攻 + 較高傷害
 swamp_spider:
@@ -101,6 +103,7 @@ swamp_spider:
   special-behavior: "poison_attack"
   show-level-in-name: true
   tags: [swamp, forest]
+  spawn-time: all
 
 # 4. 暗影刺客 — 快速 + 高傷害 + 低血量
 shadow_assassin:
@@ -141,6 +144,7 @@ shadow_assassin:
   special-behavior: "shadow_teleport"
   show-level-in-name: true
   tags: [cave, forest]
+  spawn-time: night
 
 # 5. 精英弩手 — 高傷害遠程
 elite_crossbowman:
@@ -169,6 +173,7 @@ elite_crossbowman:
   special-behavior: "none"
   show-level-in-name: true
   tags: [plains, mountain]
+  spawn-time: all
 
 # 5.1 狂戰殭屍 — 血量越低攻擊越高 (HP<30% → +50%傷害)
 berserker_zombie:
@@ -202,6 +207,7 @@ berserker_zombie:
   special-behavior: "berserker_rage"
   show-level-in-name: true
   tags: [plains, desert]
+  spawn-time: night
 
 # 5.2 爆裂骷髏 — 箭矢命中小範圍爆炸
 explosive_skeleton:
@@ -238,6 +244,7 @@ explosive_skeleton:
   special-behavior: "explosive_arrow"
   show-level-in-name: true
   tags: [cave, mountain]
+  spawn-time: night
 
 # 5.3 潛伏蜘蛛 — 靠近玩家隱形、突襲加傷
 stalker_spider:
@@ -269,6 +276,7 @@ stalker_spider:
   special-behavior: "stalker_stealth"
   show-level-in-name: true
   tags: [cave, forest]
+  spawn-time: night
 
 # 5.4 冰霜殭屍 — 攻擊附帶緩速
 frost_zombie:
@@ -309,6 +317,7 @@ frost_zombie:
   special-behavior: "frost_attack"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # 5.5 衝鋒野獸 — 鎖定玩家直線衝刺 (高傷害可閃)
 charge_beast:
@@ -341,6 +350,7 @@ charge_beast:
   special-behavior: "charge_beast"
   show-level-in-name: true
   tags: [plains, forest]
+  spawn-time: all
 
 # 5.6 瘟疫散播者 — 周圍持續產生毒氣
 plague_carrier:
@@ -377,6 +387,7 @@ plague_carrier:
   special-behavior: "plague_aura"
   show-level-in-name: true
   tags: [swamp]
+  spawn-time: night
 
 # 5.7 鋼鐵守衛 — 高防禦鐵巨人
 iron_guard:
@@ -433,6 +444,7 @@ iron_guard:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, mountain]
+  spawn-time: all
 
 # ───────────────────────────────
 #  深層洞穴 (Lv.20~35)
@@ -462,6 +474,7 @@ lava_slime:
   special-behavior: "none"
   show-level-in-name: true
   tags: [fire, nether, cave]
+  spawn-time: all
 
 # 7. 亡靈騎士 — 全套鐵裝，高傷害
 undead_knight:
@@ -515,6 +528,7 @@ undead_knight:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, plains]
+  spawn-time: night
 
 # 8. 冰霜射手 — 緩速箭
 frost_archer:
@@ -548,6 +562,7 @@ frost_archer:
   special-behavior: "none"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # ───────────────────────────────
 #  暗黑森林 (Lv.25~40)
@@ -580,6 +595,7 @@ forest_witch:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, swamp]
+  spawn-time: night
 
 # 10. 暴怒熊人 — 血越低傷害越高
 berserker_bear:
@@ -611,6 +627,7 @@ berserker_bear:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [forest, mountain]
+  spawn-time: all
 
 # 11. 黑暗遊俠 — 高傷害遠程精英
 dark_ranger:
@@ -658,6 +675,7 @@ dark_ranger:
   special-behavior: "fire_arrows"
   show-level-in-name: true
   tags: [forest, cave]
+  spawn-time: night
 
 # 12. 腐化衛士 — 超高防禦
 corrupted_guard:
@@ -699,6 +717,7 @@ corrupted_guard:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave]
+  spawn-time: night
 
 # 13. 噴火蜥蜴 — 火焰攻擊
 fire_lizard:
@@ -727,6 +746,7 @@ fire_lizard:
   special-behavior: "none"
   show-level-in-name: true
   tags: [fire, nether, desert]
+  spawn-time: all
 
 # 14. 苦力怕巫師 — 爆炸加強版
 creeper_mage:
@@ -755,6 +775,7 @@ creeper_mage:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, cave]
+  spawn-time: night
 
 # 15. 洞穴巨魔 — 高血量坦克
 cave_troll:
@@ -786,6 +807,7 @@ cave_troll:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, mountain]
+  spawn-time: all
 
 # ───────────────────────────────
 #  冰原凍土 (Lv.15~30)
@@ -826,6 +848,7 @@ frost_wolf:
   special-behavior: "pack_passive"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: all
 
 # ICE-2. 冰晶史萊姆 — 接觸造成緩速
 ice_crystal_slime:
@@ -857,6 +880,7 @@ ice_crystal_slime:
   special-behavior: "frost_attack"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: all
 
 # ICE-3. 雪原巡邏兵 — 持弩遠程，穿鐵鏈甲
 snow_patrol:
@@ -897,6 +921,7 @@ snow_patrol:
   special-behavior: "none"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # ICE-4. 凍骨亡靈 — 攻擊附帶緩速的近戰骷髏
 frozen_undead:
@@ -935,6 +960,7 @@ frozen_undead:
   special-behavior: "frost_attack"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # ICE-5. 暴雪巨熊 — 高血量坦克，衝撞攻擊
 blizzard_bear:
@@ -970,6 +996,7 @@ blizzard_bear:
   special-behavior: "charge_attack"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: all
 
 # ICE-6. 冰霜女巫 — 魔法攻擊，施放緩速藥水
 frost_witch:
@@ -1004,6 +1031,7 @@ frost_witch:
   special-behavior: "none"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # ICE-7. 冰刺蜘蛛 — 快速近戰，死亡時小範圍冰凍
 ice_spike_spider:
@@ -1035,6 +1063,7 @@ ice_spike_spider:
   special-behavior: "frost_attack"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: all
 
 # ICE-8. 永凍傀儡 — 超高血量冰甲坦克
 permafrost_golem:
@@ -1093,6 +1122,7 @@ permafrost_golem:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: all
 
 # ICE-9. 寒霜幽靈 — 飛行型低血高傷，接觸造成凍傷
 frost_specter:
@@ -1124,6 +1154,7 @@ frost_specter:
   special-behavior: "frost_attack"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # ICE-10. 冰原苦力怕 — 爆炸後造成大範圍緩速
 arctic_creeper:
@@ -1155,6 +1186,7 @@ arctic_creeper:
   special-behavior: "none"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # ICE-11. 雪嶺獵手 — 高傷遠程弓箭手，箭矢附帶冰凍
 snowridge_hunter:
@@ -1198,6 +1230,7 @@ snowridge_hunter:
   special-behavior: "none"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # ICE-12. 冰牙狂獸 — 高傷害近戰野獸，血量低時狂暴
 ice_fang_beast:
@@ -1243,6 +1276,7 @@ ice_fang_beast:
   special-behavior: "berserker_rage"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: all
 
 # ICE-13. 極地掠奪者 — 持斧全裝備近戰冰原強盜
 arctic_raider:
@@ -1285,6 +1319,7 @@ arctic_raider:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: all
 
 # ICE-14. 冰魄法師 — 丟雪球造成傷害的骷髏法師
 ice_mage:
@@ -1337,6 +1372,7 @@ ice_mage:
   special-behavior: "snowball_mage"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: night
 
 # ICE-15. 冰封蠍王 — 近戰毒攻+緩速，稀有怪
 ice_scorpion:
@@ -1371,3 +1407,4 @@ ice_scorpion:
   special-behavior: "poison_attack"
   show-level-in-name: true
   tags: [ice, snow]
+  spawn-time: all

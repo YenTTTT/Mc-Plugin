@@ -174,6 +174,9 @@ public class ManaManager {
      * @return 是否有足夠的魔力
      */
     public boolean hasMana(Player player, double cost) {
+        if (plugin.getManaCommand() != null && plugin.getManaCommand().isUnlimited(player.getUniqueId())) {
+            return true;
+        }
         PlayerStats stats = statsManager.getStats(player);
         if (stats == null) {
             return false;
@@ -188,6 +191,9 @@ public class ManaManager {
      * @return 是否成功消耗
      */
     public boolean consumeMana(Player player, double cost) {
+        if (plugin.getManaCommand() != null && plugin.getManaCommand().isUnlimited(player.getUniqueId())) {
+            return true;
+        }
         PlayerStats stats = statsManager.getStats(player);
         if (stats == null) {
             return false;

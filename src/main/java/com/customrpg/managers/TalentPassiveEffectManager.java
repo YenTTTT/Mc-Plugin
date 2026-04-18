@@ -237,6 +237,30 @@ public class TalentPassiveEffectManager implements Listener {
         // 應用最終傷害
         event.setDamage(finalDamage);
 
+        // ===== 暗黑系：生命虹吸（攻擊吸血）=====
+        int lifeLeechLevel = playerTalents.getTalentLevel("life_leech");
+        if (lifeLeechLevel > 0 && event.getEntity() instanceof LivingEntity) {
+            double lifeStealPercent = 0;
+            switch (lifeLeechLevel) {
+                case 1: lifeStealPercent = 0.05; break;
+                case 2: lifeStealPercent = 0.08; break;
+                case 3: lifeStealPercent = 0.12; break;
+            }
+            double healAmount = finalDamage * lifeStealPercent;
+            double newHealth = Math.min(attacker.getMaxHealth(), attacker.getHealth() + healAmount);
+            attacker.setHealth(newHealth);
+            if (healAmount > 1) {
+                attacker.getWorld().spawnParticle(org.bukkit.Particle.HEART, attacker.getLocation().add(0, 2, 0), 1, 0.2, 0.2, 0.2, 0);
+            }
+        }
+
+        // ===== 暗黑系：詛咒印記（被標記目標受額外傷害）=====
+        if (event.getEntity() instanceof LivingEntity target && target.hasMetadata("curse_mark")) {
+            double bonusDmgPercent = target.getMetadata("curse_mark").get(0).asDouble();
+            event.setDamage(event.getDamage() * (1.0 + bonusDmgPercent));
+            target.getWorld().spawnParticle(org.bukkit.Particle.ENCHANT, target.getLocation().add(0, 1.5, 0), 5, 0.3, 0.3, 0.3, 0.5);
+        }
+
         // 狂戰士效果 (血量越低傷害越高)
         double berserkerBonus = bonuses.getOrDefault("berserker-bonus", 0.0);
         if (berserkerBonus > 0) {

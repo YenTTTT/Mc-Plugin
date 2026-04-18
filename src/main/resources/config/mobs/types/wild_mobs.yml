@@ -36,7 +36,8 @@ rotten_zombie:
 
   special-behavior: "aggressive"
   show-level-in-name: true
-  tags: [plains, forest, cave]
+  tags: [plains, forest]
+  spawn-time: night
 
 # 2. 狂暴骷髏戰士 - 近戰骷髏
 skeleton_warrior:
@@ -86,7 +87,8 @@ skeleton_warrior:
 
   special-behavior: "aggressive"
   show-level-in-name: true
-  tags: [plains, cave, desert]
+  tags: [plains, cave]
+  spawn-time: night
 
 # ===== 遠程類 =====
 
@@ -139,6 +141,7 @@ shadow_archer:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, cave]
+  spawn-time: night
 
 # ===== 蜘蛛類 =====
 
@@ -178,6 +181,7 @@ venomous_spider:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, swamp, cave]
+  spawn-time: all
 
 # ===== 苦力怕類 =====
 
@@ -214,6 +218,7 @@ unstable_creeper:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, plains]
+  spawn-time: night
 
 # ===== 魔法類 =====
 
@@ -269,6 +274,7 @@ dark_witch:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, swamp]
+  spawn-time: night
 
 # ===== 地獄類 =====
 
@@ -305,6 +311,7 @@ blaze_guard:
   special-behavior: "none"
   show-level-in-name: true
   tags: [fire, nether]
+  spawn-time: all
 
 # ===== 重甲類 =====
 
@@ -368,3 +375,4 @@ ironclad_undead:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, plains]
+  spawn-time: night

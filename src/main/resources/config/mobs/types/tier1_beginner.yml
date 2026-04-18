@@ -31,6 +31,7 @@ grass_zombie:
   special-behavior: "none"
   show-level-in-name: true
   tags: [plains, forest]
+  spawn-time: night
 
 # 2. 林間蜘蛛 — 低血量但速度快
 forest_spider:
@@ -59,6 +60,7 @@ forest_spider:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, swamp]
+  spawn-time: all
 
 # 3. 迷路骷髏 — 基礎遠程怪
 lost_skeleton:
@@ -87,6 +89,7 @@ lost_skeleton:
   special-behavior: "none"
   show-level-in-name: true
   tags: [plains, cave]
+  spawn-time: night
 
 # 4. 草原史萊姆 — 純近戰，偶爾跳躍
 meadow_slime:
@@ -112,6 +115,7 @@ meadow_slime:
   special-behavior: "none"
   show-level-in-name: true
   tags: [plains, swamp]
+  spawn-time: all
 
 # 5. 野生狼人 — 稍強近戰 (殭屍偽裝)
 feral_wolf:
@@ -140,6 +144,7 @@ feral_wolf:
   special-behavior: "fast_movement"
   show-level-in-name: true
   tags: [forest, plains]
+  spawn-time: all
 
 # ───────────────────────────────
 #  Tier 2: 森林 / 洞穴 (Lv.3~8)
@@ -175,6 +180,7 @@ mushroom_zombie:
   special-behavior: "poison_attack"
   show-level-in-name: true
   tags: [forest, swamp]
+  spawn-time: night
 
 # 7. 洞穴蝙蝠精 — 低血快攻
 cave_bat:
@@ -200,6 +206,7 @@ cave_bat:
   special-behavior: "none"
   show-level-in-name: true
   tags: [cave, mountain]
+  spawn-time: all
 
 # 8. 盜墓者 — 持劍近戰，有裝備
 graverobber:
@@ -248,6 +255,7 @@ graverobber:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, plains]
+  spawn-time: night
 
 # 9. 孢子蜘蛛 — 死亡時小爆炸
 spore_spider:
@@ -276,6 +284,7 @@ spore_spider:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, cave, swamp]
+  spawn-time: all
 
 # 10. 流浪弓手 — 比迷路骷髏更強的遠程
 wandering_archer:
@@ -309,6 +318,7 @@ wandering_archer:
   special-behavior: "none"
   show-level-in-name: true
   tags: [plains, desert]
+  spawn-time: all
 
 # ───────────────────────────────
 #  Tier 3: 危險林地 (Lv.5~15)
@@ -338,6 +348,7 @@ creeper_hatchling:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, plains]
+  spawn-time: night
 
 # 12. 腐木守衛 — 高血量坦克
 rotten_treant:
@@ -372,6 +383,7 @@ rotten_treant:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [forest, swamp]
+  spawn-time: all
 
 # 13. 幽魂哨兵 — 穿透型遠程
 phantom_sentry:
@@ -409,6 +421,7 @@ phantom_sentry:
   special-behavior: "none"
   show-level-in-name: true
   tags: [ice, snow, cave]
+  spawn-time: night
 
 # 14. 暗影潛行者 — 快速近戰 (蜘蛛系)
 shadow_lurker:
@@ -440,6 +453,7 @@ shadow_lurker:
   special-behavior: "fast_movement"
   show-level-in-name: true
   tags: [cave, forest]
+  spawn-time: night
 
 # 15. 岩石傀儡 — 超高血量低傷害
 stone_golem:
@@ -478,6 +492,7 @@ stone_golem:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, mountain, desert]
+  spawn-time: all
 
 # ───────────────────────────────
 #  新增怪物
@@ -509,7 +524,8 @@ slime_bomber:
         chance: 0.3
   special-behavior: "delayed_explosion"
   show-level-in-name: true
-  tags: [swamp, cave]
+  tags: [swamp, plains]
+  spawn-time: all
 
 # 17. 野生雞 — 逃跑型資源怪
 wild_chicken:
@@ -541,6 +557,7 @@ wild_chicken:
   special-behavior: "flee"
   show-level-in-name: true
   tags: [plains, forest]
+  spawn-time: day
 
 # 18. 小型元素靈 — 遠距離攻擊（火/冰雪球）
 lesser_elemental:
@@ -569,6 +586,7 @@ lesser_elemental:
   special-behavior: "snowball_thrower"
   show-level-in-name: true
   tags: [ice, fire, cave]
+  spawn-time: all
 
 # 19. 狂暴野豬 — 直線衝撞
 rage_boar:
@@ -601,6 +619,7 @@ rage_boar:
   special-behavior: "charge_attack"
   show-level-in-name: true
   tags: [plains, forest]
+  spawn-time: day
 
 # 20. 影襲蜘蛛 — 短距離瞬移 + 暗影粒子 (稀有)
 shadow_spider:
@@ -645,6 +664,7 @@ shadow_spider:
   special-behavior: "shadow_teleport"
   show-level-in-name: true
   tags: [cave, forest]
+  spawn-time: night
 
 # 21. 骷髏法師 — 持木棒丟雪球（雪球扣血）
 skeleton_mage:
@@ -689,6 +709,7 @@ skeleton_mage:
   special-behavior: "snowball_mage"
   show-level-in-name: true
   tags: [cave, ice]
+  spawn-time: night
 
 # 22. 草原狼 — 群體生成(3~5隻)、不主動攻擊
 prairie_wolf:
@@ -717,6 +738,7 @@ prairie_wolf:
   special-behavior: "pack_passive"
   show-level-in-name: true
   tags: [plains]
+  spawn-time: all
 
 # 23. 小蟲子 — 外觀是 Silverfish
 small_bug:
@@ -745,3 +767,4 @@ small_bug:
   special-behavior: "none"
   show-level-in-name: true
   tags: [cave, forest, swamp]
+  spawn-time: day

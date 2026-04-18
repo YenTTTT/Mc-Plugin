@@ -189,10 +189,13 @@ public class MobManager {
         // 是否為 Boss 怪物
         boolean isBoss = Boolean.TRUE.equals(config.get("boss"));
 
+        // 生成時段 (all / night / day)
+        String spawnTime = config.getOrDefault("spawn-time", "all").toString().toLowerCase();
+
         return new MobData(key, name, entityType, minLevel, maxLevel,
                           baseHealth, baseDamage, healthPerLevel, damagePerLevel,
                           baseExp, expPerLevel, equipment, vanillaDrops, weaponDrops,
-                          equipmentDrops, disguise, specialBehavior, showLevelInName, tags, isBoss);
+                          equipmentDrops, disguise, specialBehavior, showLevelInName, tags, isBoss, spawnTime);
     }
 
     /**
@@ -1145,6 +1148,7 @@ public class MobManager {
         private final boolean showLevelInName;
         private final List<String> tags; // 生態域標籤 (如 "ice", "fire", "forest")
         private final boolean isBoss; // 是否為 Boss 怪物（只會在 Boss 生成機制中被選擇）
+        private final String spawnTime; // 生成時段: "all"(全天), "night"(夜晚), "day"(白天)
 
         // 向後兼容的構造函數 (舊格式)
         public MobData(String key, String name, EntityType entityType, double health, double damage, String specialBehavior) {
@@ -1177,6 +1181,7 @@ public class MobManager {
             this.showLevelInName = false;
             this.tags = new ArrayList<>();
             this.isBoss = false;
+            this.spawnTime = "all";
         }
 
         // 新格式的完整構造函數
@@ -1190,7 +1195,7 @@ public class MobManager {
                        List<EquipmentDrop> equipmentDrops,
                        DisguiseConfig disguise,
                        String specialBehavior, boolean showLevelInName,
-                       List<String> tags, boolean isBoss) {
+                       List<String> tags, boolean isBoss, String spawnTime) {
             this.key = key;
             this.name = name;
             this.entityType = entityType;
@@ -1211,6 +1216,7 @@ public class MobManager {
             this.showLevelInName = showLevelInName;
             this.tags = tags != null ? tags : new ArrayList<>();
             this.isBoss = isBoss;
+            this.spawnTime = spawnTime != null ? spawnTime : "all";
 
             // 計算舊格式的值（向後兼容）
             this.health = baseHealth;
@@ -1244,6 +1250,7 @@ public class MobManager {
         public boolean shouldShowLevelInName() { return showLevelInName; }
         public List<String> getTags() { return tags; }
         public boolean isBoss() { return isBoss; }
+        public String getSpawnTime() { return spawnTime; }
 
         // 計算等級化屬性
         public double calculateHealth(int level) {

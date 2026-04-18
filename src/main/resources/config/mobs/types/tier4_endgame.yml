@@ -1,4 +1,4 @@
-﻿# ========================================
+﻿﻿# ========================================
 # 終盤區域怪物 (Lv.70~100)
 # 最強的野外敵人，只有頂級冒險者能應對
 # ========================================
@@ -70,6 +70,7 @@ doom_knight:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, nether]
+  spawn-time: night
 
 # 2. 天界弓手 — 獄髓裝備火焰箭
 celestial_archer:
@@ -122,6 +123,7 @@ celestial_archer:
   special-behavior: "fire_arrows"
   show-level-in-name: true
   tags: [mountain, plains]
+  spawn-time: all
 
 # 3. 上古女巫 — 高等級魔法
 elder_witch:
@@ -171,6 +173,7 @@ elder_witch:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, swamp]
+  spawn-time: night
 
 # 4. 龍屍 — 龍頭裝備超高血量
 dragon_zombie:
@@ -230,6 +233,7 @@ dragon_zombie:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, mountain, nether]
+  spawn-time: night
 
 # 5. 虛空蜘蛛 — 快速移動高傷
 void_spider:
@@ -268,6 +272,7 @@ void_spider:
   special-behavior: "fast_movement"
   show-level-in-name: true
   tags: [cave]
+  spawn-time: night
 
 # ───────────────────────────────
 #  煉獄深層 (Lv.72~92)
@@ -310,6 +315,7 @@ hell_blaze:
   special-behavior: "none"
   show-level-in-name: true
   tags: [fire, nether]
+  spawn-time: all
 
 # 7. 泰坦傀儡 — 超高血量獄髓坦克
 titan_golem:
@@ -365,6 +371,7 @@ titan_golem:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [mountain, cave]
+  spawn-time: all
 
 # 8. 死亡法師 — 凋零骷髏法師
 death_mage:
@@ -416,6 +423,7 @@ death_mage:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, nether]
+  spawn-time: night
 
 # 9. 遠古苦力怕 — 極致爆炸傷害
 ancient_creeper:
@@ -444,6 +452,7 @@ ancient_creeper:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, cave]
+  spawn-time: night
 
 # 10. 混沌妖精 — 低血超高傷飛行
 chaos_vex:
@@ -484,6 +493,7 @@ chaos_vex:
   special-behavior: "none"
   show-level-in-name: true
   tags: [forest, swamp]
+  spawn-time: night
 
 # ───────────────────────────────
 #  終末領域 (Lv.85~100)
@@ -553,6 +563,7 @@ world_serpent:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [nether, cave]
+  spawn-time: all
 
 # 12. 終界守護者 — 全裝獄髓弓手
 ender_guardian:
@@ -613,6 +624,7 @@ ender_guardian:
   special-behavior: "fire_arrows"
   show-level-in-name: true
   tags: [cave]
+  spawn-time: all
 
 # 13. 天啟女巫 — 最強魔法怪
 apocalypse_witch:
@@ -665,6 +677,7 @@ apocalypse_witch:
   special-behavior: "none"
   show-level-in-name: true
   tags: [nether, fire]
+  spawn-time: night
 
 # 14. 忘卻史萊姆王 — 分裂型終盤坦克
 oblivion_slime:
@@ -714,6 +727,7 @@ oblivion_slime:
   special-behavior: "split_on_death"
   show-level-in-name: true
   tags: [swamp, cave]
+  spawn-time: all
 
 # 15. 深淵看守者 — 最終怪物 (Lv.95~100)
 final_warden:
@@ -810,3 +824,4 @@ final_warden:
   special-behavior: "aggressive"
   show-level-in-name: true
   tags: [cave, nether]
+  spawn-time: night

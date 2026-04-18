@@ -59,6 +59,7 @@ public class TalentMainMenuGUI implements Listener {
         gui.setItem(22, createBranchIcon(TalentBranch.SUKUNA, Material.DIAMOND_SWORD)); // 宿儺系
         gui.setItem(23, createBranchIcon(TalentBranch.BLOOD, Material.REDSTONE)); // 赤血操術系
         gui.setItem(24, createBranchIcon(TalentBranch.ASSASSIN, Material.SPIDER_EYE)); // 刺客系
+        gui.setItem(25, createBranchIcon(TalentBranch.BEAST, Material.BONE)); // 野獸系
 
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
@@ -98,6 +99,7 @@ public class TalentMainMenuGUI implements Listener {
             case 22: branch = TalentBranch.SUKUNA; break;
             case 23: branch = TalentBranch.BLOOD; break;
             case 24: branch = TalentBranch.ASSASSIN; break;
+            case 25: branch = TalentBranch.BEAST; break; // 修正：支援野獸系
         }
 
         if (branch != null) {

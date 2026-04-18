@@ -77,6 +77,14 @@ commands:
     permission: customrpg.menu
     permission-message: You don't have permission to use this command!
     aliases: [m, mainmenu]
+  mana:
+    description: 魔力管理指令 — 切換無限/正常魔力模式
+    usage: /mana <unlimit|limit>
+    permission: customrpg.admin
+    permission-message: You don't have permission to use this command!
+
+
+
 
 permissions:
   customrpg.*:

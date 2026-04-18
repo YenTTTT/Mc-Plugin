@@ -132,6 +132,9 @@ public class TalentTreeGUI implements Listener {
                 if (talent.getManaCost() > 0) {
                     lore.add("§7消耗: §b" + (int)talent.getManaCost() + " MANA");
                 }
+                if (talent.getHpCost() > 0) {
+                    lore.add("§7消耗: §c" + (int)(talent.getHpCost() * 100) + "% 生命值");
+                }
                 if (talent.getMechanism() != null && !talent.getMechanism().isEmpty()) {
                     lore.add("§7機制物品: §f" + talent.getMechanism());
                 }
@@ -177,12 +180,171 @@ public class TalentTreeGUI implements Listener {
         Talent.TalentLevelData data = talent.getLevelData(level);
         if (data == null) return;
 
+        // 收集傷害公式的元素
+        List<String> formulaParts = new ArrayList<>();
+        boolean hasFormula = false;
+
         for (Map.Entry<String, Double> entry : data.effects.entrySet()) {
-            lore.add(" §7- " + entry.getKey() + ": §f+" + entry.getValue());
+            String key = entry.getKey();
+            double val = entry.getValue();
+            String translated = translateEffectKey(key);
+
+            // 傷害公式相關的 scaling 值
+            if (key.equals("magicScaling")) {
+                formulaParts.add("§d魔力§7×§f" + formatNum(val));
+                hasFormula = true;
+                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "倍");
+            } else if (key.equals("strengthScaling")) {
+                formulaParts.add("§c力量§7×§f" + formatNum(val));
+                hasFormula = true;
+                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "倍");
+            } else if (key.equals("agilityScaling")) {
+                formulaParts.add("§a敏捷§7×§f" + formatNum(val));
+                hasFormula = true;
+                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "倍");
+            } else if (key.equals("baseDamage")) {
+                formulaParts.add(0, "§f" + (int)val);
+                hasFormula = true;
+                lore.add(" §7- " + translated + ": §f" + (int)val);
+            } else if (key.equals("damageMultiplier")) {
+                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "倍");
+                hasFormula = true;
+            } else if (key.endsWith("Percent") || key.endsWith("percent") || key.equals("lifeStealPercent")
+                    || key.equals("leechPercent") || key.equals("bonusDamagePercent")
+                    || key.equals("shieldPercent") || key.equals("hpCostReduction")
+                    || key.equals("executeThreshold")) {
+                lore.add(" §7- " + translated + ": §f" + (int)(val * 100) + "%");
+            } else if (key.startsWith("statBonus_")) {
+                String stat = key.substring("statBonus_".length());
+                lore.add(" §7- " + translateStatName(stat) + ": §a+" + (int)val);
+            } else if (key.equals("duration") || key.equals("burnDuration") || key.equals("delay")) {
+                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "秒");
+            } else if (key.equals("radius") || key.equals("range")) {
+                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "格");
+            } else if (key.equals("cooldownReduction")) {
+                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "秒");
+            } else {
+                lore.add(" §7- " + translated + ": §f" + formatNum(val));
+            }
         }
         for (Map.Entry<String, Double> entry : data.scaling.entrySet()) {
-            lore.add(" §7- " + entry.getKey() + "加乘: §f自身" + entry.getKey() + " * " + entry.getValue());
+            String stat = translateStatName(entry.getKey());
+            lore.add(" §7- " + stat + "加乘: §f自身" + stat + " × " + formatNum(entry.getValue()));
+            formulaParts.add(stat + "§7×§f" + formatNum(entry.getValue()));
+            hasFormula = true;
         }
+
+        // 傷害公式行
+        if (hasFormula && !formulaParts.isEmpty()) {
+            lore.add(" §e⚔ 傷害公式: §f" + String.join(" §7+ ", formulaParts));
+        }
+    }
+
+    /**
+     * 格式化數字：整數不帶小數，否則保留一位
+     */
+    private String formatNum(double val) {
+        if (val == (int)val) return String.valueOf((int)val);
+        return String.format("%.1f", val);
+    }
+
+    /**
+     * 翻譯效果鍵名為中文
+     */
+    private String translateEffectKey(String key) {
+        return switch (key) {
+            // ===== 傷害/倍率 =====
+            case "magicScaling" -> "魔力倍率";
+            case "strengthScaling" -> "力量倍率";
+            case "agilityScaling" -> "敏捷倍率";
+            case "baseDamage" -> "基礎傷害";
+            case "damageMultiplier" -> "傷害倍率";
+            case "damageType" -> "傷害類型";
+            case "bonusDamagePercent" -> "額外傷害";
+            case "executeDamageBonus" -> "處決加傷";
+            case "executeThreshold" -> "處決門檻(血量%)";
+
+            // ===== 範圍/距離 =====
+            case "range" -> "射程";
+            case "radius" -> "範圍半徑";
+            case "speed" -> "飛行速度";
+            case "waveCount" -> "波數";
+            case "waveInterval" -> "波間隔(tick)";
+
+            // ===== 持續/時間 =====
+            case "duration" -> "持續時間";
+            case "burnDuration" -> "燃燒時間";
+            case "delay" -> "延遲引爆";
+            case "cooldownReduction" -> "冷卻縮減";
+
+            // ===== 回復/吸血 =====
+            case "leechPercent" -> "吸血比例";
+            case "lifeStealPercent" -> "生命偷取";
+            case "healingPerSecond" -> "每秒回復";
+            case "shieldPercent" -> "護盾比例(最大HP)";
+
+            // ===== 屬性加成 =====
+            case "manaBonus" -> "魔力值加成";
+            case "hpBonus" -> "生命值加成";
+            case "hpCostReduction" -> "HP消耗減免";
+
+            // ===== 增減益 =====
+            case "weaknessLevel" -> "虛弱等級";
+            case "slownessLevel" -> "緩速等級";
+            case "damageBoost" -> "攻擊提升等級";
+            case "speedBoost" -> "速度提升等級";
+            case "stealthSpeedBoost" -> "隱身移速加成";
+
+            // ===== 暴擊 =====
+            case "critChanceBonus" -> "暴擊率加成";
+            case "critDamageBonus" -> "暴擊傷害加成";
+
+            // ===== 被動 =====
+            case "backstabBonus" -> "背刺加傷";
+            case "backstabExtraBonus" -> "背刺額外加傷";
+            case "damage-bonus" -> "傷害加成(%)";
+            case "crit-chance" -> "暴擊率(%)";
+            case "crit-damage" -> "暴擊傷害(%)";
+            case "berserker-bonus" -> "狂戰士加成";
+            case "defense-bonus" -> "防禦加成(%)";
+            case "dodge-chance" -> "閃避率(%)";
+
+            // ===== 其他 =====
+            case "particle" -> "粒子效果";
+            case "projectileCount" -> "投射物數量";
+            case "spread" -> "擴散角度";
+            case "bounceCount" -> "彈跳次數";
+            case "bounceRange" -> "彈跳範圍";
+            case "knockback" -> "擊退距離";
+            case "pullStrength" -> "拉力強度";
+            case "slowDuration" -> "緩速時間";
+
+            default -> {
+                // statBonus_xxx 已經在上面處理了
+                if (key.startsWith("statBonus_")) yield translateStatName(key.substring("statBonus_".length()));
+                if (key.startsWith("selfEffect_")) yield "自身效果-" + key.substring("selfEffect_".length());
+                if (key.startsWith("healingPerSecond_")) yield "每秒回復-" + key.substring("healingPerSecond_".length());
+                if (key.startsWith("damagePerSecond_")) yield "每秒傷害-" + key.substring("damagePerSecond_".length());
+                yield key;
+            }
+        };
+    }
+
+    /**
+     * 翻譯屬性名稱
+     */
+    private String translateStatName(String stat) {
+        return switch (stat.toUpperCase()) {
+            case "STRENGTH", "strength" -> "力量";
+            case "AGILITY", "agility" -> "敏捷";
+            case "MAGIC", "magic" -> "魔力";
+            case "SPIRIT", "spirit" -> "精神";
+            case "WISDOM", "wisdom" -> "智慧";
+            case "DEFENSE", "defense" -> "防禦";
+            case "LUCK", "luck" -> "幸運";
+            case "VITALITY", "vitality" -> "體力";
+            default -> stat;
+        };
     }
 
     /**

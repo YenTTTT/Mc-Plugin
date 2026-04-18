@@ -31,6 +31,7 @@ public class Talent {
     private final String mechanism;             // 機制描述 (如: 被動, 持武器蹲下右鍵)
     private final double cooldown;              // 冷卻 (秒)
     private final double manaCost;              // 消耗 (Mana)
+    private final double hpCost;               // 消耗 (HP百分比, 0.0~1.0)
     private final String triggerType;           // 觸發類型 (RIGHT_CLICK_SNEAK, ON_HIT, etc.)
 
     // 各等級的效果數據
@@ -39,7 +40,7 @@ public class Talent {
     public Talent(String id, String name, String description, TalentType type,
                   TalentBranch branch, int maxLevel, int pointsPerLevel,
                   List<Prerequisite> prerequisites, PrerequisiteMode prerequisiteMode, int guiSlot, String icon,
-                  String mechanism, double cooldown, double manaCost, String triggerType) {
+                  String mechanism, double cooldown, double manaCost, double hpCost, String triggerType) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -54,6 +55,7 @@ public class Talent {
         this.mechanism = mechanism;
         this.cooldown = cooldown;
         this.manaCost = manaCost;
+        this.hpCost = hpCost;
         this.triggerType = triggerType;
         this.levelData = new HashMap<>();
     }
@@ -77,6 +79,7 @@ public class Talent {
     public String getMechanism() { return mechanism; }
     public double getCooldown() { return cooldown; }
     public double getManaCost() { return manaCost; }
+    public double getHpCost() { return hpCost; }
     public String getTriggerType() { return triggerType; }
 
     public TalentLevelData getLevelData(int level) {
