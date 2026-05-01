@@ -4,12 +4,10 @@ import com.customrpg.CustomRPG;
 import com.customrpg.managers.MobManager;
 import com.customrpg.managers.PlayerStatsManager;
 import com.customrpg.managers.WeaponManager;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -24,6 +22,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.Random;
+import java.util.UUID;
 
 /**
  * MobListener - Handles custom mob behavior events
@@ -176,7 +175,7 @@ public class MobListener implements Listener {
      * Handle custom mob death events
      * @param event EntityDeathEvent
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onMobDeath(EntityDeathEvent event) {
         // 排除玩家死亡
         if (event.getEntity() instanceof Player) {
@@ -185,7 +184,16 @@ public class MobListener implements Listener {
 
         Player killer = event.getEntity().getKiller();
         if (killer == null) {
-            return;
+            // 支援野獸擊殺：如果 killer 為 null，檢查 beast_kill_owner metadata
+            if (event.getEntity().hasMetadata("beast_kill_owner")) {
+                try {
+                    String ownerId = event.getEntity().getMetadata("beast_kill_owner").get(0).asString();
+                    Player owner = Bukkit.getPlayer(UUID.fromString(ownerId));
+                    if (owner != null && owner.isOnline()) {
+                        killer = owner;
+                    }
+                } catch (Exception ignored) {}
+            }
         }
 
         String mobKey = mobManager.getCustomMobKey(event.getEntity());
@@ -194,6 +202,11 @@ public class MobListener implements Listener {
         if (mobKey != null) {
             MobManager.MobData mobData = mobManager.getMobData(mobKey);
             if (mobData == null) {
+                return;
+            }
+
+            // 沒有擊殺者（例如跌落死亡），跳過獎勵
+            if (killer == null) {
                 return;
             }
 
@@ -323,6 +336,7 @@ public class MobListener implements Listener {
             }
         } else {
             // 普通原版怪物：依類型給予不同經驗值
+            if (killer == null) return; // 無擊殺者（跌落、其他原因死亡）
             int vanillaExp = switch (event.getEntity().getType()) {
                 case ENDER_DRAGON -> 500;
                 case WITHER -> 300;

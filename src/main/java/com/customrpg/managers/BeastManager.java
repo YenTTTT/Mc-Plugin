@@ -98,8 +98,7 @@ public class BeastManager implements Listener {
             LivingEntity beast = (LivingEntity) player.getWorld().spawnEntity(loc, entityType);
 
             // 設定名稱
-            beast.setCustomName("§a[" + player.getName() + "的] §f" + name);
-            beast.setCustomNameVisible(true);
+            setBeastNameWithHealth(beast, player, name);
 
             // 設定血量
             if (beast.getAttribute(Attribute.MAX_HEALTH) != null) {
@@ -310,8 +309,9 @@ public class BeastManager implements Listener {
 
     /**
      * 野獸擊殺怪物時，歸屬給主人（用於經驗值/掉落）
+     * 使用 LOWEST 確保在 MobListener 處理死亡前先設置 metadata
      */
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onBeastKill(EntityDeathEvent event) {
         LivingEntity victim = event.getEntity();
         Entity killer = victim.getKiller();
@@ -383,6 +383,89 @@ public class BeastManager implements Listener {
         }
     }
 
+    /**
+     * 玩家攻擊怪物時，讓其北極熊自動協助攻擊同一目標
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerAttackMob(EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player player)) return;
+        if (!(event.getEntity() instanceof LivingEntity target)) return;
+        if (target instanceof Player) return; // 不協助攻擊玩家
+
+        UUID pid = player.getUniqueId();
+        List<UUID> beasts = playerBeasts.get(pid);
+        if (beasts == null) return;
+        for (UUID beastId : beasts) {
+            Entity e = Bukkit.getEntity(beastId);
+            if (e instanceof PolarBear bear && !bear.isDead()) {
+                // 設定攻擊目標
+                bear.setTarget(target);
+            }
+        }
+    }
+
+    /**
+     * 召喚時名稱加上血量
+     */
+    private void setBeastNameWithHealth(LivingEntity beast, Player player, String name) {
+        int hp = (int) beast.getHealth();
+        int maxHp = (int) beast.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
+        beast.setCustomName("§a[" + player.getName() + "的] §f" + name + " §c❤" + hp + "/" + maxHp);
+        beast.setCustomNameVisible(true);
+    }
+
+    // 受傷時自動更新名稱
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBeastHurt(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity beast)) return;
+        if (!beast.hasMetadata("beast_owner")) return;
+        Player owner = null;
+        try {
+            owner = Bukkit.getPlayer(UUID.fromString(beast.getMetadata("beast_owner").get(0).asString()));
+        } catch (Exception ignored) {}
+        if (owner == null) return;
+        String baseName = beast.getCustomName();
+        if (baseName == null) baseName = beast.getType().name();
+        // 移除舊血量
+        baseName = baseName.replaceAll(" §c❤.*", "");
+        setBeastNameWithHealth(beast, owner, baseName.replaceFirst("§a\\[.*?\\] §f", ""));
+    }
+
+    // 寵物攻擊怪物時顯示傷害浮空字
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBeastDealDamage(EntityDamageByEntityEvent event) {
+        Entity damager = event.getDamager();
+        if (!damager.hasMetadata("beast_owner")) return;
+        if (!(event.getEntity() instanceof LivingEntity target)) return;
+        double damage = event.getFinalDamage();
+        // 顯示浮空字
+        target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, target.getLocation().add(0, 1.2, 0), 8, 0.2, 0.2, 0.2, 0.1);
+        target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1.5, 0), 1, 0, 0, 0, 0,
+            new Particle.DustOptions(org.bukkit.Color.RED, 1.5f));
+        target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1.1, 0), 2, 0.1, 0.1, 0.1, 0.05);
+        // 顯示傷害數字（用自定義名稱閃現）
+        String oldName = target.getCustomName();
+        target.setCustomName("§c-" + (int)damage);
+        target.setCustomNameVisible(true);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            target.setCustomName(oldName);
+            if (oldName == null) target.setCustomNameVisible(false);
+        }, 16L);
+        // 更新寵物名稱血量（如果是寵物自己也受傷）
+        if (damager instanceof LivingEntity beast) {
+            Player owner = null;
+            try {
+                owner = Bukkit.getPlayer(UUID.fromString(beast.getMetadata("beast_owner").get(0).asString()));
+            } catch (Exception ignored) {}
+            if (owner != null) {
+                String baseName = beast.getCustomName();
+                if (baseName == null) baseName = beast.getType().name();
+                baseName = baseName.replaceAll(" §c❤.*", "");
+                setBeastNameWithHealth(beast, owner, baseName.replaceFirst("§a\\[.*?\\] §f", ""));
+            }
+        }
+    }
+
     // ═══════════════════════════════════════
     //  工具方法
     // ═══════════════════════════════════════
@@ -432,5 +515,4 @@ public class BeastManager implements Listener {
         double strengthBonus;
     }
 }
-
 
