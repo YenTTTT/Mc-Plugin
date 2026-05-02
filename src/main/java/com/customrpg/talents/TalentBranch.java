@@ -19,7 +19,8 @@ public enum TalentBranch {
     SUKUNA("宿儺系", "咒術王的斬擊與火焰術式"),
     BLOOD("赤血操術系", "操控血液的禁忌術式"),
     ASSASSIN("刺客系", "影襲 / 連擊 / 收割的暗殺技巧"),
-    BEAST("野獸系", "馴服野獸召喚同伴 / 化身野獸變身戰鬥");
+    BEAST("野獸系", "馴服野獸召喚同伴 / 化身野獸變身戰鬥"),
+    BOW("風獵者之道", "距離狙擊 / 箭雨連射 / 陷阱控場的弓箭流派");
 
     private final String displayName;
     private final String description;

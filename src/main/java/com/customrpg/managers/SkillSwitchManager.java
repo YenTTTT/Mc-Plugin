@@ -55,6 +55,7 @@ public class SkillSwitchManager {
         addMechanism("鐮刀", Material.GOLDEN_HOE);
         addMechanism("鐮刀", Material.DIAMOND_HOE);
         addMechanism("鐮刀", Material.NETHERITE_HOE);
+        addMechanism("弓", Material.BOW);
     }
 
     /**

@@ -82,6 +82,9 @@ public class CustomRPG extends JavaPlugin {
     // Beast system
     private com.customrpg.managers.BeastManager beastManager;
 
+    // Bow talent system
+    private com.customrpg.managers.FocusManager focusManager;
+
     // New skill system (weapon skills)
     private SkillManager newSkillManager;
 
@@ -288,6 +291,7 @@ public class CustomRPG extends JavaPlugin {
 
         activeTalentSkillManager = new com.customrpg.managers.TalentSkillManager(this);
         beastManager = new com.customrpg.managers.BeastManager(this);
+        focusManager = new com.customrpg.managers.FocusManager(this);
         getLogger().info("- TalentSkillManager initialized");
 
         // ===== New skill system (manager/service pattern) =====
@@ -409,6 +413,10 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("- RaceListener registered");
 
         // Menu GUI + compass listener
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.BowTalentListener(
+                this, focusManager, talentManager), this);
+        getLogger().info("- BowTalentListener registered");
+
         getServer().getPluginManager().registerEvents(menuGUI, this);
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.MenuListener(this, menuGUI), this);
         getLogger().info("- MenuGUI & MenuListener registered");
@@ -645,6 +653,10 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.managers.BeastManager getBeastManager() {
         return beastManager;
+    }
+
+    public com.customrpg.managers.FocusManager getFocusManager() {
+        return focusManager;
     }
 
     public com.customrpg.weaponSkills.managers.SkillManager getNewSkillManager() {

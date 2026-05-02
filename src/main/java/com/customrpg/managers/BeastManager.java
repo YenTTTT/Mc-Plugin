@@ -114,6 +114,7 @@ public class BeastManager implements Listener {
             // 標記為玩家的野獸
             beast.setMetadata("beast_owner", new FixedMetadataValue(plugin, pid.toString()));
             beast.setMetadata("beast_damage", new FixedMetadataValue(plugin, damage));
+            beast.setMetadata("beast_base_name", new FixedMetadataValue(plugin, name));
 
             // 如果是可馴服的動物（如狼），設定主人
             if (beast instanceof Tameable tameable) {
@@ -188,6 +189,26 @@ public class BeastManager implements Listener {
             return e == null || e.isDead();
         });
         return beasts.size();
+    }
+
+    /**
+     * 直接將已生成的野獸實體登錄給玩家（不受上限限制）
+     * 用於有特殊邏輯的技能（如蜂巢誓盟）
+     */
+    public void registerExistingBeast(Player player, LivingEntity beast, double damage) {
+        UUID pid = player.getUniqueId();
+        beast.setMetadata("beast_owner", new FixedMetadataValue(plugin, pid.toString()));
+        beast.setMetadata("beast_damage", new FixedMetadataValue(plugin, damage));
+        // 記錄基礎名稱（去掉顏色前綴的純文字，用於健康名稱更新）
+        String rawName = beast.getCustomName();
+        if (rawName == null) rawName = beast.getType().name();
+        beast.setMetadata("beast_base_name", new FixedMetadataValue(plugin, rawName));
+        beast.setRemoveWhenFarAway(false);
+        beast.setPersistent(true);
+
+        List<UUID> existing = playerBeasts.computeIfAbsent(pid, k -> new ArrayList<>());
+        existing.add(beast.getUniqueId());
+        beastOwners.put(beast.getUniqueId(), pid);
     }
 
     // ═══════════════════════════════════════
@@ -359,6 +380,7 @@ public class BeastManager implements Listener {
 
     /**
      * 防止野獸攻擊自己的主人
+     * 蜜蜂額外：玩家打到蜜蜂時重置生氣狀態
      */
     @EventHandler
     public void onBeastTarget(EntityTargetEvent event) {
@@ -366,6 +388,59 @@ public class BeastManager implements Listener {
         Entity target = event.getTarget();
         if (entity.hasMetadata("beast_owner") && target instanceof Player player) {
             String ownerStr = entity.getMetadata("beast_owner").get(0).asString();
+            if (player.getUniqueId().toString().equals(ownerStr)) {
+                event.setCancelled(true);
+                // 如果是蜜蜂，清除目標（EntityTargetEvent 會阻止後續攻擊）
+                if (entity instanceof org.bukkit.entity.Bee bee) {
+                    bee.setTarget(null);
+                }
+            }
+        }
+    }
+
+    /**
+     * 防止攻擊蜂 stinger 傷害主人；守護蜂永不攻擊任何人
+     * （EntityDamageByEntityEvent 已在 onBeastAttack 中覆蓋，這裡補充蜜蜂場景）
+     */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBeeAttackOwner(EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof org.bukkit.entity.Bee bee)) return;
+        if (!bee.hasMetadata("beast_owner")) return;
+        // 守護蜂絕對不攻擊任何人
+        if (bee.hasMetadata("bee_companion")) {
+            event.setCancelled(true);
+            bee.setTarget(null);
+            return;
+        }
+        // 攻擊蜂不攻擊主人
+        if (event.getEntity() instanceof Player victim) {
+            String ownerStr = bee.getMetadata("beast_owner").get(0).asString();
+            if (victim.getUniqueId().toString().equals(ownerStr)) {
+                event.setCancelled(true);
+                bee.setTarget(null);
+            }
+        }
+    }
+
+    /**
+     * 阻止召喚蜜蜂對主人產生生氣（使用 Paper 的 EntityTargetEvent 就足夠了，
+     * 但若伺服器支援 EntityAngerEvent 也攔截）
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBeeAnger(org.bukkit.event.entity.EntityTargetEvent event) {
+        // EntityTargetEvent 已在 onBeastTarget 中處理，此為備援
+        Entity entity = event.getEntity();
+        Entity target = event.getTarget();
+        if (!(entity instanceof org.bukkit.entity.Bee bee)) return;
+        if (!bee.hasMetadata("beast_owner")) return;
+        // 守護蜂永不攻擊任何人
+        if (bee.hasMetadata("bee_companion")) {
+            event.setCancelled(true);
+            return;
+        }
+        // 攻擊蜂不攻擊主人
+        if (target instanceof Player player) {
+            String ownerStr = bee.getMetadata("beast_owner").get(0).asString();
             if (player.getUniqueId().toString().equals(ownerStr)) {
                 event.setCancelled(true);
             }
@@ -384,22 +459,31 @@ public class BeastManager implements Listener {
     }
 
     /**
-     * 玩家攻擊怪物時，讓其北極熊自動協助攻擊同一目標
+     * 玩家攻擊怪物時，讓其北極熊與攻擊蜂自動協助攻擊同一目標
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerAttackMob(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player player)) return;
         if (!(event.getEntity() instanceof LivingEntity target)) return;
         if (target instanceof Player) return; // 不協助攻擊玩家
+        // 忽略攻擊到自己的野獸（避免讓野獸互打）
+        if (target.hasMetadata("beast_owner")) return;
 
         UUID pid = player.getUniqueId();
         List<UUID> beasts = playerBeasts.get(pid);
         if (beasts == null) return;
         for (UUID beastId : beasts) {
             Entity e = Bukkit.getEntity(beastId);
-            if (e instanceof PolarBear bear && !bear.isDead()) {
-                // 設定攻擊目標
+            if (e == null || e.isDead()) continue;
+            if (e instanceof PolarBear bear) {
                 bear.setTarget(target);
+            } else if (e instanceof org.bukkit.entity.Bee bee) {
+                // 只有攻擊蜂跟隨目標（守護蜂不攻擊）
+                if (!e.hasMetadata("bee_companion")) {
+                    // 用 metadata 記錄目標 UUID，讓手動控制 loop 讀取
+                    bee.setMetadata("bee_attack_target",
+                            new FixedMetadataValue(plugin, target.getUniqueId().toString()));
+                }
             }
         }
     }
@@ -424,11 +508,11 @@ public class BeastManager implements Listener {
             owner = Bukkit.getPlayer(UUID.fromString(beast.getMetadata("beast_owner").get(0).asString()));
         } catch (Exception ignored) {}
         if (owner == null) return;
-        String baseName = beast.getCustomName();
-        if (baseName == null) baseName = beast.getType().name();
-        // 移除舊血量
-        baseName = baseName.replaceAll(" §c❤.*", "");
-        setBeastNameWithHealth(beast, owner, baseName.replaceFirst("§a\\[.*?\\] §f", ""));
+        // 使用 metadata 記錄的基礎名稱，避免重複疊加玩家名前綴
+        String baseName = beast.hasMetadata("beast_base_name")
+                ? beast.getMetadata("beast_base_name").get(0).asString()
+                : beast.getType().name();
+        setBeastNameWithHealth(beast, owner, baseName);
     }
 
     // 寵物攻擊怪物時顯示傷害浮空字
@@ -451,17 +535,17 @@ public class BeastManager implements Listener {
             target.setCustomName(oldName);
             if (oldName == null) target.setCustomNameVisible(false);
         }, 16L);
-        // 更新寵物名稱血量（如果是寵物自己也受傷）
+        // 更新寵物名稱血量（僅用 metadata 基礎名稱，不做 regex 剝除）
         if (damager instanceof LivingEntity beast) {
             Player owner = null;
             try {
                 owner = Bukkit.getPlayer(UUID.fromString(beast.getMetadata("beast_owner").get(0).asString()));
             } catch (Exception ignored) {}
             if (owner != null) {
-                String baseName = beast.getCustomName();
-                if (baseName == null) baseName = beast.getType().name();
-                baseName = baseName.replaceAll(" §c❤.*", "");
-                setBeastNameWithHealth(beast, owner, baseName.replaceFirst("§a\\[.*?\\] §f", ""));
+                String baseName = beast.hasMetadata("beast_base_name")
+                        ? beast.getMetadata("beast_base_name").get(0).asString()
+                        : beast.getType().name();
+                setBeastNameWithHealth(beast, owner, baseName);
             }
         }
     }
@@ -477,6 +561,23 @@ public class BeastManager implements Listener {
                 if (e == null || e.isDead()) {
                     beastOwners.remove(uuid);
                     return true;
+                }
+                // 定期重置蜜蜂狀態（守護蜂永遠不攻擊，攻擊蜂持續維持憤怒值）
+                if (e instanceof org.bukkit.entity.Bee bee) {
+                    if (e.hasMetadata("bee_companion")) {
+                        // 守護蜂永遠清除目標與憤怒
+                        bee.setTarget(null);
+                        bee.setAnger(0);
+                    } else {
+                        // 攻擊蜂：若有存活目標則刷新憤怒計時，否則清除目標
+                        LivingEntity currentTarget = bee.getTarget();
+                        if (currentTarget != null && !currentTarget.isDead()) {
+                            bee.setAnger(600); // 重置憤怒計時 30秒
+                        } else {
+                            bee.setTarget(null);
+                            bee.setAnger(0);
+                        }
+                    }
                 }
                 return false;
             });

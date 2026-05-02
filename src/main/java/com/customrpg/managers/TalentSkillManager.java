@@ -10,20 +10,28 @@ import com.customrpg.weaponSkills.managers.DamageManager;
 import com.customrpg.weaponSkills.util.AoEUtil;
 import com.customrpg.weaponSkills.util.ParticleUtil;
 import com.customrpg.weaponSkills.util.SoundUtil;
+import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Bukkit;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Bee;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -332,6 +340,9 @@ public class TalentSkillManager {
             case "beast_master":
                 success = executeBeastMaster(player, talent, level, item);
                 break;
+            case "bee_swarm":
+                success = executeBeeSwarm(player, talent, level, item);
+                break;
             case "wolf_form":
                 success = executeWolfForm(player, talent, level, item);
                 break;
@@ -349,6 +360,31 @@ public class TalentSkillManager {
                 break;
             case "primal_wrath":
                 success = executePrimalWrath(player, talent, level, item);
+                break;
+            // ── 風獵者之道 (Bow) ──
+            case "critical_arrow":
+                success = executeCriticalArrow(player, talent, level, item);
+                break;
+            case "arrow_storm":
+                success = executeArrowStorm(player, talent, level, item);
+                break;
+            case "split_arrow":
+                success = executeSplitArrow(player, talent, level, item);
+                break;
+            case "burst_mode":
+                success = executeBurstMode(player, talent, level, item);
+                break;
+            case "tracking_mark":
+                success = executeTrackingMark(player, talent, level, item);
+                break;
+            case "slow_arrow":
+                success = executeSlowArrow(player, talent, level, item);
+                break;
+            case "net_trap":
+                success = executeNetTrap(player, talent, level, item);
+                break;
+            case "wind_trap":
+                success = executeWindTrap(player, talent, level, item);
                 break;
         }
 
@@ -4066,8 +4102,7 @@ public class TalentSkillManager {
         return bm.activateBeastForm(player, "ravager", duration, strengthBonus, healthBonus, speedLevel, damageBoost);
     }
 
-    private boolean executePrimalWrath(Player player, Talent talent, int level, ItemStack item) {
-        BeastManager bm = plugin.getBeastManager();
+    private boolean executePrimalWrath(Player player, Talent talent, int level, ItemStack item) {        BeastManager bm = plugin.getBeastManager();
         int duration = (int) talent.getEffectDouble(level, "duration", 35);
         double strengthBonus = talent.getEffectDouble(level, "strengthBonus", 40);
         double healthBonus = talent.getEffectDouble(level, "healthBonus", 80);
@@ -4088,6 +4123,554 @@ public class TalentSkillManager {
         player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
         player.getWorld().spawnParticle(Particle.EXPLOSION, player.getLocation(), 3, 1, 1, 1, 0);
         player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0, 2, 0), 60, 2, 2, 2, 0.5);
+        return true;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  野獸系技能 — 馴服野獸支線 · 終極：蜂巢誓盟
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * 蜂巢誓盟 — 召喚4隻忠誠蜜蜂
+     *  · 1隻守護蜂：永遠跟隨玩家，每4秒回血並出現粒子效果
+     *  · 3隻攻擊蜂：跟隨玩家攻擊的目標
+     *  · 蜜蜂不會因被玩家攻擊而反攻主人
+     */
+    private boolean executeBeeSwarm(Player player, Talent talent, int level, ItemStack item) {
+        BeastManager bm = plugin.getBeastManager();
+
+        double beeHealth       = talent.getEffectDouble(level, "beeHealth",      30);
+        double attackBeeDamage = talent.getEffectDouble(level, "attackBeeDamage", 4);
+        double healAmount      = talent.getEffectDouble(level, "healAmount",      3);
+        int    duration        = (int) talent.getEffectDouble(level, "duration",  60);
+
+        Location spawnBase = player.getLocation().clone();
+
+        // ── 召喚1隻守護蜂 ──
+        Bee companion = (Bee) player.getWorld().spawnEntity(
+                spawnBase.clone().add(0.5, 1.2, 0.5), EntityType.BEE);
+        initBee(companion, player, beeHealth, attackBeeDamage,
+                "§e✿ 守護蜂", true);
+        bm.registerExistingBeast(player, companion, 0); // 守護蜂傷害為0
+
+        // ── 召喚3隻攻擊蜂 ──
+        List<UUID> attackBeeIds = new ArrayList<>();
+        double[] offX = {1.2, -1.2, 0};
+        double[] offZ = {0,    0,    1.2};
+        for (int i = 0; i < 3; i++) {
+            Bee atk = (Bee) player.getWorld().spawnEntity(
+                    spawnBase.clone().add(offX[i], 1.2, offZ[i]), EntityType.BEE);
+            initBee(atk, player, beeHealth, attackBeeDamage,
+                    "§c⚔ 攻擊蜂", false);
+            bm.registerExistingBeast(player, atk, attackBeeDamage);
+            attackBeeIds.add(atk.getUniqueId());
+        }
+
+        // 召喚特效
+        Location center = spawnBase.clone().add(0, 1, 0);
+        player.getWorld().spawnParticle(Particle.HEART,          center, 10, 0.6, 0.4, 0.6, 0);
+        player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, center, 20, 0.8, 0.6, 0.8, 0);
+        player.getWorld().playSound(spawnBase, Sound.ENTITY_BEE_LOOP, 1.2f, 1.0f);
+        player.sendMessage("§6§l[蜂巢誓盟] §e召喚了1隻守護蜂與3隻攻擊蜂！");
+
+        // ── 攻擊蜂行為：完全手動控制（繞過蜜蜂自然 AI 的逃跑行為）──
+        final double finalAtkDmg = attackBeeDamage;
+        new BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = duration * 20;
+
+            @Override
+            public void run() {
+                if (ticks >= maxTicks || !player.isOnline()) { cancel(); return; }
+
+                for (UUID id : attackBeeIds) {
+                    org.bukkit.entity.Entity e = org.bukkit.Bukkit.getEntity(id);
+                    if (e == null || e.isDead()) continue;
+                    Bee bee = (Bee) e;
+
+                    // 讀目標 metadata
+                    LivingEntity target = null;
+                    if (bee.hasMetadata("bee_attack_target")) {
+                        try {
+                            UUID tid = UUID.fromString(
+                                    bee.getMetadata("bee_attack_target").get(0).asString());
+                            org.bukkit.entity.Entity te = org.bukkit.Bukkit.getEntity(tid);
+                            if (te instanceof LivingEntity le && !le.isDead()) {
+                                target = le;
+                            } else {
+                                bee.removeMetadata("bee_attack_target", plugin);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+
+                    if (target == null) continue;
+
+                    // 強制清除逃跑狀態，設定追擊目標
+                    bee.setAnger(600);
+                    bee.setTarget(target);
+
+                    // 手動飛向目標（覆蓋自然 AI 位移）
+                    double dist = bee.getLocation().distance(target.getLocation());
+                    if (dist > 1.8) {
+                        org.bukkit.util.Vector dir = target.getLocation().clone().add(0, 0.5, 0)
+                                .toVector().subtract(bee.getLocation().toVector())
+                                .normalize().multiply(Math.min(0.7, dist * 0.25));
+                        bee.setVelocity(dir);
+                    }
+
+                    // 每 20 ticks (1秒) 對鄰近目標造成手動傷害
+                    if (ticks % 20 == 0 && dist <= 2.5) {
+                        target.damage(finalAtkDmg, bee);
+                        // 攻擊粒子
+                        target.getWorld().spawnParticle(Particle.CRIT,
+                                target.getLocation().add(0, 1, 0), 4, 0.2, 0.2, 0.2, 0.05);
+                        target.getWorld().spawnParticle(Particle.DUST,
+                                target.getLocation().add(0, 1.2, 0), 2, 0.1, 0.1, 0.1, 0,
+                                new Particle.DustOptions(org.bukkit.Color.YELLOW, 1.2f));
+                    }
+                }
+
+                ticks += 10;
+            }
+        }.runTaskTimer(plugin, 10L, 10L); // 每0.5秒執行一次，移動更流暢
+
+        // ── 守護蜂行為：跟隨玩家 + 每4秒回血 ──
+        final UUID companionId  = companion.getUniqueId();
+        final double finalHeal  = healAmount;
+
+        new BukkitRunnable() {
+            int seconds     = 0;
+            final int maxSec = duration;
+
+            @Override
+            public void run() {
+                if (seconds >= maxSec || !player.isOnline() || player.isDead()) {
+                    cancel();
+                    return;
+                }
+
+                org.bukkit.entity.Entity ent = org.bukkit.Bukkit.getEntity(companionId);
+                if (ent == null || ent.isDead()) {
+                    cancel();
+                    return;
+                }
+
+                Bee comp = (Bee) ent;
+
+                // 守護蜂永不攻擊（清除目標即可，EntityTargetEvent 會阻止牠攻擊主人）
+                comp.setTarget(null);
+
+                // 跟隨玩家
+                double dist = comp.getLocation().distance(player.getLocation());
+                if (dist > 12) {
+                    // 太遠則瞬移
+                    comp.teleport(player.getLocation().clone().add(
+                            (Math.random() - 0.5) * 1.5, 1.5, (Math.random() - 0.5) * 1.5));
+                } else if (dist > 3) {
+                    // 飛向玩家
+                    Vector dir = player.getLocation().clone().add(0, 1.2, 0)
+                            .toVector().subtract(comp.getLocation().toVector())
+                            .normalize().multiply(0.35);
+                    comp.setVelocity(dir);
+                }
+
+                // 每4秒回血並出現粒子效果
+                if (seconds > 0 && seconds % 4 == 0) {
+                    // 安全取得最大血量
+                    org.bukkit.attribute.AttributeInstance maxHpAttr =
+                            player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                    double maxHp = maxHpAttr != null ? maxHpAttr.getValue() : 20.0;
+                    player.setHealth(Math.min(maxHp, player.getHealth() + finalHeal));
+
+                    // 玩家身上的效果：愛心 + 治癒綠光
+                    Location pLoc = player.getLocation().clone().add(0, 1.0, 0);
+                    player.getWorld().spawnParticle(Particle.HEART, pLoc,
+                            6, 0.4, 0.5, 0.4, 0.02);
+                    player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, pLoc,
+                            10, 0.4, 0.6, 0.4, 0);
+
+                    // 守護蜂旁邊的愛心
+                    Location bLoc = comp.getLocation().clone().add(0, 0.6, 0);
+                    comp.getWorld().spawnParticle(Particle.HEART, bLoc,
+                            3, 0.2, 0.2, 0.2, 0);
+
+                    player.playSound(player.getLocation(),
+                            Sound.ENTITY_BEE_POLLINATE, 0.7f, 1.3f);
+                }
+
+                seconds++;
+            }
+        }.runTaskTimer(plugin, 20L, 20L); // 每秒執行一次
+
+        // 定時移除所有蜜蜂（由 BeastManager 在 summonBeast 中已處理到期邏輯，
+        // 但這裡我們另起一個 timer 確保到期刪除）
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            org.bukkit.entity.Entity ent = org.bukkit.Bukkit.getEntity(companionId);
+            if (ent != null && !ent.isDead()) {
+                ent.getWorld().spawnParticle(Particle.SMOKE,
+                        ent.getLocation().add(0, 0.5, 0), 10, 0.3, 0.5, 0.3, 0.02);
+                ent.remove();
+            }
+        }, duration * 20L);
+
+        return true;
+    }
+
+    /**
+     * 初始化蜜蜂屬性與 metadata
+     */
+    private void initBee(Bee bee, Player owner, double health, double damage,
+                         String displayName, boolean isCompanion) {
+        // 設定血量
+        if (bee.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null) {
+            bee.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(health);
+            bee.setHealth(health);
+        }
+        // 設定攻擊力
+        if (bee.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE) != null) {
+            bee.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE)
+               .setBaseValue(isCompanion ? 0 : damage);
+        }
+        bee.setCustomName(displayName);
+        bee.setCustomNameVisible(true);
+        bee.setRemoveWhenFarAway(false);
+        bee.setPersistent(true);
+        // 初始清除目標（避免召喚後立刻攻擊）
+        bee.setTarget(null);
+
+        if (isCompanion) {
+            bee.setMetadata("bee_companion",
+                    new org.bukkit.metadata.FixedMetadataValue(plugin, true));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  風獵者之道 — 主動技能
+    // ══════════════════════════════════════════════════════
+
+    /** 取得 FocusManager 捷徑 */
+    private FocusManager fm() {
+        return plugin.getFocusManager();
+    }
+
+    /**
+     * 極息穿心箭：消耗全部專注，射出穿透箭
+     */
+    private boolean executeCriticalArrow(Player player, Talent talent, int level, ItemStack item) {
+        int focusConsumed = fm().consumeAllFocus(player);
+        double baseDamage    = talent.getEffectDouble(level, "baseDamage", 15);
+        double damagePerFocus= talent.getEffectDouble(level, "damagePerFocus", 4);
+        int    piercing      = (int) talent.getEffectDouble(level, "piercing", 3);
+
+        double totalDamage = baseDamage + focusConsumed * damagePerFocus;
+
+        org.bukkit.entity.Arrow arrow = player.getWorld()
+                .spawn(player.getEyeLocation(), org.bukkit.entity.Arrow.class);
+        arrow.setVelocity(player.getLocation().getDirection().multiply(4.5));
+        arrow.setShooter(player);
+        arrow.setDamage(totalDamage);
+        arrow.setPierceLevel(piercing);
+        arrow.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
+        arrow.setGlowing(true);
+        arrow.setMetadata("bow_critical_arrow", new FixedMetadataValue(plugin, true));
+
+        // 特效
+        player.getWorld().spawnParticle(Particle.ENCHANT,
+                player.getEyeLocation(), 25, 0.3, 0.3, 0.3, 0.6);
+        player.playSound(player.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.5f, 0.6f);
+        player.sendMessage("§6§l[極息穿心箭] §e消耗 " + focusConsumed
+                + " 層專注 → 傷害 §f" + (int) totalDamage);
+        return true;
+    }
+
+    /**
+     * 箭雨：瞬間射出多支箭矢
+     */
+    private boolean executeArrowStorm(Player player, Talent talent, int level, ItemStack item) {
+        int    count     = (int) talent.getEffectDouble(level, "arrowCount", 3);
+        double baseDmg   = talent.getEffectDouble(level, "baseDamage", 6);
+        double spread    = talent.getEffectDouble(level, "spread", 0.2);
+
+        // 連擊加成
+        int combo = fm().getCombo(player);
+        double comboMult = 1.0 + combo * 0.05;
+
+        for (int i = 0; i < count; i++) {
+            double ox = (Math.random() - 0.5) * spread * 2;
+            double oz = (Math.random() - 0.5) * spread * 2;
+            Vector dir = player.getLocation().getDirection()
+                    .clone().add(new Vector(ox, 0, oz)).normalize();
+
+            org.bukkit.entity.Arrow a = player.getWorld()
+                    .spawn(player.getEyeLocation(), org.bukkit.entity.Arrow.class);
+            a.setVelocity(dir.multiply(3.8));
+            a.setShooter(player);
+            a.setDamage(baseDmg * comboMult);
+            a.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
+        }
+
+        player.getWorld().spawnParticle(Particle.CLOUD,
+                player.getEyeLocation(), 8, 0.2, 0.2, 0.2, 0.08);
+        player.playSound(player.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0f, 1.1f);
+        player.sendMessage("§a[箭雨] §f射出 " + count + " 支箭矢！");
+        return true;
+    }
+
+    /**
+     * 分裂箭：射出一箭，命中後分裂（由 BowTalentListener 處理）
+     */
+    private boolean executeSplitArrow(Player player, Talent talent, int level, ItemStack item) {
+        double baseDmg       = talent.getEffectDouble(level, "baseDamage", 8);
+        int    splitCount    = (int) talent.getEffectDouble(level, "splitCount", 2);
+        double splitDmgRatio = talent.getEffectDouble(level, "splitDamageRatio", 0.70);
+
+        org.bukkit.entity.Arrow arrow = player.getWorld()
+                .spawn(player.getEyeLocation(), org.bukkit.entity.Arrow.class);
+        arrow.setVelocity(player.getLocation().getDirection().multiply(3.5));
+        arrow.setShooter(player);
+        arrow.setDamage(baseDmg);
+        arrow.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
+        arrow.setGlowing(true);
+        arrow.setMetadata("bow_split_arrow", new FixedMetadataValue(plugin, true));
+        arrow.setMetadata("bow_split_count", new FixedMetadataValue(plugin, (double) splitCount));
+        arrow.setMetadata("bow_split_damage", new FixedMetadataValue(plugin, baseDmg * splitDmgRatio));
+
+        player.getWorld().spawnParticle(Particle.CRIT,
+                player.getEyeLocation(), 6, 0.1, 0.1, 0.1, 0.15);
+        player.playSound(player.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0f, 1.0f);
+        player.sendMessage("§a[分裂箭] §f射出！命中後將分裂成 " + splitCount + " 箭！");
+        return true;
+    }
+
+    /**
+     * 龍捲箭風：消耗連擊與專注，連續射出多支箭
+     */
+    private boolean executeBurstMode(Player player, Talent talent, int level, ItemStack item) {
+        int comboConsumed = fm().consumeAllCombo(player);
+        fm().consumeAllFocus(player);
+
+        int    arrowCount     = (int) talent.getEffectDouble(level, "arrowCount", 10);
+        double dmgPerArrow    = talent.getEffectDouble(level, "damagePerArrow", 5);
+        int    durationTicks  = (int) talent.getEffectDouble(level, "durationTicks", 60);
+
+        double finalDmg = dmgPerArrow * (1 + comboConsumed * 0.08);
+        int interval = Math.max(2, durationTicks / arrowCount);
+
+        player.sendMessage("§6§l[龍捲箭風] §e消耗 " + comboConsumed
+                + " 層連擊，連射 " + arrowCount + " 箭！");
+
+        new BukkitRunnable() {
+            int fired = 0;
+            @Override
+            public void run() {
+                if (fired >= arrowCount || !player.isOnline() || player.isDead()) {
+                    cancel();
+                    return;
+                }
+                org.bukkit.entity.Arrow a = player.getWorld()
+                        .spawn(player.getEyeLocation(), org.bukkit.entity.Arrow.class);
+                a.setVelocity(player.getLocation().getDirection().multiply(3.8));
+                a.setShooter(player);
+                a.setDamage(finalDmg);
+                a.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
+                player.getWorld().spawnParticle(Particle.CRIT,
+                        player.getEyeLocation(), 2, 0.05, 0.05, 0.05, 0.05);
+                player.playSound(player.getLocation(), Sound.ENTITY_ARROW_SHOOT, 0.7f, 1.3f);
+                fired++;
+            }
+        }.runTaskTimer(plugin, 2L, interval);
+
+        return true;
+    }
+
+    /**
+     * 追蹤標記：標記玩家視線前方的敵人
+     */
+    private boolean executeTrackingMark(Player player, Talent talent, int level, ItemStack item) {
+        int    markDuration    = (int) talent.getEffectDouble(level, "markDurationTicks", 200);
+        double markedDmgBonus  = talent.getEffectDouble(level, "markedDamageBonus", 0.25);
+        int    focusGain       = (int) talent.getEffectDouble(level, "focusOnMark", 2);
+
+        // 射線追蹤目標
+        var rayResult = player.getWorld().rayTraceEntities(
+                player.getEyeLocation(),
+                player.getLocation().getDirection(),
+                30, 0.6,
+                e -> e instanceof LivingEntity && !(e instanceof Player) && !e.equals(player));
+
+        LivingEntity target = null;
+        if (rayResult != null && rayResult.getHitEntity() instanceof LivingEntity le) {
+            target = le;
+        }
+
+        if (target == null) {
+            player.sendMessage("§c[追蹤標記] 視線內沒有目標！");
+            return false;
+        }
+
+        fm().markTarget(player, target, markDuration);
+        fm().addFocus(player, focusGain);
+
+        player.getWorld().spawnParticle(Particle.ENCHANT,
+                target.getLocation().add(0, 1.5, 0), 20, 0.3, 0.3, 0.3, 0.4);
+        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 1.4f);
+        player.sendMessage("§a[追蹤標記] §f已標記目標！傷害+" + (int)(markedDmgBonus * 100)
+                + "% +" + focusGain + " 專注");
+        return true;
+    }
+
+    /**
+     * 緩速箭：射出帶緩速效果的特殊箭
+     */
+    private boolean executeSlowArrow(Player player, Talent talent, int level, ItemStack item) {
+        int    slowLv    = (int) talent.getEffectDouble(level, "slowLevel", 1);
+        int    slowDur   = (int) talent.getEffectDouble(level, "slowDurationTicks", 60);
+        double arrowDmg  = talent.getEffectDouble(level, "slowArrowDamage", 4);
+
+        org.bukkit.entity.Arrow arrow = player.getWorld()
+                .spawn(player.getEyeLocation(), org.bukkit.entity.Arrow.class);
+        arrow.setVelocity(player.getLocation().getDirection().multiply(3.5));
+        arrow.setShooter(player);
+        arrow.setDamage(arrowDmg);
+        arrow.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
+        arrow.setGlowing(true);
+        arrow.setMetadata("bow_slow_arrow", new FixedMetadataValue(plugin, true));
+        arrow.setMetadata("bow_slow_level", new FixedMetadataValue(plugin, (double) slowLv));
+        arrow.setMetadata("bow_slow_duration", new FixedMetadataValue(plugin, (double) slowDur));
+
+        player.getWorld().spawnParticle(Particle.SNOWFLAKE,
+                player.getEyeLocation(), 8, 0.1, 0.1, 0.1, 0.05);
+        player.playSound(player.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0f, 0.8f);
+        player.sendMessage("§b[緩速箭] §f射出！命中後施加緩速 " + slowLv + " 級！");
+        return true;
+    }
+
+    /**
+     * 羅網陷阱：在腳下放置束縛陷阱
+     */
+    private boolean executeNetTrap(Player player, Talent talent, int level, ItemStack item) {
+        double trapRadius  = talent.getEffectDouble(level, "trapRadius", 1.5);
+        int    snareDur    = (int) talent.getEffectDouble(level, "snareDurationTicks", 40);
+        int    trapDurSecs = (int) talent.getEffectDouble(level, "trapDurationSecs", 30);
+
+        Location trapLoc = player.getLocation().clone();
+
+        // 用隱形盔甲架作為陷阱標記
+        org.bukkit.entity.ArmorStand trap = (org.bukkit.entity.ArmorStand)
+                player.getWorld().spawnEntity(trapLoc, org.bukkit.entity.EntityType.ARMOR_STAND);
+        trap.setVisible(false);
+        trap.setGravity(false);
+        trap.setSmall(true);
+        trap.setCustomName("§c[羅網陷阱]");
+        trap.setMetadata("bow_trap_owner",
+                new FixedMetadataValue(plugin, player.getUniqueId().toString()));
+
+        // 陷阱圓圈粒子特效
+        for (double ang = 0; ang < 2 * Math.PI; ang += 0.25) {
+            Location pp = trapLoc.clone().add(
+                    Math.cos(ang) * trapRadius, 0.05, Math.sin(ang) * trapRadius);
+            player.getWorld().spawnParticle(Particle.SPIT, pp, 1, 0, 0, 0, 0);
+        }
+        player.playSound(trapLoc, Sound.BLOCK_CHAIN_PLACE, 1.0f, 1.2f);
+
+        // 陷阱觸發循環
+        new BukkitRunnable() {
+            int secs = 0;
+            final Set<UUID> snaredIds = new java.util.HashSet<>();
+
+            @Override
+            public void run() {
+                if (secs >= trapDurSecs || trap.isDead()) {
+                    trap.remove();
+                    cancel();
+                    return;
+                }
+                // 每秒刷新陷阱粒子
+                if (secs % 2 == 0) {
+                    trapLoc.getWorld().spawnParticle(Particle.SPIT,
+                            trapLoc.clone().add(0, 0.15, 0), 5, (float) trapRadius, 0.05f, (float) trapRadius, 0);
+                }
+                // 偵測進入的怪物
+                for (Entity e : trapLoc.getWorld().getNearbyEntities(
+                        trapLoc, trapRadius, 1.5, trapRadius)) {
+                    if (!(e instanceof LivingEntity le)) continue;
+                    if (e instanceof Player) continue;
+                    if (snaredIds.contains(e.getUniqueId())) continue;
+
+                    final UUID eid = e.getUniqueId();
+                    snaredIds.add(eid);
+                    le.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                            org.bukkit.potion.PotionEffectType.SLOWNESS,
+                            snareDur, 10, false, true, true));
+                    le.getWorld().spawnParticle(Particle.SPIT,
+                            le.getLocation().add(0, 1, 0), 10, 0.3, 0.5, 0.3, 0);
+                    player.sendMessage("§a[羅網] §f束縛了 " + le.getType().name());
+
+                    // 延遲後允許再次觸發
+                    Bukkit.getScheduler().runTaskLater(plugin,
+                            () -> snaredIds.remove(eid), snareDur + 20L);
+                }
+                secs++;
+            }
+        }.runTaskTimer(plugin, 0L, 20L);
+
+        player.sendMessage("§a[羅網陷阱] §f陷阱已放置！持續 " + trapDurSecs + " 秒");
+        return true;
+    }
+
+    /**
+     * 風暴漩渦：消耗全部專注，形成持續吸入傷害的漩渦
+     */
+    private boolean executeWindTrap(Player player, Talent talent, int level, ItemStack item) {
+        int focusConsumed = fm().consumeAllFocus(player);
+        double radius      = talent.getEffectDouble(level, "radius", 5);
+        double dmgPerTick  = talent.getEffectDouble(level, "damagePerTick", 2);
+        int    durationTicks = (int) talent.getEffectDouble(level, "durationTicks", 100);
+        double pullForce   = talent.getEffectDouble(level, "pullForce", 0.30);
+
+        Location center = player.getLocation().clone();
+
+        player.sendMessage("§6§l[風暴漩渦] §e消耗 " + focusConsumed
+                + " 層專注，形成風暴！持續 " + (durationTicks / 20) + " 秒");
+        center.getWorld().playSound(center, Sound.ENTITY_BLAZE_SHOOT, 1.5f, 0.5f);
+
+        new BukkitRunnable() {
+            int t = 0;
+            @Override
+            public void run() {
+                if (t >= durationTicks) { cancel(); return; }
+
+                // 螺旋粒子效果
+                double ang = t * 0.4;
+                for (double r = 0.5; r <= radius; r += 1.0) {
+                    Location pLoc = center.clone().add(
+                            Math.cos(ang + r) * r,
+                            0.3 + (t % 20) * 0.03,
+                            Math.sin(ang + r) * r);
+                    center.getWorld().spawnParticle(Particle.CLOUD, pLoc, 1, 0, 0, 0, 0);
+                }
+
+                // 每 10 ticks 拉引並傷害周圍敵人
+                if (t % 10 == 0) {
+                    for (Entity e : center.getWorld().getNearbyEntities(
+                            center, radius, radius, radius)) {
+                        if (!(e instanceof LivingEntity le)) continue;
+                        if (e instanceof Player) continue;
+                        // 拉向中心
+                        Vector pull = center.toVector()
+                                .subtract(le.getLocation().toVector())
+                                .normalize().multiply(pullForce);
+                        le.setVelocity(le.getVelocity().add(pull));
+                        // 傷害
+                        le.damage(dmgPerTick, player);
+                        le.getWorld().spawnParticle(Particle.CRIT,
+                                le.getLocation().add(0, 1, 0), 3, 0.2, 0.2, 0.2, 0.05);
+                    }
+                }
+                t++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+
         return true;
     }
 }

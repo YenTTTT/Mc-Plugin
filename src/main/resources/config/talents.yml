@@ -3265,6 +3265,7 @@ dark:
           damageBoost: 2
           speedBoost: 2
 
+# ==================== 野獸系 (Beast) ====================
 # ==================== 野獸系 (BEAST) — 馴服野獸 / 化身野獸 ====================
 #
 #  GUI 佈局 (54 格箱子):
@@ -3581,6 +3582,45 @@ beast:
       3:
         effect:
           healOnKill: 0.15
+
+  # 蜂巢誓盟 (1,3) → slot 2 — 終極主動：召喚4隻蜜蜂（馴服支線最終技）
+  bee_swarm:
+    name: "蜂巢誓盟"
+    description: "召喚4隻忠誠蜜蜂。1隻守護蜂永遠伴隨你，每4秒為你回復生命值；3隻攻擊蜂專門圍攻你所攻擊的敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 2
+    mechanism: "骨頭"
+    cooldown: 60
+    manaCost: 50
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "beast_army"
+      level: 1
+    gui:
+      slot: 2
+      icon: "BEE_SPAWN_EGG"
+    levels:
+      1:
+        effect:
+          beeHealth: 60
+          attackBeeDamage: 6.0
+          healAmount: 3.0
+          duration: 60
+      2:
+        effect:
+          beeHealth: 80
+          attackBeeDamage: 8.0
+          healAmount: 5.0
+          duration: 90
+      3:
+        effect:
+          beeHealth: 100
+          attackBeeDamage: 10.0
+          healAmount: 8.0
+          duration: 120
 
   # 野獸之王 (1,5) → slot 4 — 終極主動：召喚劫獸
   beast_master:
@@ -3912,3 +3952,573 @@ beast:
           radius: 12
           fearDuration: 6
 
+
+# ==================== 風獵者之道 (Bow) ====================
+# 三大分支：
+#   狙擊者  (Sniper)  — 左側 col 1:  slots 46→37→28→19→10→1
+#   遊俠    (Ranger)  — 中央 col 4:  slots 49→40→31→22→13→4
+#   陷阱獵人(Trapper) — 右側 col 7:  slots 52→43→34→25→16→7
+# GUI 佈局 (row, col) → slot = row*9 + col
+bow:
+
+  # ══════════════════════════════════
+  #  狙擊者支線  (Sniper Branch)
+  # ══════════════════════════════════
+
+  # 獵人鎮定 (5,1) → slot 46 — 被動入口：靜止積累專注
+  hunters_calm:
+    name: "獵人鎮定"
+    description: "靜止不動時每秒積累專注，最高 10 層；專注在 5 秒無行動後開始衰減"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    gui:
+      slot: 46
+      icon: "FEATHER"
+    levels:
+      1:
+        effect:
+          focusPerSecond: 1
+      2:
+        effect:
+          focusPerSecond: 2
+      3:
+        effect:
+          focusPerSecond: 3
+
+  # 致命瞄準 (4,1) → slot 37 — 被動：每層專注提升傷害
+  deadly_aim:
+    name: "致命瞄準"
+    description: "每層專注為弓箭傷害提升固定百分比"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "hunters_calm"
+      level: 1
+    gui:
+      slot: 37
+      icon: "ARROW"
+    levels:
+      1:
+        effect:
+          damagePerFocus: 0.04
+      2:
+        effect:
+          damagePerFocus: 0.07
+      3:
+        effect:
+          damagePerFocus: 0.10
+
+  # 靜止姿態 (3,1) → slot 28 — 被動：站立不動時額外傷害
+  still_stance:
+    name: "靜止姿態"
+    description: "靜止不動時，弓箭傷害額外提升"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "deadly_aim"
+      level: 1
+    gui:
+      slot: 28
+      icon: "LEATHER_BOOTS"
+    levels:
+      1:
+        effect:
+          stillDamageBonus: 0.10
+      2:
+        effect:
+          stillDamageBonus: 0.20
+      3:
+        effect:
+          stillDamageBonus: 0.30
+
+  # 鷹眼 (2,1) → slot 19 — 被動：距離越遠傷害越高
+  eagle_eye:
+    name: "鷹眼"
+    description: "箭矢飛行距離越長，命中傷害越高（每格 +X%，上限 Y%）"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "still_stance"
+      level: 1
+    gui:
+      slot: 19
+      icon: "SPYGLASS"
+    levels:
+      1:
+        effect:
+          damagePerBlock: 0.01
+          maxDistanceBonus: 0.30
+      2:
+        effect:
+          damagePerBlock: 0.02
+          maxDistanceBonus: 0.50
+      3:
+        effect:
+          damagePerBlock: 0.03
+          maxDistanceBonus: 0.80
+
+  # 爆頭精通 (1,1) → slot 10 — 被動：頭部命中暴擊
+  headshot_mastery:
+    name: "爆頭精通"
+    description: "命中敵人頭部視為爆頭，傷害倍增並恢復專注"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "eagle_eye"
+      level: 1
+    gui:
+      slot: 10
+      icon: "SKELETON_SKULL"
+    levels:
+      1:
+        effect:
+          headshotMultiplier: 1.5
+          focusOnHeadshot: 2
+      2:
+        effect:
+          headshotMultiplier: 1.8
+          focusOnHeadshot: 3
+      3:
+        effect:
+          headshotMultiplier: 2.2
+          focusOnHeadshot: 5
+
+  # 極息穿心箭 (0,1) → slot 1 — 主動終極：消耗全部專注穿透射箭
+  critical_arrow:
+    name: "極息穿心箭"
+    description: "消耗全部專注，射出一支穿透所有敵人的箭，專注越多傷害越高"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 2
+    mechanism: "弓"
+    cooldown: 25
+    manaCost: 40
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "headshot_mastery"
+      level: 2
+    gui:
+      slot: 1
+      icon: "SPECTRAL_ARROW"
+    levels:
+      1:
+        effect:
+          baseDamage: 15
+          damagePerFocus: 4
+          piercing: 3
+      2:
+        effect:
+          baseDamage: 20
+          damagePerFocus: 6
+          piercing: 5
+      3:
+        effect:
+          baseDamage: 28
+          damagePerFocus: 8
+          piercing: 8
+
+  # ══════════════════════════════════
+  #  遊俠支線  (Ranger Branch)
+  # ══════════════════════════════════
+
+  # 閃速連射 (5,4) → slot 49 — 被動入口：命中積累連擊
+  quick_draw:
+    name: "閃速連射"
+    description: "每次箭矢命中敵人，累積一層連擊（最高 10）；5 秒無命中後清除"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    gui:
+      slot: 49
+      icon: "BOW"
+    levels:
+      1:
+        effect:
+          maxCombo: 5
+      2:
+        effect:
+          maxCombo: 8
+      3:
+        effect:
+          maxCombo: 10
+
+  # 連擊強化 (4,4) → slot 40 — 被動：連擊層數提升傷害
+  combo_shot:
+    name: "連擊強化"
+    description: "每層連擊為弓箭傷害提升百分比"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    prerequisite:
+      skill: "quick_draw"
+      level: 1
+    gui:
+      slot: 40
+      icon: "CROSSBOW"
+    levels:
+      1:
+        effect:
+          damagePerCombo: 0.05
+      2:
+        effect:
+          damagePerCombo: 0.08
+      3:
+        effect:
+          damagePerCombo: 0.12
+
+  # 箭雨 (3,4) → slot 31 — 主動：一次射出多支箭
+  arrow_storm:
+    name: "箭雨"
+    description: "瞬間向前發射多支箭矢，連擊越高傷害越強"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "弓"
+    cooldown: 12
+    manaCost: 25
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "combo_shot"
+      level: 1
+    gui:
+      slot: 31
+      icon: "ARROW"
+    levels:
+      1:
+        effect:
+          arrowCount: 3
+          baseDamage: 6
+          spread: 0.25
+      2:
+        effect:
+          arrowCount: 3
+          baseDamage: 9
+          spread: 0.18
+      3:
+        effect:
+          arrowCount: 3
+          baseDamage: 13
+          spread: 0.12
+
+  # 分裂箭 (2,4) → slot 22 — 主動：命中後分裂
+  split_arrow:
+    name: "分裂箭"
+    description: "射出一箭，命中後在原地分裂成多支箭射向四周"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "弓"
+    cooldown: 15
+    manaCost: 30
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "arrow_storm"
+      level: 1
+    gui:
+      slot: 22
+      icon: "TIPPED_ARROW"
+    levels:
+      1:
+        effect:
+          baseDamage: 8
+          splitCount: 2
+          splitDamageRatio: 0.70
+      2:
+        effect:
+          baseDamage: 11
+          splitCount: 3
+          splitDamageRatio: 0.80
+      3:
+        effect:
+          baseDamage: 14
+          splitCount: 4
+          splitDamageRatio: 0.90
+
+  # 急速殺機 (1,4) → slot 13 — 被動：連擊滿時次箭暴傷
+  rapid_fire:
+    name: "急速殺機"
+    description: "連擊達到上限時，下一箭傷害大幅暴增"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 2
+    mechanism: "被動"
+    prerequisite:
+      skill: "split_arrow"
+      level: 1
+    gui:
+      slot: 13
+      icon: "SPECTRAL_ARROW"
+    levels:
+      1:
+        effect:
+          maxComboBonus: 1.5
+      2:
+        effect:
+          maxComboBonus: 2.0
+      3:
+        effect:
+          maxComboBonus: 2.5
+
+  # 龍捲箭風 (0,4) → slot 4 — 主動終極：消耗連擊持續連射
+  burst_mode:
+    name: "龍捲箭風"
+    description: "消耗所有連擊與專注，在數秒內連射大量強化箭矢"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 3
+    mechanism: "弓"
+    cooldown: 50
+    manaCost: 60
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "rapid_fire"
+      level: 2
+    gui:
+      slot: 4
+      icon: "CROSSBOW"
+    levels:
+      1:
+        effect:
+          arrowCount: 10
+          damagePerArrow: 5
+          durationTicks: 60
+      2:
+        effect:
+          arrowCount: 12
+          damagePerArrow: 8
+          durationTicks: 70
+      3:
+        effect:
+          arrowCount: 15
+          damagePerArrow: 11
+          durationTicks: 80
+
+  # ══════════════════════════════════
+  #  陷阱獵人支線  (Trapper Branch)
+  # ══════════════════════════════════
+
+  # 獵人本能 (5,7) → slot 52 — 被動入口：定期偵測敵人
+  hunters_instinct:
+    name: "獵人本能"
+    description: "定期掃描周圍敵人，令其發光方便追蹤"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "被動"
+    gui:
+      slot: 52
+      icon: "COMPASS"
+    levels:
+      1:
+        effect:
+          detectRadius: 20
+          glowDurationTicks: 80
+      2:
+        effect:
+          detectRadius: 30
+          glowDurationTicks: 120
+      3:
+        effect:
+          detectRadius: 40
+          glowDurationTicks: 160
+
+  # 追蹤標記 (4,7) → slot 43 — 主動：標記敵人
+  tracking_mark:
+    name: "追蹤標記"
+    description: "標記視線內敵人，對其攻擊加成提升並獲得額外專注"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "弓"
+    cooldown: 18
+    manaCost: 20
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "hunters_instinct"
+      level: 1
+    gui:
+      slot: 43
+      icon: "TARGET"
+    levels:
+      1:
+        effect:
+          markDurationTicks: 200
+          markedDamageBonus: 0.25
+          focusOnMark: 2
+      2:
+        effect:
+          markDurationTicks: 300
+          markedDamageBonus: 0.40
+          focusOnMark: 3
+      3:
+        effect:
+          markDurationTicks: 400
+          markedDamageBonus: 0.55
+          focusOnMark: 5
+
+  # 緩速箭 (3,7) → slot 34 — 主動：減速箭
+  slow_arrow:
+    name: "緩速箭"
+    description: "射出冰封之箭，命中後對目標造成緩速"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "弓"
+    cooldown: 12
+    manaCost: 20
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "tracking_mark"
+      level: 1
+    gui:
+      slot: 34
+      icon: "BLUE_DYE"
+    levels:
+      1:
+        effect:
+          slowLevel: 1
+          slowDurationTicks: 60
+          slowArrowDamage: 4
+      2:
+        effect:
+          slowLevel: 2
+          slowDurationTicks: 100
+          slowArrowDamage: 6
+      3:
+        effect:
+          slowLevel: 3
+          slowDurationTicks: 140
+          slowArrowDamage: 9
+
+  # 羅網陷阱 (2,7) → slot 25 — 主動：放置束縛陷阱
+  net_trap:
+    name: "羅網陷阱"
+    description: "在腳下放置陷阱，敵人踩入後被強力束縛無法移動"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "弓"
+    cooldown: 20
+    manaCost: 25
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "slow_arrow"
+      level: 1
+    gui:
+      slot: 25
+      icon: "STRING"
+    levels:
+      1:
+        effect:
+          trapRadius: 1.5
+          snareDurationTicks: 40
+          trapDurationSecs: 30
+      2:
+        effect:
+          trapRadius: 2.0
+          snareDurationTicks: 60
+          trapDurationSecs: 40
+      3:
+        effect:
+          trapRadius: 2.5
+          snareDurationTicks: 80
+          trapDurationSecs: 50
+
+  # 幻影步伐 (1,7) → slot 16 — 被動：受傷時自動後跳閃避
+  phantom_step:
+    name: "幻影步伐"
+    description: "受到攻擊時自動向後跳躍閃避，並短暫隱身，同時減免部分傷害（有冷卻）"
+    type: "PASSIVE"
+    max-level: 3
+    points-per-level: 2
+    mechanism: "被動"
+    prerequisite:
+      skill: "net_trap"
+      level: 1
+    gui:
+      slot: 16
+      icon: "ENDER_PEARL"
+    levels:
+      1:
+        effect:
+          dashForce: 1.2
+          invisDurationTicks: 20
+          damageReduction: 0.30
+          cooldownSecs: 20
+      2:
+        effect:
+          dashForce: 1.5
+          invisDurationTicks: 30
+          damageReduction: 0.40
+          cooldownSecs: 15
+      3:
+        effect:
+          dashForce: 1.8
+          invisDurationTicks: 40
+          damageReduction: 0.50
+          cooldownSecs: 10
+
+  # 風暴漩渦 (0,7) → slot 7 — 主動終極：消耗全部專注形成風暴
+  wind_trap:
+    name: "風暴漩渦"
+    description: "消耗全部專注，在原地形成持續吸入並傷害周圍敵人的風暴漩渦"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 3
+    mechanism: "弓"
+    cooldown: 60
+    manaCost: 70
+    hpCost: 0
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "phantom_step"
+      level: 2
+    gui:
+      slot: 7
+      icon: "WIND_CHARGE"
+    levels:
+      1:
+        effect:
+          radius: 5
+          damagePerTick: 2
+          durationTicks: 100
+          pullForce: 0.30
+      2:
+        effect:
+          radius: 7
+          damagePerTick: 3
+          durationTicks: 120
+          pullForce: 0.40
+      3:
+        effect:
+          radius: 9
+          damagePerTick: 4
+          durationTicks: 140
+          pullForce: 0.50
