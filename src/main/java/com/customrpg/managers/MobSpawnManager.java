@@ -8,6 +8,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -356,6 +357,28 @@ public class MobSpawnManager {
             }
         } else {
             candidateMobKeys = mobKeys;
+        }
+
+        // Peaceful 世界會讓敵對生物立刻消失，先過濾掉這些怪物
+        if (spawnLoc.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
+            List<String> peacefulAllowed = new ArrayList<>();
+            for (String key : candidateMobKeys) {
+                if (!mobManager.willBeRemovedInPeaceful(key)) {
+                    peacefulAllowed.add(key);
+                }
+            }
+
+            if (debug && peacefulAllowed.size() != candidateMobKeys.size()) {
+                log.info("[MobSpawn]   世界難度為 Peaceful，已排除會被原版立即移除的敵對怪物: "
+                        + (candidateMobKeys.size() - peacefulAllowed.size()) + " 隻候選類型");
+            }
+
+            if (peacefulAllowed.isEmpty()) {
+                lastSkipReason = "和平模式：敵對怪物會被原版立即移除";
+                return false;
+            }
+
+            candidateMobKeys = peacefulAllowed;
         }
 
         // 檢查最近的zone是否有生態域標籤，如果有則過濾怪物
@@ -814,8 +837,16 @@ public class MobSpawnManager {
      * 強制在玩家附近生成一隻指定類型的怪物 (用於測試)
      */
     public String forceSpawn(Player player, String mobKey, MobTier tier) {
-        List<String> mobKeys = mobManager.getMobKeys();
+        List<String> mobKeys = new ArrayList<>(mobManager.getMobKeys());
+        if (player.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
+            mobKeys.removeIf(mobManager::willBeRemovedInPeaceful);
+        }
+
         if (mobKeys.isEmpty()) {
+            if (player.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
+                return ChatColor.RED + "目前世界難度是 Peaceful，敵對自訂怪會被 Minecraft 立刻移除。"
+                        + "\n" + ChatColor.YELLOW + "請先把世界難度改成 easy / normal / hard。";
+            }
             return ChatColor.RED + "沒有已註冊的怪物類型！";
         }
 
@@ -824,10 +855,18 @@ public class MobSpawnManager {
         } else if (mobManager.getMobData(mobKey) == null) {
             return ChatColor.RED + "未知的怪物類型: " + mobKey + "\n"
                     + ChatColor.YELLOW + "可用類型: " + String.join(", ", mobKeys);
+        } else if (player.getWorld().getDifficulty() == Difficulty.PEACEFUL && mobManager.willBeRemovedInPeaceful(mobKey)) {
+            EntityType actualType = mobManager.getActualSpawnEntityType(mobKey);
+            return ChatColor.RED + "此怪物在 Peaceful 世界中會被 Minecraft 立刻移除：" + mobKey
+                    + ChatColor.GRAY + " (實際實體類型: " + (actualType != null ? actualType.name() : "unknown") + ")"
+                    + "\n" + ChatColor.YELLOW + "請先把世界難度改成 easy / normal / hard。";
         }
 
-        Location spawnLoc = player.getLocation().add(player.getLocation().getDirection().multiply(8));
-        spawnLoc.setY(player.getWorld().getHighestBlockYAt(spawnLoc.getBlockX(), spawnLoc.getBlockZ()) + 1);
+        Location desiredLoc = player.getLocation().clone().add(player.getLocation().getDirection().multiply(8));
+        Location spawnLoc = mobManager.findSafeSpawnLocation(desiredLoc);
+        if (spawnLoc == null) {
+            return ChatColor.RED + "找不到安全的生成位置，請到較空曠的位置再試一次。";
+        }
 
         // Zone-based level
         int mobLevel;
@@ -884,6 +923,9 @@ public class MobSpawnManager {
         if (zoneManager != null) {
             lines.add(ChatColor.AQUA + "--- Zone-Based 系統 ---");
             lines.add(ChatColor.YELLOW + "怪物區域數量: " + ChatColor.WHITE + zoneManager.getZoneCount());
+            if (zoneManager.getZoneCount() == 0) {
+                lines.add(ChatColor.RED + "  尚未設定任何怪物區域，自然生成不會啟動。請先使用 /setmob 建立 zone。");
+            }
             for (var zone : zoneManager.getAllZones()) {
                 lines.add(ChatColor.GRAY + "  " + zone.name + ": Lv." + zone.minLevel + "~" + zone.maxLevel
                         + " (步進: " + zone.radiusStep + "格)");
@@ -897,6 +939,10 @@ public class MobSpawnManager {
             lines.add(ChatColor.YELLOW + "遊戲模式: " + ChatColor.WHITE + player.getGameMode().name());
             lines.add(ChatColor.YELLOW + "世界: " + ChatColor.WHITE + player.getWorld().getName()
                     + (disabledWorlds.contains(player.getWorld().getName()) ? ChatColor.RED + " (已禁用)" : ChatColor.GREEN + " (允許)"));
+            lines.add(ChatColor.YELLOW + "世界難度: " + ChatColor.WHITE + player.getWorld().getDifficulty().name()
+                    + (player.getWorld().getDifficulty() == Difficulty.PEACEFUL
+                    ? ChatColor.RED + " (敵對自訂怪會被原版立即移除)"
+                    : ChatColor.GREEN + " (允許敵對怪)"));
 
             // Zone-based 狀態
             if (zoneManager != null && zoneManager.getZoneCount() > 0) {

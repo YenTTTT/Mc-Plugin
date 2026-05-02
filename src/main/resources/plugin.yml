@@ -82,6 +82,11 @@ commands:
     usage: /mana <unlimit|limit>
     permission: customrpg.admin
     permission-message: You don't have permission to use this command!
+  finishrpg:
+    description: 啟動 RPG 自訂怪物生成系統
+    usage: /finishrpg
+    permission: customrpg.admin
+    permission-message: You don't have permission to use this command!
 
 
 

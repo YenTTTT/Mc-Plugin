@@ -57,9 +57,11 @@ public class CustomRPG extends JavaPlugin {
     private com.customrpg.commands.ManaCommand manaCommand;
     private ManaDisplayManager manaDisplayManager;
     private com.customrpg.managers.BloodManager bloodManager;
-    private com.customrpg.managers.MobSpawnManager mobSpawnManager;
+    private com.customrpg.managers.DistanceSpawnManager distanceSpawnManager;
     private com.customrpg.managers.ProtectionAreaManager protectionAreaManager;
     private com.customrpg.managers.ZoneManager zoneManager;
+    private com.customrpg.managers.SafeZoneManager safeZoneManager;
+    private com.customrpg.managers.BossZoneManager bossZoneManager;
 
     // BossBar system
     private com.customrpg.managers.BossBarManager bossBarManager;
@@ -144,9 +146,14 @@ public class CustomRPG extends JavaPlugin {
         }
 
         // 關閉怪物生成系統
-        if (mobSpawnManager != null) {
-            mobSpawnManager.shutdown();
-            getLogger().info("- MobSpawnManager shutdown");
+        if (distanceSpawnManager != null) {
+            distanceSpawnManager.shutdown();
+            getLogger().info("- DistanceSpawnManager shutdown");
+        }
+
+        if (bossZoneManager != null) {
+            bossZoneManager.shutdown();
+            getLogger().info("- BossZoneManager shutdown");
         }
 
         // 清理裝備GUI
@@ -197,7 +204,7 @@ public class CustomRPG extends JavaPlugin {
         configManager = null;
         weaponManager = null;
         mobManager = null;
-        mobSpawnManager = null;
+        distanceSpawnManager = null;
         statsManager = null;
         equipmentManager = null;
         equipmentGUI = null;
@@ -234,9 +241,15 @@ public class CustomRPG extends JavaPlugin {
         zoneManager = new com.customrpg.managers.ZoneManager(this);
         getLogger().info("- ZoneManager initialized with " + zoneManager.getZoneCount() + " zones");
 
-        // Initialize MobSpawnManager (dynamic mob spawning)
-        mobSpawnManager = new com.customrpg.managers.MobSpawnManager(this, mobManager, statsManager);
-        getLogger().info("- MobSpawnManager initialized");
+        safeZoneManager = new com.customrpg.managers.SafeZoneManager(this);
+        getLogger().info("- SafeZoneManager initialized with " + safeZoneManager.getZoneCount() + " zones");
+
+        distanceSpawnManager = new com.customrpg.managers.DistanceSpawnManager(this, mobManager, safeZoneManager);
+        getLogger().info("- DistanceSpawnManager initialized");
+
+        bossZoneManager = new com.customrpg.managers.BossZoneManager(this, mobManager, distanceSpawnManager);
+        distanceSpawnManager.setBossZoneManager(bossZoneManager);
+        getLogger().info("- BossZoneManager initialized with " + bossZoneManager.getZoneCount() + " zones");
 
         protectionAreaManager = new com.customrpg.managers.ProtectionAreaManager(this);
         getLogger().info("- ProtectionAreaManager initialized");
@@ -401,6 +414,9 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ProtectAreaListener(this, protectionAreaManager), this);
         getLogger().info("- ProtectAreaListener registered");
 
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SafeZoneSpawnListener(safeZoneManager), this);
+        getLogger().info("- SafeZoneSpawnListener registered");
+
         // SetMob zone listener
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SetMobListener(this, zoneManager), this);
         getLogger().info("- SetMobListener registered");
@@ -508,6 +524,16 @@ public class CustomRPG extends JavaPlugin {
             getLogger().info("- /mobspawn command registered");
         } else {
             getLogger().warning("- Failed to register /mobspawn command: command not defined in plugin.yml");
+        }
+
+        org.bukkit.command.PluginCommand finishRpgCommand = getCommand("finishrpg");
+        if (finishRpgCommand != null) {
+            com.customrpg.commands.FinishRpgCommand executor = new com.customrpg.commands.FinishRpgCommand(this);
+            finishRpgCommand.setExecutor(executor);
+            finishRpgCommand.setTabCompleter(executor);
+            getLogger().info("- /finishrpg command registered");
+        } else {
+            getLogger().warning("- Failed to register /finishrpg command: command not defined in plugin.yml");
         }
 
         // ProtectArea command
@@ -666,12 +692,20 @@ public class CustomRPG extends JavaPlugin {
         return armorManager;
     }
 
-    public com.customrpg.managers.MobSpawnManager getMobSpawnManager() {
-        return mobSpawnManager;
+    public com.customrpg.managers.DistanceSpawnManager getDistanceSpawnManager() {
+        return distanceSpawnManager;
     }
 
     public com.customrpg.managers.ProtectionAreaManager getProtectionAreaManager() {
         return protectionAreaManager;
+    }
+
+    public com.customrpg.managers.SafeZoneManager getSafeZoneManager() {
+        return safeZoneManager;
+    }
+
+    public com.customrpg.managers.BossZoneManager getBossZoneManager() {
+        return bossZoneManager;
     }
 
     public com.customrpg.managers.ZoneManager getZoneManager() {

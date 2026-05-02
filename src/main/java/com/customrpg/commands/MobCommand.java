@@ -3,6 +3,8 @@ package com.customrpg.commands;
 import com.customrpg.CustomRPG;
 import com.customrpg.managers.MobManager;
 import org.bukkit.ChatColor;
+import org.bukkit.Difficulty;
+import org.bukkit.entity.EntityType;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -105,7 +107,21 @@ public class MobCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        Location spawnLocation = player.getLocation().add(player.getLocation().getDirection().multiply(3));
+        if (player.getWorld().getDifficulty() == Difficulty.PEACEFUL && mobManager.willBeRemovedInPeaceful(mobKey)) {
+            EntityType actualType = mobManager.getActualSpawnEntityType(mobKey);
+            sender.sendMessage(ChatColor.RED + "此怪物在 Peaceful 世界中會被 Minecraft 立刻移除：" + mobKey);
+            sender.sendMessage(ChatColor.GRAY + "實際實體類型: " + (actualType != null ? actualType.name() : "unknown"));
+            sender.sendMessage(ChatColor.YELLOW + "請先把世界難度改成 easy / normal / hard 再生成。\n");
+            return true;
+        }
+
+        Location desiredLocation = player.getLocation().clone().add(player.getLocation().getDirection().multiply(3));
+        Location spawnLocation = mobManager.findSafeSpawnLocation(desiredLocation);
+        if (spawnLocation == null) {
+            sender.sendMessage(ChatColor.RED + "找不到安全的生成位置，請到較空曠的位置再試一次。");
+            return true;
+        }
+
         LivingEntity mob = mobManager.spawnCustomMob(mobKey, spawnLocation);
 
         if (mob == null) {

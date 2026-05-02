@@ -3,7 +3,8 @@
 # MobSpawnManager Configuration
 # ========================================
 
-# 是否啟用自動生成系統
+# 是否啟用自動生成系統 (配置總開關)
+# 注意：即使這裡是 true，伺服器啟動後仍需管理員輸入 /finishrpg 才會開始生成自訂怪
 enabled: true
 
 # 是否啟用 debug 日誌 (在 console 輸出詳細生成過程，測試時建議開啟)
@@ -74,11 +75,20 @@ tiers:
     spawn-sound-pitch: 0.5
 
 # ===== 距離加成 =====
-# 距離世界出生點越遠，怪物等級越高
-distance-scaling:
+# 以固定中心點為基準，距離越遠怪物等級越高
+difficulty-scaling:
   enabled: true
-  # 每幾格距離增加1級
-  blocks-per-level: 200
+  # 地圖中心 / 重生點座標
+  origin:
+    world: "world"
+    x: 192
+    y: 73
+    z: -70
+  # 基礎等級
+  base-level: 1
+  # 每多少格距離增加 1 級
+  # 公式：Level = base-level + floor(distance / blocks-per-level)
+  blocks-per-level: 80
 
 # ===== 生成條件 =====
 conditions:

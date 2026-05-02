@@ -334,6 +334,11 @@ public class MobListener implements Listener {
             if (bossBarMgr != null) {
                 bossBarMgr.onMobDeath(event.getEntity().getUniqueId());
             }
+
+            com.customrpg.managers.BossZoneManager bossZoneManager = plugin.getBossZoneManager();
+            if (bossZoneManager != null) {
+                bossZoneManager.handleEntityDeath(event.getEntity());
+            }
         } else {
             // 普通原版怪物：依類型給予不同經驗值
             if (killer == null) return; // 無擊殺者（跌落、其他原因死亡）

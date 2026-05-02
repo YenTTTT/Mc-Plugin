@@ -1,7 +1,7 @@
 package com.customrpg.commands;
 
 import com.customrpg.CustomRPG;
-import com.customrpg.managers.MobSpawnManager;
+import com.customrpg.managers.DistanceSpawnManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -35,9 +35,9 @@ public class MobSpawnCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        MobSpawnManager manager = plugin.getMobSpawnManager();
+        DistanceSpawnManager manager = plugin.getDistanceSpawnManager();
         if (manager == null) {
-            sender.sendMessage(ChatColor.RED + "MobSpawnManager 未初始化！");
+            sender.sendMessage(ChatColor.RED + "DistanceSpawnManager 未初始化！");
             return true;
         }
 
@@ -73,7 +73,7 @@ public class MobSpawnCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private boolean handleStatus(CommandSender sender, MobSpawnManager manager) {
+    private boolean handleStatus(CommandSender sender, DistanceSpawnManager manager) {
         Player player = (sender instanceof Player) ? (Player) sender : null;
         List<String> lines = manager.getDebugStatus(player);
         for (String line : lines) {
@@ -82,7 +82,7 @@ public class MobSpawnCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean handleSpawn(CommandSender sender, String[] args, MobSpawnManager manager) {
+    private boolean handleSpawn(CommandSender sender, String[] args, DistanceSpawnManager manager) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(ChatColor.RED + "此指令只能由玩家執行！");
             return true;
@@ -90,10 +90,10 @@ public class MobSpawnCommand implements CommandExecutor, TabCompleter {
 
         String mobKey = args.length >= 2 ? args[1] : null;
 
-        MobSpawnManager.MobTier tier = MobSpawnManager.MobTier.NORMAL;
+        DistanceSpawnManager.MobTier tier = DistanceSpawnManager.MobTier.NORMAL;
         if (args.length >= 3) {
             try {
-                tier = MobSpawnManager.MobTier.valueOf(args[2].toUpperCase());
+                tier = DistanceSpawnManager.MobTier.valueOf(args[2].toUpperCase());
             } catch (IllegalArgumentException e) {
                 sender.sendMessage(ChatColor.RED + "未知階級: " + args[2]);
                 sender.sendMessage(ChatColor.YELLOW + "可用階級: NORMAL, ELITE, BOSS");
@@ -106,22 +106,22 @@ public class MobSpawnCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean handleClear(CommandSender sender, MobSpawnManager manager) {
+    private boolean handleClear(CommandSender sender, DistanceSpawnManager manager) {
         int removed = manager.clearAllSpawnedMobs();
         sender.sendMessage(ChatColor.GREEN + "✓ 已清除 " + removed + " 隻自動生成的怪物");
         return true;
     }
 
-    private boolean handleDebug(CommandSender sender, MobSpawnManager manager) {
+    private boolean handleDebug(CommandSender sender, DistanceSpawnManager manager) {
         boolean newState = manager.toggleDebug();
         sender.sendMessage(ChatColor.YELLOW + "Debug 模式: " + (newState ? ChatColor.GREEN + "開啟" : ChatColor.RED + "關閉"));
         sender.sendMessage(ChatColor.GRAY + "開啟後會在伺服器 console 輸出詳細的生成日誌");
         return true;
     }
 
-    private boolean handleReload(CommandSender sender, MobSpawnManager manager) {
+    private boolean handleReload(CommandSender sender, DistanceSpawnManager manager) {
         manager.reload();
-        sender.sendMessage(ChatColor.GREEN + "✓ MobSpawnManager 配置已重新載入");
+        sender.sendMessage(ChatColor.GREEN + "✓ DistanceSpawnManager 配置已重新載入");
         return true;
     }
 
@@ -134,6 +134,7 @@ public class MobSpawnCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.YELLOW + "/mobspawn clear" + ChatColor.GRAY + " - 清除所有自動生成的怪物");
         sender.sendMessage(ChatColor.YELLOW + "/mobspawn debug" + ChatColor.GRAY + " - 切換 debug 日誌");
         sender.sendMessage(ChatColor.YELLOW + "/mobspawn reload" + ChatColor.GRAY + " - 重新載入配置");
+        sender.sendMessage(ChatColor.YELLOW + "/finishrpg" + ChatColor.GRAY + " - 啟動整套 RPG 自訂怪生成系統");
         sender.sendMessage(ChatColor.GOLD + "====================================");
     }
 

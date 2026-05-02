@@ -1,9 +1,9 @@
 package com.customrpg.managers;
 
 import com.customrpg.CustomRPG;
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.EntityEquipment;
@@ -12,7 +12,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
@@ -413,6 +412,12 @@ public class MobManager {
             return null;
         }
 
+        Location spawnLocation = findSafeSpawnLocation(location);
+        if (spawnLocation == null) {
+            plugin.getLogger().warning("Failed to find safe spawn location for custom mob '" + mobKey + "' near " + location);
+            return null;
+        }
+
         // 生成隨機等級
         int level = mobData.getMinLevel();
         if (mobData.getMaxLevel() > mobData.getMinLevel()) {
@@ -422,9 +427,9 @@ public class MobManager {
         // 檢查是否需要偽裝
         LivingEntity mob;
         if (mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
-            mob = spawnDisguisedMob(mobData, location, level);
+            mob = spawnDisguisedMob(mobData, spawnLocation, level);
         } else {
-            mob = spawnNormalMob(mobData, location, level);
+            mob = spawnNormalMob(mobData, spawnLocation, level);
         }
 
         if (mob == null) {
@@ -435,7 +440,7 @@ public class MobManager {
         mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
         mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
 
-        plugin.getLogger().info("Spawned custom mob: " + mobData.getName() + " (Lv." + level + ") at " + location);
+        plugin.getLogger().info("Spawned custom mob: " + mobData.getName() + " (Lv." + level + ") at " + spawnLocation);
         return mob;
     }
 
@@ -452,15 +457,21 @@ public class MobManager {
             return null;
         }
 
+        Location spawnLocation = findSafeSpawnLocation(location);
+        if (spawnLocation == null) {
+            plugin.getLogger().warning("Failed to find safe spawn location for custom mob '" + mobKey + "' near " + location);
+            return null;
+        }
+
         // Clamp level to at least 1
         level = Math.max(1, level);
 
         // 檢查是否需要偽裝
         LivingEntity mob;
         if (mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
-            mob = spawnDisguisedMob(mobData, location, level);
+            mob = spawnDisguisedMob(mobData, spawnLocation, level);
         } else {
-            mob = spawnNormalMob(mobData, location, level);
+            mob = spawnNormalMob(mobData, spawnLocation, level);
         }
 
         if (mob == null) {
@@ -472,6 +483,117 @@ public class MobManager {
         mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
 
         return mob;
+    }
+
+    private String buildMobDisplayName(MobData mobData, int level) {
+        if (mobData == null) {
+            return "&8[&eLv." + level + "&8] 未知怪物";
+        }
+        return "&8[&eLv." + level + "&8] " + mobData.getName();
+    }
+
+    /**
+     * Resolve a safe spawn position near the requested location.
+     * 優先保留玩家原本想生成的高度；若空間不足，再回退到該欄位最高方塊上方。
+     */
+    public Location findSafeSpawnLocation(Location location) {
+        if (location == null) {
+            return null;
+        }
+
+        World world = location.getWorld();
+        if (world == null) {
+            return null;
+        }
+
+        int blockX = location.getBlockX();
+        int blockZ = location.getBlockZ();
+        int minY = world.getMinHeight() + 1;
+        int maxY = world.getMaxHeight() - 2;
+        int highestY = Math.min(maxY, Math.max(minY, world.getHighestBlockYAt(blockX, blockZ) + 1));
+
+        LinkedHashSet<Integer> candidateYs = new LinkedHashSet<>();
+        candidateYs.add(Math.min(maxY, Math.max(minY, location.getBlockY())));
+        candidateYs.add(Math.min(maxY, Math.max(minY, location.getBlockY() + 1)));
+        candidateYs.add(highestY);
+
+        for (int offset = 1; offset <= 4; offset++) {
+            candidateYs.add(Math.min(maxY, highestY + offset));
+        }
+
+        for (int y : candidateYs) {
+            Location candidate = new Location(world, blockX + 0.5, y, blockZ + 0.5, location.getYaw(), location.getPitch());
+            if (isSafeSpawnLocation(candidate)) {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isSafeSpawnLocation(Location location) {
+        if (location == null || location.getWorld() == null) {
+            return false;
+        }
+
+        org.bukkit.block.Block feetBlock = location.getBlock();
+        org.bukkit.block.Block headBlock = feetBlock.getRelative(org.bukkit.block.BlockFace.UP);
+        org.bukkit.block.Block groundBlock = feetBlock.getRelative(org.bukkit.block.BlockFace.DOWN);
+
+        return feetBlock.getType().isAir()
+                && headBlock.getType().isAir()
+                && groundBlock.getType().isSolid()
+                && !groundBlock.isLiquid()
+                && !feetBlock.isLiquid();
+    }
+
+    /**
+     * 取得自訂怪實際會生成出的原版實體類型（考慮 disguise / BlockDisplay 核心）
+     */
+    public EntityType getActualSpawnEntityType(String mobKey) {
+        MobData mobData = mobTypes.get(mobKey);
+        return mobData == null ? null : getActualSpawnEntityType(mobData);
+    }
+
+    public EntityType getActualSpawnEntityType(MobData mobData) {
+        if (mobData == null) {
+            return null;
+        }
+
+        DisguiseConfig disguise = mobData.getDisguise();
+        if (disguise != null && disguise.isEnabled()) {
+            return disguise.getDisguiseType() == EntityType.ARMOR_STAND ? EntityType.ZOMBIE : disguise.getDisguiseType();
+        }
+
+        return mobData.getEntityType();
+    }
+
+    /**
+     * 判斷該自訂怪在 Peaceful 世界中是否會被原版 Minecraft 立刻移除。
+     */
+    public boolean willBeRemovedInPeaceful(String mobKey) {
+        MobData mobData = mobTypes.get(mobKey);
+        return mobData != null && willBeRemovedInPeaceful(mobData);
+    }
+
+    public boolean willBeRemovedInPeaceful(MobData mobData) {
+        return isPeacefulRestricted(getActualSpawnEntityType(mobData));
+    }
+
+    private boolean isPeacefulRestricted(EntityType entityType) {
+        if (entityType == null) {
+            return false;
+        }
+
+        return switch (entityType) {
+            case BLAZE, BOGGED, BREEZE, CAVE_SPIDER, CREEPER, DROWNED, ELDER_GUARDIAN,
+                    ENDERMAN, ENDERMITE, EVOKER, GHAST, GIANT, GUARDIAN, HOGLIN, HUSK,
+                    MAGMA_CUBE, PHANTOM, PIGLIN, PIGLIN_BRUTE, PILLAGER, RAVAGER,
+                    SHULKER, SILVERFISH, SKELETON, SLIME, SPIDER, STRAY, VEX, VINDICATOR,
+                    WARDEN, WITCH, WITHER, WITHER_SKELETON, ZOGLIN, ZOMBIE,
+                    ZOMBIE_VILLAGER, ZOMBIFIED_PIGLIN -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -524,10 +646,7 @@ public class MobManager {
         LivingEntity mob = (LivingEntity) entity;
 
         // 設置名稱
-        String displayName = mobData.getName();
-        if (mobData.shouldShowLevelInName() && mobData.hasLevelSystem()) {
-            displayName = "&8[&eLv." + level + "&8] " + mobData.getName();
-        }
+        String displayName = buildMobDisplayName(mobData, level);
         mob.setCustomName(org.bukkit.ChatColor.translateAlternateColorCodes('&', displayName));
         mob.setCustomNameVisible(true);
 
@@ -538,6 +657,7 @@ public class MobManager {
 
         // 裝備物品
         applyEquipment(mob, mobData);
+        applySpawnPersistence(mob);
 
         return mob;
     }
@@ -578,10 +698,7 @@ public class MobManager {
         LivingEntity mob = (LivingEntity) disguiseEntity;
 
         // 設置名稱
-        String displayName = mobData.getName();
-        if (mobData.shouldShowLevelInName() && mobData.hasLevelSystem()) {
-            displayName = "&8[&eLv." + level + "&8] " + mobData.getName();
-        }
+        String displayName = buildMobDisplayName(mobData, level);
         mob.setCustomName(org.bukkit.ChatColor.translateAlternateColorCodes('&', displayName));
         mob.setCustomNameVisible(true);
 
@@ -599,6 +716,7 @@ public class MobManager {
 
         // 裝備物品
         applyEquipment(mob, mobData);
+        applySpawnPersistence(mob);
 
         // 只有當生物是被動類型且設置了傷害值時，才賦予攻擊行為
         if (isPassiveMob(disguise.getDisguiseType()) && mobData.getBaseDamage() > 0) {
@@ -737,10 +855,7 @@ public class MobManager {
         nameTag.setArms(false);
 
         // 設置名稱
-        String displayName = mobData.getName();
-        if (mobData.shouldShowLevelInName() && mobData.hasLevelSystem()) {
-            displayName = "&8[&eLv." + level + "&8] " + mobData.getName();
-        }
+        String displayName = buildMobDisplayName(mobData, level);
         nameTag.customName(net.kyori.adventure.text.Component.text(
             org.bukkit.ChatColor.translateAlternateColorCodes('&', displayName)
         ));
@@ -1022,6 +1137,13 @@ public class MobManager {
         if (equipmentMap.containsKey("off-hand")) {
             equipment.setItemInOffHand(equipmentMap.get("off-hand"));
             equipment.setItemInOffHandDropChance(0.0f);
+        }
+    }
+
+    private void applySpawnPersistence(LivingEntity mob) {
+        if (mob instanceof Mob spawnedMob) {
+            spawnedMob.setRemoveWhenFarAway(false);
+            spawnedMob.setCanPickupItems(false);
         }
     }
 

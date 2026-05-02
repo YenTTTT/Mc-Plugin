@@ -1,0 +1,50 @@
+# ========================================
+# Boss 區域配置
+# 在指定中心點半徑內：
+# 1. 只允許該 Boss 與 linked-minions 生成
+# 2. Boss 不能離開 radius 範圍
+# 3. 非綁定自訂怪會被清除
+# ========================================
+boss-zones:
+  blossom_temple_guardian:
+    name: "Blossom Temple Guardian"
+    world: "world"
+    center: { x: 888, y: 133, z: 190 }
+    radius: 200
+    boss-mob-key: "boss_pumpkin_knight"
+    linked-minions:
+      - "shadow_archer"
+      - "rotten_zombie"
+      - "venomous_spider"
+    boss-spawn-chance-per-cycle: 0.35
+    respawn-cooldown-seconds: 900
+    max-minions: 4
+    minion-spawn-interval-ticks: 200
+  volcano_overlord:
+    name: "Volcano Overlord"
+    world: "world"
+    center: { x: 900, y: 71, z: -600 }
+    radius: 200
+    boss-mob-key: "boss_zombie_beast"
+    linked-minions:
+      - "blaze_guard"
+      - "fire_lizard"
+      - "lava_slime"
+    boss-spawn-chance-per-cycle: 0.30
+    respawn-cooldown-seconds: 1200
+    max-minions: 5
+    minion-spawn-interval-ticks: 160
+  greek_temple_warden:
+    name: "Greek Temple Warden"
+    world: "world"
+    center: { x: 930, y: 110, z: -830 }
+    radius: 200
+    boss-mob-key: "boss_crazy_scissor"
+    linked-minions:
+      - "skeleton_warrior"
+      - "undead_knight"
+      - "dark_ranger"
+    boss-spawn-chance-per-cycle: 0.25
+    respawn-cooldown-seconds: 1500
+    max-minions: 6
+    minion-spawn-interval-ticks: 180
