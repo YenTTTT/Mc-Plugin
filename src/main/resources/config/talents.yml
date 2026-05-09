@@ -573,6 +573,91 @@ weapon:
             stat: "AGILITY"
             multiplier: 0.5
 
+  # 壓制彈幕 (4,7) -> slot 43
+  suppressive_barrage:
+    name: "壓制彈幕"
+    description: "以高速連射壓制前方敵人，對單體與狹窄區域持續造成多段傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "槍械武器"
+    cooldown: 7
+    manaCost: 12
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "weapon_firearms_mastery"
+      level: 3
+    gui:
+      slot: 43
+      icon: "CROSSBOW"
+    levels:
+      1:
+        effect:
+          shotCount: 6
+          damageMultiplier: 0.70
+          agilityScaling: 0.22
+          range: 22
+          spread: 0.14
+      2:
+        effect:
+          shotCount: 8
+          damageMultiplier: 0.82
+          agilityScaling: 0.26
+          range: 24
+          spread: 0.11
+      3:
+        effect:
+          shotCount: 10
+          damageMultiplier: 0.95
+          agilityScaling: 0.32
+          range: 28
+          spread: 0.08
+
+  # 彈射穿甲彈 (3,7) -> slot 34
+  ricochet_round:
+    name: "彈射穿甲彈"
+    description: "射出一枚高穿透彈丸，命中後在敵群間反彈，逐次衰減傷害"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "槍械武器"
+    cooldown: 11
+    manaCost: 20
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "suppressive_barrage"
+      level: 1
+    gui:
+      slot: 34
+      icon: "FIREWORK_STAR"
+    levels:
+      1:
+        effect:
+          damageMultiplier: 1.60
+          agilityScaling: 0.30
+          bounceCount: 3
+          bounceRadius: 5
+          falloff: 0.80
+          range: 26
+      2:
+        effect:
+          damageMultiplier: 1.90
+          agilityScaling: 0.36
+          bounceCount: 4
+          bounceRadius: 6
+          falloff: 0.82
+          range: 30
+      3:
+        effect:
+          damageMultiplier: 2.20
+          agilityScaling: 0.45
+          bounceCount: 5
+          bounceRadius: 7
+          falloff: 0.85
+          range: 34
+
   # 冷兵器 (5,4) -> slot 49
   weapon_melee_mastery:
     name: "冷兵器"
@@ -647,11 +732,11 @@ weapon:
   # 裂地擊 (3,3) -> slot 30
   earth_shatter:
     name: "裂地擊"
-    description: "持武器蹲下右鍵打擊前方地面造成地板裂開地刺"
+    description: "持武器右鍵打擊前方地面造成地板裂開地刺"
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "持武器蹲下右鍵"
+    mechanism: "持武器右鍵"
     cooldown: 3
     manaCost: 1
     trigger:
@@ -666,6 +751,79 @@ weapon:
       1:
         effect:
           damageMultiplier: 1.7
+
+  # 旋風斬 (4,3) -> slot 39
+  cyclone_slash:
+    name: "旋風斬"
+    description: "快速迴旋揮砍周圍敵人，將近身敵人一口氣掃開"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "近戰武器"
+    cooldown: 6
+    manaCost: 10
+    trigger:
+      type: "RIGHT_CLICK"
+    prerequisite:
+      skill: "weapon_melee_mastery"
+      level: 3
+    gui:
+      slot: 39
+      icon: "IRON_AXE"
+    levels:
+      1:
+        effect:
+          radius: 3.5
+          damageMultiplier: 1.60
+          strengthScaling: 0.30
+      2:
+        effect:
+          radius: 4.0
+          damageMultiplier: 1.90
+          strengthScaling: 0.42
+      3:
+        effect:
+          radius: 4.5
+          damageMultiplier: 2.20
+          strengthScaling: 0.55
+
+  # 流星步 (3,4) -> slot 31
+  meteor_step:
+    name: "流星步"
+    description: "向前突進並斬裂路徑上的所有敵人，適合切入與追擊"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "近戰武器"
+    cooldown: 10
+    manaCost: 18
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "cyclone_slash"
+      level: 1
+    gui:
+      slot: 31
+      icon: "DIAMOND_SWORD"
+    levels:
+      1:
+        effect:
+          dashDistance: 6
+          width: 1.8
+          damageMultiplier: 1.80
+          strengthScaling: 0.40
+      2:
+        effect:
+          dashDistance: 7
+          width: 2.2
+          damageMultiplier: 2.10
+          strengthScaling: 0.52
+      3:
+        effect:
+          dashDistance: 8
+          width: 2.6
+          damageMultiplier: 2.50
+          strengthScaling: 0.68
 
   # 無限箭制 (2,4) -> slot = 2 * 9 + 4 = 22
   infinite_arrows:
@@ -689,11 +847,11 @@ weapon:
   # 魔法漩渦 (3,6) -> slot = 3 * 9 + 6 = 33
   magic_vortex:
     name: "魔法漩渦"
-    description: "持武器蹲下右鍵施放魔法漩渦控住敵人並造成傷害"
+    description: "持武器右鍵施放魔法漩渦控住敵人並造成傷害"
     type: "ACTIVE"
     max-level: 2
     points-per-level: 1
-    mechanism: "持武器蹲下右鍵"
+    mechanism: "持武器右鍵"
     cooldown: 2
     manaCost: 0
     trigger:
@@ -716,28 +874,119 @@ weapon:
           slowLevel: 3
           slowDuration: 2
 
-  # 狙殺 (3,2) -> slot = 3 * 9 + 2 = 29
-  sniper_shot:
-    name: "狙殺"
-    description: "瞄準0.5秒後射擊，造成物理傷害"
+  # 秘法連星 (4,5) -> slot 41
+  arcane_barrage:
+    name: "秘法連星"
+    description: "召喚多枚自動尋敵的秘法飛劍，接連轟擊附近敵人"
     type: "ACTIVE"
-    max-level: 1
+    max-level: 3
     points-per-level: 1
-    mechanism: "手持海磷碎片按左鍵"
-    cooldown: 0
-    manaCost: 0
+    mechanism: "法杖"
+    cooldown: 7
+    manaCost: 20
     trigger:
-      type: "LEFT_CLICK"
+      type: "RIGHT_CLICK"
     prerequisite:
-      skill: "weapon_firearms_mastery"
+      skill: "weapon_magic_mastery"
       level: 3
     gui:
-      slot: 29
-      icon: "PRISMARINE_SHARD"
+      slot: 41
+      icon: "AMETHYST_SHARD"
     levels:
       1:
         effect:
-          damageMultiplier: 1.0
+          boltCount: 4
+          boltDamageMultiplier: 0.75
+          magicScaling: 0.40
+          seekRadius: 14
+      2:
+        effect:
+          boltCount: 6
+          boltDamageMultiplier: 0.90
+          magicScaling: 0.52
+          seekRadius: 16
+      3:
+        effect:
+          boltCount: 8
+          boltDamageMultiplier: 1.05
+          magicScaling: 0.68
+          seekRadius: 18
+
+  # 重力牢籠 (3,5) -> slot 32
+  gravity_prison:
+    name: "重力牢籠"
+    description: "在前方張開扭曲重力的魔法領域，持續拉扯並削弱敵人"
+    type: "ACTIVE"
+    max-level: 3
+    points-per-level: 1
+    mechanism: "法杖"
+    cooldown: 12
+    manaCost: 26
+    trigger:
+      type: "LEFT_CLICK"
+    prerequisite:
+      skill: "arcane_barrage"
+      level: 1
+    gui:
+      slot: 32
+      icon: "RESPAWN_ANCHOR"
+    levels:
+      1:
+        effect:
+          radius: 3.5
+          durationTicks: 60
+          tickDamageMultiplier: 0.45
+          magicScaling: 0.32
+          pullForce: 0.18
+      2:
+        effect:
+          radius: 4.0
+          durationTicks: 80
+          tickDamageMultiplier: 0.60
+          magicScaling: 0.42
+          pullForce: 0.22
+      3:
+        effect:
+          radius: 4.8
+          durationTicks: 100
+          tickDamageMultiplier: 0.78
+          magicScaling: 0.55
+          pullForce: 0.28
+
+  # 終極劍雨 (1,4) -> slot 13
+  ultimate_sword_rain:
+    name: "終極劍雨"
+    description: "玩家頭上逐漸凝聚大量金色長劍，2秒後以一波一波的垂直劍雨高速落下，3秒內持續覆蓋範圍並重創怪物"
+    type: "ACTIVE"
+    max-level: 1
+    points-per-level: 1
+    mechanism: "武器系終極"
+    cooldown: 35
+    manaCost: 90
+    trigger:
+      type: "LEFT_CLICK_SNEAK"
+    prerequisite:
+      anyOf:
+        - skill: "ricochet_round"
+          level: 1
+        - skill: "meteor_step"
+          level: 1
+        - skill: "gravity_prison"
+          level: 1
+    gui:
+      slot: 13
+      icon: "GOLDEN_SWORD"
+    levels:
+      1:
+        effect:
+          radius: 10
+          swordCount: 28
+          chargeTicks: 40
+          fallTicks: 60
+          damageMultiplier: 1.4
+          strengthScaling: 0.25
+          magicScaling: 0.25
+          agilityScaling: 0.25
 
 nature:
   # 星碎 (5,7) -> slot = 5 * 9 + 7 = 52

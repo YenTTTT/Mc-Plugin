@@ -20,24 +20,10 @@ boss-zones:
     respawn-cooldown-seconds: 900
     max-minions: 4
     minion-spawn-interval-ticks: 200
-  volcano_overlord:
-    name: "Volcano Overlord"
-    world: "world"
-    center: { x: 900, y: 71, z: -600 }
-    radius: 200
-    boss-mob-key: "boss_zombie_beast"
-    linked-minions:
-      - "blaze_guard"
-      - "fire_lizard"
-      - "lava_slime"
-    boss-spawn-chance-per-cycle: 0.30
-    respawn-cooldown-seconds: 1200
-    max-minions: 5
-    minion-spawn-interval-ticks: 160
   greek_temple_warden:
     name: "Greek Temple Warden"
     world: "world"
-    center: { x: -1032, y: 131, z: 227 }
+    center: { x: -1032, y: 132, z: 227 }
     radius: 200
     boss-mob-key: "boss_crazy_scissor"
     linked-minions:
@@ -48,3 +34,16 @@ boss-zones:
     respawn-cooldown-seconds: 1500
     max-minions: 6
     minion-spawn-interval-ticks: 180
+  magma_core_volcano:
+    name: "熔核火山"
+    world: "world"
+    center: { x: 900, y: 71, z: -600 }
+    radius: 100
+    boss-mob-key: "boss_magma_core"
+    linked-minions:
+      - "magma_core_medium"
+      - "magma_core_small"
+    boss-spawn-chance-per-cycle: 0.25
+    respawn-cooldown-seconds: 1200
+    max-minions: 0
+    minion-spawn-interval-ticks: 200

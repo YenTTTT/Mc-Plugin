@@ -17,20 +17,24 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Bee;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -145,6 +149,28 @@ public class TalentSkillManager {
                 break;
             case "sniper_shot":
                 success = executeSniperShot(player, talent, level, item);
+                break;
+            // 武器系新增技能
+            case "suppressive_barrage":
+                success = executeSuppressiveBarrage(player, talent, level, item);
+                break;
+            case "ricochet_round":
+                success = executeRicochetRound(player, talent, level, item);
+                break;
+            case "cyclone_slash":
+                success = executeCycloneSlash(player, talent, level, item);
+                break;
+            case "meteor_step":
+                success = executeMeteorStep(player, talent, level, item);
+                break;
+            case "arcane_barrage":
+                success = executeArcaneBarrage(player, talent, level, item);
+                break;
+            case "gravity_prison":
+                success = executeGravityPrison(player, talent, level, item);
+                break;
+            case "ultimate_sword_rain":
+                success = executeUltimateSwordRain(player, talent, level, item);
                 break;
             // 自然系天賦
             case "star_shatter":
@@ -386,6 +412,10 @@ public class TalentSkillManager {
             case "wind_trap":
                 success = executeWindTrap(player, talent, level, item);
                 break;
+            default:
+                player.sendMessage("§c技能尚未接入執行器: §f" + talent.getName() + " §7(" + talent.getId() + ")");
+                plugin.getLogger().warning("[TalentSkillManager] Unhandled talent skill: " + talent.getId());
+                break;
         }
 
         // 4. 消耗資源與套用冷卻
@@ -523,6 +553,589 @@ public class TalentSkillManager {
         }, 10L);
 
         return true;
+    }
+
+    /**
+     * 槍械武器：壓制彈幕
+     */
+    private boolean executeSuppressiveBarrage(Player player, Talent talent, int level, ItemStack item) {
+        if (!isFirearmWeapon(item)) {
+            player.sendMessage("§c需要手持槍械武器才能使用 §e" + talent.getName());
+            return false;
+        }
+
+        Talent.TalentLevelData data = talent.getLevelData(level);
+        int shots = data.effects.getOrDefault("shotCount", 6.0).intValue();
+        double shotMultiplier = data.effects.getOrDefault("damageMultiplier", 0.7);
+        double agilityScaling = data.effects.getOrDefault("agilityScaling", 0.25);
+        double range = data.effects.getOrDefault("range", 24.0);
+        double spread = data.effects.getOrDefault("spread", 0.10);
+
+        PlayerStats stats = statsManager.getStats(player);
+        double shotDamage = calculateBaseWeaponDamage(player, item) * shotMultiplier + (stats.getAgility() * agilityScaling);
+
+        player.sendMessage("§6[壓制彈幕] §f連續掃射前方區域！");
+        player.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 0.8f, 1.35f);
+
+        new BukkitRunnable() {
+            int fired = 0;
+            @Override
+            public void run() {
+                if (!player.isOnline() || fired >= shots) {
+                    cancel();
+                    return;
+                }
+
+                Location eye = player.getEyeLocation();
+                Vector dir = eye.getDirection().normalize().add(new Vector(
+                        (Math.random() - 0.5) * spread,
+                        (Math.random() - 0.5) * spread * 0.35,
+                        (Math.random() - 0.5) * spread)).normalize();
+
+                org.bukkit.util.RayTraceResult result = eye.getWorld().rayTraceEntities(
+                        eye, dir, range, 0.5,
+                        e -> e instanceof LivingEntity le && !le.isDead() && !e.equals(player));
+
+                Location end = eye.clone().add(dir.clone().multiply(range));
+                LivingEntity target = null;
+                if (result != null && result.getHitEntity() instanceof LivingEntity le) {
+                    target = le;
+                    end = result.getHitPosition().toLocation(eye.getWorld());
+                }
+
+                for (double d = 0; d < eye.distance(end); d += 0.5) {
+                    Location p = eye.clone().add(dir.clone().multiply(d));
+                    eye.getWorld().spawnParticle(Particle.CRIT, p, 1, 0, 0, 0, 0);
+                    if (d % 1.5 < 0.1) {
+                        eye.getWorld().spawnParticle(Particle.SMOKE, p, 1, 0.02, 0.02, 0.02, 0.001);
+                    }
+                }
+
+                eye.getWorld().playSound(eye, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 0.45f, 1.8f);
+
+                if (target != null) {
+                    damageManager.dealSkillDamage(player, target, shotDamage);
+                    target.setVelocity(target.getVelocity().add(dir.clone().multiply(0.15)));
+                    target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 6, 0.15, 0.15, 0.15, 0.08);
+                }
+                fired++;
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
+
+        return true;
+    }
+
+    /**
+     * 槍械武器：彈射穿甲彈
+     */
+    private boolean executeRicochetRound(Player player, Talent talent, int level, ItemStack item) {
+        if (!isFirearmWeapon(item)) {
+            player.sendMessage("§c需要手持槍械武器才能使用 §e" + talent.getName());
+            return false;
+        }
+
+        Talent.TalentLevelData data = talent.getLevelData(level);
+        double damageMultiplier = data.effects.getOrDefault("damageMultiplier", 1.8);
+        double agilityScaling = data.effects.getOrDefault("agilityScaling", 0.35);
+        int bounceCount = data.effects.getOrDefault("bounceCount", 3.0).intValue();
+        double bounceRadius = data.effects.getOrDefault("bounceRadius", 6.0);
+        double falloff = data.effects.getOrDefault("falloff", 0.75);
+        double range = data.effects.getOrDefault("range", 30.0);
+
+        LivingEntity firstTarget = rayTraceLivingTarget(player, range, 0.6);
+        if (firstTarget == null) {
+            player.sendMessage("§c[彈射穿甲彈] 視線內沒有可命中的敵人！");
+            return false;
+        }
+
+        PlayerStats stats = statsManager.getStats(player);
+        double damage = calculateBaseWeaponDamage(player, item) * damageMultiplier + stats.getAgility() * agilityScaling;
+
+        Set<UUID> hitTargets = new HashSet<>();
+        LivingEntity current = firstTarget;
+        Location from = player.getEyeLocation();
+
+        for (int hitIndex = 0; hitIndex < bounceCount && current != null; hitIndex++) {
+            drawGoldenLine(from, current.getLocation().add(0, 1, 0));
+            current.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, current.getLocation().add(0, 1, 0), 8, 0.2, 0.2, 0.2, 0.06);
+            damageManager.dealSkillDamage(player, current, damage);
+            hitTargets.add(current.getUniqueId());
+
+            LivingEntity next = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (Entity entity : current.getWorld().getNearbyEntities(current.getLocation(), bounceRadius, bounceRadius, bounceRadius)) {
+                if (!(entity instanceof LivingEntity le) || le.isDead() || entity instanceof Player) continue;
+                if (hitTargets.contains(entity.getUniqueId())) continue;
+                double distance = entity.getLocation().distanceSquared(current.getLocation());
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    next = le;
+                }
+            }
+
+            from = current.getLocation().add(0, 1, 0);
+            current = next;
+            damage *= falloff;
+        }
+
+        player.playSound(player.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 0.9f, 1.4f);
+        player.sendMessage("§6[彈射穿甲彈] §f子彈在敵群之間反彈穿透！");
+        return true;
+    }
+
+    /**
+     * 近戰武器：旋風斬
+     */
+    private boolean executeCycloneSlash(Player player, Talent talent, int level, ItemStack item) {
+        if (!isMeleeWeapon(item)) {
+            player.sendMessage("§c需要手持近戰武器才能使用 §e" + talent.getName());
+            return false;
+        }
+
+        Talent.TalentLevelData data = talent.getLevelData(level);
+        double radius = data.effects.getOrDefault("radius", 4.0);
+        double damageMultiplier = data.effects.getOrDefault("damageMultiplier", 1.8);
+        double strengthScaling = data.effects.getOrDefault("strengthScaling", 0.45);
+
+        PlayerStats stats = statsManager.getStats(player);
+        double totalDamage = calculateBaseWeaponDamage(player, item) * damageMultiplier + stats.getStrength() * strengthScaling;
+
+        Location center = player.getLocation();
+        for (double angle = 0; angle < Math.PI * 2; angle += 0.18) {
+            Location p = center.clone().add(Math.cos(angle) * radius, 1.0, Math.sin(angle) * radius);
+            center.getWorld().spawnParticle(Particle.SWEEP_ATTACK, p, 1, 0, 0, 0, 0);
+        }
+        center.getWorld().playSound(center, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.2f, 0.7f);
+
+        List<LivingEntity> targets = aoeUtil.getRadiusTargets(player, center, radius);
+        for (LivingEntity target : targets) {
+            damageManager.dealSkillDamage(player, target, totalDamage);
+            Vector knockback = target.getLocation().toVector().subtract(center.toVector()).normalize().multiply(0.8).setY(0.25);
+            target.setVelocity(knockback);
+        }
+        player.sendMessage("§6[旋風斬] §f捲起周圍敵人！");
+        return true;
+    }
+
+    /**
+     * 近戰武器：流星步
+     */
+    private boolean executeMeteorStep(Player player, Talent talent, int level, ItemStack item) {
+        if (!isMeleeWeapon(item)) {
+            player.sendMessage("§c需要手持近戰武器才能使用 §e" + talent.getName());
+            return false;
+        }
+
+        Talent.TalentLevelData data = talent.getLevelData(level);
+        double dashDistance = data.effects.getOrDefault("dashDistance", 7.0);
+        double width = data.effects.getOrDefault("width", 2.2);
+        double damageMultiplier = data.effects.getOrDefault("damageMultiplier", 2.0);
+        double strengthScaling = data.effects.getOrDefault("strengthScaling", 0.6);
+
+        PlayerStats stats = statsManager.getStats(player);
+        double totalDamage = calculateBaseWeaponDamage(player, item) * damageMultiplier + stats.getStrength() * strengthScaling;
+        Vector dir = player.getLocation().getDirection().setY(0).normalize();
+        Location start = player.getLocation().clone();
+        player.setVelocity(dir.clone().multiply(1.6).setY(0.15));
+        player.playSound(start, Sound.ENTITY_ENDERMAN_TELEPORT, 0.8f, 1.6f);
+
+        new BukkitRunnable() {
+            int step = 0;
+            final Set<UUID> hit = new HashSet<>();
+
+            @Override
+            public void run() {
+                if (step > 10 || !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                Location point = start.clone().add(dir.clone().multiply((dashDistance / 10.0) * step));
+                point.getWorld().spawnParticle(Particle.SWEEP_ATTACK, point.clone().add(0, 1, 0), 2, width * 0.15, 0.15, width * 0.15, 0.0);
+                point.getWorld().spawnParticle(Particle.CRIT, point.clone().add(0, 1, 0), 6, width * 0.18, 0.2, width * 0.18, 0.08);
+
+                for (Entity entity : point.getWorld().getNearbyEntities(point, width, 1.5, width)) {
+                    if (!(entity instanceof LivingEntity target) || entity instanceof Player || target.isDead()) continue;
+                    if (!hit.add(target.getUniqueId())) continue;
+                    damageManager.dealSkillDamage(player, target, totalDamage);
+                    target.setVelocity(dir.clone().multiply(0.7).setY(0.25));
+                }
+                step++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+
+        player.sendMessage("§6[流星步] §f化作一道劍光衝刺斬擊！");
+        return true;
+    }
+
+    /**
+     * 法杖：秘法連星
+     */
+    private boolean executeArcaneBarrage(Player player, Talent talent, int level, ItemStack item) {
+        if (!isMagicWeapon(item)) {
+            player.sendMessage("§c需要手持法杖才能使用 §e" + talent.getName());
+            return false;
+        }
+
+        Talent.TalentLevelData data = talent.getLevelData(level);
+        int boltCount = data.effects.getOrDefault("boltCount", 5.0).intValue();
+        double boltDamage = data.effects.getOrDefault("boltDamageMultiplier", 0.9) * calculateBaseWeaponDamage(player, item)
+                + statsManager.getStats(player).getMagic() * data.effects.getOrDefault("magicScaling", 0.55);
+        double seekRadius = data.effects.getOrDefault("seekRadius", 16.0);
+
+        player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.2f);
+        player.sendMessage("§d[秘法連星] §f釋放追蹤秘法飛劍！");
+
+        new BukkitRunnable() {
+            int fired = 0;
+            @Override
+            public void run() {
+                if (!player.isOnline() || fired >= boltCount) {
+                    cancel();
+                    return;
+                }
+
+                LivingEntity target = findNearestEnemy(player.getLocation(), seekRadius);
+                if (target == null) {
+                    target = rayTraceLivingTarget(player, seekRadius, 0.7);
+                }
+                if (target == null) {
+                    fired++;
+                    return;
+                }
+
+                Location from = player.getEyeLocation().clone();
+                Location to = target.getLocation().add(0, 1, 0);
+                drawArcaneLine(from, to);
+                to.getWorld().spawnParticle(Particle.ENCHANT, to, 12, 0.25, 0.35, 0.25, 0.12);
+                to.getWorld().playSound(to, Sound.ENTITY_EVOKER_CAST_SPELL, 0.35f, 1.6f);
+                damageManager.dealSkillDamage(player, target, boltDamage);
+                target.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 30, 0, false, true));
+                fired++;
+            }
+        }.runTaskTimer(plugin, 0L, 4L);
+
+        return true;
+    }
+
+    /**
+     * 法杖：重力牢籠
+     */
+    private boolean executeGravityPrison(Player player, Talent talent, int level, ItemStack item) {
+        if (!isMagicWeapon(item)) {
+            player.sendMessage("§c需要手持法杖才能使用 §e" + talent.getName());
+            return false;
+        }
+
+        Talent.TalentLevelData data = talent.getLevelData(level);
+        double radius = data.effects.getOrDefault("radius", 4.0);
+        int durationTicks = data.effects.getOrDefault("durationTicks", 80.0).intValue();
+        double tickDamage = data.effects.getOrDefault("tickDamageMultiplier", 0.55) * calculateBaseWeaponDamage(player, item)
+                + statsManager.getStats(player).getMagic() * data.effects.getOrDefault("magicScaling", 0.45);
+        double pullForce = data.effects.getOrDefault("pullForce", 0.22);
+
+        Location center = player.getTargetBlock(null, 14).getLocation().add(0.5, 1.0, 0.5);
+        if (center.getBlock().getType().isAir()) {
+            center = player.getLocation().add(player.getLocation().getDirection().multiply(6)).add(0, 1, 0);
+        }
+
+        Location prisonCenter = center;
+        prisonCenter.getWorld().playSound(prisonCenter, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 1.1f, 1.4f);
+        player.sendMessage("§5[重力牢籠] §f在前方張開拘束領域！");
+
+        new BukkitRunnable() {
+            int t = 0;
+            @Override
+            public void run() {
+                if (t >= durationTicks) {
+                    cancel();
+                    return;
+                }
+
+                for (double angle = 0; angle < Math.PI * 2; angle += 0.25) {
+                    Location ring = prisonCenter.clone().add(Math.cos(angle) * radius, 0.2 + ((t % 20) * 0.03), Math.sin(angle) * radius);
+                    prisonCenter.getWorld().spawnParticle(Particle.PORTAL, ring, 1, 0, 0, 0, 0.02);
+                    prisonCenter.getWorld().spawnParticle(Particle.ENCHANT, ring, 1, 0, 0, 0, 0.01);
+                }
+
+                if (t % 10 == 0) {
+                    for (LivingEntity target : aoeUtil.getRadiusTargets(player, prisonCenter, radius)) {
+                        Vector pull = prisonCenter.toVector().subtract(target.getLocation().toVector()).normalize().multiply(pullForce);
+                        target.setVelocity(target.getVelocity().add(pull));
+                        damageManager.dealSkillDamage(player, target, tickDamage);
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 25, 2, false, true));
+                    }
+                }
+                t++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+
+        return true;
+    }
+
+    /**
+     * 共通最終技：終極劍雨
+     */
+    private boolean executeUltimateSwordRain(Player player, Talent talent, int level, ItemStack item) {
+        if (!isFirearmWeapon(item) && !isMeleeWeapon(item) && !isMagicWeapon(item)) {
+            player.sendMessage("§c需要手持槍械 / 近戰武器 / 法杖 才能施放 §6終極劍雨");
+            return false;
+        }
+
+        Location center = player.getLocation().clone();
+        double radius = talent.getEffectDouble(level, "radius", 5.5);
+        int swordCount = (int) Math.round(talent.getEffectDouble(level, "swordCount", 28.0));
+        int chargeTicks = (int) Math.round(talent.getEffectDouble(level, "chargeTicks", 40.0));
+        int fallTicks = (int) Math.round(talent.getEffectDouble(level, "fallTicks", 60.0));
+        double perHitDamage = calculateBaseWeaponDamage(player, item) * talent.getEffectDouble(level, "damageMultiplier", 1.4)
+                + statsManager.getStats(player).getStrength() * talent.getEffectDouble(level, "strengthScaling", 0.25)
+                + statsManager.getStats(player).getMagic() * talent.getEffectDouble(level, "magicScaling", 0.25)
+                + statsManager.getStats(player).getAgility() * talent.getEffectDouble(level, "agilityScaling", 0.25);
+
+        List<SwordRainBlade> blades = new ArrayList<>();
+
+        for (int i = 0; i < swordCount; i++) {
+            double angle = Math.random() * Math.PI * 2;
+            double dist = Math.sqrt(Math.random()) * radius;
+            Location anchor = center.clone().add(Math.cos(angle) * dist, 6.0 + Math.random() * 1.6, Math.sin(angle) * dist);
+            int revealTick = Math.min(chargeTicks - 1, (int) Math.floor((i / (double) Math.max(1, swordCount)) * chargeTicks));
+            double driftRadius = 0.25 + Math.random() * 0.35;
+            double swayPhase = Math.random() * Math.PI * 2;
+            int waveDelay = (int) Math.floor((i / (double) Math.max(1, swordCount)) * Math.max(1, fallTicks - 12));
+            double fallSpeed = 1.15 + Math.random() * 0.28;
+            int activeFallTicks = 7 + (int) Math.round(Math.random() * 2.0);
+            blades.add(new SwordRainBlade(anchor, revealTick, driftRadius, swayPhase, waveDelay, fallSpeed, activeFallTicks));
+        }
+
+        center.getWorld().playSound(center, Sound.BLOCK_BEACON_ACTIVATE, 1.5f, 1.1f);
+        player.sendMessage("§6§l[終極劍雨] §e金色劍陣正在你頭頂凝聚...");
+
+        new BukkitRunnable() {
+            int tick = 0;
+            final Map<UUID, Integer> hitCooldown = new HashMap<>();
+
+            @Override
+            public void run() {
+                if (!player.isOnline()) {
+                    cleanup();
+                    cancel();
+                    return;
+                }
+
+                if (tick < chargeTicks) {
+                    for (SwordRainBlade blade : blades) {
+                        if (blade.stand == null && tick >= blade.revealTick) {
+                            blade.spawn(center.getWorld());
+                        }
+
+                        if (blade.stand != null) {
+                            Location current = blade.anchor.clone().add(
+                                    Math.cos((tick * 0.18) + blade.swayPhase) * blade.driftRadius,
+                                    Math.sin((tick * 0.12) + blade.swayPhase) * 0.08,
+                                    Math.sin((tick * 0.18) + blade.swayPhase) * blade.driftRadius);
+                            blade.stand.teleport(current);
+                            current.getWorld().spawnParticle(Particle.GLOW, current.clone().add(0, 0.25, 0), 1, 0.03, 0.08, 0.03, 0.0);
+                            if (tick == blade.revealTick) {
+                                current.getWorld().spawnParticle(Particle.END_ROD, current.clone().add(0, 0.2, 0), 8, 0.12, 0.22, 0.12, 0.015);
+                                current.getWorld().playSound(current, Sound.BLOCK_AMETHYST_CLUSTER_PLACE, 0.35f, 1.9f);
+                            }
+                        }
+                    }
+
+                    center.getWorld().spawnParticle(Particle.ENCHANT, center.clone().add(0, 1.2, 0), 24,
+                            radius, 0.8, radius, 0.05);
+                    center.getWorld().spawnParticle(Particle.GLOW, center.clone().add(0, 6.0, 0), 10,
+                            radius * 0.75, 0.5, radius * 0.75, 0.02);
+                    if (tick % 10 == 0) {
+                        center.getWorld().playSound(center, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 0.8f, 1.6f);
+                    }
+                } else if (tick == chargeTicks) {
+                    center.getWorld().playSound(center, Sound.ENTITY_ENDER_DRAGON_FLAP, 1.4f, 1.9f);
+                    center.getWorld().playSound(center, Sound.ITEM_TRIDENT_THUNDER, 0.9f, 1.8f);
+                    player.sendMessage("§6§l[終極劍雨] §c萬劍墜落！");
+                } else if (tick <= chargeTicks + fallTicks) {
+                    int fallTick = tick - chargeTicks;
+                    for (SwordRainBlade blade : blades) {
+                        if (blade.ended) continue;
+                        if (blade.stand == null) {
+                            blade.spawn(center.getWorld());
+                        }
+                        if (blade.stand == null) continue;
+
+                        if (fallTick < blade.waveDelay) {
+                            Location suspended = blade.getHoverLocation(fallTick);
+                            blade.stand.teleport(suspended);
+                            if (fallTick % 6 == 0) {
+                                suspended.getWorld().spawnParticle(Particle.GLOW, suspended.clone().add(0, 0.2, 0), 1, 0.03, 0.08, 0.03, 0.0);
+                            }
+                            continue;
+                        }
+
+                        int bladeFallTick = fallTick - blade.waveDelay;
+                        Location current = blade.getFallLocation(bladeFallTick);
+                        blade.stand.teleport(current);
+                        current.getWorld().spawnParticle(Particle.GLOW, current.clone().add(0, 0.15, 0), 2, 0.02, 0.18, 0.02, 0.0);
+                        current.getWorld().spawnParticle(Particle.CRIT, current.clone().add(0, 0.1, 0), 1, 0.02, 0.08, 0.02, 0.01);
+
+                        for (Entity entity : current.getWorld().getNearbyEntities(current, 0.9, 1.4, 0.9)) {
+                            if (!(entity instanceof LivingEntity target) || entity instanceof Player || target.isDead()) continue;
+                            int lastHit = hitCooldown.getOrDefault(target.getUniqueId(), -999);
+                            if (tick - lastHit < 8) continue;
+                            hitCooldown.put(target.getUniqueId(), tick);
+                            damageManager.dealSkillDamage(player, target, perHitDamage);
+                            target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.2, 0.3, 0.2, 0.06);
+                        }
+
+                        if (bladeFallTick >= blade.activeFallTicks || current.getBlock().getType().isSolid() || current.getY() <= center.getY() - 2.0) {
+                            current.getWorld().spawnParticle(Particle.END_ROD, current.clone().add(0, 0.2, 0), 6, 0.18, 0.08, 0.18, 0.01);
+                            current.getWorld().spawnParticle(Particle.CRIT, current.clone().add(0, 0.2, 0), 6, 0.12, 0.05, 0.12, 0.02);
+                            current.getWorld().playSound(current, Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.35f, 1.4f);
+                            blade.remove();
+                        }
+                    }
+                } else {
+                    cleanup();
+                    cancel();
+                    return;
+                }
+
+                tick++;
+            }
+
+            private void cleanup() {
+                for (SwordRainBlade blade : blades) {
+                    blade.remove();
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+
+        return true;
+    }
+
+    private static class SwordRainBlade {
+        private final Location anchor;
+        private final int revealTick;
+        private final double driftRadius;
+        private final double swayPhase;
+        private final int waveDelay;
+        private final double fallSpeed;
+        private final int activeFallTicks;
+        private ArmorStand stand;
+        private boolean ended;
+
+        private SwordRainBlade(Location anchor, int revealTick, double driftRadius, double swayPhase, int waveDelay, double fallSpeed, int activeFallTicks) {
+            this.anchor = anchor;
+            this.revealTick = revealTick;
+            this.driftRadius = driftRadius;
+            this.swayPhase = swayPhase;
+            this.waveDelay = waveDelay;
+            this.fallSpeed = fallSpeed;
+            this.activeFallTicks = activeFallTicks;
+        }
+
+        private Location getHoverLocation(int tick) {
+            return anchor.clone().add(
+                    Math.cos((tick * 0.16) + swayPhase) * driftRadius,
+                    Math.sin((tick * 0.10) + swayPhase) * 0.08,
+                    Math.sin((tick * 0.16) + swayPhase) * driftRadius);
+        }
+
+        private Location getFallLocation(int bladeFallTick) {
+            return anchor.clone().add(0, -(bladeFallTick * fallSpeed), 0);
+        }
+
+        private void spawn(org.bukkit.World world) {
+            if (stand != null || ended) return;
+            stand = world.spawn(anchor, ArmorStand.class);
+            stand.setVisible(false);
+            stand.setGravity(false);
+            stand.setMarker(true);
+            stand.setSmall(true);
+            stand.setArms(true);
+            stand.setBasePlate(false);
+            stand.setRightArmPose(new EulerAngle(Math.toRadians(90), 0.0, 0.0));
+            stand.setHeadPose(new EulerAngle(0.0, 0.0, 0.0));
+            if (stand.getEquipment() != null) {
+                stand.getEquipment().setItemInMainHand(new ItemStack(Material.GOLDEN_SWORD));
+            }
+        }
+
+        private void remove() {
+            ended = true;
+            if (stand != null && !stand.isDead()) {
+                stand.remove();
+            }
+        }
+    }
+
+    private boolean isFirearmWeapon(ItemStack item) {
+        if (item == null) return false;
+        Material type = item.getType();
+        return type == Material.IRON_HORSE_ARMOR || type == Material.GOLDEN_HORSE_ARMOR || type == Material.DIAMOND_HORSE_ARMOR;
+    }
+
+    private boolean isMeleeWeapon(ItemStack item) {
+        if (item == null) return false;
+        String name = item.getType().name();
+        return name.contains("SWORD") || name.contains("AXE") || name.contains("HOE");
+    }
+
+    private boolean isMagicWeapon(ItemStack item) {
+        if (item == null) return false;
+        Material type = item.getType();
+        return type == Material.STICK || type == Material.BLAZE_ROD || type == Material.BREEZE_ROD || type == Material.ENCHANTED_BOOK;
+    }
+
+    private LivingEntity rayTraceLivingTarget(Player player, double range, double hitbox) {
+        org.bukkit.util.RayTraceResult result = player.getWorld().rayTraceEntities(
+                player.getEyeLocation(), player.getEyeLocation().getDirection(), range, hitbox,
+                entity -> entity instanceof LivingEntity le && !le.isDead() && !entity.equals(player));
+        if (result != null && result.getHitEntity() instanceof LivingEntity target) {
+            return target;
+        }
+        return null;
+    }
+
+    private LivingEntity findNearestEnemy(Location center, double radius) {
+        LivingEntity best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (Entity entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
+            if (!(entity instanceof LivingEntity le) || entity instanceof Player || le.isDead()) continue;
+            double dist = entity.getLocation().distanceSquared(center);
+            if (dist < bestDistance) {
+                bestDistance = dist;
+                best = le;
+            }
+        }
+        return best;
+    }
+
+    private void drawGoldenLine(Location from, Location to) {
+        Vector dir = to.toVector().subtract(from.toVector());
+        double length = dir.length();
+        if (length <= 0.01) return;
+        dir.normalize();
+        for (double d = 0; d <= length; d += 0.5) {
+            Location p = from.clone().add(dir.clone().multiply(d));
+            p.getWorld().spawnParticle(Particle.GLOW, p, 1, 0, 0, 0, 0);
+            if (((int) (d * 10)) % 8 == 0) {
+                p.getWorld().spawnParticle(Particle.CRIT, p, 1, 0.01, 0.01, 0.01, 0.01);
+            }
+        }
+    }
+
+    private void drawArcaneLine(Location from, Location to) {
+        Vector dir = to.toVector().subtract(from.toVector());
+        double length = dir.length();
+        if (length <= 0.01) return;
+        dir.normalize();
+        for (double d = 0; d <= length; d += 0.4) {
+            Location p = from.clone().add(dir.clone().multiply(d));
+            p.getWorld().spawnParticle(Particle.ENCHANT, p, 1, 0, 0, 0, 0.02);
+            if (((int) (d * 10)) % 7 == 0) {
+                p.getWorld().spawnParticle(Particle.WITCH, p, 1, 0.02, 0.02, 0.02, 0.0);
+            }
+        }
     }
 
     private double calculateBaseWeaponDamage(Player player, ItemStack item) {

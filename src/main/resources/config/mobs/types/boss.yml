@@ -746,5 +746,130 @@ boss_world_ender:
         chance: 0.03
   special-behavior: "aggressive"
   show-level-in-name: true
-  tags: [cave, nether, mountain, fire]
+  tags: [cave, nether, mountain]
+  spawn-time: all
+
+# ───────────────────────────────
+#  Lv.50~70 熔核巨獸 — 分裂型 Boss
+#  【重要】如果把此 Boss 放進 boss_zones.yml，
+#           linked-minions 必須加入 magma_core_medium 與 magma_core_small，
+#           否則 BossZoneManager 會在分裂期間把分裂體清除掉。
+# ───────────────────────────────
+
+boss_magma_core:
+  name: "&4&l✦ 熔核巨獸 ✦"
+  type: MAGMA_CUBE
+  boss: true
+  level-range:
+    min: 50
+    max: 70
+  base-stats:
+    health: 900.0
+    damage: 30.0
+  stat-scaling:
+    health-per-level: 22.0
+    damage-per-level: 2.8
+  exp:
+    base: 350
+    per-level: 45
+  drops:
+    vanilla-items:
+      - material: MAGMA_CREAM
+        amount: 4-8
+        chance: 0.95
+      - material: BLAZE_POWDER
+        amount: 3-6
+        chance: 0.80
+      - material: FIRE_CHARGE
+        amount: 2-4
+        chance: 0.60
+      - material: LAVA_BUCKET
+        amount: 1
+        chance: 0.35
+      - material: NETHERITE_SCRAP
+        amount: 1
+        chance: 0.10
+      - material: NETHER_STAR
+        amount: 1
+        chance: 0.04
+    custom-weapons:
+      - weapon-key: "flame_staff_t4"
+        chance: 0.12
+      - weapon-key: "cyclone_staff_t5"
+        chance: 0.07
+      - weapon-key: "infernal_blade_t6"
+        chance: 0.05
+    custom-equipment:
+      - equipment-key: "arcanist_helmet"
+        type: "armor"
+        chance: 0.10
+      - equipment-key: "arcanist_chestplate"
+        type: "armor"
+        chance: 0.08
+      - equipment-key: "elemental_charm"
+        type: "accessory"
+        chance: 0.10
+      - equipment-key: "soul_bracelet"
+        type: "accessory"
+        chance: 0.08
+  special-behavior: "boss_magma_core"
+  show-level-in-name: true
+  tags: [nether, fire, mountain]
+  spawn-time: all
+
+# 中型熔岩史萊姆 — 熔核巨獸分裂體，由 Java 代碼程式化生成
+magma_core_medium:
+  name: "&6&l熔核分裂體"
+  type: MAGMA_CUBE
+  boss: false
+  level-range:
+    min: 45
+    max: 65
+  base-stats:
+    health: 200.0
+    damage: 20.0
+  stat-scaling:
+    health-per-level: 6.0
+    damage-per-level: 1.2
+  exp:
+    base: 60
+    per-level: 8
+  drops:
+    vanilla-items:
+      - material: MAGMA_CREAM
+        amount: 1-3
+        chance: 0.80
+      - material: BLAZE_POWDER
+        amount: 1-2
+        chance: 0.50
+  special-behavior: "magma_core_medium"
+  show-level-in-name: true
+  tags: [nether, fire]
+  spawn-time: all
+
+# 小型高速熔岩史萊姆 — 熔核分裂體的次分裂，高速騷擾型
+magma_core_small:
+  name: "&e熔核碎體"
+  type: MAGMA_CUBE
+  boss: false
+  level-range:
+    min: 40
+    max: 60
+  base-stats:
+    health: 70.0
+    damage: 12.0
+  stat-scaling:
+    health-per-level: 2.5
+    damage-per-level: 0.6
+  exp:
+    base: 18
+    per-level: 3
+  drops:
+    vanilla-items:
+      - material: MAGMA_CREAM
+        amount: 1
+        chance: 0.60
+  special-behavior: "magma_core_small"
+  show-level-in-name: true
+  tags: [nether, fire]
   spawn-time: all

@@ -56,6 +56,69 @@ public class SkillSwitchManager {
         addMechanism("鐮刀", Material.DIAMOND_HOE);
         addMechanism("鐮刀", Material.NETHERITE_HOE);
         addMechanism("弓", Material.BOW);
+        addMechanism("持武器右鍵", Material.WOODEN_SWORD);
+        addMechanism("持武器右鍵", Material.STONE_SWORD);
+        addMechanism("持武器右鍵", Material.IRON_SWORD);
+        addMechanism("持武器右鍵", Material.GOLDEN_SWORD);
+        addMechanism("持武器右鍵", Material.DIAMOND_SWORD);
+        addMechanism("持武器右鍵", Material.NETHERITE_SWORD);
+        addMechanism("持武器右鍵", Material.WOODEN_AXE);
+        addMechanism("持武器右鍵", Material.STONE_AXE);
+        addMechanism("持武器右鍵", Material.IRON_AXE);
+        addMechanism("持武器右鍵", Material.GOLDEN_AXE);
+        addMechanism("持武器右鍵", Material.DIAMOND_AXE);
+        addMechanism("持武器右鍵", Material.NETHERITE_AXE);
+        addMechanism("持武器右鍵", Material.WOODEN_HOE);
+        addMechanism("持武器右鍵", Material.STONE_HOE);
+        addMechanism("持武器右鍵", Material.IRON_HOE);
+        addMechanism("持武器右鍵", Material.GOLDEN_HOE);
+        addMechanism("持武器右鍵", Material.DIAMOND_HOE);
+        addMechanism("持武器右鍵", Material.NETHERITE_HOE);
+        addMechanism("持武器右鍵", Material.STICK);
+        addMechanism("持武器右鍵", Material.BLAZE_ROD);
+        addMechanism("持武器右鍵", Material.BREEZE_ROD);
+
+        // ── 武器系三大方向 ──
+        addMechanism("槍械武器", Material.IRON_HORSE_ARMOR);
+        addMechanism("槍械武器", Material.GOLDEN_HORSE_ARMOR);
+        addMechanism("槍械武器", Material.DIAMOND_HORSE_ARMOR);
+
+        addMechanism("近戰武器", Material.WOODEN_SWORD);
+        addMechanism("近戰武器", Material.STONE_SWORD);
+        addMechanism("近戰武器", Material.IRON_SWORD);
+        addMechanism("近戰武器", Material.GOLDEN_SWORD);
+        addMechanism("近戰武器", Material.DIAMOND_SWORD);
+        addMechanism("近戰武器", Material.NETHERITE_SWORD);
+        addMechanism("近戰武器", Material.WOODEN_AXE);
+        addMechanism("近戰武器", Material.STONE_AXE);
+        addMechanism("近戰武器", Material.IRON_AXE);
+        addMechanism("近戰武器", Material.GOLDEN_AXE);
+        addMechanism("近戰武器", Material.DIAMOND_AXE);
+        addMechanism("近戰武器", Material.NETHERITE_AXE);
+        addMechanism("近戰武器", Material.WOODEN_HOE);
+        addMechanism("近戰武器", Material.STONE_HOE);
+        addMechanism("近戰武器", Material.IRON_HOE);
+        addMechanism("近戰武器", Material.GOLDEN_HOE);
+        addMechanism("近戰武器", Material.DIAMOND_HOE);
+        addMechanism("近戰武器", Material.NETHERITE_HOE);
+
+        addMechanism("法杖", Material.STICK);
+        addMechanism("法杖", Material.BLAZE_ROD);
+        addMechanism("法杖", Material.BREEZE_ROD);
+        addMechanism("法杖", Material.ENCHANTED_BOOK);
+
+        // 共通大招：三條武器路線都能使用
+        for (Material material : Set.of(
+                Material.IRON_HORSE_ARMOR, Material.GOLDEN_HORSE_ARMOR, Material.DIAMOND_HORSE_ARMOR,
+                Material.WOODEN_SWORD, Material.STONE_SWORD, Material.IRON_SWORD, Material.GOLDEN_SWORD,
+                Material.DIAMOND_SWORD, Material.NETHERITE_SWORD,
+                Material.WOODEN_AXE, Material.STONE_AXE, Material.IRON_AXE, Material.GOLDEN_AXE,
+                Material.DIAMOND_AXE, Material.NETHERITE_AXE,
+                Material.WOODEN_HOE, Material.STONE_HOE, Material.IRON_HOE, Material.GOLDEN_HOE,
+                Material.DIAMOND_HOE, Material.NETHERITE_HOE,
+                Material.STICK, Material.BLAZE_ROD, Material.BREEZE_ROD, Material.ENCHANTED_BOOK)) {
+            addMechanism("武器系終極", material);
+        }
     }
 
     /**

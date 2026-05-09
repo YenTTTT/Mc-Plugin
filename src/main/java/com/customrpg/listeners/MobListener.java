@@ -21,6 +21,10 @@ import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -42,6 +46,21 @@ public class MobListener implements Listener {
     private final PlayerStatsManager statsManager;
     private final WeaponManager weaponManager;
     private final Random random;
+
+    // ══ 熔核巨獸 (boss_magma_core) 階段狀態追蹤 ══
+    private final Map<UUID, MagmaCoreState> magmaCoreStates = new HashMap<>();
+
+    private static class MagmaCoreState {
+        int phase = 1;          // 1=初始, 2=75%分裂完, 3=50%分裂完, 4=25%分裂完
+        boolean inSplitPhase = false;
+        long splitMergeDeadline = 0L;
+        final List<UUID> activeSplits = new ArrayList<>();
+        long lastSlamMs    = 0L;   // 冷卻 14s (狂暴 8s)
+        long lastEruptMs   = 0L;   // 冷卻 10s (狂暴 6s)
+        long lastAbsorbMs  = 0L;   // 冷卻 25s
+        long lastWaveMs    = 0L;   // 冷卻 15s (狂暴 8s)
+        boolean berserkActive = false;
+    }
 
     /**
      * Constructor for MobListener
@@ -168,6 +187,10 @@ public class MobListener implements Listener {
                         1, 0.3, 0.3, 0.3, 0);
                 bossZombieBeastCharge(mob);
             }
+            // ══ 熔核巨獸系列 ══
+            case "boss_magma_core"   -> magmaCoreBehavior(mob);
+            case "magma_core_medium" -> magmaMediumBehavior(mob);
+            case "magma_core_small"  -> magmaSmallBehavior(mob);
         }
     }
 
@@ -221,6 +244,31 @@ public class MobListener implements Listener {
             // 黏液爆破者：延遲爆炸
             if (mobData.getSpecialBehavior().equalsIgnoreCase("delayed_explosion")) {
                 delayedExplosion(event.getEntity().getLocation(), mobLevel);
+            }
+
+            // 熔核巨獸：Boss 死亡 → 清理狀態 + 公告
+            if (mobData.getSpecialBehavior().equalsIgnoreCase("boss_magma_core")) {
+                MagmaCoreState bossState = magmaCoreStates.remove(event.getEntity().getUniqueId());
+                if (bossState != null) {
+                    for (UUID splitUuid : bossState.activeSplits) {
+                        Entity e = plugin.getServer().getEntity(splitUuid);
+                        if (e != null && !e.isDead()) e.remove();
+                    }
+                }
+                Location dl = event.getEntity().getLocation();
+                dl.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, dl.clone().add(0, 2, 0), 4, 2, 2, 2, 0);
+                dl.getWorld().playSound(dl, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.5f, 0.5f);
+                for (Player p : dl.getWorld().getPlayers()) {
+                    if (p.getLocation().distance(dl) <= 100) {
+                        p.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "[熔核巨獸] " + ChatColor.YELLOW + "熔岩之核冷卻沉眠... 已被討伐！");
+                        p.sendTitle(ChatColor.GOLD + "" + ChatColor.BOLD + "BOSS 擊敗！", ChatColor.WHITE + "✦ 熔核巨獸 ✦", 10, 80, 20);
+                    }
+                }
+            }
+
+            // 熔核分裂體：死亡 → 分裂成 2 隻小型碎體
+            if (mobData.getSpecialBehavior().equalsIgnoreCase("magma_core_medium")) {
+                spawnSmallSplits(event.getEntity(), 2);
             }
 
             // 清除預設掉落物（如果有自定義掉落物）
@@ -1141,6 +1189,416 @@ public class MobListener implements Listener {
         if (mobKey != null) {
             // 是自訂怪物 → 取消燃燒
             event.setCancelled(true);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  熔核巨獸 Boss 行為系統
+    // ══════════════════════════════════════════════════════════
+
+    /** 主 Boss 每 3 秒執行一次 */
+    private void magmaCoreBehavior(LivingEntity mob) {
+        // 設定超大體型（只在需要時設定，避免覆蓋血量）
+        if (mob instanceof MagmaCube cube && cube.getSize() < 8) {
+            double maxHp = mob.getMaxHealth();
+            double curHp = mob.getHealth();
+            cube.setSize(8);
+            org.bukkit.attribute.AttributeInstance attr = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (attr != null) attr.setBaseValue(maxHp);
+            mob.setHealth(Math.min(curHp, maxHp));
+        }
+
+        MagmaCoreState state = magmaCoreStates.computeIfAbsent(mob.getUniqueId(), k -> new MagmaCoreState());
+        double maxHp  = mob.getMaxHealth();
+        double curHp  = mob.getHealth();
+        double hpPct  = curHp / maxHp;
+        long   now    = System.currentTimeMillis();
+        Location loc  = mob.getLocation();
+
+        // 固定粒子光環
+        loc.getWorld().spawnParticle(Particle.LAVA,  loc.clone().add(0, 2.5, 0), 8, 1.8, 1.0, 1.8, 0);
+        loc.getWorld().spawnParticle(Particle.FLAME, loc.clone().add(0, 1.0, 0), 5, 1.0, 0.8, 1.0, 0.02);
+        if (hpPct < 0.20) {
+            loc.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, loc.clone().add(0, 3.5, 0), 12, 1.2, 1.2, 1.2, 0.05);
+        }
+
+        // ── 分裂階段管理 ──────────────────────────────────────
+        if (state.inSplitPhase) {
+            // 清理已死亡分裂體
+            state.activeSplits.removeIf(uuid -> {
+                Entity e = plugin.getServer().getEntity(uuid);
+                return e == null || e.isDead();
+            });
+
+            if (state.activeSplits.isEmpty()) {
+                // 玩家勝利：所有分裂體被消滅
+                state.inSplitPhase = false;
+                broadcast(loc, 40, ChatColor.GREEN + "[熔核巨獸] 所有分裂體被消滅！熔核巨獸受到重創！");
+            } else if (now > state.splitMergeDeadline) {
+                // 時間到：強制融合，恢復 15% HP
+                for (UUID uid : state.activeSplits) {
+                    Entity e = plugin.getServer().getEntity(uid);
+                    if (e != null && !e.isDead()) e.remove();
+                }
+                state.activeSplits.clear();
+                state.inSplitPhase = false;
+                double heal = maxHp * 0.15;
+                mob.setHealth(Math.min(curHp + heal, maxHp));
+                loc.getWorld().spawnParticle(Particle.EXPLOSION, loc.clone().add(0, 2, 0), 20, 2, 2, 2, 0.1);
+                loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.35f);
+                broadcast(loc, 60, ChatColor.DARK_RED + "" + ChatColor.BOLD + "[熔核巨獸] 熔核再生！" + ChatColor.RED + "分裂體重新融合，回復 15% 生命值！");
+            } else {
+                // 倒計時警告
+                long remain = (state.splitMergeDeadline - now) / 1000;
+                if (remain == 20 || remain == 10 || remain == 5) {
+                    broadcast(loc, 50, ChatColor.YELLOW + "[熔核巨獸] 分裂體融合倒計時：" + ChatColor.RED + remain + "秒！");
+                    loc.getWorld().playSound(loc, Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                }
+            }
+            return; // 分裂期間不使用技能
+        }
+
+        // ── 血量門檻觸發分裂 ─────────────────────────────────
+        if (hpPct <= 0.75 && state.phase == 1) { state.phase = 2; triggerSplit(mob, state); return; }
+        if (hpPct <= 0.50 && state.phase == 2) { state.phase = 3; triggerSplit(mob, state); return; }
+        if (hpPct <= 0.25 && state.phase == 3) { state.phase = 4; triggerSplit(mob, state); return; }
+
+        // ── 狂暴模式（≤20%）────────────────────────────────
+        if (hpPct <= 0.20 && !state.berserkActive) {
+            state.berserkActive = true;
+            mob.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,  Integer.MAX_VALUE, 2, false, false));
+            mob.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,     Integer.MAX_VALUE, 1, false, false));
+            loc.getWorld().playSound(loc, Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 0.4f);
+            broadcast(loc, 80, ChatColor.DARK_RED + "" + ChatColor.BOLD + "⚠ [熔核巨獸] 進入狂暴！！！");
+        }
+
+        // 第三/四階段：隨機火柱
+        if (state.phase >= 3 && random.nextDouble() < 0.35) {
+            spawnFirePillar(mob);
+        }
+
+        // ── 技能冷卻（狂暴時縮短）─────────────────────────
+        long slamCd  = state.berserkActive ?  8_000L : 14_000L;
+        long eruptCd = state.berserkActive ?  6_000L : 10_000L;
+        long absorbCd = 25_000L;
+        long waveCd  = state.berserkActive ?  8_000L : 15_000L;
+
+        List<Runnable> ready = new ArrayList<>();
+        if (now - state.lastSlamMs   > slamCd)  ready.add(() -> magmaLavaSlam(mob, state));
+        if (now - state.lastEruptMs  > eruptCd) ready.add(() -> magmaErupt(mob, state));
+        if (state.phase >= 2 && now - state.lastAbsorbMs > absorbCd) ready.add(() -> magmaAbsorb(mob, state));
+        if (state.phase >= 3 && now - state.lastWaveMs   > waveCd)   ready.add(() -> magmaWave(mob, state));
+
+        if (!ready.isEmpty() && random.nextDouble() < 0.60) {
+            ready.get(random.nextInt(ready.size())).run();
+        }
+    }
+
+    /** 觸發分裂：生成 4 隻中型分裂體，倒計時 30 秒 */
+    private void triggerSplit(LivingEntity boss, MagmaCoreState state) {
+        Location loc = boss.getLocation();
+        state.inSplitPhase = true;
+        state.splitMergeDeadline = System.currentTimeMillis() + 30_000L;
+        state.activeSplits.clear();
+
+        loc.getWorld().spawnParticle(Particle.EXPLOSION, loc.clone().add(0, 2, 0), 15, 2, 2, 2, 0.1);
+        loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.3f);
+        broadcast(loc, 60, ChatColor.DARK_RED + "" + ChatColor.BOLD + "[熔核巨獸] 熔核分裂！§c在 30 秒內消滅所有分裂體！");
+        for (Player p : loc.getWorld().getPlayers()) {
+            if (p.getLocation().distance(loc) <= 60) {
+                p.sendTitle(ChatColor.RED + "" + ChatColor.BOLD + "⚠ 熔核分裂！", ChatColor.YELLOW + "在 30 秒內擊殺所有分裂體！", 5, 70, 10);
+            }
+        }
+
+        int level = mobManager.getMobLevel(boss);
+        int splitLevel = Math.max(1, level - 5);
+        for (int i = 0; i < 4; i++) {
+            double angle = (Math.PI * 2.0 / 4) * i;
+            Location spawnLoc = loc.clone().add(Math.cos(angle) * 4, 0, Math.sin(angle) * 4);
+            spawnLoc.setY(spawnLoc.getWorld().getHighestBlockYAt(spawnLoc) + 1);
+
+            LivingEntity split = mobManager.spawnCustomMobWithLevel("magma_core_medium", spawnLoc, splitLevel);
+            if (split != null) {
+                split.getPersistentDataContainer().set(
+                    new org.bukkit.NamespacedKey(plugin, "magma_parent_uuid"),
+                    org.bukkit.persistence.PersistentDataType.STRING,
+                    boss.getUniqueId().toString());
+                state.activeSplits.add(split.getUniqueId());
+            }
+        }
+    }
+
+    /** 中型分裂體死亡後，再生成 2 隻小型碎體 */
+    private void spawnSmallSplits(LivingEntity medium, int count) {
+        Location loc = medium.getLocation();
+        String parentUuidStr = medium.getPersistentDataContainer().get(
+            new org.bukkit.NamespacedKey(plugin, "magma_parent_uuid"),
+            org.bukkit.persistence.PersistentDataType.STRING);
+
+        int level = Math.max(1, mobManager.getMobLevel(medium) - 3);
+        for (int i = 0; i < count; i++) {
+            double angle = random.nextDouble() * Math.PI * 2;
+            Location spawnLoc = loc.clone().add(Math.cos(angle) * 2, 0, Math.sin(angle) * 2);
+            spawnLoc.setY(spawnLoc.getWorld().getHighestBlockYAt(spawnLoc) + 1);
+
+            LivingEntity small = mobManager.spawnCustomMobWithLevel("magma_core_small", spawnLoc, level);
+            if (small != null && parentUuidStr != null) {
+                small.getPersistentDataContainer().set(
+                    new org.bukkit.NamespacedKey(plugin, "magma_parent_uuid"),
+                    org.bukkit.persistence.PersistentDataType.STRING, parentUuidStr);
+                try {
+                    MagmaCoreState bossState = magmaCoreStates.get(UUID.fromString(parentUuidStr));
+                    if (bossState != null) bossState.activeSplits.add(small.getUniqueId());
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    // ── 技能 1：熔岩重壓 ─────────────────────────────────────
+    private void magmaLavaSlam(LivingEntity mob, MagmaCoreState state) {
+        state.lastSlamMs = System.currentTimeMillis();
+        Location loc = mob.getLocation();
+        broadcast(loc, 25, ChatColor.RED + "⚠ 熔核巨獸正在蓄力重壓！");
+        mob.getWorld().playSound(loc, Sound.ENTITY_MAGMA_CUBE_JUMP, 2.0f, 0.5f);
+        mob.setVelocity(new Vector(0, 1.4, 0));
+        loc.getWorld().spawnParticle(Particle.LAVA, loc.clone().add(0, 1, 0), 20, 1.5, 0.5, 1.5, 0);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (mob.isDead()) { cancel(); return; }
+                Location landLoc = mob.getLocation();
+                landLoc.getWorld().playSound(landLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.8f, 0.35f);
+
+                // 震波粒子環
+                for (double r = 1; r <= 7; r += 0.8) {
+                    for (double a = 0; a < Math.PI * 2; a += 0.4) {
+                        Location pl = landLoc.clone().add(Math.cos(a) * r, 0.1, Math.sin(a) * r);
+                        landLoc.getWorld().spawnParticle(Particle.LAVA, pl, 1, 0, 0, 0, 0);
+                    }
+                }
+
+                // 地面點火
+                for (int x = -5; x <= 5; x++) {
+                    for (int z = -5; z <= 5; z++) {
+                        if (random.nextDouble() < 0.35) {
+                            org.bukkit.block.Block above = landLoc.clone().add(x, 0, z).getBlock();
+                            org.bukkit.block.Block below = landLoc.clone().add(x, -1, z).getBlock();
+                            if (above.getType().isAir() && below.getType().isSolid() && !below.isLiquid()) {
+                                above.setType(org.bukkit.Material.FIRE);
+                            }
+                        }
+                    }
+                }
+
+                // 擊退 + 傷害玩家
+                for (Entity e : landLoc.getWorld().getNearbyEntities(landLoc, 7, 5, 7)) {
+                    if (!(e instanceof Player p) || p.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
+                    Vector kb = p.getLocation().toVector().subtract(landLoc.toVector()).normalize().multiply(1.8).setY(0.6);
+                    p.setVelocity(kb);
+                    p.damage(18.0, mob);
+                    p.sendMessage(ChatColor.RED + "💥 熔核重壓震波！");
+                }
+                cancel();
+            }
+        }.runTaskLater(plugin, 32L);
+    }
+
+    // ── 技能 2：熔核噴發 ─────────────────────────────────────
+    private void magmaErupt(LivingEntity mob, MagmaCoreState state) {
+        state.lastEruptMs = System.currentTimeMillis();
+        Location loc = mob.getLocation().add(0, 2.5, 0);
+        mob.getWorld().playSound(loc, Sound.ENTITY_BLAZE_SHOOT, 1.5f, 0.4f);
+        broadcast(mob.getLocation(), 25, ChatColor.RED + "⚠ 熔核噴發！");
+
+        int shots = state.berserkActive ? 12 : 8;
+        for (int i = 0; i < shots; i++) {
+            double angle = (Math.PI * 2.0 / shots) * i;
+            Vector dir = new Vector(Math.cos(angle), 0.25 + random.nextDouble() * 0.25, Math.sin(angle)).normalize().multiply(1.6);
+            SmallFireball fb = mob.getWorld().spawn(loc, SmallFireball.class);
+            fb.setVelocity(dir);
+            fb.setShooter(mob);
+            fb.setIsIncendiary(true);
+            fb.setYield(2.0f);
+        }
+    }
+
+    // ── 技能 3：熔岩吞噬 ─────────────────────────────────────
+    private void magmaAbsorb(LivingEntity mob, MagmaCoreState state) {
+        state.lastAbsorbMs = System.currentTimeMillis();
+        Location loc = mob.getLocation();
+        broadcast(loc, 30, ChatColor.GOLD + "⚠ 熔核吞噬！摧毀附近的熔岩阻止回血！");
+        mob.getWorld().playSound(loc, Sound.BLOCK_LAVA_AMBIENT, 2.0f, 0.5f);
+
+        // 在周圍放 3 塊熔岩（玩家可以清除）
+        List<org.bukkit.block.Block> lavaBlocks = new ArrayList<>();
+        for (int t = 0; t < 3; t++) {
+            double angle = random.nextDouble() * Math.PI * 2;
+            int dist = 4 + random.nextInt(4);
+            org.bukkit.block.Block above = loc.clone().add(Math.cos(angle) * dist, 0, Math.sin(angle) * dist).getBlock();
+            org.bukkit.block.Block below = above.getRelative(org.bukkit.block.BlockFace.DOWN);
+            if (above.getType().isAir() && below.getType().isSolid() && !below.isLiquid()) {
+                above.setType(org.bukkit.Material.LAVA);
+                lavaBlocks.add(above);
+            }
+        }
+
+        // 吸收粒子動畫
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (mob.isDead() || ticks >= 20) { cancel(); return; }
+                Location center = mob.getLocation().add(0, 1, 0);
+                for (int k = 0; k < 8; k++) {
+                    double px = center.getX() + (random.nextDouble() - 0.5) * 12;
+                    double py = center.getY() + (random.nextDouble() - 0.5) * 4;
+                    double pz = center.getZ() + (random.nextDouble() - 0.5) * 12;
+                    center.getWorld().spawnParticle(Particle.DRIPPING_LAVA, new Location(center.getWorld(), px, py, pz), 1, 0, 0, 0, 0);
+                }
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 5L);
+
+        // 5 秒後判定
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (mob.isDead()) { lavaBlocks.forEach(b -> { if (b.getType() == org.bukkit.Material.LAVA) b.setType(org.bukkit.Material.AIR); }); return; }
+                long remaining = lavaBlocks.stream().filter(b -> b.getType() == org.bukkit.Material.LAVA).count();
+                if (remaining > 0) {
+                    double heal = mob.getMaxHealth() * 0.05 * remaining;
+                    mob.setHealth(Math.min(mob.getHealth() + heal, mob.getMaxHealth()));
+                    broadcast(mob.getLocation(), 35, ChatColor.RED + "[熔核巨獸] 吸收了熔岩！回復 " + ChatColor.YELLOW + (int) heal + ChatColor.RED + " 生命值！");
+                    mob.getWorld().spawnParticle(Particle.HEART, mob.getLocation().add(0, 3, 0), 10, 0.5, 0.5, 0.5, 0.1);
+                } else {
+                    broadcast(mob.getLocation(), 35, ChatColor.GREEN + "[熔核巨獸] 熔岩被全數摧毀！回血被阻止！");
+                }
+                lavaBlocks.forEach(b -> { if (b.getType() == org.bukkit.Material.LAVA) b.setType(org.bukkit.Material.AIR); });
+            }
+        }.runTaskLater(plugin, 100L);
+    }
+
+    // ── 技能 4：岩漿浪潮 ─────────────────────────────────────
+    private void magmaWave(LivingEntity mob, MagmaCoreState state) {
+        state.lastWaveMs = System.currentTimeMillis();
+        Player target = getNearestPlayer(mob, 28.0);
+        if (target == null) return;
+
+        Location mobLoc = mob.getLocation();
+        Vector toward = target.getLocation().toVector().subtract(mobLoc.toVector()).normalize();
+        mob.getWorld().playSound(mobLoc, Sound.ENTITY_MAGMA_CUBE_SQUISH_SMALL, 2.0f, 0.35f);
+        broadcast(mobLoc, 28, ChatColor.RED + "⚠ 岩漿浪潮！");
+
+        new BukkitRunnable() {
+            int wave = 0;
+            @Override
+            public void run() {
+                if (wave >= 9 || mob.isDead()) { cancel(); return; }
+                double dist = 2.5 + wave * 1.8;
+                // 扇形粒子
+                for (double a = -Math.PI / 3; a <= Math.PI / 3; a += 0.25) {
+                    double sx = Math.cos(a) * toward.getX() - Math.sin(a) * toward.getZ();
+                    double sz = Math.sin(a) * toward.getX() + Math.cos(a) * toward.getZ();
+                    Location pl = mobLoc.clone().add(sx * dist, 0.5, sz * dist);
+                    mobLoc.getWorld().spawnParticle(Particle.LAVA, pl, 2, 0.1, 0.2, 0.1, 0);
+                    mobLoc.getWorld().spawnParticle(Particle.FLAME, pl, 1, 0, 0, 0, 0.04);
+                }
+                // 波浪中心傷害
+                Location waveCenter = mobLoc.clone().add(toward.clone().multiply(dist)).add(0, 0.5, 0);
+                for (Entity e : waveCenter.getWorld().getNearbyEntities(waveCenter, 3, 2, 3)) {
+                    if (!(e instanceof Player p) || p.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
+                    p.setVelocity(toward.clone().multiply(1.5).setY(0.35));
+                    p.setFireTicks(80);
+                    p.damage(8.0, mob);
+                    p.sendMessage(ChatColor.RED + "🌊 岩漿浪潮衝擊！");
+                }
+                wave++;
+            }
+        }.runTaskTimer(plugin, 0L, 5L);
+    }
+
+    // ── 第三/四階段：火柱 ────────────────────────────────────
+    private void spawnFirePillar(LivingEntity mob) {
+        Player target = getNearestPlayer(mob, 28.0);
+        if (target == null) return;
+        Location pillarLoc = target.getLocation().clone().add(
+            (random.nextDouble() - 0.5) * 8, 0, (random.nextDouble() - 0.5) * 8);
+        pillarLoc.setY(pillarLoc.getWorld().getHighestBlockYAt(pillarLoc));
+        final Location finalLoc = pillarLoc;
+
+        // 0.5s 警告後火柱噴發
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                finalLoc.getWorld().spawnParticle(Particle.SMOKE, finalLoc.clone().add(0, 0.5, 0), 6, 0.3, 0, 0.3, 0.02);
+            }
+        }.runTaskTimer(plugin, 0L, 5L);
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (ticks >= 30 || mob.isDead()) { cancel(); return; }
+                for (int h = 0; h <= 5; h++) {
+                    finalLoc.getWorld().spawnParticle(Particle.FLAME, finalLoc.clone().add(0, h, 0), 4, 0.3, 0, 0.3, 0.06);
+                    finalLoc.getWorld().spawnParticle(Particle.LAVA,  finalLoc.clone().add(0, h, 0), 1, 0.2, 0, 0.2, 0);
+                }
+                for (Entity e : finalLoc.getWorld().getNearbyEntities(finalLoc, 1.5, 6, 1.5)) {
+                    if (!(e instanceof Player p) || p.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
+                    p.setFireTicks(60);
+                    p.damage(5.0, mob);
+                }
+                ticks += 5;
+            }
+        }.runTaskLater(plugin, 10L);
+    }
+
+    // ── 中型分裂體行為 ────────────────────────────────────────
+    private void magmaMediumBehavior(LivingEntity mob) {
+        if (mob instanceof MagmaCube cube && cube.getSize() < 3) {
+            double maxHp = mob.getMaxHealth();
+            double curHp = mob.getHealth();
+            cube.setSize(3);
+            org.bukkit.attribute.AttributeInstance attr = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (attr != null) attr.setBaseValue(maxHp);
+            mob.setHealth(Math.min(curHp, maxHp));
+        }
+        mob.getWorld().spawnParticle(Particle.LAVA, mob.getLocation().add(0, 1, 0), 3, 0.5, 0.3, 0.5, 0);
+        // 25% 機率朝最近玩家跳躍
+        if (random.nextDouble() < 0.25) {
+            Player t = getNearestPlayer(mob, 16.0);
+            if (t != null) {
+                Vector leap = t.getLocation().toVector().subtract(mob.getLocation().toVector())
+                    .normalize().multiply(1.0).setY(0.9);
+                mob.setVelocity(leap);
+                mob.getWorld().playSound(mob.getLocation(), Sound.ENTITY_MAGMA_CUBE_JUMP, 1.0f, 0.7f);
+            }
+        }
+    }
+
+    // ── 小型碎體行為 ─────────────────────────────────────────
+    private void magmaSmallBehavior(LivingEntity mob) {
+        if (mob instanceof MagmaCube cube && cube.getSize() != 1) {
+            double maxHp = mob.getMaxHealth();
+            double curHp = mob.getHealth();
+            cube.setSize(1);
+            org.bukkit.attribute.AttributeInstance attr = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (attr != null) attr.setBaseValue(maxHp);
+            mob.setHealth(Math.min(curHp, maxHp));
+        }
+        if (!mob.hasPotionEffect(PotionEffectType.SPEED)) {
+            mob.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 120, 3, false, false));
+        }
+        mob.getWorld().spawnParticle(Particle.FLAME, mob.getLocation().add(0, 0.3, 0), 2, 0.2, 0.2, 0.2, 0.02);
+    }
+
+    /** 向 Boss 周圍玩家廣播訊息 */
+    private void broadcast(Location center, double radius, String msg) {
+        for (Player p : center.getWorld().getPlayers()) {
+            if (p.getLocation().distance(center) <= radius) {
+                p.sendMessage(msg);
+            }
         }
     }
 }
