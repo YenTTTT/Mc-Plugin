@@ -166,9 +166,13 @@ public class BossZoneManager {
             return;
         }
 
-        Location spawnLocation = distanceSpawnManager.findSpawnNear(zone.getCenter(player.getWorld()), 8);
+        Location zoneCenter = zone.getCenter(player.getWorld());
+        Location spawnLocation = mobManager.findSafeSpawnLocationExact(zoneCenter);
         if (spawnLocation == null) {
-            spawnLocation = mobManager.findSafeSpawnLocation(zone.getCenter(player.getWorld()));
+            spawnLocation = distanceSpawnManager.findSpawnNear(zoneCenter, 8);
+        }
+        if (spawnLocation == null) {
+            spawnLocation = mobManager.findSafeSpawnLocation(zoneCenter);
         }
         if (spawnLocation == null) {
             return;
@@ -189,11 +193,31 @@ public class BossZoneManager {
     }
 
     private void maintainZone(BossZone zone) {
+        // ── 強制「每個 Zone 最多 1 隻 Boss」限制 ──────────────────────────
+        List<LivingEntity> allBosses = scanAllBossEntitiesInZone(zone);
+        if (allBosses.size() > 1) {
+            // 保留追蹤中的那隻（若存在），其餘全部移除
+            UUID trackedUUID = activeBosses.get(zone.getId());
+            for (LivingEntity b : allBosses) {
+                if (!b.getUniqueId().equals(trackedUUID)) {
+                    b.remove();
+                    plugin.getLogger().warning("[BossZoneManager] 移除 Zone [" + zone.getId() + "] 多餘的 Boss：" + b.getUniqueId());
+                }
+            }
+        }
+
         LivingEntity boss = getBossEntity(zone);
         if (boss == null) {
-            activeBosses.remove(zone.getId());
-            cleanupMinions(zone, false);
-            return;
+            // 若追蹤 UUID 對應的實體不在了，但世界仍有掃描到的 Boss，接手追蹤第一個
+            if (!allBosses.isEmpty()) {
+                LivingEntity scanned = allBosses.get(0);
+                activeBosses.put(zone.getId(), scanned.getUniqueId());
+                boss = scanned;
+            } else {
+                activeBosses.remove(zone.getId());
+                cleanupMinions(zone, false);
+                return;
+            }
         }
 
         keepBossInsideZone(zone, boss);
@@ -396,6 +420,96 @@ public class BossZoneManager {
         activeBosses.clear();
         activeMinions.clear();
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 新增：Boss 上限控制 & 強制生成 API
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /** 掃描世界中所有在指定 Zone 內、被標記為 BOSS 的實體（含未追蹤的殘留）*/
+    private List<LivingEntity> scanAllBossEntitiesInZone(BossZone zone) {
+        World world = plugin.getServer().getWorld(zone.getWorld());
+        if (world == null) return new ArrayList<>();
+        Location center = zone.getCenter(world);
+        List<LivingEntity> found = new ArrayList<>();
+        for (Entity entity : world.getNearbyEntities(center, zone.getRadius(), zone.getRadius(), zone.getRadius())) {
+            if (!(entity instanceof LivingEntity living) || living.isDead()) continue;
+            String role = living.getPersistentDataContainer().get(zoneRoleKey, PersistentDataType.STRING);
+            String zid  = living.getPersistentDataContainer().get(zoneIdKey,  PersistentDataType.STRING);
+            if ("BOSS".equalsIgnoreCase(role) && zone.getId().equalsIgnoreCase(zid)) {
+                found.add(living);
+            }
+        }
+        return found;
+    }
+
+    /** 移除指定 Zone 內所有 Boss（追蹤中 + 掃描到的殘留都清除）*/
+    public void removeAllBossesInZone(BossZone zone) {
+        UUID trackedUUID = activeBosses.remove(zone.getId());
+        if (trackedUUID != null) {
+            Entity tracked = plugin.getServer().getEntity(trackedUUID);
+            if (tracked != null && !tracked.isDead()) tracked.remove();
+        }
+        for (LivingEntity boss : scanAllBossEntitiesInZone(zone)) {
+            boss.remove();
+        }
+    }
+
+    /**
+     * 強制在指定 Zone 生成 Boss（先移除所有現有 Boss，再生成新的，並跳過冷卻）
+     * @return 成功生成的 Boss 實體，若失敗則為 null
+     */
+    public LivingEntity forceSpawnBoss(String zoneId) {
+        BossZone zone = zones.get(zoneId.toLowerCase());
+        if (zone == null || zone.getBossMobKey().isBlank()) return null;
+
+        removeAllBossesInZone(zone);
+        bossCooldownUntil.remove(zone.getId());
+
+        World world = plugin.getServer().getWorld(zone.getWorld());
+        if (world == null) return null;
+        Location center = zone.getCenter(world);
+        Location spawnLoc = mobManager.findSafeSpawnLocationExact(center);
+        if (spawnLoc == null) {
+            plugin.getLogger().warning("[BossZoneManager] Force spawn failed for zone '" + zone.getId()
+                    + "' because configured center " + center + " is not a safe spawn location.");
+            return null;
+        }
+
+        int level = distanceSpawnManager.calculateLevelForLocation(spawnLoc, DistanceSpawnManager.MobTier.BOSS);
+        LivingEntity boss = mobManager.spawnCustomMobWithLevelExact(zone.getBossMobKey(), spawnLoc, level);
+        if (boss == null) return null;
+
+        mobManager.setMobTier(boss, DistanceSpawnManager.MobTier.BOSS.name());
+        distanceSpawnManager.applyBossModifiers(boss, spawnLoc, level);
+        tagEntity(boss, zone.getId(), "BOSS");
+        activeBosses.put(zone.getId(), boss.getUniqueId());
+        clearForbiddenCustomMobs(zone);
+        announceBoss(zone, boss, level);
+        return boss;
+    }
+
+    /** 取得指定 Zone 目前存活的 Boss（含世界掃描驗證）*/
+    public LivingEntity getActiveBoss(String zoneId) {
+        BossZone zone = zones.get(zoneId.toLowerCase());
+        if (zone == null) return null;
+        // 優先返回追蹤中的
+        LivingEntity tracked = getBossEntity(zone);
+        if (tracked != null) return tracked;
+        // Fallback：掃描世界
+        List<LivingEntity> scanned = scanAllBossEntitiesInZone(zone);
+        if (!scanned.isEmpty()) {
+            activeBosses.put(zone.getId(), scanned.get(0).getUniqueId());
+            return scanned.get(0);
+        }
+        return null;
+    }
+
+    /** 回傳所有已知 Zone 的 ID 列表（供 Tab 補全使用）*/
+    public List<String> getZoneIds() {
+        return new ArrayList<>(zones.keySet());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
 
     public int getZoneCount() {
         return zones.size();

@@ -37,7 +37,7 @@ boss-zones:
   greek_temple_warden:
     name: "Greek Temple Warden"
     world: "world"
-    center: { x: 930, y: 110, z: -830 }
+    center: { x: -1032, y: 131, z: 227 }
     radius: 200
     boss-mob-key: "boss_crazy_scissor"
     linked-minions:

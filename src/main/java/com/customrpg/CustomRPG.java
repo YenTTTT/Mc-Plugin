@@ -591,6 +591,17 @@ public class CustomRPG extends JavaPlugin {
         } else {
             getLogger().warning("- Failed to register /mana command: command not defined in plugin.yml");
         }
+
+        // BossZone command
+        org.bukkit.command.PluginCommand bossZoneCmd = getCommand("bosszone");
+        if (bossZoneCmd != null) {
+            com.customrpg.commands.BossZoneCommand bossZoneCommand = new com.customrpg.commands.BossZoneCommand(this);
+            bossZoneCmd.setExecutor(bossZoneCommand);
+            bossZoneCmd.setTabCompleter(bossZoneCommand);
+            getLogger().info("- /bosszone command registered");
+        } else {
+            getLogger().warning("- Failed to register /bosszone command: command not defined in plugin.yml");
+        }
     }
 
     /**

@@ -485,6 +485,41 @@ public class MobManager {
         return mob;
     }
 
+    /**
+     * Spawn a custom mob at the exact requested block position with a specified level.
+     * Unlike the normal spawn API, this does not search nearby columns or jump to the highest block.
+     */
+    public LivingEntity spawnCustomMobWithLevelExact(String mobKey, Location location, int level) {
+        MobData mobData = mobTypes.get(mobKey);
+        if (mobData == null) {
+            return null;
+        }
+
+        Location spawnLocation = findSafeSpawnLocationExact(location);
+        if (spawnLocation == null) {
+            plugin.getLogger().warning("Failed to find exact safe spawn location for custom mob '" + mobKey + "' at " + location);
+            return null;
+        }
+
+        level = Math.max(1, level);
+
+        LivingEntity mob;
+        if (mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
+            mob = spawnDisguisedMob(mobData, spawnLocation, level);
+        } else {
+            mob = spawnNormalMob(mobData, spawnLocation, level);
+        }
+
+        if (mob == null) {
+            return null;
+        }
+
+        mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
+        mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+
+        return mob;
+    }
+
     private String buildMobDisplayName(MobData mobData, int level) {
         if (mobData == null) {
             return "&8[&eLv." + level + "&8] 未知怪物";
@@ -529,6 +564,30 @@ public class MobManager {
         }
 
         return null;
+    }
+
+    /**
+     * Resolve a safe spawn position only at the exact requested block column and Y level.
+     * This keeps boss/admin forced spawns anchored to the configured center.
+     */
+    public Location findSafeSpawnLocationExact(Location location) {
+        if (location == null) {
+            return null;
+        }
+
+        World world = location.getWorld();
+        if (world == null) {
+            return null;
+        }
+
+        int blockX = location.getBlockX();
+        int blockZ = location.getBlockZ();
+        int minY = world.getMinHeight() + 1;
+        int maxY = world.getMaxHeight() - 2;
+        int blockY = Math.min(maxY, Math.max(minY, location.getBlockY()));
+
+        Location candidate = new Location(world, blockX + 0.5, blockY, blockZ + 0.5, location.getYaw(), location.getPitch());
+        return isSafeSpawnLocation(candidate) ? candidate : null;
     }
 
     private boolean isSafeSpawnLocation(Location location) {

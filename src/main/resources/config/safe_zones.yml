@@ -4,7 +4,7 @@
 # ========================================
 
 default-world: "world"
-default-radius: 200
+default-radius: 100
 
 zones:
   spawnpoint_castle:
@@ -12,145 +12,145 @@ zones:
     type: "CASTLE"
     world: "world"
     center: { x: 192, y: 73, z: -70 }
-    radius: 200
+    radius: 100
 
   blossom_temple:
     name: "Blossom Temple"
     type: "TEMPLE"
     world: "world"
     center: { x: 888, y: 133, z: 190 }
-    radius: 200
+    radius: 100
 
   beach:
     name: "Beach"
     type: "LANDMARK"
     world: "world"
     center: { x: -400, y: 65, z: 200 }
-    radius: 200
+    radius: 100
 
   volcano:
     name: "Volcano"
     type: "LANDMARK"
     world: "world"
     center: { x: 900, y: 71, z: -600 }
-    radius: 200
+    radius: 100
 
   spruce_red_castle:
     name: "Spruce Red castle"
     type: "CASTLE"
     world: "world"
     center: { x: -850, y: 79, z: -350 }
-    radius: 200
+    radius: 100
 
   prisma_castle:
     name: "Prisma castle"
     type: "CASTLE"
     world: "world"
     center: { x: -20, y: 116, z: -530 }
-    radius: 200
+    radius: 100
 
   greek_temple:
     name: "Greek temple"
     type: "TEMPLE"
     world: "world"
     center: { x: 930, y: 110, z: -830 }
-    radius: 200
+    radius: 100
 
   maya_pyramid:
     name: "Maya pyramid"
     type: "TEMPLE"
     world: "world"
     center: { x: 250, y: 84, z: 470 }
-    radius: 200
+    radius: 100
 
   wild_farms:
     name: "Wild farms"
     type: "TOWN"
     world: "world"
     center: { x: 730, y: 72, z: -135 }
-    radius: 200
+    radius: 100
 
   purple_castle:
     name: "Purple castle"
     type: "CASTLE"
     world: "world"
     center: { x: 0, y: 77, z: 780 }
-    radius: 200
+    radius: 100
 
   red_village:
     name: "Red village"
     type: "VILLAGE"
     world: "world"
     center: { x: 500, y: 68, z: 0 }
-    radius: 200
+    radius: 100
 
   forest_village:
     name: "Forest village"
     type: "VILLAGE"
     world: "world"
     center: { x: -60, y: 67, z: -90 }
-    radius: 200
+    radius: 100
 
   swamp_village_1:
     name: "Swamp village 1"
     type: "VILLAGE"
     world: "world"
     center: { x: -1000, y: 68, z: 433 }
-    radius: 200
+    radius: 100
 
   swamp_village_2:
     name: "Swamp village 2"
     type: "VILLAGE"
     world: "world"
     center: { x: -750, y: 67, z: 390 }
-    radius: 200
+    radius: 100
 
   desert_village_1:
     name: "Desert village 1"
     type: "VILLAGE"
     world: "world"
     center: { x: -1190, y: 67, z: -750 }
-    radius: 200
+    radius: 100
 
   desert_village_2:
     name: "Desert village 2"
     type: "VILLAGE"
     world: "world"
     center: { x: -999, y: 67, z: -580 }
-    radius: 200
+    radius: 100
 
   spruce_mangrove_village:
     name: "Spruce Mangrove village"
     type: "VILLAGE"
     world: "world"
     center: { x: -630, y: 68, z: -300 }
-    radius: 200
+    radius: 100
 
   birch_village:
     name: "Birch village"
     type: "VILLAGE"
     world: "world"
     center: { x: 500, y: 66, z: -700 }
-    radius: 200
+    radius: 100
 
   dark_trees_village:
     name: "Dark trees village"
     type: "VILLAGE"
     world: "world"
     center: { x: 1090, y: 65, z: -330 }
-    radius: 200
+    radius: 100
 
   jungle_village:
     name: "Jungle village"
     type: "VILLAGE"
     world: "world"
     center: { x: 470, y: 69, z: 450 }
-    radius: 200
+    radius: 100
 
   winter_village:
     name: "Winter village"
     type: "VILLAGE"
     world: "world"
     center: { x: 960, y: 70, z: 500 }
-    radius: 200
+    radius: 100
 

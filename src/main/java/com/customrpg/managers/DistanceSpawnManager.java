@@ -287,28 +287,37 @@ public class DistanceSpawnManager {
         Location spawnLoc = findSpawnLocation(player);
         if (spawnLoc == null) {
             totalLocationFails++;
-            lastSkipReason = "找不到有效生成位置";
+            lastSkipReason = "找不到有效生成位置（8次嘗試均失敗，可能因安全區、地形或區塊未載入）";
+            if (debug) log.info("[DistanceSpawn] 找不到生成位置 (靠近 " + player.getName() + ")，若玩家靠近安全區邊緣請稍微遠離");
             return false;
         }
 
         if (bossZoneManager != null && bossZoneManager.isInsideBossZone(spawnLoc)) {
             lastSkipReason = "Boss 區域排他範圍內";
+            if (debug) log.info("[DistanceSpawn] 候選位置在 Boss 區域，跳過");
             return false;
         }
 
         MobTier tier = determineNaturalTier();
         int level = calculateLevelForLocation(spawnLoc, tier);
-        String mobKey = selectMobTypeForLevel(filterBySpawnTime(availableMobKeys, spawnLoc.getWorld()), level);
+        List<String> timeFiltered = filterBySpawnTime(availableMobKeys, spawnLoc.getWorld());
+        String mobKey = selectMobTypeForLevel(timeFiltered, level);
 
         if (mobKey == null) {
-            lastSkipReason = "沒有符合當前等級的怪物";
+            lastSkipReason = "沒有符合當前等級 Lv." + level + " 的怪物設定（請檢查 level-range 設定）";
+            if (debug) log.info("[DistanceSpawn] 無法選出等級 " + level + " 的怪物，可用數: " + timeFiltered.size());
             return false;
         }
 
+        if (debug) log.info("[DistanceSpawn] 嘗試在 (" + String.format("%.1f", spawnLoc.getX()) + "," + String.format("%.1f", spawnLoc.getZ()) + ") 生成 " + mobKey + " [" + tier.name() + "] Lv." + level);
         boolean success = spawnTieredMob(mobKey, spawnLoc, level, tier);
         if (success) {
             totalSpawnSuccess++;
-            lastSkipReason = "成功";
+            lastSkipReason = "成功生成 " + mobKey + " [" + tier.name() + "] Lv." + level;
+            if (debug) log.info("[DistanceSpawn] ✓ 成功生成 " + mobKey + " [" + tier.name() + "] Lv." + level);
+        } else {
+            lastSkipReason = "spawnTieredMob 回傳失敗：" + mobKey;
+            if (debug) log.info("[DistanceSpawn] ✗ spawnTieredMob 失敗：" + mobKey);
         }
         return success;
     }
@@ -533,7 +542,7 @@ public class DistanceSpawnManager {
     private void applyEliteModifiers(LivingEntity mob) {
         double newMaxHealth = mob.getMaxHealth() * eliteStatMultiplier;
         mob.setMaxHealth(newMaxHealth);
-        mob.setHealth(newMaxHealth);
+        mob.setHealth(mob.getMaxHealth());
         if (mob.getCustomName() != null) {
             mob.setCustomName(eliteNamePrefix + ChatColor.translateAlternateColorCodes('&', "&e[精英] ") + mob.getCustomName());
         }
@@ -543,7 +552,7 @@ public class DistanceSpawnManager {
     public void applyBossModifiers(LivingEntity mob, Location location, int level) {
         double newMaxHealth = mob.getMaxHealth() * bossStatMultiplier;
         mob.setMaxHealth(newMaxHealth);
-        mob.setHealth(newMaxHealth);
+        mob.setHealth(mob.getMaxHealth());
         if (mob.getCustomName() != null) {
             mob.setCustomName(bossNamePrefix + mob.getCustomName());
         }
@@ -729,6 +738,7 @@ public class DistanceSpawnManager {
         return spawnedMobs.size();
     }
 }
+
 
 
 

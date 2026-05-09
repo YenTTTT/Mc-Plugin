@@ -87,6 +87,12 @@ commands:
     usage: /finishrpg
     permission: customrpg.admin
     permission-message: You don't have permission to use this command!
+  bosszone:
+    description: Boss 區域管理 — 強制生成/移除/查看 Boss
+    usage: /bosszone <list|spawn|remove|status|help> [zone_id]
+    permission: customrpg.admin
+    permission-message: You don't have permission to use this command!
+    aliases: [bz, bosszones]
 
 
 
