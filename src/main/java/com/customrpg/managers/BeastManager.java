@@ -2,7 +2,16 @@ package com.customrpg.managers;
 
 import com.customrpg.CustomRPG;
 import com.customrpg.players.PlayerStats;
+import me.libraryaddict.disguise.DisguiseAPI;
+import me.libraryaddict.disguise.DisguiseConfig;
+import me.libraryaddict.disguise.disguisetypes.DisguiseType;
+import me.libraryaddict.disguise.disguisetypes.FlagWatcher;
+import me.libraryaddict.disguise.disguisetypes.MobDisguise;
+import me.libraryaddict.disguise.disguisetypes.watchers.FoxWatcher;
 import org.bukkit.*;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -268,7 +277,18 @@ public class BeastManager implements Listener {
         player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0, 1, 0), 30, 0.5, 1, 0.5, 0.3);
         player.playSound(player.getLocation(), Sound.ENTITY_WOLF_AMBIENT, 1.5f, 0.8f);
 
-        // ActionBar 提示
+        // Lib's Disguises 套裝外觀
+        applyDisguise(player, formType);
+
+        // ── BossBar 計時顯示（顯示在畫面頂部，不覆蓋血量/魔力 HUD）──
+        BossBar bossBar = Bukkit.createBossBar(
+                buildBossBarTitle(formName, duration, (int) strengthBonus, (int) healthBonus),
+                BarColor.YELLOW,
+                BarStyle.SEGMENTED_10);
+        bossBar.setProgress(1.0);
+        bossBar.addPlayer(player);
+        data.bossBar = bossBar;
+
         new BukkitRunnable() {
             int remaining = duration;
             @Override
@@ -280,7 +300,8 @@ public class BeastManager implements Listener {
                     cancel();
                     return;
                 }
-                player.sendActionBar("§6§l[" + formName + "] §e剩餘 " + remaining + " 秒 §7| §c力量+" + (int) strengthBonus + " §a生命+" + (int) healthBonus);
+                bossBar.setTitle(buildBossBarTitle(formName, remaining, (int) strengthBonus, (int) healthBonus));
+                bossBar.setProgress(Math.max(0.0, (double) remaining / duration));
                 remaining--;
             }
         }.runTaskTimer(plugin, 0L, 20L);
@@ -303,6 +324,15 @@ public class BeastManager implements Listener {
         }
 
         player.removeMetadata("beast_form_strength", plugin);
+
+        // 移除 BossBar
+        if (data.bossBar != null) {
+            data.bossBar.removePlayer(player);
+            data.bossBar.setVisible(false);
+        }
+
+        // 移除 Lib's Disguises 變裝
+        removeDisguise(player);
 
         player.sendMessage("§6§l[野獸化身] §7變身效果已結束");
         player.playSound(player.getLocation(), Sound.ENTITY_WOLF_AMBIENT, 1.0f, 1.2f);
@@ -595,6 +625,82 @@ public class BeastManager implements Listener {
         };
     }
 
+    /** 組合 BossBar 標題文字 */
+    private String buildBossBarTitle(String formName, int remaining, int strength, int health) {
+        return formName + " §e" + remaining + "s §7| §c力量+" + strength + " §a生命+" + health;
+    }
+
+    // ═══════════════════════════════════════
+    //  Lib's Disguises 整合
+    // ═══════════════════════════════════════
+
+    /** 是否已載入 Lib's Disguises */
+    private boolean isLibsDisguisesLoaded() {
+        return Bukkit.getPluginManager().getPlugin("LibsDisguises") != null;
+    }
+
+    /**
+     * 將 formType 對應到 DisguiseType
+     */
+    private DisguiseType toDisguiseType(String formType) {
+        return switch (formType.toLowerCase()) {
+            case "wolf"       -> DisguiseType.WOLF;
+            case "polar_bear" -> DisguiseType.POLAR_BEAR;
+            case "fox"        -> DisguiseType.FOX;
+            case "ravager"    -> DisguiseType.RAVAGER;
+            case "apex"       -> DisguiseType.RAVAGER; // 極致掠食者用狂暴獸外觀
+            default -> null;
+        };
+    }
+
+    /**
+     * 套用 Lib's Disguises 變裝給玩家
+     */
+    private void applyDisguise(Player player, String formType) {
+        if (!isLibsDisguisesLoaded()) return;
+        DisguiseType type = toDisguiseType(formType);
+        if (type == null) return;
+        try {
+            MobDisguise disguise = new MobDisguise(type);
+            disguise.setViewSelfDisguise(true);
+
+            // 隱藏玩家自身視角的盔甲和手持物
+            disguise.setHideArmorFromSelf(true);
+            disguise.setHideHeldItemFromSelf(true);
+
+            // 關閉 Lib's Disguises 預設的 ActionBar「Currently disguised as...」提示
+            // 改由 BossBar 統一顯示，避免覆蓋血量/魔力 HUD
+            disguise.setNotifyBar(DisguiseConfig.NotifyBar.NONE);
+
+            // 清除變裝上顯示的玩家裝備（其他人視角）
+            FlagWatcher watcher = disguise.getWatcher();
+            watcher.setHelmet(null);
+            watcher.setChestplate(null);
+            watcher.setLeggings(null);
+            watcher.setBoots(null);
+            watcher.setItemInMainHand(null);
+            watcher.setItemInOffHand(null);
+
+            DisguiseAPI.disguiseToAll(player, disguise);
+        } catch (Exception e) {
+            plugin.getLogger().warning("[BeastManager] 套用 Lib's Disguises 失敗: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 移除玩家的 Lib's Disguises 變裝
+     */
+    private void removeDisguise(Player player) {
+        if (!isLibsDisguisesLoaded()) return;
+        try {
+            if (DisguiseAPI.isDisguised(player)) {
+                DisguiseAPI.undisguiseToAll(player);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("[BeastManager] 移除 Lib's Disguises 失敗: " + e.getMessage());
+        }
+    }
+
     public void shutdown() {
         // 清除所有召喚的野獸
         for (Map.Entry<UUID, List<UUID>> entry : playerBeasts.entrySet()) {
@@ -614,6 +720,7 @@ public class BeastManager implements Listener {
         double originalMaxHealth;
         double healthBonus;
         double strengthBonus;
+        BossBar bossBar; // 變身計時 BossBar
     }
 }
 

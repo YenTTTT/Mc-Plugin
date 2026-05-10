@@ -11,66 +11,6 @@ armors:
   #  Lv.1~20 — 新手期
   # ═══════════════════════════════════════════
 
-  # ─── 🟥 戰士 (STRENGTH + VITALITY + DEFENSE) ───
-
-  novice_warrior_helmet:
-    name: "新手戰盔"
-    type: MEDIUM
-    slot: HELMET
-    material: CHAINMAIL_HELMET
-    required_level: 1
-    physical_defense: 3
-    magical_defense: 1
-    attributes:
-      defense: 3
-      strength: 2
-    rarity: COMMON
-    max_durability: 120
-    description: "初出茅廬的戰士頭盔"
-
-  novice_warrior_chestplate:
-    name: "戰士胸甲"
-    type: MEDIUM
-    slot: CHESTPLATE
-    material: CHAINMAIL_CHESTPLATE
-    required_level: 1
-    physical_defense: 5
-    magical_defense: 2
-    attributes:
-      defense: 5
-      vitality: 5
-    rarity: COMMON
-    max_durability: 150
-    description: "保護要害的基礎戰甲"
-
-  novice_warrior_leggings:
-    name: "戰士護腿"
-    type: MEDIUM
-    slot: LEGGINGS
-    material: CHAINMAIL_LEGGINGS
-    required_level: 1
-    physical_defense: 4
-    magical_defense: 1
-    attributes:
-      vitality: 8
-    rarity: COMMON
-    max_durability: 130
-    description: "堅固耐用的戰士護腿"
-
-  novice_warrior_boots:
-    name: "戰士靴"
-    type: MEDIUM
-    slot: BOOTS
-    material: CHAINMAIL_BOOTS
-    required_level: 1
-    physical_defense: 2
-    magical_defense: 1
-    attributes:
-      strength: 2
-    rarity: COMMON
-    max_durability: 100
-    description: "輕便堅固的戰士靴"
-
   # ─── 🟦 法師 (Magic + 少量 Spirit) ───
 
   novice_mage_helmet:
@@ -89,7 +29,7 @@ armors:
     description: "魔法學院的入門法帽"
 
   novice_mage_chestplate:
-    name: "法袍"
+    name: "初學法袍"
     type: LIGHT
     slot: CHESTPLATE
     material: LEATHER_CHESTPLATE
@@ -104,7 +44,7 @@ armors:
     description: "附有簡單魔法紋路的法袍"
 
   novice_mage_leggings:
-    name: "法褲"
+    name: "初學法褲"
     type: LIGHT
     slot: LEGGINGS
     material: LEATHER_LEGGINGS
@@ -119,7 +59,7 @@ armors:
     description: "輕巧的法師護腿"
 
   novice_mage_boots:
-    name: "法靴"
+    name: "初學法靴"
     type: LIGHT
     slot: BOOTS
     material: LEATHER_BOOTS
@@ -312,6 +252,341 @@ armors:
     rarity: COMMON
     max_durability: 150
     description: "沉重但穩固的鋼靴"
+
+
+  # ─────────────────────────────────────────────
+  # 🟥 戰士裝備成長線 (Strength + Vitality + Defense)
+  # Lv1 ~ Lv20
+  # ─────────────────────────────────────────────
+
+  # ============================================
+  # Lv1 新手套裝
+  # ============================================
+
+  novice_warrior_helmet:
+    name: "破舊戰盔"
+    type: MEDIUM
+    slot: HELMET
+    material: CHAINMAIL_HELMET
+    required_level: 1
+    physical_defense: 3
+    magical_defense: 1
+    attributes:
+      defense: 3
+      strength: 2
+    rarity: COMMON
+    max_durability: 120
+    description: "初出茅廬的戰士頭盔"
+
+  novice_warrior_chestplate:
+    name: "破舊戰士胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: CHAINMAIL_CHESTPLATE
+    required_level: 1
+    physical_defense: 5
+    magical_defense: 2
+    attributes:
+      defense: 5
+      vitality: 5
+    rarity: COMMON
+    max_durability: 150
+    description: "保護要害的基礎戰甲"
+
+  novice_warrior_leggings:
+    name: "破舊戰士護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: CHAINMAIL_LEGGINGS
+    required_level: 1
+    physical_defense: 4
+    magical_defense: 1
+    attributes:
+      vitality: 8
+    rarity: COMMON
+    max_durability: 130
+    description: "堅固耐用的戰士護腿"
+
+  novice_warrior_boots:
+    name: "破舊戰士靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: CHAINMAIL_BOOTS
+    required_level: 1
+    physical_defense: 2
+    magical_defense: 1
+    attributes:
+      strength: 2
+    rarity: COMMON
+    max_durability: 100
+    description: "輕便堅固的戰士靴"
+
+  # ============================================
+  # Lv5 青銅套裝
+  # ============================================
+
+  bronze_warrior_helmet:
+    name: "青銅戰盔"
+    type: MEDIUM
+    slot: HELMET
+    material: COPPER_HELMET
+    required_level: 5
+    physical_defense: 7
+    magical_defense: 2
+    attributes:
+      defense: 5
+      strength: 4
+    rarity: COMMON
+    max_durability: 180
+    description: "由青銅打造的制式戰盔"
+
+  bronze_warrior_chestplate:
+    name: "青銅戰士胸甲"
+    type: MEDIUM
+    slot: CHESTPLATE
+    material: COPPER_CHESTPLATE
+    required_level: 5
+    physical_defense: 11
+    magical_defense: 3
+    attributes:
+      defense: 8
+      vitality: 10
+    rarity: COMMON
+    max_durability: 220
+    description: "能有效抵禦初階魔物攻擊"
+
+  bronze_warrior_leggings:
+    name: "青銅護腿"
+    type: MEDIUM
+    slot: LEGGINGS
+    material: COPPER_LEGGINGS
+    required_level: 5
+    physical_defense: 9
+    magical_defense: 2
+    attributes:
+      vitality: 12
+    rarity: COMMON
+    max_durability: 200
+    description: "標準戰士護腿"
+
+  bronze_warrior_boots:
+    name: "青銅戰靴"
+    type: MEDIUM
+    slot: BOOTS
+    material: COPPER_BOOTS
+    required_level: 5
+    physical_defense: 5
+    magical_defense: 2
+    attributes:
+      strength: 4
+      movement_speed: 1
+    rarity: COMMON
+    max_durability: 170
+    description: "提升穩定性的金屬戰靴"
+
+  # ============================================
+  # Lv10 鋼鐵套裝
+  # ============================================
+
+  steel_warrior_helmet:
+    name: "鋼鐵重盔"
+    type: HEAVY
+    slot: HELMET
+    material: IRON_HELMET
+    required_level: 10
+    physical_defense: 13
+    magical_defense: 4
+    attributes:
+      defense: 10
+      vitality: 5
+    rarity: UNCOMMON
+    max_durability: 300
+    description: "真正戰士才有資格配戴的鋼鐵重盔"
+
+  steel_warrior_chestplate:
+    name: "鋼鐵重甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: IRON_CHESTPLATE
+    required_level: 10
+    physical_defense: 18
+    magical_defense: 5
+    attributes:
+      defense: 14
+      vitality: 18
+    rarity: UNCOMMON
+    max_durability: 360
+    description: "厚重鋼板製成的戰士胸甲"
+
+  steel_warrior_leggings:
+    name: "鋼鐵護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: IRON_LEGGINGS
+    required_level: 10
+    physical_defense: 15
+    magical_defense: 4
+    attributes:
+      vitality: 20
+      defense: 5
+    rarity: UNCOMMON
+    max_durability: 330
+    description: "能抵禦強力衝擊的護腿"
+
+  steel_warrior_boots:
+    name: "鋼鐵戰靴"
+    type: HEAVY
+    slot: BOOTS
+    material: IRON_BOOTS
+    required_level: 10
+    physical_defense: 10
+    magical_defense: 3
+    attributes:
+      strength: 8
+      defense: 4
+    rarity: UNCOMMON
+    max_durability: 280
+    description: "沉重卻極為穩固的戰靴"
+
+  # ============================================
+  # Lv15 騎士套裝
+  # ============================================
+
+  knight_warrior_helmet:
+    name: "騎士戰盔"
+    type: HEAVY
+    slot: HELMET
+    material: GOLDEN_HELMET
+    required_level: 15
+    physical_defense: 20
+    magical_defense: 7
+    attributes:
+      defense: 15
+      strength: 10
+    rarity: RARE
+    max_durability: 1000
+    description: "王國騎士團制式頭盔"
+
+  knight_warrior_chestplate:
+    name: "騎士重甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: GOLDEN_CHESTPLATE
+    required_level: 15
+    physical_defense: 28
+    magical_defense: 9
+    attributes:
+      defense: 18
+      vitality: 30
+    rarity: RARE
+    max_durability: 1000
+    description: "具備極高防禦力的騎士胸甲"
+
+  knight_warrior_leggings:
+    name: "騎士護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: GOLDEN_LEGGINGS
+    required_level: 15
+    physical_defense: 24
+    magical_defense: 8
+    attributes:
+      vitality: 28
+      defense: 10
+    rarity: RARE
+    max_durability: 1000
+    description: "騎士專用高階護腿"
+
+  knight_warrior_boots:
+    name: "騎士戰靴"
+    type: HEAVY
+    slot: BOOTS
+    material: GOLDEN_BOOTS
+    required_level: 15
+    physical_defense: 15
+    magical_defense: 6
+    attributes:
+      strength: 12
+      movement_speed: 2
+    rarity: RARE
+    max_durability: 1000
+    description: "兼具穩定與機動性的高級戰靴"
+
+  # ============================================
+  # Lv20 血鋼套裝
+  # ============================================
+
+  bloodsteel_warrior_helmet:
+    name: "血鋼戰盔"
+    type: HEAVY
+    slot: HELMET
+    material: DIAMOND_HELMET
+    trim_pattern: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    trim_material: RED_STONE
+    required_level: 20
+    physical_defense: 30
+    magical_defense: 12
+    attributes:
+      defense: 22
+      strength: 15
+      vitality: 10
+    rarity: EPIC
+    max_durability: 700
+    description: "由血鋼打造的高階戰士頭盔"
+
+  bloodsteel_warrior_chestplate:
+    name: "血鋼重甲"
+    type: HEAVY
+    slot: CHESTPLATE
+    material: DIAMOND_CHESTPLATE
+    trim_pattern: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    trim_material: RED_STONE
+    required_level: 20
+    physical_defense: 40
+    magical_defense: 15
+    attributes:
+      defense: 30
+      vitality: 45
+      strength: 10
+    rarity: EPIC
+    max_durability: 850
+    description: "散發壓迫感的終階重型鎧甲"
+
+  bloodsteel_warrior_leggings:
+    name: "血鋼護腿"
+    type: HEAVY
+    slot: LEGGINGS
+    material: DIAMOND_LEGGINGS
+    trim_pattern: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    trim_material: RED_STONE
+    required_level: 20
+    physical_defense: 35
+    magical_defense: 13
+    attributes:
+      vitality: 40
+      defense: 18
+    rarity: EPIC
+    max_durability: 800
+    description: "經歷無數戰鬥洗禮的護腿"
+
+  bloodsteel_warrior_boots:
+    name: "血鋼戰靴"
+    type: HEAVY
+    slot: BOOTS
+    material: DIAMOND_BOOTS
+    trim_pattern: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    trim_material: RED_STONE
+    required_level: 20
+    physical_defense: 22
+    magical_defense: 10
+    attributes:
+      strength: 18
+      movement_speed: 3
+      defense: 8
+    rarity: EPIC
+    max_durability: 650
+    description: "高階戰士專屬的血鋼戰靴"
+
 
   # ═══════════════════════════════════════════
   #  Lv.21~50 — 成長期
@@ -2595,6 +2870,8 @@ armors:
     type: HEAVY
     slot: HELMET
     material: DIAMOND_HELMET
+    trim_pattern: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    trim_material: RED_STONE
     required_level: 35
     physical_defense: 32
     magical_defense: 10
@@ -2609,6 +2886,8 @@ armors:
     type: HEAVY
     slot: CHESTPLATE
     material: DIAMOND_CHESTPLATE
+    trim_pattern: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    trim_material: RED_STONE
     required_level: 35
     physical_defense: 50
     magical_defense: 14
@@ -2624,6 +2903,8 @@ armors:
     type: HEAVY
     slot: LEGGINGS
     material: DIAMOND_LEGGINGS
+    trim_pattern: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    trim_material: RED_STONE
     required_level: 35
     physical_defense: 38
     magical_defense: 12
@@ -2638,6 +2919,8 @@ armors:
     type: HEAVY
     slot: BOOTS
     material: DIAMOND_BOOTS
+    trim_pattern: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    trim_material: RED_STONE
     required_level: 35
     physical_defense: 22
     magical_defense: 8

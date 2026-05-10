@@ -1,8 +1,15 @@
 package com.customrpg.equipment;
 
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.trim.ArmorTrim;
+import org.bukkit.inventory.meta.trim.TrimMaterial;
+import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
@@ -12,7 +19,9 @@ import java.util.*;
  */
 public class EquipmentData {
 
-    // 基本信息
+    /** PDC key：儲存裝備的需求等級，供升級時動態重整 lore 使用 */
+    public static final NamespacedKey PDC_REQUIRED_LEVEL =
+            new NamespacedKey("customrpg", "equipment_required_level");    // 基本信息
     private String id;
     private String name;
     private String description;
@@ -35,6 +44,10 @@ public class EquipmentData {
     // 特殊效果
     private List<String> specialEffects;
     private Map<String, Object> effectData;
+
+    // 盔甲外觀
+    private String armorTrimPattern;
+    private String armorTrimMaterial;
 
     // 需求條件
     private int requiredLevel;
@@ -62,6 +75,8 @@ public class EquipmentData {
         this.maxRuneSlots = rarity.getRuneSlots();
         this.specialEffects = new ArrayList<>();
         this.effectData = new HashMap<>();
+        this.armorTrimPattern = "";
+        this.armorTrimMaterial = "";
         this.requiredStats = new HashMap<>();
         this.requiredLevel = 1;  // 初始化為1
         this.createTime = System.currentTimeMillis();
@@ -215,9 +230,18 @@ public class EquipmentData {
     }
 
     /**
-     * 轉換為ItemStack
+     * 轉換為ItemStack（不帶玩家等級，需求等級永遠顯示）
      */
     public ItemStack toItemStack() {
+        return toItemStack(-1);
+    }
+
+    /**
+     * 轉換為ItemStack
+     *
+     * @param playerLevel 玩家當前等級；傳入 -1 代表永遠顯示需求等級
+     */
+    public ItemStack toItemStack(int playerLevel) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
 
@@ -280,8 +304,8 @@ public class EquipmentData {
                 lore.add("");
             }
 
-            // 需求條件
-            if (requiredLevel > 1) {
+            // 需求條件：玩家等級未達到才顯示
+            if (requiredLevel > 1 && playerLevel < requiredLevel) {
                 lore.add("§c需求等級: " + requiredLevel);
             }
 
@@ -293,6 +317,12 @@ public class EquipmentData {
                 }
             }
 
+            applyArmorTrim(meta);
+            // 將需求等級寫入 PDC，以便玩家升級時自動刷新 lore
+            if (requiredLevel > 1) {
+                meta.getPersistentDataContainer().set(
+                        PDC_REQUIRED_LEVEL, PersistentDataType.INTEGER, requiredLevel);
+            }
             meta.setLore(lore);
             item.setItemMeta(meta);
         }
@@ -375,6 +405,12 @@ public class EquipmentData {
     public List<String> getSpecialEffects() { return specialEffects; }
     public void setSpecialEffects(List<String> specialEffects) { this.specialEffects = specialEffects; }
 
+    public String getArmorTrimPattern() { return armorTrimPattern; }
+    public void setArmorTrimPattern(String armorTrimPattern) { this.armorTrimPattern = armorTrimPattern != null ? armorTrimPattern : ""; }
+
+    public String getArmorTrimMaterial() { return armorTrimMaterial; }
+    public void setArmorTrimMaterial(String armorTrimMaterial) { this.armorTrimMaterial = armorTrimMaterial != null ? armorTrimMaterial : ""; }
+
     public int getRequiredLevel() { return requiredLevel; }
     public void setRequiredLevel(int requiredLevel) { this.requiredLevel = requiredLevel; }
 
@@ -388,4 +424,67 @@ public class EquipmentData {
 
     public UUID getOriginalOwner() { return originalOwner; }
     public void setOriginalOwner(UUID originalOwner) { this.originalOwner = originalOwner; }
+
+    private void applyArmorTrim(ItemMeta meta) {
+        if (!(meta instanceof ArmorMeta armorMeta) || armorTrimPattern == null || armorTrimPattern.isBlank()
+                || armorTrimMaterial == null || armorTrimMaterial.isBlank()) {
+            return;
+        }
+
+        TrimPattern pattern = resolveTrimPattern(armorTrimPattern);
+        TrimMaterial material = resolveTrimMaterial(armorTrimMaterial);
+        if (pattern == null || material == null) {
+            return;
+        }
+
+        armorMeta.setTrim(new ArmorTrim(material, pattern));
+    }
+
+    private TrimPattern resolveTrimPattern(String input) {
+        String normalized = normalizeTrimPatternKey(input);
+        NamespacedKey key = normalized.contains(":")
+                ? NamespacedKey.fromString(normalized)
+                : NamespacedKey.minecraft(normalized);
+        return key != null ? Registry.TRIM_PATTERN.get(key) : null;
+    }
+
+    private TrimMaterial resolveTrimMaterial(String input) {
+        String normalized = normalizeTrimMaterialKey(input);
+        NamespacedKey key = normalized.contains(":")
+                ? NamespacedKey.fromString(normalized)
+                : NamespacedKey.minecraft(normalized);
+        return key != null ? Registry.TRIM_MATERIAL.get(key) : null;
+    }
+
+    private String normalizeTrimPatternKey(String input) {
+        String normalized = input.trim().toLowerCase(Locale.ROOT).replace(' ', '_');
+        if (!normalized.contains(":")) {
+            normalized = normalized
+                    .replace("_armor_trim_smithing_template", "")
+                    .replace("_smithing_template", "");
+        }
+        return normalized;
+    }
+
+    private String normalizeTrimMaterialKey(String input) {
+        String normalized = input.trim().toLowerCase(Locale.ROOT).replace(' ', '_');
+        if (normalized.contains(":")) {
+            return normalized;
+        }
+
+        return switch (normalized) {
+            case "red_stone", "redstone_dust" -> "redstone";
+            case "lapis_lazuli", "lapis_block", "lapislazuli" -> "lapis";
+            case "nether_quartz" -> "quartz";
+            case "amethyst_shard" -> "amethyst";
+            case "copper_ingot" -> "copper";
+            case "iron_ingot" -> "iron";
+            case "gold_ingot" -> "gold";
+            case "diamond_gem" -> "diamond";
+            case "emerald_gem" -> "emerald";
+            case "netherite_ingot" -> "netherite";
+            case "resin_brick" -> "resin";
+            default -> normalized;
+        };
+    }
 }

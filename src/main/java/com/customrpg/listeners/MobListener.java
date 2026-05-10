@@ -11,7 +11,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.inventory.ItemStack;
@@ -161,7 +163,9 @@ public class MobListener implements Listener {
             }
             case "berserker_rage" -> {
                 // 狂戰殭屍：低血量時發紅光粒子
-                double hpPercent = mob.getHealth() / mob.getMaxHealth();
+                double hpPercent = MobManager.hasVirtualHP(mob)
+                        ? MobManager.getVirtualCurrentHP(mob) / MobManager.getVirtualMaxHP(mob)
+                        : mob.getHealth() / mob.getMaxHealth();
                 if (hpPercent < 0.3) {
                     mob.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, mob.getLocation().add(0, 1, 0),
                             3, 0.3, 0.3, 0.3, 0.02);
@@ -547,7 +551,9 @@ public class MobListener implements Listener {
 
         // 狂戰殭屍：HP < 30% → +50% 傷害
         if (mobData.getSpecialBehavior().equalsIgnoreCase("berserker_rage")) {
-            double hpPercent = attacker.getHealth() / attacker.getMaxHealth();
+            double hpPercent = MobManager.hasVirtualHP(attacker)
+                    ? MobManager.getVirtualCurrentHP(attacker) / MobManager.getVirtualMaxHP(attacker)
+                    : attacker.getHealth() / attacker.getMaxHealth();
             if (hpPercent < 0.3) {
                 scaledDamage *= 1.5;
                 attacker.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, attacker.getLocation().add(0, 1.5, 0),
@@ -1177,6 +1183,122 @@ public class MobListener implements Listener {
         }.runTaskTimer(plugin, 0L, 2L);
     }
 
+    // ══════════════════════════════════════════════════════════
+    //  虛擬 HP 系統：傷害 & 回血攔截
+    // ══════════════════════════════════════════════════════════
+
+    /**
+     * 攔截對「虛擬 HP 怪物」的所有傷害事件
+     * 將 MC 傷害按比例轉換為虛擬傷害，並同步 MC HP
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onVirtualHPDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        if (!MobManager.hasVirtualHP(mob)) return;
+
+        double finalDamage = event.getFinalDamage();
+        if (finalDamage <= 0) return;
+
+        double virtualMaxHp = MobManager.getVirtualMaxHP(mob);
+        double currentVirtualHp = MobManager.getVirtualCurrentHP(mob);
+
+        // 比例：1 MC 傷害 = ratio 虛擬傷害
+        double ratio = virtualMaxHp / MobManager.getMcMaxHealthCap();
+        double virtualDamage = finalDamage * ratio;
+        double newVirtualHp = currentVirtualHp - virtualDamage;
+
+        if (newVirtualHp <= 0) {
+            // 怪物應死亡 — 儲存虛擬 HP = 0，讓事件通過以觸發死亡
+            mob.getPersistentDataContainer().set(
+                    new org.bukkit.NamespacedKey(plugin, MobManager.VIRTUAL_CURRENT_HP_KEY),
+                    org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0);
+            return; // 不取消 → 讓 Minecraft 自然觸發死亡事件
+        }
+
+        // 取消事件，手動扣虛擬 HP 並同步 MC HP
+        event.setCancelled(true);
+
+        // 儲存新虛擬 HP
+        mob.getPersistentDataContainer().set(
+                new org.bukkit.NamespacedKey(plugin, MobManager.VIRTUAL_CURRENT_HP_KEY),
+                org.bukkit.persistence.PersistentDataType.DOUBLE, newVirtualHp);
+
+        // 計算目標 MC HP
+        double targetMcHp = (newVirtualHp / virtualMaxHp) * mob.getMaxHealth();
+        targetMcHp = Math.max(0.1, Math.min(targetMcHp, mob.getMaxHealth()));
+        final double finalMcHp = targetMcHp;
+
+        // 下一 tick 設定 MC HP（不能在事件中直接 setHealth）
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (mob.isValid() && !mob.isDead()) {
+                    mob.setHealth(finalMcHp);
+                }
+            }
+        }.runTask(plugin);
+
+        // === 手動觸發受傷效果（因事件被取消，這些不會自動觸發） ===
+        // 受傷音效
+        Sound hurtSound = switch (mob.getType()) {
+            case ZOMBIE, ZOMBIE_VILLAGER, HUSK, DROWNED, ZOMBIFIED_PIGLIN -> Sound.ENTITY_ZOMBIE_HURT;
+            case SKELETON, STRAY, WITHER_SKELETON -> Sound.ENTITY_SKELETON_HURT;
+            case SPIDER, CAVE_SPIDER -> Sound.ENTITY_SPIDER_HURT;
+            case CREEPER -> Sound.ENTITY_CREEPER_HURT;
+            case ENDERMAN -> Sound.ENTITY_ENDERMAN_HURT;
+            case BLAZE -> Sound.ENTITY_BLAZE_HURT;
+            case MAGMA_CUBE, SLIME -> Sound.ENTITY_SLIME_HURT;
+            case GHAST -> Sound.ENTITY_GHAST_HURT;
+            case IRON_GOLEM -> Sound.ENTITY_IRON_GOLEM_HURT;
+            default -> Sound.ENTITY_GENERIC_HURT;
+        };
+        mob.getWorld().playSound(mob.getLocation(), hurtSound, 1.0f, 1.0f);
+
+        // 受傷粒子
+        Location hurtLoc = mob.getLocation().add(0, mob.getHeight() * 0.6, 0);
+        mob.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, hurtLoc, 1, 0.2, 0.2, 0.2, 0.05);
+
+        // 設定無敵幀（防止連續傷害）
+        mob.setNoDamageTicks(10);
+    }
+
+    /**
+     * 攔截對「虛擬 HP 怪物」的回血事件（如天然再生、藥水效果）
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onVirtualHPHeal(EntityRegainHealthEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        if (!MobManager.hasVirtualHP(mob)) return;
+
+        double healAmount = event.getAmount();
+        if (healAmount <= 0) return;
+
+        double virtualMaxHp = MobManager.getVirtualMaxHP(mob);
+        double currentVirtualHp = MobManager.getVirtualCurrentHP(mob);
+
+        double ratio = virtualMaxHp / MobManager.getMcMaxHealthCap();
+        double virtualHeal = healAmount * ratio;
+        double newVirtualHp = Math.min(virtualMaxHp, currentVirtualHp + virtualHeal);
+
+        event.setCancelled(true);
+
+        mob.getPersistentDataContainer().set(
+                new org.bukkit.NamespacedKey(plugin, MobManager.VIRTUAL_CURRENT_HP_KEY),
+                org.bukkit.persistence.PersistentDataType.DOUBLE, newVirtualHp);
+
+        double newMcHp = (newVirtualHp / virtualMaxHp) * mob.getMaxHealth();
+        final double finalMcHp = Math.min(newMcHp, mob.getMaxHealth());
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (mob.isValid() && !mob.isDead()) {
+                    mob.setHealth(finalMcHp);
+                }
+            }
+        }.runTask(plugin);
+    }
+
     /**
      * 防止自訂怪物被陽光燃燒
      * 殭屍、骷髏等不死生物在白天會著火，取消此行為
@@ -1209,8 +1331,8 @@ public class MobListener implements Listener {
         }
 
         MagmaCoreState state = magmaCoreStates.computeIfAbsent(mob.getUniqueId(), k -> new MagmaCoreState());
-        double maxHp  = mob.getMaxHealth();
-        double curHp  = mob.getHealth();
+        double maxHp  = MobManager.hasVirtualHP(mob) ? MobManager.getVirtualMaxHP(mob) : mob.getMaxHealth();
+        double curHp  = MobManager.hasVirtualHP(mob) ? MobManager.getVirtualCurrentHP(mob) : mob.getHealth();
         double hpPct  = curHp / maxHp;
         long   now    = System.currentTimeMillis();
         Location loc  = mob.getLocation();
@@ -1243,7 +1365,11 @@ public class MobListener implements Listener {
                 state.activeSplits.clear();
                 state.inSplitPhase = false;
                 double heal = maxHp * 0.15;
-                mob.setHealth(Math.min(curHp + heal, maxHp));
+                if (MobManager.hasVirtualHP(mob)) {
+                    MobManager.healVirtualHP(mob, heal);
+                } else {
+                    mob.setHealth(Math.min(curHp + heal, maxHp));
+                }
                 loc.getWorld().spawnParticle(Particle.EXPLOSION, loc.clone().add(0, 2, 0), 20, 2, 2, 2, 0.1);
                 loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.35f);
                 broadcast(loc, 60, ChatColor.DARK_RED + "" + ChatColor.BOLD + "[熔核巨獸] 熔核再生！" + ChatColor.RED + "分裂體重新融合，回復 15% 生命值！");
@@ -1468,8 +1594,14 @@ public class MobListener implements Listener {
                 long remaining = lavaBlocks.stream().filter(b -> b.getType() == org.bukkit.Material.LAVA).count();
                 if (remaining > 0) {
                     double heal = mob.getMaxHealth() * 0.05 * remaining;
-                    mob.setHealth(Math.min(mob.getHealth() + heal, mob.getMaxHealth()));
-                    broadcast(mob.getLocation(), 35, ChatColor.RED + "[熔核巨獸] 吸收了熔岩！回復 " + ChatColor.YELLOW + (int) heal + ChatColor.RED + " 生命值！");
+                    if (MobManager.hasVirtualHP(mob)) {
+                        MobManager.healVirtualHP(mob, heal);
+                        double vCurrent = MobManager.getVirtualCurrentHP(mob);
+                        broadcast(mob.getLocation(), 35, ChatColor.RED + "[熔核巨獸] 吸收了熔岩！回復 " + ChatColor.YELLOW + (int)(heal * MobManager.getVirtualMaxHP(mob) / MobManager.getMcMaxHealthCap()) + ChatColor.RED + " 生命值！");
+                    } else {
+                        mob.setHealth(Math.min(mob.getHealth() + heal, mob.getMaxHealth()));
+                        broadcast(mob.getLocation(), 35, ChatColor.RED + "[熔核巨獸] 吸收了熔岩！回復 " + ChatColor.YELLOW + (int) heal + ChatColor.RED + " 生命值！");
+                    }
                     mob.getWorld().spawnParticle(Particle.HEART, mob.getLocation().add(0, 3, 0), 10, 0.5, 0.5, 0.5, 0.1);
                 } else {
                     broadcast(mob.getLocation(), 35, ChatColor.GREEN + "[熔核巨獸] 熔岩被全數摧毀！回血被阻止！");

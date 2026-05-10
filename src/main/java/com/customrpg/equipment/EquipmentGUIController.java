@@ -93,7 +93,7 @@ public class EquipmentGUIController implements Listener {
             for (ArmorData armor : armors) {
                 if (index >= 45) break; // 最多45個
 
-                ItemStack item = armor.toItemStack();
+                ItemStack item = armor.toItemStack(getPlayerLevel(player));
 
                 // 添加驗證狀態
                 ValidationResult result = validator.validateArmor(player, armor);
@@ -167,7 +167,7 @@ public class EquipmentGUIController implements Listener {
 
             EquipmentData equip = equipment.get(slot);
             if (equip != null) {
-                gui.setItem(position, equip.toItemStack());
+                gui.setItem(position, equip.toItemStack(getPlayerLevel(player)));
             } else {
                 gui.setItem(position, createEmptySlot(slot));
             }
@@ -341,6 +341,14 @@ public class EquipmentGUIController implements Listener {
             openGUIs.remove(player.getUniqueId());
             guiTypes.remove(player.getUniqueId());
         }
+    }
+
+    /**
+     * 獲取玩家的 RPG 等級；若查不到則回傳 0
+     */
+    private int getPlayerLevel(Player player) {
+        com.customrpg.players.PlayerStats stats = plugin.getPlayerStatsManager().getStats(player);
+        return stats != null ? stats.getLevel() : 0;
     }
 
     /**

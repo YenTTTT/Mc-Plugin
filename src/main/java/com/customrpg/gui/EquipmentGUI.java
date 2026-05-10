@@ -212,7 +212,7 @@ public class EquipmentGUI implements Listener {
         fillBackground(gui, ENHANCE_GUI_SIZE);
 
         // 顯示當前裝備
-        gui.setItem(13, equipment.toItemStack());
+        gui.setItem(13, equipment.toItemStack(getPlayerLevel(player)));
 
         // 強化信息
         addEnhanceInfo(gui, player, equipment);
@@ -236,7 +236,7 @@ public class EquipmentGUI implements Listener {
         fillBackground(gui, RUNE_GUI_SIZE);
 
         // 顯示當前裝備
-        gui.setItem(13, equipment.toItemStack());
+        gui.setItem(13, equipment.toItemStack(getPlayerLevel(player)));
 
         // 符文槽位
         addRuneSlots(gui, equipment);
@@ -281,7 +281,7 @@ public class EquipmentGUI implements Listener {
             // 顯示槽位 - 顯示當前裝備或空槽位
             ItemStack displayItem;
             if (equip != null) {
-                displayItem = equip.toItemStack();
+                displayItem = equip.toItemStack(getPlayerLevel(player));
 
                 // 添加操作提示
                 ItemMeta meta = displayItem.getItemMeta();
@@ -718,12 +718,12 @@ public class EquipmentGUI implements Listener {
                     if (removed != null) {
                         // 檢查背包是否有空間
                         if (player.getInventory().firstEmpty() != -1) {
-                            player.getInventory().addItem(removed.toItemStack());
+                            player.getInventory().addItem(removed.toItemStack(getPlayerLevel(player)));
                             player.sendMessage("§a已卸除 " + removed.getName());
                             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 0.8f);
                         } else {
                             // 背包滿了，將裝備掉落到地上
-                            player.getWorld().dropItemNaturally(player.getLocation(), removed.toItemStack());
+                            player.getWorld().dropItemNaturally(player.getLocation(), removed.toItemStack(getPlayerLevel(player)));
                             player.sendMessage("§e背包已滿！" + removed.getName() + " 已掉落到地上");
                             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 0.8f);
                         }
@@ -798,9 +798,9 @@ public class EquipmentGUI implements Listener {
                             // 處理舊裝備
                             if (existingEquip != null) {
                                 if (player.getInventory().firstEmpty() != -1) {
-                                    player.getInventory().addItem(existingEquip.toItemStack());
+                                    player.getInventory().addItem(existingEquip.toItemStack(getPlayerLevel(player)));
                                 } else {
-                                    player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack());
+                                    player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack(getPlayerLevel(player)));
                                     player.sendMessage("§e背包已滿！舊裝備已掉落到地上");
                                 }
                             }
@@ -841,9 +841,9 @@ public class EquipmentGUI implements Listener {
                 if (existingEquip != null) {
                     // 如果有舊裝備，將其放入背包或掉落
                     if (player.getInventory().firstEmpty() != -1) {
-                        player.getInventory().addItem(existingEquip.toItemStack());
+                        player.getInventory().addItem(existingEquip.toItemStack(getPlayerLevel(player)));
                     } else {
-                        player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack());
+                        player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack(getPlayerLevel(player)));
                         player.sendMessage("§e背包已滿！舊裝備已掉落到地上");
                     }
                 }
@@ -879,9 +879,9 @@ public class EquipmentGUI implements Listener {
                 if (tryEquipItem(player, targetSlot, cursor)) {
                     if (existingEquip != null) {
                         if (player.getInventory().firstEmpty() != -1) {
-                            player.getInventory().addItem(existingEquip.toItemStack());
+                            player.getInventory().addItem(existingEquip.toItemStack(getPlayerLevel(player)));
                         } else {
-                            player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack());
+                            player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack(getPlayerLevel(player)));
                             player.sendMessage("§e背包已滿！舊裝備已掉落到地上");
                         }
                     }
@@ -1257,6 +1257,14 @@ public class EquipmentGUI implements Listener {
                 selectedEquipment.remove(uuid);
             }
         }
+    }
+
+    /**
+     * 獲取玩家的 RPG 等級；若查不到則回傳 0
+     */
+    private int getPlayerLevel(Player player) {
+        PlayerStats stats = statsManager.getStats(player);
+        return stats != null ? stats.getLevel() : 0;
     }
 
     /**

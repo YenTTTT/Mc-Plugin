@@ -33,6 +33,21 @@ import java.util.*;
  */
 public class MobManager {
 
+    /** Paper 1.21+ 的 GENERIC_MAX_HEALTH 屬性硬上限 */
+    private static final double MC_MAX_HEALTH_CAP = 1024.0;
+
+    /** PDC Key：儲存虛擬（實際）最大血量，供 HP 顯示、傷害換算使用 */
+    public static final String VIRTUAL_MAX_HP_KEY = "virtual_max_hp";
+
+    /** PDC Key：儲存虛擬當前血量 */
+    public static final String VIRTUAL_CURRENT_HP_KEY = "virtual_current_hp";
+
+    /** 虛擬 HP 的 NamespacedKey（靜態，供跨 Manager 存取） */
+    private static final org.bukkit.NamespacedKey NS_VIRTUAL_MAX_HP =
+            new org.bukkit.NamespacedKey("customrpg", VIRTUAL_MAX_HP_KEY);
+    private static final org.bukkit.NamespacedKey NS_VIRTUAL_CURRENT_HP =
+            new org.bukkit.NamespacedKey("customrpg", VIRTUAL_CURRENT_HP_KEY);
+
     private final CustomRPG plugin;
     private final Map<String, MobData> mobTypes;
     private final NamespacedKey customMobKey;
@@ -296,7 +311,8 @@ public class MobManager {
         for (Map<String, Object> itemConfig : items) {
             try {
                 Material material = Material.valueOf((String) itemConfig.get("material"));
-                String amountStr = (String) itemConfig.getOrDefault("amount", "1");
+                Object amountRaw = itemConfig.getOrDefault("amount", "1");
+                String amountStr = String.valueOf(amountRaw);
                 double chance = getDouble(itemConfig, "chance", 1.0);
 
                 int minAmount = 1;
@@ -693,6 +709,102 @@ public class MobManager {
     }
 
     /**
+     * 安全地設置生物最大血量，兼容 Paper 1.21+ 的 1024 硬上限。
+     * 當 desiredHealth > 1024 時，Minecraft HP 裁切為 1024，
+     * 並將「虛擬最大血量」寫入 PDC 供其他系統（傷害換算、名牌顯示）使用。
+     */
+    public static void applyMobMaxHealth(LivingEntity mob, double desiredHealth) {
+        double mcHealth = Math.min(desiredHealth, MC_MAX_HEALTH_CAP);
+
+        org.bukkit.attribute.AttributeInstance attr =
+                mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+        if (attr != null) {
+            attr.setBaseValue(mcHealth);
+        }
+        mob.setHealth(mob.getMaxHealth());
+
+        // 若實際設計血量超過上限，記錄虛擬 HP 以供換算
+        if (desiredHealth > MC_MAX_HEALTH_CAP) {
+            mob.getPersistentDataContainer().set(NS_VIRTUAL_MAX_HP,
+                    PersistentDataType.DOUBLE, desiredHealth);
+            mob.getPersistentDataContainer().set(NS_VIRTUAL_CURRENT_HP,
+                    PersistentDataType.DOUBLE, desiredHealth);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  虛擬 HP 靜態工具方法（供 Listener / BarManager 使用）
+    // ══════════════════════════════════════════════════════════
+
+    /** 判斷該生物是否使用虛擬 HP 系統 */
+    public static boolean hasVirtualHP(org.bukkit.entity.LivingEntity mob) {
+        return mob.getPersistentDataContainer().has(NS_VIRTUAL_MAX_HP, PersistentDataType.DOUBLE);
+    }
+
+    /** 取得虛擬最大血量；若無則回傳 MC maxHealth */
+    public static double getVirtualMaxHP(org.bukkit.entity.LivingEntity mob) {
+        Double val = mob.getPersistentDataContainer().get(NS_VIRTUAL_MAX_HP, PersistentDataType.DOUBLE);
+        return val != null ? val : mob.getMaxHealth();
+    }
+
+    /** 取得虛擬當前血量；若無則以 MC 血量推算 */
+    public static double getVirtualCurrentHP(org.bukkit.entity.LivingEntity mob) {
+        Double val = mob.getPersistentDataContainer().get(NS_VIRTUAL_CURRENT_HP, PersistentDataType.DOUBLE);
+        if (val != null) return val;
+        // 從 MC HP 比例推算
+        double vMax = getVirtualMaxHP(mob);
+        return (mob.getHealth() / mob.getMaxHealth()) * vMax;
+    }
+
+    /** 直接設定虛擬當前血量（同步更新 MC HP） */
+    public static void setVirtualCurrentHP(org.bukkit.entity.LivingEntity mob, double virtualHp) {
+        double vMax = getVirtualMaxHP(mob);
+        double clamped = Math.max(0, Math.min(virtualHp, vMax));
+        mob.getPersistentDataContainer().set(NS_VIRTUAL_CURRENT_HP, PersistentDataType.DOUBLE, clamped);
+
+        // 同步 MC HP
+        double newMcHp = (clamped / vMax) * mob.getMaxHealth();
+        newMcHp = Math.max(0.1, Math.min(newMcHp, mob.getMaxHealth()));
+        mob.setHealth(newMcHp);
+    }
+
+    /** 對虛擬 HP 怪物扣血（回傳 true＝怪物應死亡） */
+    public static boolean damageVirtualHP(org.bukkit.entity.LivingEntity mob, double mcDamage) {
+        double vMax = getVirtualMaxHP(mob);
+        double vCurrent = getVirtualCurrentHP(mob);
+        double ratio = vMax / MC_MAX_HEALTH_CAP;          // 每 1 MC 傷害 = ratio 虛擬傷害
+        double vDamage = mcDamage * ratio;
+        double vNew = vCurrent - vDamage;
+
+        if (vNew <= 0) {
+            mob.getPersistentDataContainer().set(NS_VIRTUAL_CURRENT_HP, PersistentDataType.DOUBLE, 0.0);
+            return true; // 應死亡
+        }
+        mob.getPersistentDataContainer().set(NS_VIRTUAL_CURRENT_HP, PersistentDataType.DOUBLE, vNew);
+        double newMcHp = (vNew / vMax) * mob.getMaxHealth();
+        mob.setHealth(Math.max(0.1, newMcHp));
+        return false;
+    }
+
+    /** 對虛擬 HP 怪物回血 */
+    public static void healVirtualHP(org.bukkit.entity.LivingEntity mob, double mcHeal) {
+        double vMax = getVirtualMaxHP(mob);
+        double vCurrent = getVirtualCurrentHP(mob);
+        double ratio = vMax / MC_MAX_HEALTH_CAP;
+        double vHeal = mcHeal * ratio;
+        double vNew = Math.min(vMax, vCurrent + vHeal);
+
+        mob.getPersistentDataContainer().set(NS_VIRTUAL_CURRENT_HP, PersistentDataType.DOUBLE, vNew);
+        double newMcHp = (vNew / vMax) * mob.getMaxHealth();
+        mob.setHealth(Math.min(newMcHp, mob.getMaxHealth()));
+    }
+
+    /** 取得 MC 最大血量上限（供外部讀取） */
+    public static double getMcMaxHealthCap() {
+        return MC_MAX_HEALTH_CAP;
+    }
+
+    /**
      * Spawn a normal (non-disguised) mob
      */
     private LivingEntity spawnNormalMob(MobData mobData, Location location, int level) {
@@ -711,8 +823,7 @@ public class MobManager {
 
         // 設置等級化屬性
         double health = mobData.calculateHealth(level);
-        mob.setMaxHealth(health);
-        mob.setHealth(health);
+        applyMobMaxHealth(mob, health);
 
         // 裝備物品
         applyEquipment(mob, mobData);
@@ -763,8 +874,7 @@ public class MobManager {
 
         // 設置等級化屬性
         double health = mobData.calculateHealth(level);
-        mob.setMaxHealth(health);
-        mob.setHealth(health);
+        applyMobMaxHealth(mob, health);
 
         // 隨機幼年
         if (disguise.getBabyChance() > 0 && random.nextDouble() < disguise.getBabyChance()) {
@@ -833,8 +943,7 @@ public class MobManager {
 
         // 設置生命值和傷害（等級化）
         double health = mobData.calculateHealth(level);
-        core.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(health);
-        core.setHealth(health);
+        applyMobMaxHealth(core, health);
 
         // 設置攻擊力（等級化）
         double damage = mobData.calculateDamage(level);

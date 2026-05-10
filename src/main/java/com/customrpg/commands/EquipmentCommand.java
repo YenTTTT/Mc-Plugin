@@ -113,7 +113,9 @@ public class EquipmentCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        target.getInventory().addItem(equipment.toItemStack());
+        target.getInventory().addItem(equipment.toItemStack(
+                plugin.getPlayerStatsManager().getStats(target) != null
+                        ? plugin.getPlayerStatsManager().getStats(target).getLevel() : 0));
         player.sendMessage("§a已給予 " + target.getName() + " 裝備: " + equipment.getName());
 
         if (target != player) {
@@ -177,7 +179,10 @@ public class EquipmentCommand implements CommandExecutor, TabCompleter {
         }
 
         equipmentManager.reload();
-        player.sendMessage("§a裝備配置已重載！");
+        if (plugin.getArmorManager() != null) {
+            plugin.getArmorManager().reload();
+        }
+        player.sendMessage("§a裝備與裝甲配置已重載！");
     }
 
     /**

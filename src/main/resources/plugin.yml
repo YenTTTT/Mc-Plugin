@@ -5,6 +5,8 @@ api-version: '1.21'
 description: A professional RPG plugin with custom weapons, skills, and mobs
 author: CustomRPG Team
 website: https://github.com/customrpg
+soft-depend:
+  - LibsDisguises
 
 commands:
   weapon:

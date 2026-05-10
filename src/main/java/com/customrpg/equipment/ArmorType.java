@@ -10,6 +10,7 @@ package com.customrpg.equipment;
  */
 public enum ArmorType {
     LIGHT("輕甲", "§a", "刺客"),
+    MEDIUM("中甲", "§e", "戰士"),
     CLOTH("布甲", "§b", "法師"),
     HEAVY("重甲", "§7", "鬥士");
 

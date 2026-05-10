@@ -541,8 +541,7 @@ public class DistanceSpawnManager {
 
     private void applyEliteModifiers(LivingEntity mob) {
         double newMaxHealth = mob.getMaxHealth() * eliteStatMultiplier;
-        mob.setMaxHealth(newMaxHealth);
-        mob.setHealth(mob.getMaxHealth());
+        MobManager.applyMobMaxHealth(mob, newMaxHealth);
         if (mob.getCustomName() != null) {
             mob.setCustomName(eliteNamePrefix + ChatColor.translateAlternateColorCodes('&', "&e[精英] ") + mob.getCustomName());
         }
@@ -551,8 +550,7 @@ public class DistanceSpawnManager {
 
     public void applyBossModifiers(LivingEntity mob, Location location, int level) {
         double newMaxHealth = mob.getMaxHealth() * bossStatMultiplier;
-        mob.setMaxHealth(newMaxHealth);
-        mob.setHealth(mob.getMaxHealth());
+        MobManager.applyMobMaxHealth(mob, newMaxHealth);
         if (mob.getCustomName() != null) {
             mob.setCustomName(bossNamePrefix + mob.getCustomName());
         }

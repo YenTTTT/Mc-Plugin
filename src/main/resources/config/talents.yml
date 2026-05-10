@@ -979,7 +979,7 @@ weapon:
     levels:
       1:
         effect:
-          radius: 10
+          radius: 20
           swordCount: 28
           chargeTicks: 40
           fallTicks: 60
@@ -3929,7 +3929,7 @@ beast:
       level: 1
     gui:
       slot: 33
-      icon: "BONE"
+      icon: "WOLF_SPAWN_EGG"
     levels:
       1:
         effect:
@@ -3996,7 +3996,7 @@ beast:
       level: 1
     gui:
       slot: 24
-      icon: "DIAMOND_CHESTPLATE"
+      icon: "POLAR_BEAR_SPAWN_EGG"
     levels:
       1:
         effect:
@@ -4056,7 +4056,7 @@ beast:
   # 靈狐化身 (2,7) → slot 15 — 主動：變身為狐狸 (隱身+暴擊)
   fox_form:
     name: "靈狐化身"
-    description: "化身為靈狐，獲得隱身、超高速度與暴擊加成"
+    description: "化身為靈狐，超高速度與暴擊加成"
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
@@ -4071,7 +4071,7 @@ beast:
       level: 1
     gui:
       slot: 15
-      icon: "SWEET_BERRIES"
+      icon: "FOX_SPAWN_EGG"
     levels:
       1:
         effect:
@@ -4135,7 +4135,7 @@ beast:
       level: 2
     gui:
       slot: 6
-      icon: "NETHERITE_CHESTPLATE"
+      icon: "RAVAGER_SPAWN_EGG"
     levels:
       1:
         effect:

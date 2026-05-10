@@ -746,8 +746,7 @@ public class MobSpawnManager {
     private void applyBossModifiers(LivingEntity mob, Location location, int level) {
         if (bossStatMultiplier != 1.0) {
             double newMaxHealth = mob.getMaxHealth() * bossStatMultiplier;
-            mob.setMaxHealth(newMaxHealth);
-            mob.setHealth(newMaxHealth);
+            MobManager.applyMobMaxHealth(mob, newMaxHealth);
         }
 
         String currentName = mob.getCustomName();

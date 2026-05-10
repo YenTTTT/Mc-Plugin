@@ -85,6 +85,8 @@ public class ArmorData extends EquipmentData {
         copy.setMagicalDefense(this.magicalDefense);
         copy.setRarity(getRarity());
         copy.setDescription(getDescription());
+        copy.setArmorTrimPattern(getArmorTrimPattern());
+        copy.setArmorTrimMaterial(getArmorTrimMaterial());
         copy.setMaxDurability(this.maxDurability);
         copy.setDurability(this.durability);
 

@@ -134,6 +134,8 @@ public class ArmorManager {
 
             // 其他屬性
             armor.setDescription(section.getString("description", ""));
+            armor.setArmorTrimPattern(section.getString("trim_pattern", ""));
+            armor.setArmorTrimMaterial(section.getString("trim_material", ""));
             String rarityStr = section.getString("rarity", "COMMON");
             armor.setRarity(EquipmentRarity.valueOf(rarityStr.toUpperCase()));
             armor.setMaxDurability(section.getInt("max_durability", 100));

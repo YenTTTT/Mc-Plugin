@@ -4699,9 +4699,6 @@ public class TalentSkillManager {
         int speedLevel = (int) talent.getEffectDouble(level, "speedLevel", 3);
 
         boolean ok = bm.activateBeastForm(player, "fox", duration, strengthBonus, healthBonus, speedLevel, 0);
-        if (ok) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, duration * 20, 0, true, false));
-        }
         return ok;
     }
 

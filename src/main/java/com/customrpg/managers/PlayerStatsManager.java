@@ -313,6 +313,12 @@ public class PlayerStatsManager {
         // 如果還有剩餘經驗值大於下一級需求，繼續升級
         checkLevelUp(player);
 
+        // 刷新背包中裝備物品的「需求等級」lore
+        com.customrpg.equipment.EquipmentManager equipmentManager = plugin.getEquipmentManager();
+        if (equipmentManager != null) {
+            equipmentManager.refreshRequiredLevelLore(player, stats.getLevel());
+        }
+
         saveStats(player);
     }
 

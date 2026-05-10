@@ -61,8 +61,17 @@ public class BossBarManager {
     public void createBossBossBar(LivingEntity mob, int level) {
         if (activeBossBars.containsKey(mob.getUniqueId())) return;
 
-        String name = mob.getCustomName() != null ? mob.getCustomName() : "Boss";
-        String title = ChatColor.DARK_RED + "💀 " + name + ChatColor.GRAY + " Lv." + level;
+        String name = mob.getCustomName() != null
+                ? ChatColor.stripColor(mob.getCustomName()) : "Boss";
+
+        // 若有虛擬 HP，在標題顯示實際血量
+        String hpText = "";
+        if (MobManager.hasVirtualHP(mob)) {
+            double vMax = MobManager.getVirtualMaxHP(mob);
+            hpText = ChatColor.GRAY + " [" + ChatColor.RED + formatHP(vMax)
+                    + ChatColor.GRAY + " / " + ChatColor.WHITE + formatHP(vMax) + ChatColor.GRAY + "]";
+        }
+        String title = ChatColor.DARK_RED + "💀 " + name + ChatColor.GRAY + " Lv." + level + hpText;
 
         BossBar bar = Bukkit.createBossBar(title, BarColor.RED, BarStyle.SEGMENTED_10, BarFlag.CREATE_FOG);
         bar.setProgress(1.0);
@@ -110,7 +119,10 @@ public class BossBarManager {
             case "ELITE" -> {
                 String title = ChatColor.GOLD + "⚔ " + name + ChatColor.GRAY + " Lv." + level;
                 BossBar bar = Bukkit.createBossBar(title, BarColor.YELLOW, BarStyle.SEGMENTED_6);
-                bar.setProgress(mob.getHealth() / mob.getMaxHealth());
+                double prog = MobManager.hasVirtualHP(mob)
+                        ? MobManager.getVirtualCurrentHP(mob) / MobManager.getVirtualMaxHP(mob)
+                        : mob.getHealth() / mob.getMaxHealth();
+                bar.setProgress(Math.max(0.0, Math.min(1.0, prog)));
                 bar.setVisible(true);
                 activeBossBars.put(mobId, bar);
                 barExpiry.put(mobId, System.currentTimeMillis() + ELITE_BAR_DURATION_MS);
@@ -120,7 +132,10 @@ public class BossBarManager {
                 // 普通怪物 - 短暫顯示
                 String title = ChatColor.LIGHT_PURPLE + name + ChatColor.GRAY + " Lv." + level;
                 BossBar bar = Bukkit.createBossBar(title, BarColor.PURPLE, BarStyle.SOLID);
-                bar.setProgress(mob.getHealth() / mob.getMaxHealth());
+                double prog = MobManager.hasVirtualHP(mob)
+                        ? MobManager.getVirtualCurrentHP(mob) / MobManager.getVirtualMaxHP(mob)
+                        : mob.getHealth() / mob.getMaxHealth();
+                bar.setProgress(Math.max(0.0, Math.min(1.0, prog)));
                 bar.setVisible(true);
                 activeBossBars.put(mobId, bar);
                 barExpiry.put(mobId, System.currentTimeMillis() + NORMAL_BAR_DURATION_MS);
@@ -141,14 +156,21 @@ public class BossBarManager {
     }
 
     /**
-     * 更新指定怪物的血量條
+     * 更新指定怪物的血量條（支援虛擬 HP）
      */
     private void updateBarHealth(LivingEntity mob) {
         BossBar bar = activeBossBars.get(mob.getUniqueId());
         if (bar == null) return;
 
-        double progress = Math.max(0.0, Math.min(1.0, mob.getHealth() / mob.getMaxHealth()));
-        bar.setProgress(progress);
+        double progress;
+        if (MobManager.hasVirtualHP(mob)) {
+            double vCurrent = MobManager.getVirtualCurrentHP(mob);
+            double vMax = MobManager.getVirtualMaxHP(mob);
+            progress = vMax > 0 ? vCurrent / vMax : 0;
+        } else {
+            progress = mob.getMaxHealth() > 0 ? mob.getHealth() / mob.getMaxHealth() : 0;
+        }
+        bar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
     }
 
     /**
@@ -193,9 +215,34 @@ public class BossBarManager {
                         continue;
                     }
 
-                    // 更新血量
-                    double progress = Math.max(0.0, Math.min(1.0, mob.getHealth() / mob.getMaxHealth()));
-                    bar.setProgress(progress);
+                    // 更新血量（使用虛擬 HP 或 MC HP）
+                    double progress;
+                    if (MobManager.hasVirtualHP(mob)) {
+                        double vCurrent = MobManager.getVirtualCurrentHP(mob);
+                        double vMax = MobManager.getVirtualMaxHP(mob);
+                        progress = vMax > 0 ? vCurrent / vMax : 0;
+
+                        // 更新 BossBar 標題顯示實際血量數字
+                        String mobKey = mobManager.getCustomMobKey(mob);
+                        int level = mobManager.getMobLevel(mob);
+                        String mobName = mob.getCustomName() != null
+                                ? ChatColor.stripColor(mob.getCustomName()) : (mobKey != null ? mobKey : "Boss");
+                        String tier = mobManager.getMobTier(mob);
+                        String tierTag = switch (tier) {
+                            case "ELITE" -> ChatColor.GOLD + "⚔ ";
+                            case "BOSS" -> ChatColor.DARK_RED + "💀 ";
+                            default -> ChatColor.LIGHT_PURPLE + "";
+                        };
+                        String hpText = ChatColor.GRAY + " [" + ChatColor.RED
+                                + formatHP(vCurrent) + ChatColor.GRAY + " / "
+                                + ChatColor.WHITE + formatHP(vMax) + ChatColor.GRAY + "]";
+                        String newTitle = tierTag + ChatColor.translateAlternateColorCodes('&', mobName)
+                                + ChatColor.GRAY + " Lv." + level + hpText;
+                        bar.setTitle(newTitle);
+                    } else {
+                        progress = mob.getMaxHealth() > 0 ? mob.getHealth() / mob.getMaxHealth() : 0;
+                    }
+                    bar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
 
                     // 更新玩家列表（根據距離）
                     String tier = mobManager.getMobTier(mob);
@@ -218,6 +265,19 @@ public class BossBarManager {
                 }
             }
         }.runTaskTimer(plugin, 0L, 10L); // 每 0.5 秒更新
+    }
+
+    /**
+     * 格式化 HP 數字（≥1000 時顯示 k，如 5.4k）
+     */
+    private static String formatHP(double hp) {
+        int rounded = (int) Math.ceil(hp);
+        if (rounded >= 10000) {
+            return String.format("%.1fk", rounded / 1000.0);
+        } else if (rounded >= 1000) {
+            return String.format("%.1fk", rounded / 1000.0);
+        }
+        return String.valueOf(rounded);
     }
 
     /**

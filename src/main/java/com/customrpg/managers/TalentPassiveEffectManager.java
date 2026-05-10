@@ -138,8 +138,12 @@ public class TalentPassiveEffectManager implements Listener {
         // 應用最大血量加成
         double healthBonus = bonuses.getOrDefault("max-health", 0.0);
         if (healthBonus > 0) {
-            double newMaxHealth = player.getMaxHealth() + healthBonus;
-            player.setMaxHealth(Math.min(2048.0, newMaxHealth)); // Minecraft 限制
+            double newMaxHealth = Math.min(1024.0, player.getMaxHealth() + healthBonus);
+            org.bukkit.attribute.AttributeInstance attr =
+                    player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (attr != null) {
+                attr.setBaseValue(newMaxHealth);
+            }
         }
 
         // 應用速度效果

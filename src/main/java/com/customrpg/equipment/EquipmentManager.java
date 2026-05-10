@@ -8,6 +8,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
 import java.io.IOException;
@@ -136,16 +138,21 @@ public class EquipmentManager {
         // 載入護甲 (armors.yml)
         ConfigurationSection equipmentSection = equipmentConfig.getConfigurationSection("armors");
         if (equipmentSection != null) {
+            plugin.getLogger().info("開始從 armors.yml 載入裝備...");
             for (String equipId : equipmentSection.getKeys(false)) {
                 try {
                     EquipmentData equipment = loadEquipmentFromConfig(equipId, equipmentSection.getConfigurationSection(equipId));
                     if (equipment != null) {
                         equipmentTemplates.put(equipId, equipment);
+                        plugin.getLogger().info("成功載入裝備: " + equipId + " - " + equipment.getName());
                     }
                 } catch (Exception e) {
                     plugin.getLogger().warning("載入裝備 " + equipId + " 時發生錯誤: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
+        } else {
+            plugin.getLogger().warning("警告: 在 armors.yml 中找不到 'armors' 配置區段！");
         }
 
         // 載入飾品 (accessories.yml)
@@ -170,13 +177,18 @@ public class EquipmentManager {
      * 從配置載入裝備數據
      */
     private EquipmentData loadEquipmentFromConfig(String id, ConfigurationSection section) {
-        if (section == null) return null;
+        if (section == null) {
+            plugin.getLogger().warning("裝備 " + id + " 的配置區段為 null");
+            return null;
+        }
 
         String name = section.getString("name", id);
         String description = section.getString("description", "");
         String materialStr = section.getString("material", "STONE");
         String slotStr = section.getString("slot", "HELMET");
         String rarityStr = section.getString("rarity", "COMMON");
+
+        plugin.getLogger().info("  載入裝備 " + id + ": name=" + name + ", material=" + materialStr + ", slot=" + slotStr);
 
         try {
             org.bukkit.Material material = org.bukkit.Material.valueOf(materialStr.toUpperCase());
@@ -193,14 +205,20 @@ public class EquipmentManager {
             ConfigurationSection attributesSection = section.getConfigurationSection("attributes");
             if (attributesSection != null) {
                 Map<EquipmentAttribute, Double> attributes = new HashMap<>();
+                plugin.getLogger().info("    載入屬性:");
                 for (String attrKey : attributesSection.getKeys(false)) {
                     EquipmentAttribute attr = EquipmentAttribute.fromName(attrKey.toUpperCase());
                     if (attr != null) {
                         double value = attributesSection.getDouble(attrKey);
                         attributes.put(attr, value);
+                        plugin.getLogger().info("      " + attrKey + " = " + value + " -> " + attr.name());
+                    } else {
+                        plugin.getLogger().warning("      無法識別屬性: " + attrKey);
                     }
                 }
                 equipment.setBaseAttributes(attributes);
+            } else {
+                plugin.getLogger().info("    沒有屬性配置");
             }
 
             // 載入特殊效果
@@ -211,6 +229,7 @@ public class EquipmentManager {
 
         } catch (IllegalArgumentException e) {
             plugin.getLogger().warning("裝備 " + id + " 配置錯誤: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
@@ -636,6 +655,8 @@ public class EquipmentManager {
         equipment.setSetId(template.getSetId());
         equipment.setBaseAttributes(new HashMap<>(template.getBaseAttributes()));
         equipment.setSpecialEffects(new ArrayList<>(template.getSpecialEffects()));
+        equipment.setArmorTrimPattern(template.getArmorTrimPattern());
+        equipment.setArmorTrimMaterial(template.getArmorTrimMaterial());
 
         return equipment;
     }
@@ -693,4 +714,57 @@ public class EquipmentManager {
     public Map<String, SetData> getSetData() { return setData; }
     public Map<String, RuneData> getRuneTemplates() { return runeTemplates; }
     public SetData getSetData(String setId) { return setData.get(setId); }
+
+    /**
+     * 玩家升級後，掃描背包和裝備槽中的所有裝備物品，
+     * 動態加入或移除「需求等級」lore，使其與玩家當前等級同步。
+     *
+     * @param player   目標玩家
+     * @param newLevel 玩家升級後的新等級
+     */
+    public void refreshRequiredLevelLore(Player player, int newLevel) {
+        // 收集所有需要檢查的 ItemStack（背包 + 盔甲欄）
+        List<ItemStack> allItems = new ArrayList<>();
+        allItems.addAll(Arrays.asList(player.getInventory().getContents()));
+        allItems.addAll(Arrays.asList(player.getInventory().getArmorContents()));
+
+        boolean inventoryChanged = false;
+
+        for (ItemStack item : allItems) {
+            if (item == null || item.getType() == Material.AIR) continue;
+            if (!item.hasItemMeta()) continue;
+
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) continue;
+
+            // 只處理有 equipment_required_level PDC 的物品
+            Integer requiredLevel = meta.getPersistentDataContainer()
+                    .get(EquipmentData.PDC_REQUIRED_LEVEL, PersistentDataType.INTEGER);
+            if (requiredLevel == null || requiredLevel <= 1) continue;
+
+            List<String> lore = meta.getLore();
+            if (lore == null) lore = new ArrayList<>();
+
+            String loreLine = "§c需求等級: " + requiredLevel;
+            boolean hasLine = lore.contains(loreLine);
+
+            if (newLevel >= requiredLevel && hasLine) {
+                // 玩家已達到需求等級 → 移除 lore
+                lore.remove(loreLine);
+                meta.setLore(lore);
+                item.setItemMeta(meta);
+                inventoryChanged = true;
+            } else if (newLevel < requiredLevel && !hasLine) {
+                // 玩家低於需求等級但 lore 不見了 → 補回來
+                lore.add(loreLine);
+                meta.setLore(lore);
+                item.setItemMeta(meta);
+                inventoryChanged = true;
+            }
+        }
+
+        if (inventoryChanged) {
+            player.updateInventory();
+        }
+    }
 }
