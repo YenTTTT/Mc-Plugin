@@ -387,6 +387,12 @@ public class MobListener implements Listener {
                 bossBarMgr.onMobDeath(event.getEntity().getUniqueId());
             }
 
+            // 通知 BeautyQuests 擊殺進度
+            com.customrpg.integration.BeautyQuestsHook bqHook = plugin.getBeautyQuestsHook();
+            if (bqHook != null && bqHook.isEnabled()) {
+                bqHook.notifyMobDeath(event, mobKey, event.getEntity(), killer);
+            }
+
             com.customrpg.managers.BossZoneManager bossZoneManager = plugin.getBossZoneManager();
             if (bossZoneManager != null) {
                 bossZoneManager.handleEntityDeath(event.getEntity());

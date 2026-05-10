@@ -93,6 +93,9 @@ public class CustomRPG extends JavaPlugin {
     // Menu GUI
     private com.customrpg.gui.MenuGUI menuGUI;
 
+    // BeautyQuests integration
+    private com.customrpg.integration.BeautyQuestsHook beautyQuestsHook;
+
     /**
      * Called when the plugin is enabled
      * Initializes all managers, registers listeners and commands
@@ -351,6 +354,10 @@ public class CustomRPG extends JavaPlugin {
         // Initialize BossBarManager
         bossBarManager = new com.customrpg.managers.BossBarManager(this, mobManager);
         getLogger().info("- BossBarManager initialized");
+
+        // Initialize BeautyQuests integration hook（延遲 1 tick 確保 BQ 完成載入）
+        beautyQuestsHook = new com.customrpg.integration.BeautyQuestsHook(this, mobManager);
+        org.bukkit.Bukkit.getScheduler().runTask(this, () -> beautyQuestsHook.tryEnable());
     }
 
     /**
@@ -737,6 +744,10 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.managers.BossBarManager getBossBarManager() {
         return bossBarManager;
+    }
+
+    public com.customrpg.integration.BeautyQuestsHook getBeautyQuestsHook() {
+        return beautyQuestsHook;
     }
 
     public StatsGUI getStatsGUI() {
