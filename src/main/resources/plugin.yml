@@ -24,7 +24,7 @@ commands:
     aliases: [cmob, custommobs, spawncmob]
   rpg:
     description: Manage player stats and RPG features
-    usage: /rpg <gui|stats|setstat|reload> [args]
+    usage: /rpg <gui|stats|addxp|setstat|reload> [args]
     permission: customrpg.rpg
     permission-message: You don't have permission to use this command!
   stats:
@@ -96,6 +96,18 @@ commands:
     permission: customrpg.admin
     permission-message: You don't have permission to use this command!
     aliases: [bz, bosszones]
+  rpgnpc:
+    description: NPC 管理 — 建立/刪除/綁定 任務 NPC
+    usage: /rpgnpc <create|delete|list|tp|rename|settype|spawn|setquest|clearquest>
+    permission: customrpg.npc.admin
+    permission-message: You don't have permission to use this command!
+    aliases: [npc, questnpc]
+  quest:
+    description: 查看與接受 CustomRPG 原生任務
+    usage: /quest [list|info <id>|admin ...]
+    permission: customrpg.quest
+    permission-message: You don't have permission to use this command!
+    aliases: [quests, q]
 
 
 
@@ -118,6 +130,9 @@ permissions:
       customrpg.race: true
       customrpg.race.admin: true
       customrpg.menu: true
+      customrpg.npc.admin: true
+      customrpg.quest: true
+      customrpg.quest.admin: true
   customrpg.weapon:
     description: Allows using the /weapon command for yourself
     default: op
@@ -157,3 +172,12 @@ permissions:
   customrpg.menu:
     description: Allows using /menu command to open main menu
     default: true
+  customrpg.npc.admin:
+    description: Allows creating/deleting/managing quest NPCs
+    default: op
+  customrpg.quest:
+    description: Allows using /quest command
+    default: true
+  customrpg.quest.admin:
+    description: Allows admin quest management (/quest admin)
+    default: op

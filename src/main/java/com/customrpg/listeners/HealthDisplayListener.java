@@ -37,7 +37,7 @@ public class HealthDisplayListener implements Listener {
     /**
      * 實體受到傷害時，立即更新血量顯示
      */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityDamage(EntityDamageEvent event) {
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
@@ -61,7 +61,7 @@ public class HealthDisplayListener implements Listener {
     /**
      * 實體恢復血量時，立即更新血量顯示
      */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityRegainHealth(EntityRegainHealthEvent event) {
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();

@@ -1,6 +1,9 @@
 package com.customrpg.integration;
 
+import com.customrpg.integration.npc.NpcFactory;
+import com.customrpg.integration.npc.NpcManager;
 import com.customrpg.managers.MobManager;
+import fr.skytasul.quests.api.QuestsAPI;
 import fr.skytasul.quests.api.editors.TextEditor;
 import fr.skytasul.quests.api.editors.parsers.AbstractParser;
 import org.bukkit.Bukkit;
@@ -25,12 +28,19 @@ public class BeautyQuestsHook {
 
     private final JavaPlugin plugin;
     private final MobManager mobManager;
+    private NpcManager npcManager;
+    private NpcFactory  npcFactory;
     private CustomRPGMobFactory factory;
-    private boolean enabled = false;
+    private boolean mobIntegrationEnabled = false;
 
     public BeautyQuestsHook(JavaPlugin plugin, MobManager mobManager) {
         this.plugin = plugin;
         this.mobManager = mobManager;
+    }
+
+    /** 由 CustomRPG.initializeManagers() 呼叫，在 tryEnable() 前設定好 NpcManager。 */
+    public void setNpcManager(NpcManager npcManager) {
+        this.npcManager = npcManager;
     }
 
     /**
@@ -44,14 +54,34 @@ public class BeautyQuestsHook {
         }
 
         try {
+            // 1. 怪物工廠（擊殺任務）
             factory = new CustomRPGMobFactory(mobManager, this);
             registerMobFactoryWithBeautyQuests(factory);
-
-            enabled = true;
-            plugin.getLogger().info("[BeautyQuestsHook] 已成功連接 BeautyQuests！已注冊 CustomRPG 怪物工廠。");
+            mobIntegrationEnabled = true;
+            plugin.getLogger().info("[BeautyQuestsHook] 已注冊 CustomRPG 怪物工廠 (ID: " + CustomRPGMobFactory.FACTORY_ID + ")。");
         } catch (Exception e) {
-            plugin.getLogger().warning("[BeautyQuestsHook] 連接 BeautyQuests 失敗：" + e.getMessage());
+            mobIntegrationEnabled = false;
+            factory = null;
+            plugin.getLogger().warning("[BeautyQuestsHook] 注冊 CustomRPG 怪物工廠失敗：" + e.getMessage());
+            e.printStackTrace();
+            return;
         }
+
+        try {
+            // 2. NPC 工廠（NPC 任務觸發）
+            if (npcManager != null) {
+                npcFactory = new NpcFactory(npcManager);
+                QuestsAPI.getAPI().addNpcFactory(NpcFactory.FACTORY_ID, npcFactory);
+                plugin.getLogger().info("[BeautyQuestsHook] 已注冊 CustomRPG NPC 工廠 (ID: " + NpcFactory.FACTORY_ID + ")。");
+                // NPC 需在 BQ 就緒後生成
+                npcManager.spawnAllNpcs();
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("[BeautyQuestsHook] NPC 整合失敗，但怪物擊殺整合仍可使用：" + e.getMessage());
+            e.printStackTrace();
+        }
+
+        plugin.getLogger().info("[BeautyQuestsHook] 已成功連接 BeautyQuests！");
     }
 
     /**
@@ -142,15 +172,20 @@ public class BeautyQuestsHook {
      */
     public void notifyMobDeath(EntityDeathEvent deathEvent, String mobKey,
                                 Entity entity, Player killer) {
-        if (!enabled || factory == null || killer == null) return;
+        if (!mobIntegrationEnabled || factory == null || killer == null) return;
         try {
             factory.fireBeautyQuestsMobEvent(deathEvent, mobKey, entity, killer);
         } catch (Exception e) {
             plugin.getLogger().warning("[BeautyQuestsHook] callEvent 失敗：" + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     public boolean isEnabled() {
-        return enabled;
+        return mobIntegrationEnabled;
+    }
+
+    public NpcFactory getNpcFactory() {
+        return npcFactory;
     }
 }

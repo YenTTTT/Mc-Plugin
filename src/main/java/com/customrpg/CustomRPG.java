@@ -96,6 +96,11 @@ public class CustomRPG extends JavaPlugin {
     // BeautyQuests integration
     private com.customrpg.integration.BeautyQuestsHook beautyQuestsHook;
 
+    // NPC system
+    private com.customrpg.integration.npc.NpcManager npcManager;
+    private com.customrpg.integration.npc.QuestBindGUI questBindGUI;
+
+
     /**
      * Called when the plugin is enabled
      * Initializes all managers, registers listeners and commands
@@ -357,6 +362,10 @@ public class CustomRPG extends JavaPlugin {
 
         // Initialize BeautyQuests integration hook（延遲 1 tick 確保 BQ 完成載入）
         beautyQuestsHook = new com.customrpg.integration.BeautyQuestsHook(this, mobManager);
+
+        // NPC system — 先建立 NpcManager，再傳入 hook，BQ 就緒後呼叫 spawnAllNpcs
+        npcManager = new com.customrpg.integration.npc.NpcManager(this);
+        beautyQuestsHook.setNpcManager(npcManager);
         org.bukkit.Bukkit.getScheduler().runTask(this, () -> beautyQuestsHook.tryEnable());
     }
 

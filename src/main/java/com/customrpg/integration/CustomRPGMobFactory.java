@@ -2,16 +2,18 @@ package com.customrpg.integration;
 
 import com.customrpg.managers.MobManager;
 import fr.skytasul.quests.api.mobs.MobFactory;
-import org.bukkit.event.Event;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -114,12 +116,99 @@ public class CustomRPGMobFactory implements MobFactory<String> {
     }
 
     /**
-     * 顯式包裝 BeautyQuests 的 MobFactory#callEvent，
-     * 避免在其他類中直接呼叫 default method 時出現 IDE 解析問題。
+     * 通知 BeautyQuests 怪物擊殺事件。
+     *
+     * 使用 MobFactory 所屬的 ClassLoader 載入 BQMobDeathEvent，
+     * 並動態掃描所有建構子以找到相容的版本，
+     * 避免因 BQ 版本差異或 ClassLoader 隔離導致的例外。
      */
     public void fireBeautyQuestsMobEvent(Event sourceEvent, String mobKey, Entity entity, Player killer) {
-        MobFactory.super.callEvent(sourceEvent, mobKey, entity, killer);
+        try {
+            ClassLoader bqClassLoader = MobFactory.class.getClassLoader();
+            Class<?> eventClass = Class.forName(
+                    "fr.skytasul.quests.api.events.internal.BQMobDeathEvent",
+                    true,
+                    bqClassLoader
+            );
+
+            Event bqEvent = buildBQMobDeathEvent(eventClass, mobKey, entity, killer);
+            if (bqEvent == null) {
+                // 記錄可用的建構子清單，方便排查版本差異
+                StringBuilder ctors = new StringBuilder();
+                for (Constructor<?> c : eventClass.getDeclaredConstructors()) {
+                    ctors.append("\n  ").append(c);
+                }
+                throw new NoSuchMethodException(
+                        "No compatible BQMobDeathEvent constructor found. Available:" + ctors);
+            }
+
+            Bukkit.getPluginManager().callEvent(bqEvent);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fire BQMobDeathEvent", e);
+        }
     }
+
+    /**
+     * 掃描 BQMobDeathEvent 的所有建構子，嘗試以目前持有的參數值對應每個參數型別。
+     *
+     * 對應規則（依優先順序）：
+     *  - Player  → killer
+     *  - Entity（及它的子介面/子類，例如 LivingEntity） → entity
+     *  - int / Integer → 1
+     *  - Object / String（作為 pluginMob） → mobKey
+     */
+    @SuppressWarnings("unchecked")
+    private Event buildBQMobDeathEvent(Class<?> eventClass, String mobKey,
+                                       Entity entity, Player killer) throws Exception {
+        for (Constructor<?> ctor : eventClass.getDeclaredConstructors()) {
+            Class<?>[] params = ctor.getParameterTypes();
+            Object[] args = matchConstructorArgs(params, mobKey, entity, killer);
+            if (args == null) continue;
+
+            ctor.setAccessible(true);
+            return (Event) ctor.newInstance(args);
+        }
+        return null;
+    }
+
+    /**
+     * 嘗試將現有值對應到建構子的每個參數型別。
+     * 若有任何參數無法對應，回傳 null。
+     */
+    private Object[] matchConstructorArgs(Class<?>[] params, String mobKey,
+                                          Entity entity, Player killer) {
+        Object[] args = new Object[params.length];
+        boolean mobAssigned    = false;
+        boolean killerAssigned = false;
+        boolean entityAssigned = false;
+        boolean amountAssigned = false;
+
+        for (int i = 0; i < params.length; i++) {
+            Class<?> p = params[i];
+
+            // Player 必須在 Entity 之前判斷，因為 Player extends Entity
+            if (!killerAssigned && p.isAssignableFrom(killer.getClass())) {
+                args[i] = killer;
+                killerAssigned = true;
+            } else if (!entityAssigned && p.isAssignableFrom(entity.getClass())) {
+                args[i] = entity;
+                entityAssigned = true;
+            } else if (!amountAssigned && (p == int.class || p == Integer.class)) {
+                args[i] = 1;
+                amountAssigned = true;
+            } else if (!mobAssigned && (p == Object.class || p == String.class
+                    || p.isAssignableFrom(String.class))) {
+                args[i] = mobKey;
+                mobAssigned = true;
+            } else {
+                return null; // 無法對應此參數
+            }
+        }
+
+        return (mobAssigned && killerAssigned && entityAssigned && amountAssigned) ? args : null;
+    }
+
 }
 
 

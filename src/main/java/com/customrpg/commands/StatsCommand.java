@@ -15,7 +15,6 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * StatsCommand - 管理玩家數據的指令
@@ -63,6 +62,9 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
             }
             case "addexp" -> {
                 return handleAddExp(sender, args);
+            }
+            case "addxp" -> {
+                return handleAddXp(sender, args);
             }
             case "setlevel" -> {
                 return handleSetLevel(sender, args);
@@ -163,6 +165,47 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         statsManager.addExp(target, value);
         sender.sendMessage(ChatColor.GREEN + "✓ 已給予 " + target.getName() + " " + value + " 經驗值");
 
+        return true;
+    }
+
+    /**
+     * 給予自己或指定玩家經驗
+     * 用法:
+     * - /rpg addxp <數值>
+     * - /rpg addxp <玩家> <數值>
+     */
+    private boolean handleAddXp(CommandSender sender, String[] args) {
+        if (args.length == 2) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(ChatColor.RED + "控制台必須指定玩家名稱！");
+                sender.sendMessage(ChatColor.RED + "用法: /rpg addxp <玩家> <數值>");
+                return true;
+            }
+
+            long value;
+            try {
+                value = Long.parseLong(args[1]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(ChatColor.RED + "無效的數值: " + args[1]);
+                return true;
+            }
+
+            if (value <= 0) {
+                sender.sendMessage(ChatColor.RED + "數值必須大於 0！");
+                return true;
+            }
+
+            statsManager.addExp(player, value);
+            sender.sendMessage(ChatColor.GREEN + "✓ 已給予自己 " + value + " RPG 經驗值");
+            return true;
+        }
+
+        if (args.length == 3) {
+            return handleAddExp(sender, new String[] {"addexp", args[1], args[2]});
+        }
+
+        sender.sendMessage(ChatColor.RED + "用法: /rpg addxp <數值>");
+        sender.sendMessage(ChatColor.RED + "或: /rpg addxp <玩家> <數值>");
         return true;
     }
 
@@ -310,6 +353,7 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GOLD + "========== CustomRPG 指令 ==========");
         sender.sendMessage(ChatColor.YELLOW + "/rpg gui" + ChatColor.GRAY + " - 開啟屬性介面");
         sender.sendMessage(ChatColor.YELLOW + "/rpg stats [玩家]" + ChatColor.GRAY + " - 查看玩家數據");
+        sender.sendMessage(ChatColor.YELLOW + "/rpg addxp <數值>" + ChatColor.GRAY + " - 給自己 RPG 經驗");
         sender.sendMessage(ChatColor.YELLOW + "/rpg setstat <玩家> <屬性> <數值>" + ChatColor.GRAY + " - 設定玩家數據");
         sender.sendMessage(ChatColor.YELLOW + "/rpg addexp <玩家> <數值>" + ChatColor.GRAY + " - 給予玩家經驗");
         sender.sendMessage(ChatColor.YELLOW + "/rpg setlevel <玩家> <等級>" + ChatColor.GRAY + " - 設定玩家等級");
@@ -323,8 +367,11 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(Arrays.asList("gui", "stats", "setstat", "reload", "addexp", "setlevel"));
+            completions.addAll(Arrays.asList("gui", "stats", "setstat", "reload", "addexp", "addxp", "setlevel"));
         } else if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("addxp")) {
+                completions.addAll(Arrays.asList("10", "50", "100", "500", "1000"));
+            }
             // 玩家名稱補全
             for (Player player : Bukkit.getOnlinePlayers()) {
                 completions.add(player.getName());
@@ -337,6 +384,9 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
             completions.addAll(Arrays.asList("0", "10", "20", "50", "100"));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("addexp")) {
             // 經驗值範例
+            completions.addAll(Arrays.asList("10", "50", "100", "500", "1000"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("addxp")) {
+            // 指定玩家時的經驗值範例
             completions.addAll(Arrays.asList("10", "50", "100", "500", "1000"));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("setlevel")) {
             // 等級範例
