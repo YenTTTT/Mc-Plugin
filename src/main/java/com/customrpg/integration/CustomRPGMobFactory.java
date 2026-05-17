@@ -175,6 +175,13 @@ public class CustomRPGMobFactory implements MobFactory<String> {
     /**
      * 嘗試將現有值對應到建構子的每個參數型別。
      * 若有任何參數無法對應，回傳 null。
+     *
+     * 對應優先順序：
+     *  1. Object / String → mobKey（pluginMob 欄位，必須最先判斷，
+     *     否則 Object.isAssignableFrom(Player) == true 會錯誤地將 killer 塞進 Object 槽）
+     *  2. Player（Entity 子型）→ killer（Player extends Entity，先於純 Entity 判斷）
+     *  3. Entity（及子介面）→ 被殺怪物 entity
+     *  4. int / Integer → 數量 1
      */
     private Object[] matchConstructorArgs(Class<?>[] params, String mobKey,
                                           Entity entity, Player killer) {
@@ -187,20 +194,28 @@ public class CustomRPGMobFactory implements MobFactory<String> {
         for (int i = 0; i < params.length; i++) {
             Class<?> p = params[i];
 
-            // Player 必須在 Entity 之前判斷，因為 Player extends Entity
-            if (!killerAssigned && p.isAssignableFrom(killer.getClass())) {
+            // ① Object / String → pluginMob (mobKey)
+            //    必須最先判斷：Object.isAssignableFrom(任何類別) 恆為 true，
+            //    若放在 Player 判斷之後，Object 槽會被錯誤地指派為 killer。
+            if (!mobAssigned && (p == Object.class || p == String.class)) {
+                args[i] = mobKey;
+                mobAssigned = true;
+
+            // ② Player 必須在 Entity 之前判斷，因為 Player extends Entity
+            } else if (!killerAssigned && killer != null && p.isAssignableFrom(killer.getClass())) {
                 args[i] = killer;
                 killerAssigned = true;
+
+            // ③ Entity → 被殺怪物
             } else if (!entityAssigned && p.isAssignableFrom(entity.getClass())) {
                 args[i] = entity;
                 entityAssigned = true;
+
+            // ④ int / Integer → 擊殺數量
             } else if (!amountAssigned && (p == int.class || p == Integer.class)) {
                 args[i] = 1;
                 amountAssigned = true;
-            } else if (!mobAssigned && (p == Object.class || p == String.class
-                    || p.isAssignableFrom(String.class))) {
-                args[i] = mobKey;
-                mobAssigned = true;
+
             } else {
                 return null; // 無法對應此參數
             }
