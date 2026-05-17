@@ -261,6 +261,19 @@ public class ConfigManager {
 
                     extra.put("backstab-enabled", config.getBoolean(key + ".special.backstab-enabled", false));
                     extra.put("backstab-multiplier", config.getDouble(key + ".special.backstab-multiplier", 1.0));
+                    // 新：全方位（機率）背刺 — 鐮刀類型使用
+                    extra.put("backstab-any-direction", config.getBoolean(key + ".special.backstab-any-direction", false));
+                    extra.put("backstab-chance", config.getDouble(key + ".special.backstab-chance", 0.3));
+
+                    // 新：近戰 AoE — 單手劍 / 雙手長棍使用
+                    extra.put("melee-aoe-enabled", config.getBoolean(key + ".special.melee-aoe-enabled", false));
+                    extra.put("melee-aoe-radius", config.getDouble(key + ".special.melee-aoe-radius", 2.0));
+                    extra.put("melee-aoe-damage-ratio", config.getDouble(key + ".special.melee-aoe-damage-ratio", 0.6));
+
+                    // 新：流血效果 — 斧類型使用
+                    extra.put("bleed-enabled", config.getBoolean(key + ".special.bleed-enabled", false));
+                    extra.put("bleed-duration-ticks", config.getInt(key + ".special.bleed-duration-ticks", 60));
+                    extra.put("bleed-level", config.getInt(key + ".special.bleed-level", 0));
 
                     // 視覺/音效（支援新位置：special.effects.*，並向下相容舊的 effects.*）
                     extra.put("backstab-sound", config.getString(key + ".special.effects.backstab-sound",
@@ -520,6 +533,25 @@ public class ConfigManager {
         }
         if (el.equals("poison") || elRaw.equals("毒")) {
             return "poison";
+        }
+        // ── 新增元素 ──
+        if (el.equals("wind") || elRaw.equals("風")) {
+            return "wind";
+        }
+        if (el.equals("light") || elRaw.equals("光")) {
+            return "light";
+        }
+        if (el.equals("dark") || el.equals("darkness") || elRaw.equals("黑暗") || elRaw.equals("暗")) {
+            return "dark";
+        }
+        if (el.equals("nature") || elRaw.equals("自然")) {
+            return "nature";
+        }
+        if (el.equals("life") || elRaw.equals("生命")) {
+            return "life";
+        }
+        if (el.equals("earth") || elRaw.equals("大地")) {
+            return "earth";
         }
         if (el.equals("none") || elRaw.equals("無")) {
             return "none";

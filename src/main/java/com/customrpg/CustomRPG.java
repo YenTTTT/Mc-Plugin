@@ -87,6 +87,10 @@ public class CustomRPG extends JavaPlugin {
     // Bow talent system
     private com.customrpg.managers.FocusManager focusManager;
 
+    // Skill bar (hotkey casting) system
+    private com.customrpg.managers.SkillBarManager skillBarManager;
+    private com.customrpg.listeners.SkillBarListener skillBarListenerInstance;
+
     // New skill system (weapon skills)
     private SkillManager newSkillManager;
 
@@ -139,6 +143,12 @@ public class CustomRPG extends JavaPlugin {
         if (statsManager != null) {
             statsManager.saveAllStats();
             getLogger().info("- All player stats saved");
+        }
+
+        // 儲存任務冷卻資料
+        if (beautyQuestsHook != null) {
+            beautyQuestsHook.shutdown();
+            getLogger().info("- Quest cooldowns saved");
         }
 
         // 儲存種族數據
@@ -206,6 +216,15 @@ public class CustomRPG extends JavaPlugin {
         if (bossBarManager != null) {
             bossBarManager.shutdown();
             getLogger().info("- BossBarManager shutdown");
+        }
+
+        // 清理快捷技能列
+        if (skillBarManager != null) {
+            skillBarManager.cleanup();
+            getLogger().info("- SkillBarManager cleanup");
+        }
+        if (skillBarListenerInstance != null) {
+            skillBarListenerInstance.cleanup();
         }
 
         // Cleanup managers
@@ -315,6 +334,10 @@ public class CustomRPG extends JavaPlugin {
         focusManager = new com.customrpg.managers.FocusManager(this);
         getLogger().info("- TalentSkillManager initialized");
 
+        // SkillBar (hotkey casting) manager
+        skillBarManager = new com.customrpg.managers.SkillBarManager();
+        getLogger().info("- SkillBarManager initialized");
+
         // ===== New skill system (manager/service pattern) =====
         com.customrpg.weaponSkills.managers.CooldownManager cooldownManager = new com.customrpg.weaponSkills.managers.CooldownManager();
         com.customrpg.weaponSkills.managers.BuffManager buffManager = new com.customrpg.weaponSkills.managers.BuffManager();
@@ -365,6 +388,7 @@ public class CustomRPG extends JavaPlugin {
 
         // NPC system — 先建立 NpcManager，再傳入 hook，BQ 就緒後呼叫 spawnAllNpcs
         npcManager = new com.customrpg.integration.npc.NpcManager(this);
+        questBindGUI = new com.customrpg.integration.npc.QuestBindGUI(this, npcManager);
         beautyQuestsHook.setNpcManager(npcManager);
         org.bukkit.Bukkit.getScheduler().runTask(this, () -> beautyQuestsHook.tryEnable());
     }
@@ -449,9 +473,28 @@ public class CustomRPG extends JavaPlugin {
                 this, focusManager, talentManager), this);
         getLogger().info("- BowTalentListener registered");
 
+        // SkillBar listener
+        skillBarListenerInstance = new com.customrpg.listeners.SkillBarListener(this, skillBarManager);
+        getServer().getPluginManager().registerEvents(skillBarListenerInstance, this);
+        getLogger().info("- SkillBarListener registered");
+
         getServer().getPluginManager().registerEvents(menuGUI, this);
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.MenuListener(this, menuGUI), this);
         getLogger().info("- MenuGUI & MenuListener registered");
+
+        // NPC interaction listener + quest bind GUI (need to be registered for Shift+右鍵 to work)
+        getServer().getPluginManager().registerEvents(
+                new com.customrpg.integration.npc.NpcListener(npcManager, questBindGUI, this), this);
+        getServer().getPluginManager().registerEvents(questBindGUI, this);
+        getLogger().info("- NpcListener & QuestBindGUI registered");
+
+        // Quest cooldown listener (repeatable quest 30-min cooldown)
+        if (getServer().getPluginManager().getPlugin("BeautyQuests") != null) {
+            getServer().getPluginManager().registerEvents(
+                    new com.customrpg.integration.QuestCooldownListener(
+                            beautyQuestsHook.getQuestCooldownManager()), this);
+            getLogger().info("- QuestCooldownListener registered");
+        }
     }
 
     /**
@@ -596,9 +639,19 @@ public class CustomRPG extends JavaPlugin {
             getLogger().warning("- Failed to register /menu command: command not defined in plugin.yml");
         }
 
+        // SkillBar command
+        org.bukkit.command.PluginCommand skillBarCmd = getCommand("skillbar");
+        if (skillBarCmd != null) {
+            com.customrpg.commands.SkillBarCommand skillBarCommand = new com.customrpg.commands.SkillBarCommand(this, skillBarManager, skillBarListenerInstance);
+            skillBarCmd.setExecutor(skillBarCommand);
+            skillBarCmd.setTabCompleter(skillBarCommand);
+            getLogger().info("- /skillbar command registered");
+        } else {
+            getLogger().warning("- Failed to register /skillbar command: command not defined in plugin.yml");
+        }
+
         // Mana command
-        org.bukkit.command.PluginCommand manaCmd = getCommand("mana");
-        if (manaCmd != null) {
+        org.bukkit.command.PluginCommand manaCmd = getCommand("mana");        if (manaCmd != null) {
             com.customrpg.commands.ManaCommand manaCommand = new com.customrpg.commands.ManaCommand(this, manaManager);
             manaCmd.setExecutor(manaCommand);
             manaCmd.setTabCompleter(manaCommand);
@@ -617,6 +670,17 @@ public class CustomRPG extends JavaPlugin {
             getLogger().info("- /bosszone command registered");
         } else {
             getLogger().warning("- Failed to register /bosszone command: command not defined in plugin.yml");
+        }
+
+        // NPC management command
+        org.bukkit.command.PluginCommand rpgNpcCmd = getCommand("rpgnpc");
+        if (rpgNpcCmd != null) {
+            com.customrpg.commands.NpcCommand npcCommand = new com.customrpg.commands.NpcCommand(npcManager, questBindGUI);
+            rpgNpcCmd.setExecutor(npcCommand);
+            rpgNpcCmd.setTabCompleter(npcCommand);
+            getLogger().info("- /rpgnpc command registered");
+        } else {
+            getLogger().warning("- Failed to register /rpgnpc command: command not defined in plugin.yml");
         }
     }
 
@@ -710,6 +774,10 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.managers.FocusManager getFocusManager() {
         return focusManager;
+    }
+
+    public com.customrpg.managers.SkillBarManager getSkillBarManager() {
+        return skillBarManager;
     }
 
     public com.customrpg.weaponSkills.managers.SkillManager getNewSkillManager() {

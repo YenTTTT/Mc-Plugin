@@ -4,6 +4,275 @@
 # 已移除職業需求，所有玩家都可使用
 # ============================================
 
+#  雙手劍   — 蓄力更慢，但單次傷害係數更高，純單體高傷出力
+#  單手斧   — 蓄力比單手劍稍慢，傷害係數較高，攻擊必附流血效果
+#  雙手斧   — 蓄力比單手斧更慢，傷害係數更高，更強的流血效果
+#  單手鐮刀 — 近戰中攻速最快的類型，主要靠敏捷加成傷害，
+#             每次攻擊有30%機率觸發背刺額外傷害（不需要繞背）
+#  雙手長棍 — 最穩定的群體攻擊力，每次攻擊都會擊中周圍範圍內所有敵人，
+#             傷害係數較低但覆蓋面最廣
+# =============================================================
+
+# ==================== 單手劍 ====================
+basic_one_hand_sword:
+  basic:
+    name: "鐵製單手劍"
+    material: IRON_SWORD
+    rarity: "普通"
+    category: "SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l鐵製單手劍"
+    lore:
+      - "&a⚔ 單手武器"
+      - "&7標準的單手格鬥用劍"
+      - "&7揮砍時帶有小範圍傷害效果"
+      - "&7手感與原版Minecraft相近"
+    custom-model-data: 0
+    enchanted-glow: false
+  stats:
+    # 傷害係數：適中
+    damage-multiplier: 1.2
+    base-damage: 15
+    # 攻速：原版鐵劍風格，在本插件中 attack-speed 為加成值
+    attack-speed: 1.6
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.5
+    knockback: 0
+  special:
+    backstab-enabled: false
+    effect: "none"
+    # 普攻小範圍傷害 (揮砍)
+    melee-aoe-enabled: true
+    melee-aoe-radius: 2.0
+    melee-aoe-damage-ratio: 0.6
+  active-skill:
+    name: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# ==================== 雙手劍 ====================
+basic_two_hand_sword:
+  basic:
+    name: "鐵製雙手劍"
+    material: IRON_SWORD
+    rarity: "普通"
+    category: "TWO_HAND_SWORD"
+    bind-type: "無"
+  appearance:
+    display-name: "&7&l鐵製雙手劍"
+    lore:
+      - "&c⚔ 雙手武器"
+      - "&7粗重的雙手格鬥長劍"
+      - "&7蓄力緩慢，但單次輸出傷害極高"
+    custom-model-data: 100
+    enchanted-glow: false
+  stats:
+    # 傷害係數：高於單手劍
+    damage-multiplier: 1.8
+    base-damage: 28
+    # 攻速：明顯慢於單手劍（約 1.6 → 0.7）
+    attack-speed: 0.7
+    crit-chance: 12.0
+    crit-damage-multiplier: 2.0
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    # 雙手劍：純單體傷害，無 AoE
+  active-skill:
+    name: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+    two-handed: true
+
+# ==================== 單手斧 ====================
+basic_one_hand_axe:
+  basic:
+    name: "鐵製單手斧"
+    material: IRON_AXE
+    rarity: "普通"
+    category: "AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&6&l鐵製單手斧"
+    lore:
+      - "&a⚔ 單手武器"
+      - "&7沉重的單手戰斧"
+      - "&7蓄力比單手劍稍慢"
+      - "&7每次攻擊令敵人流血"
+    custom-model-data: 0
+    enchanted-glow: false
+  stats:
+    # 傷害係數：高於單手劍
+    damage-multiplier: 1.4
+    base-damage: 20
+    # 攻速：稍慢於單手劍（1.6 → 1.2）
+    attack-speed: 1.2
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.8
+    knockback: 0
+  special:
+    backstab-enabled: false
+    effect: "none"
+    # 流血效果（斧專屬）
+    bleed-enabled: true
+    bleed-duration-ticks: 60
+    bleed-level: 0
+  active-skill:
+    name: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# ==================== 雙手斧 ====================
+basic_two_hand_axe:
+  basic:
+    name: "鐵製雙手斧"
+    material: IRON_AXE
+    rarity: "普通"
+    category: "TWO_HAND_AXE"
+    bind-type: "無"
+  appearance:
+    display-name: "&c&l鐵製雙手斧"
+    lore:
+      - "&c⚔ 雙手武器"
+      - "&7巨大的雙手戰斧"
+      - "&7蓄力比單手斧更慢，傷害更高"
+      - "&7更長時間的流血效果"
+    custom-model-data: 200
+    enchanted-glow: false
+  stats:
+    # 傷害係數：大幅高於單手斧
+    damage-multiplier: 2.2
+    base-damage: 38
+    # 攻速：明顯慢於單手斧（1.2 → 0.6）
+    attack-speed: 0.6
+    crit-chance: 10.0
+    crit-damage-multiplier: 2.0
+    knockback: 1
+  special:
+    backstab-enabled: false
+    effect: "none"
+    # 流血效果（更強 / 更長）
+    bleed-enabled: true
+    bleed-duration-ticks: 100
+    bleed-level: 1
+  active-skill:
+    name: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+    two-handed: true
+
+# ==================== 單手鐮刀 ====================
+basic_scythe:
+  basic:
+    name: "鐵製鐮刀"
+    material: IRON_HOE
+    rarity: "普通"
+    category: "SCYTHE"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l鐵製鐮刀"
+    lore:
+      - "&a⚔ 單手武器"
+      - "&7靈巧的單手鐮刀"
+      - "&7近戰中攻速最快的武器類型"
+      - "&7傷害主要由敏捷屬性決定"
+      - "&730% 機率觸發背刺額外傷害（任意方向）"
+    custom-model-data: 0
+    enchanted-glow: false
+  stats:
+    # 傷害係數：較低，靠敏捷縮放（AGILITY × 0.35）
+    damage-multiplier: 1.0
+    base-damage: 12
+    # 攻速：最快（1.6 → 2.5）
+    attack-speed: 2.5
+    crit-chance: 20.0
+    crit-damage-multiplier: 2.0
+    knockback: 0
+  special:
+    # 機率型背刺 — 任意方向，30% 機率觸發，不需要繞背
+    backstab-enabled: true
+    backstab-any-direction: true
+    backstab-chance: 0.30
+    backstab-multiplier: 1.5
+    backstab-particle: "enchanted_hit"
+    effect: "backstab"
+  active-skill:
+    name: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+
+# ==================== 雙手長棍 ====================
+basic_two_hand_staff:
+  basic:
+    name: "鐵製雙手長棍"
+    material: STICK
+    rarity: "普通"
+    category: "TWO_HAND_STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&e&l鐵製雙手長棍"
+    lore:
+      - "&c⚔ 雙手武器"
+      - "&7穩重的雙手長棍（棒術）"
+      - "&7擁有所有武器中最穩定的群體攻擊能力"
+      - "&7每次攻擊都會同時打擊範圍內的所有敵人"
+      - "&7傷害係數略低，以廣度換深度"
+    custom-model-data: 300
+    enchanted-glow: false
+  stats:
+    # 傷害係數：低於其他近戰但 AoE 最穩定
+    damage-multiplier: 0.9
+    base-damage: 13
+    # 攻速：中等（1.6 → 1.1）
+    attack-speed: 1.1
+    crit-chance: 6.0
+    crit-damage-multiplier: 1.5
+    knockback: 0
+  special:
+    backstab-enabled: false
+    effect: "none"
+    # 穩定 AoE — 範圍大、傷害比例高（最強群體）
+    melee-aoe-enabled: true
+    melee-aoe-radius: 3.5
+    melee-aoe-damage-ratio: 0.9
+  active-skill:
+    name: "none"
+  passive:
+    name: "無"
+  element:
+    element: "無"
+  limits:
+    droppable: true
+    required-level: 1
+    two-handed: true
+
 # ==================== 刀系列 ====================
 iron_sword:
   basic:
@@ -15,7 +284,9 @@ iron_sword:
   appearance:
     display-name: "&e&l鐵劍"
     lore:
+      - "&a⚔ 單手武器"
       - "&7一把堅固的鐵製長劍"
+      - "&7揮砍時帶有小範圍傷害效果"
     custom-model-data: 0
     enchanted-glow: false
   stats:
@@ -28,6 +299,10 @@ iron_sword:
   special:
     backstab-enabled: false
     effect: "none"
+    # 單手劍普攻小範圍傷害
+    melee-aoe-enabled: true
+    melee-aoe-radius: 2.0
+    melee-aoe-damage-ratio: 0.6
   active-skill:
     name: "none"
   passive:
@@ -50,7 +325,9 @@ mystic_blade:
   appearance:
     display-name: "&d&l神秘之刃"
     lore:
+      - "&a⚔ 單手武器"
       - "&7蘊含神秘力量的寶劍"
+      - "&7揮砍時帶有小範圍傷害效果"
       - "&6等級需求: 30"
     custom-model-data: 0
     enchanted-glow: true
@@ -64,6 +341,10 @@ mystic_blade:
   special:
     backstab-enabled: false
     effect: "none"
+    # 單手劍普攻小範圍傷害
+    melee-aoe-enabled: true
+    melee-aoe-radius: 2.5
+    melee-aoe-damage-ratio: 0.65
   passive:
     name: "連擊強化"
     condition: "hit"
@@ -87,6 +368,7 @@ apprentice_staff:
   appearance:
     display-name: "&b&l學徒法杖"
     lore:
+      - "&a⚔ 單手武器"
       - "&7適合初學者的魔法法杖"
     custom-model-data: 1
     enchanted-glow: false
@@ -124,6 +406,7 @@ mystic_staff:
   appearance:
     display-name: "&5&l神秘法杖"
     lore:
+      - "&a⚔ 單手武器"
       - "&7魔法能量環繞的強大法杖"
       - "&6等級需求: 25"
     custom-model-data: 2
@@ -163,18 +446,25 @@ iron_scythe:
   appearance:
     display-name: "&a&l鐵鐮刀"
     lore:
-      - "&7從背後攻擊造成額外傷害"
+      - "&a⚔ 單手武器"
+      - "&7敏捷型近戰鐮刀"
+      - "&7攻速快，傷害主要由敏捷加成"
+      - "&730% 機率觸發背刺傷害（任意方向）"
     custom-model-data: 0
     enchanted-glow: false
   stats:
     damage-multiplier: 1.2
     base-damage: 12
-    attack-speed: 1.5
+    attack-speed: 2.5
     crit-chance: 20.0
     crit-damage-multiplier: 2.0
   special:
+    # 機率型背刺 — 任意方向
     backstab-enabled: true
+    backstab-any-direction: true
+    backstab-chance: 0.30
     backstab-multiplier: 1.5
+    backstab-particle: "enchanted_hit"
     effect: "backstab"
   active-skill:
     name: "shadow_strike"
@@ -201,22 +491,25 @@ death_scythe:
   appearance:
     display-name: "&4&l死神鐮刀"
     lore:
+      - "&c⚔ 雙手武器"
       - "&7死神的專屬武器"
-      - "&c雙手武器"
+      - "&740% 機率觸發背刺傷害（任意方向）"
       - "&6等級需求: 40"
     custom-model-data: 0
     enchanted-glow: true
   stats:
     damage-multiplier: 2.5
     base-damage: 50
-    attack-speed: 1.2
+    attack-speed: 2.0
     crit-chance: 30.0
     crit-damage-multiplier: 2.5
   special:
     backstab-enabled: true
+    backstab-any-direction: true
+    backstab-chance: 0.40
     backstab-multiplier: 2.0
+    backstab-particle: "enchanted_hit"
     effect: "backstab"
-    aoe-range: 3.0
   active-skill:
     name: "soul_reaper"
   passive:
@@ -243,18 +536,24 @@ warrior_axe:
   appearance:
     display-name: "&6&l戰士戰斧"
     lore:
+      - "&a⚔ 單手武器"
       - "&7鋒利的單手戰斧"
+      - "&7每次攻擊令敵人流血"
     custom-model-data: 0
     enchanted-glow: false
   stats:
     damage-multiplier: 1.3
-    base-damage: 18
-    attack-speed: 1.8
+    base-damage: 20
+    attack-speed: 1.2
     crit-chance: 12.0
     crit-damage-multiplier: 1.6
   special:
     backstab-enabled: false
     effect: "none"
+    # 流血效果（斧專屬）
+    bleed-enabled: true
+    bleed-duration-ticks: 60
+    bleed-level: 0
   active-skill:
     name: "cleave"
   passive:
@@ -280,21 +579,26 @@ giant_battle_axe:
   appearance:
     display-name: "&c&l巨型戰斧"
     lore:
+      - "&c⚔ 雙手武器"
       - "&7巨大而沉重的雙手戰斧"
-      - "&c雙手武器"
+      - "&7蓄力緩慢，傷害極高"
+      - "&7強烈的流血效果"
       - "&6等級需求: 35"
     custom-model-data: 0
     enchanted-glow: true
   stats:
     damage-multiplier: 3.0
     base-damage: 65
-    attack-speed: 0.9
+    attack-speed: 0.6
     crit-chance: 15.0
     crit-damage-multiplier: 2.2
   special:
     backstab-enabled: false
     effect: "none"
-    aoe-range: 4.0
+    # 雙手斧更強流血效果
+    bleed-enabled: true
+    bleed-duration-ticks: 100
+    bleed-level: 1
   active-skill:
     name: "earthquake"
   passive:
@@ -321,8 +625,8 @@ hunter_bow:
   appearance:
     display-name: "&a&l獵人之弓"
     lore:
+      - "&c⚔ 雙手武器"
       - "&7適合狩獵的長弓"
-      - "&c雙手武器"
     custom-model-data: 0
     enchanted-glow: false
   stats:
@@ -360,8 +664,8 @@ iron_spear:
   appearance:
     display-name: "&7&l鐵長槍"
     lore:
+      - "&c⚔ 雙手武器"
       - "&7長距離突刺武器"
-      - "&c雙手武器"
     custom-model-data: 1
     enchanted-glow: false
   stats:
@@ -399,8 +703,8 @@ dragon_lance:
   appearance:
     display-name: "&6&l龍騎士長槍"
     lore:
+      - "&c⚔ 雙手武器"
       - "&7傳說中龍騎士使用的長槍"
-      - "&c雙手武器"
       - "&6等級需求: 45"
     custom-model-data: 2
     enchanted-glow: true
@@ -446,8 +750,10 @@ flame_katana:
   appearance:
     display-name: "&c&l炎刃太刀"
     lore:
+      - "&a⚔ 單手武器"
       - "&7以龍焰鍛造的東方刀劍"
       - "&7斬擊時火焰隨之迸發"
+      - "&7揮砍帶有小範圍傷害效果"
     custom-model-data: 0
     enchanted-glow: true
   stats:
@@ -460,6 +766,10 @@ flame_katana:
   special:
     backstab-enabled: false
     effect: "none"
+    # 單手劍普攻小範圍傷害
+    melee-aoe-enabled: true
+    melee-aoe-radius: 2.0
+    melee-aoe-damage-ratio: 0.6
   passive:
     name: "灼燒之痕"
     condition: "hit"
@@ -483,6 +793,7 @@ holy_excalibur:
   appearance:
     display-name: "&e&l聖劍·王者之證"
     lore:
+      - "&a⚔ 單手武器"
       - "&7只有被選中的勇者才能握起的聖劍"
       - "&7蘊含淨化一切黑暗的神聖力量"
     custom-model-data: 0
@@ -520,6 +831,7 @@ rusty_blade:
   appearance:
     display-name: "&7&l鏽蝕短劍"
     lore:
+      - "&a⚔ 單手武器"
       - "&7一把佈滿鏽跡的短劍"
       - "&7勉強還能用"
   stats:
@@ -551,6 +863,7 @@ nature_wand:
   appearance:
     display-name: "&2&l自然之杖"
     lore:
+      - "&a⚔ 單手武器"
       - "&7纏繞著藤蔓的古木法杖"
       - "&7散發著自然的芬芳"
     custom-model-data: 3
@@ -587,6 +900,7 @@ arcane_codex:
   appearance:
     display-name: "&5&l奧術聖典"
     lore:
+      - "&a⚔ 單手武器"
       - "&7記載遠古魔法的禁忌之書"
       - "&7每一頁都蘊含著毀滅性的力量"
     custom-model-data: 4
@@ -625,18 +939,24 @@ shadow_sickle:
   appearance:
     display-name: "&8&l暗影之鐮"
     lore:
+      - "&a⚔ 單手武器"
       - "&7沾染暗影氣息的鐮刀"
       - "&7在黑暗中揮舞更加致命"
+      - "&735% 機率觸發背刺傷害（任意方向）"
     enchanted-glow: true
   stats:
     damage-multiplier: 1.6
     base-damage: 24
-    attack-speed: 1.6
+    attack-speed: 2.5
     crit-chance: 25.0
     crit-damage-multiplier: 2.2
   special:
+    # 機率型背刺 — 任意方向
     backstab-enabled: true
+    backstab-any-direction: true
+    backstab-chance: 0.35
     backstab-multiplier: 1.8
+    backstab-particle: "enchanted_hit"
     effect: "backstab"
   passive:
     name: "暗影步"
@@ -662,13 +982,15 @@ berserker_cleaver:
   appearance:
     display-name: "&4&l狂戰士碎骨斧"
     lore:
+      - "&a⚔ 單手武器"
       - "&7被鮮血浸染的戰場遺物"
       - "&7揮舞者會陷入戰鬥狂熱"
+      - "&7攻擊造成強烈流血效果"
     enchanted-glow: true
   stats:
     damage-multiplier: 2.2
     base-damage: 48
-    attack-speed: 1.5
+    attack-speed: 1.2
     crit-chance: 18.0
     crit-damage-multiplier: 2.0
     knockback: 2
@@ -676,6 +998,10 @@ berserker_cleaver:
     backstab-enabled: false
     effect: "none"
     armor-pierce: 15.0
+    # 強烈流血效果
+    bleed-enabled: true
+    bleed-duration-ticks: 80
+    bleed-level: 1
   passive:
     name: "血怒"
     condition: "low_health"
@@ -700,6 +1026,7 @@ gale_longbow:
   appearance:
     display-name: "&b&l疾風長弓"
     lore:
+      - "&c⚔ 雙手武器"
       - "&7以精靈木製成的輕盈長弓"
       - "&7箭矢如風般飛出"
     enchanted-glow: true
@@ -737,6 +1064,7 @@ celestial_bow:
   appearance:
     display-name: "&e&l天穹星弓"
     lore:
+      - "&c⚔ 雙手武器"
       - "&7以星辰碎片為弦的神弓"
       - "&7射出的每一箭都帶著星光"
     enchanted-glow: true
@@ -775,6 +1103,7 @@ thunder_halberd:
   appearance:
     display-name: "&e&l雷鳴戟"
     lore:
+      - "&c⚔ 雙手武器"
       - "&7以雷電鍛造的戰戟"
       - "&7每次揮擊都伴隨著雷鳴"
     enchanted-glow: true
@@ -814,6 +1143,7 @@ steel_longsword:
   appearance:
     display-name: "&a&l精鋼長劍"
     lore:
+      - "&a⚔ 單手武器"
       - "&7由經驗豐富的鐵匠打造"
       - "&7品質優於普通鐵劍"
   stats:
@@ -843,6 +1173,7 @@ reinforced_staff:
   appearance:
     display-name: "&9&l強化法杖"
     lore:
+      - "&a⚔ 單手武器"
       - "&7鑲嵌了魔法水晶的法杖"
       - "&7能更好地引導魔法能量"
     enchanted-glow: true

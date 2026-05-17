@@ -108,6 +108,11 @@ commands:
     permission: customrpg.quest
     permission-message: You don't have permission to use this command!
     aliases: [quests, q]
+  skillbar:
+    description: 切換快捷技能列 — 開啟後鍵盤 1~4 直接施放對應技能
+    usage: /skillbar
+    permission: customrpg.skillbar
+    permission-message: You don't have permission to use this command!
 
 
 
@@ -133,6 +138,7 @@ permissions:
       customrpg.npc.admin: true
       customrpg.quest: true
       customrpg.quest.admin: true
+      customrpg.skillbar: true
   customrpg.weapon:
     description: Allows using the /weapon command for yourself
     default: op
@@ -181,3 +187,6 @@ permissions:
   customrpg.quest.admin:
     description: Allows admin quest management (/quest admin)
     default: op
+  customrpg.skillbar:
+    description: Allows using /skillbar to toggle hotkey skill casting
+    default: true

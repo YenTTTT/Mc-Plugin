@@ -27,6 +27,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -58,6 +59,21 @@ public class WeaponListener implements Listener {
     private final Map<UUID, Long> staffAttackCooldown = new ConcurrentHashMap<>();
     private static final long STAFF_ATTACK_COOLDOWN_MS = 1000L; // 1 秒冷卻
 
+    // ── 火焰疊層灼燒 DOT 系統 ──
+    private final Map<UUID, Integer> burnStacks = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> burnLastHit = new ConcurrentHashMap<>();
+    private static final int BURN_MAX_STACKS_DEFAULT = 10;
+    private static final double BURN_DAMAGE_PER_STACK = 1.5; // 每層每秒傷害
+    private static final long BURN_STACK_DECAY_MS = 3000L;   // 3秒不被命中才開始消退
+
+    /**
+     * 防止 AoE 傷害遞迴的守衛 Set。
+     * 當玩家正在傳播 AoE 傷害時，其 UUID 會被加入此 Set。
+     * onEntityDamage 偵測到 UUID 在 Set 中時直接返回，避免無限觸發。
+     */
+    private final java.util.Set<UUID> aoeGuard =
+            java.util.Collections.newSetFromMap(new ConcurrentHashMap<>());
+
     // 這個用來判斷「最後一下是否為玩家造成」
     // （EntityDeathEvent 的 getKiller 在某些情況會是 null，例如環境傷害）
 
@@ -75,6 +91,54 @@ public class WeaponListener implements Listener {
         this.statsManager = statsManager;
         this.random = new Random();
         this.passiveEffectManager = new PassiveEffectManager();
+        startBurnDotTask();
+    }
+
+    /** 啟動火焰 DOT 定時器（每秒跑一次） */
+    private void startBurnDotTask() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (burnStacks.isEmpty()) return;
+                long now = System.currentTimeMillis();
+                Iterator<Map.Entry<UUID, Integer>> iter = burnStacks.entrySet().iterator();
+                while (iter.hasNext()) {
+                    Map.Entry<UUID, Integer> entry = iter.next();
+                    UUID entityId = entry.getKey();
+                    int stacks = entry.getValue();
+
+                    // 找到實體
+                    org.bukkit.entity.Entity entity = null;
+                    for (org.bukkit.World w : org.bukkit.Bukkit.getWorlds()) {
+                        entity = w.getEntity(entityId);
+                        if (entity != null) break;
+                    }
+                    if (entity == null || !(entity instanceof LivingEntity le) || le.isDead()) {
+                        iter.remove();
+                        burnLastHit.remove(entityId);
+                        continue;
+                    }
+
+                    // 扣血
+                    double dotDmg = stacks * BURN_DAMAGE_PER_STACK;
+                    le.damage(dotDmg);
+                    le.getWorld().spawnParticle(Particle.FLAME,
+                            le.getLocation().add(0, 0.5, 0), Math.min(stacks * 3, 30), 0.3, 0.6, 0.3, 0.03);
+
+                    // 如果 3 秒內未被命中則消退一層
+                    long lastHit = burnLastHit.getOrDefault(entityId, 0L);
+                    if (now - lastHit > BURN_STACK_DECAY_MS) {
+                        int newStacks = stacks - 1;
+                        if (newStacks <= 0) {
+                            iter.remove();
+                            burnLastHit.remove(entityId);
+                        } else {
+                            entry.setValue(newStacks);
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 20L, 20L);
     }
 
     /**
@@ -90,6 +154,11 @@ public class WeaponListener implements Listener {
         }
 
         Player player = (Player) event.getDamager();
+
+        // ★ AoE 防遞迴守衛：若此玩家正在傳播 AoE 傷害，直接放行原始傷害值，不再疊加任何武器效果
+        if (aoeGuard.contains(player.getUniqueId())) {
+            return;
+        }
         ItemStack weapon = player.getInventory().getItemInMainHand();
 
         // 取得玩家屬性（無論是否使用自訂武器都需要）
@@ -359,7 +428,7 @@ public class WeaponListener implements Listener {
     private void applySpecialEffect(Player attacker, org.bukkit.entity.Entity victim,
             WeaponManager.WeaponData weaponData, EntityDamageByEntityEvent event) {
         // 1. Mechanics
-        // Backstab
+        // Backstab (position-based OR chance-based for scythe)
         if (weaponData.getBooleanExtra("backstab-enabled", false)) {
             applyBackstabEffect(attacker, victim, weaponData);
         }
@@ -376,9 +445,15 @@ public class WeaponListener implements Listener {
             applyLifeSteal(attacker, lifeSteal, event.getFinalDamage());
         }
 
-        // AOE (Not fully implemented in plan, but good to have placeholder or simple
-        // logic)
-        // double aoe = weaponData.getDoubleExtra("aoe-radius", 0.0);
+        // 新：近戰 AoE（單手劍 / 雙手長棍）
+        if (weaponData.getBooleanExtra("melee-aoe-enabled", false)) {
+            applyMeleeAoE(attacker, victim, weaponData, event.getFinalDamage());
+        }
+
+        // 新：流血效果（斧類）
+        if (weaponData.getBooleanExtra("bleed-enabled", false)) {
+            applyBleedEffect(attacker, victim, weaponData);
+        }
 
         // 2. Elements
         String elementType = String.valueOf(weaponData.getExtra().getOrDefault("element-type", "NONE")).toUpperCase();
@@ -451,8 +526,11 @@ public class WeaponListener implements Listener {
     }
 
     /**
-     * Apply backstab effect (extra damage from behind)
-     * 
+     * Apply backstab effect.
+     * 支援兩種模式：
+     * - 位置型（預設）：攻擊者在目標背後（dotProduct > 0.3）時觸發
+     * - 機率型（backstab-any-direction: true）：每次攻擊有 backstab-chance 機率觸發（鐮刀）
+     *
      * @param attacker   The attacking player
      * @param victim     The victim entity
      * @param weaponData The weapon data
@@ -468,28 +546,39 @@ public class WeaponListener implements Listener {
             return;
         }
 
-        // 計算玩家跟敵對玩家的面對方向
         LivingEntity livingVictim = (LivingEntity) victim;
+        boolean anyDirection = weaponData.getBooleanExtra("backstab-any-direction", false);
+        boolean shouldTrigger;
 
-        Vector attackerDirection = attacker.getLocation().getDirection().normalize();
-        Vector victimDirection = victim.getLocation().getDirection().normalize();
+        if (anyDirection) {
+            // 機率型背刺（鐮刀）：忽略方向，每次攻擊有機率觸發
+            double chance = weaponData.getDoubleExtra("backstab-chance", 0.3);
+            shouldTrigger = random.nextDouble() < chance;
+        } else {
+            // 位置型背刺：判斷攻擊者是否在目標背後
+            Vector attackerDirection = attacker.getLocation().getDirection().normalize();
+            Vector victimDirection = victim.getLocation().getDirection().normalize();
+            double dotProduct = attackerDirection.dot(victimDirection);
+            shouldTrigger = dotProduct > 0.3;
+        }
 
-        double dotProduct = attackerDirection.dot(victimDirection);
-
-        // dotProduct > 0.5 是完全背對，改成0.3讓背刺比較好觸發
-        if (dotProduct > 0.3) {
+        if (shouldTrigger) {
             double multiplier = weaponData.getDoubleExtra("backstab-multiplier", 1.0);
             double bonusDamage = 4.0 * Math.max(0.0, multiplier);
             livingVictim.damage(bonusDamage);
 
-            // 視覺：直接依 yml 內容決定（目前只做 enchanted_hit）
+            // 視覺
             String particleName = String.valueOf(weaponData.getExtra().getOrDefault("backstab-particle", ""));
             if (particleName != null && particleName.equalsIgnoreCase("enchanted_hit")) {
-                victim.getWorld().spawnParticle(Particle.ENCHANTED_HIT, victim.getLocation().add(0, 1.0, 0), 20, 0.3, 0.6,
-                        0.3, 0.0);
+                victim.getWorld().spawnParticle(Particle.ENCHANTED_HIT, victim.getLocation().add(0, 1.0, 0), 20, 0.3,
+                        0.6, 0.3, 0.0);
+            } else {
+                // 預設粒子
+                victim.getWorld().spawnParticle(Particle.ENCHANTED_HIT, victim.getLocation().add(0, 1.0, 0), 10, 0.2,
+                        0.5, 0.2, 0.0);
             }
 
-            // 音效：直接用 yml 提供的 sound key 字串播放
+            // 音效
             String soundKey = String.valueOf(weaponData.getExtra().getOrDefault("backstab-sound", ""));
             if (soundKey != null && !soundKey.isBlank()) {
                 attacker.getWorld().playSound(victim.getLocation(), soundKey.trim().toLowerCase(), 1.0f, 1.0f);
@@ -497,8 +586,72 @@ public class WeaponListener implements Listener {
                 attacker.getWorld().playSound(victim.getLocation(), "entity.player.attack.crit", 1.0f, 0.8f);
             }
 
-            attacker.sendMessage(ChatColor.RED + "✦ 背刺! +" + bonusDamage + " 額外傷害!");
+            if (anyDirection) {
+                attacker.sendMessage(ChatColor.LIGHT_PURPLE + "✦ 背刺觸發！ +" + String.format("%.1f", bonusDamage) + " 額外傷害！");
+            } else {
+                attacker.sendMessage(ChatColor.RED + "✦ 背刺! +" + String.format("%.1f", bonusDamage) + " 額外傷害!");
+            }
         }
+    }
+
+    /**
+     * apply melee AoE splash damage to nearby entities (excluding primary target).
+     * Used by: SWORD (小範圍), TWO_HAND_STAFF (大範圍穩定)
+     *
+     * ★ 使用 aoeGuard 防止 AoE 傷害遞迴觸發（target.damage 會再次觸發 EntityDamageByEntityEvent）
+     */
+    private void applyMeleeAoE(Player attacker, org.bukkit.entity.Entity primaryVictim,
+            WeaponManager.WeaponData weaponData, double finalDamage) {
+        double radius = weaponData.getDoubleExtra("melee-aoe-radius", 2.0);
+        double damageRatio = weaponData.getDoubleExtra("melee-aoe-damage-ratio", 0.6);
+        double aoeDamage = finalDamage * damageRatio;
+        if (aoeDamage <= 0) return;
+
+        Location center = primaryVictim.getLocation().clone().add(0, 0.5, 0);
+
+        // 將攻擊者加入守衛 Set，onEntityDamage 偵測到後會跳過武器特效處理
+        UUID attackerUuid = attacker.getUniqueId();
+        aoeGuard.add(attackerUuid);
+        try {
+            boolean hitAny = false;
+            for (org.bukkit.entity.Entity nearby : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
+                if (nearby == attacker) continue;
+                if (nearby == primaryVictim) continue;
+                if (!(nearby instanceof LivingEntity)) continue;
+                LivingEntity target = (LivingEntity) nearby;
+                if (target.isDead()) continue;
+                // damage() 會觸發 EntityDamageByEntityEvent，但 aoeGuard 會讓 handler 直接放行
+                target.damage(aoeDamage, attacker);
+                hitAny = true;
+            }
+
+            // 揮砍粒子特效
+            if (hitAny) {
+                center.getWorld().spawnParticle(Particle.SWEEP_ATTACK, center, 4,
+                        radius * 0.35, 0.1, radius * 0.35, 0.0);
+            }
+        } finally {
+            // 無論如何都移除守衛，確保不會卡住玩家後續正常攻擊
+            aoeGuard.remove(attackerUuid);
+        }
+    }
+
+    /**
+     * Apply bleed (wither) effect. Used by AXE / TWO_HAND_AXE.
+     */
+    private void applyBleedEffect(Player attacker, org.bukkit.entity.Entity victim,
+            WeaponManager.WeaponData weaponData) {
+        if (!(victim instanceof LivingEntity)) return;
+        LivingEntity target = (LivingEntity) victim;
+        int durationTicks = weaponData.getIntExtra("bleed-duration-ticks", 60);
+        int level = weaponData.getIntExtra("bleed-level", 0);
+
+        target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                org.bukkit.potion.PotionEffectType.WITHER, durationTicks, level, false, true));
+
+        victim.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR,
+                victim.getLocation().add(0, 1.0, 0), 6, 0.3, 0.5, 0.3, 0.02);
+        attacker.getWorld().playSound(victim.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.6f, 0.8f);
     }
 
     /**
@@ -885,6 +1038,38 @@ public class WeaponListener implements Listener {
                 dustOptions = null;
                 hitSound = Sound.ENTITY_SLIME_SQUISH;
                 break;
+            // ── 新增元素 ──
+            case "wind":
+                mainParticle = Particle.CLOUD;
+                trailParticle = Particle.SWEEP_ATTACK;
+                dustOptions = null;
+                hitSound = Sound.ENTITY_PHANTOM_FLAP;
+                break;
+            case "light":
+                mainParticle = Particle.END_ROD;
+                trailParticle = Particle.ENCHANTED_HIT;
+                dustOptions = null;
+                hitSound = Sound.ENTITY_PLAYER_LEVELUP;
+                break;
+            case "dark":
+                mainParticle = Particle.DRAGON_BREATH;
+                trailParticle = Particle.LARGE_SMOKE;
+                dustOptions = null;
+                hitSound = Sound.ENTITY_WITHER_HURT;
+                break;
+            case "nature":
+                mainParticle = Particle.HAPPY_VILLAGER;
+                trailParticle = Particle.COMPOSTER;
+                dustOptions = null;
+                hitSound = Sound.BLOCK_GRASS_BREAK;
+                break;
+            case "life":
+            case "earth":
+                mainParticle = Particle.TOTEM_OF_UNDYING;
+                trailParticle = Particle.HEART;
+                dustOptions = null;
+                hitSound = Sound.ENTITY_PLAYER_LEVELUP;
+                break;
             default:
                 // 默認：紫色魔法彈
                 mainParticle = Particle.DUST;
@@ -944,7 +1129,7 @@ public class WeaponListener implements Listener {
                     target.damage(finalDamage, player);
 
                     // 元素附加效果
-                    applyStaffElementEffect(target, element, weaponData);
+                    applyStaffElementEffect(target, element, weaponData, player, finalDamage);
 
                     // 命中粒子特效
                     spawnHitEffect(world, target.getLocation().add(0, 1, 0), mainParticle, dustOptions);
@@ -960,29 +1145,73 @@ public class WeaponListener implements Listener {
 
     /**
      * 法杖元素附加效果
+     * @param target     被命中的實體
+     * @param element    元素類型 (burn / ice / lightning / poison / wind / light / dark / nature / life / earth)
+     * @param weaponData 武器資料（可為 null）
+     * @param caster     施法玩家（用於 AoE / 吸血）
+     * @param damage     本次命中基礎傷害
      */
-    private void applyStaffElementEffect(LivingEntity target, String element, WeaponManager.WeaponData weaponData) {
+    private void applyStaffElementEffect(LivingEntity target, String element,
+            WeaponManager.WeaponData weaponData, Player caster, double damage) {
         switch (element.toLowerCase()) {
-            case "burn":
-                int burnTicks = 60; // 預設 3 秒
-                if (weaponData != null) burnTicks = weaponData.getIntExtra("burn-duration-ticks", 60);
-                target.setFireTicks(burnTicks);
+
+            // ══ 火焰：疊層灼燒 DOT ══
+            case "burn": {
+                UUID tid = target.getUniqueId();
+                int maxStacks = weaponData != null
+                        ? weaponData.getIntExtra("burn-max-stacks", BURN_MAX_STACKS_DEFAULT)
+                        : BURN_MAX_STACKS_DEFAULT;
+                int current = burnStacks.getOrDefault(tid, 0);
+                int newStacks = Math.min(current + 1, maxStacks);
+                burnStacks.put(tid, newStacks);
+                burnLastHit.put(tid, System.currentTimeMillis());
+                target.setFireTicks(0); // 防止原生火焰造成雙重傷害
+                target.getWorld().spawnParticle(Particle.FLAME,
+                        target.getLocation().add(0, 1, 0), newStacks * 3, 0.3, 0.6, 0.3, 0.02);
+                if (caster != null) {
+                    caster.sendMessage("§c🔥 燃燒疊加: " + newStacks + "/" + maxStacks);
+                }
                 break;
-            case "ice":
-                int iceDuration = 40; // 預設 2 秒
-                if (weaponData != null) iceDuration = weaponData.getIntExtra("ice-duration-ticks", 40);
+            }
+
+            // ══ 冰霜：緩速 ══
+            case "ice": {
+                int iceDuration = weaponData != null
+                        ? weaponData.getIntExtra("ice-duration-ticks", 60) : 60;
                 target.addPotionEffect(new org.bukkit.potion.PotionEffect(
                         org.bukkit.potion.PotionEffectType.SLOWNESS, iceDuration, 1, false, true));
                 target.setFreezeTicks(iceDuration);
+                target.getWorld().spawnParticle(Particle.SNOWFLAKE,
+                        target.getLocation().add(0, 1, 0), 15, 0.3, 0.6, 0.3, 0.02);
                 break;
-            case "lightning":
-                double lightningChance = 0.3;
-                if (weaponData != null) lightningChance = weaponData.getDoubleExtra("lightning-chance", 0.3);
-                if (random.nextDouble() < lightningChance) {
+            }
+
+            // ══ 雷電：閃電 + 機率暈眩 ══
+            case "lightning": {
+                double strikeChance = weaponData != null
+                        ? weaponData.getDoubleExtra("lightning-chance", 0.3) : 0.3;
+                double stunChance = weaponData != null
+                        ? weaponData.getDoubleExtra("stun-chance", 0.25) : 0.25;
+                if (random.nextDouble() < strikeChance) {
                     target.getWorld().strikeLightningEffect(target.getLocation());
                 }
+                if (random.nextDouble() < stunChance) {
+                    // 暈眩：噁心 + 強力緩速 + 挖掘疲勞，持續 2 秒
+                    target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                            org.bukkit.potion.PotionEffectType.NAUSEA, 40, 1, false, true));
+                    target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                            org.bukkit.potion.PotionEffectType.SLOWNESS, 40, 4, false, true));
+                    target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                            org.bukkit.potion.PotionEffectType.MINING_FATIGUE, 40, 2, false, true));
+                    target.getWorld().spawnParticle(Particle.ELECTRIC_SPARK,
+                            target.getLocation().add(0, 1, 0), 20, 0.3, 0.6, 0.3, 0.05);
+                    if (caster != null) caster.sendMessage("§e⚡ 暈眩觸發！");
+                }
                 break;
-            case "poison":
+            }
+
+            // ══ 毒素 ══
+            case "poison": {
                 int poisonTicks = 60;
                 int poisonLevel = 1;
                 if (weaponData != null) {
@@ -992,6 +1221,98 @@ public class WeaponListener implements Listener {
                 target.addPotionEffect(new org.bukkit.potion.PotionEffect(
                         org.bukkit.potion.PotionEffectType.POISON, poisonTicks, poisonLevel - 1, false, true));
                 break;
+            }
+
+            // ══ 風：群體傷害 ══
+            case "wind": {
+                double aoeRadius = weaponData != null
+                        ? weaponData.getDoubleExtra("aoe-radius", 3.5) : 3.5;
+                double aoeDmg = damage * 0.75;
+                target.getWorld().spawnParticle(Particle.CLOUD,
+                        target.getLocation().add(0, 1, 0), 30, aoeRadius * 0.4, 0.3, aoeRadius * 0.4, 0.05);
+                target.getWorld().spawnParticle(Particle.SWEEP_ATTACK,
+                        target.getLocation().add(0, 1, 0), 6, aoeRadius * 0.3, 0.2, aoeRadius * 0.3, 0.02);
+                target.getWorld().playSound(target.getLocation(), Sound.ENTITY_PHANTOM_FLAP, 0.8f, 1.2f);
+                // 傷害範圍內所有附近實體
+                for (org.bukkit.entity.Entity nearby : target.getWorld()
+                        .getNearbyEntities(target.getLocation(), aoeRadius, aoeRadius, aoeRadius)) {
+                    if (nearby == target || nearby == caster) continue;
+                    if (!(nearby instanceof LivingEntity nearLe) || nearLe.isDead()) continue;
+                    nearLe.damage(aoeDmg, caster);
+                }
+                break;
+            }
+
+            // ══ 光：群體傷害 + 緩速 ══
+            case "light": {
+                double aoeRadius = weaponData != null
+                        ? weaponData.getDoubleExtra("aoe-radius", 3.5) : 3.5;
+                double aoeDmg = damage * 0.70;
+                int slowDur = weaponData != null
+                        ? weaponData.getIntExtra("ice-duration-ticks", 60) : 60;
+                target.getWorld().spawnParticle(Particle.END_ROD,
+                        target.getLocation().add(0, 1, 0), 30, aoeRadius * 0.4, 0.3, aoeRadius * 0.4, 0.02);
+                target.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.5f);
+                // 主目標附加緩速
+                target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.SLOWNESS, slowDur, 1, false, true));
+                // 傷害並緩速周圍實體
+                for (org.bukkit.entity.Entity nearby : target.getWorld()
+                        .getNearbyEntities(target.getLocation(), aoeRadius, aoeRadius, aoeRadius)) {
+                    if (nearby == target || nearby == caster) continue;
+                    if (!(nearby instanceof LivingEntity nearLe) || nearLe.isDead()) continue;
+                    nearLe.damage(aoeDmg, caster);
+                    nearLe.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                            org.bukkit.potion.PotionEffectType.SLOWNESS, slowDur, 1, false, true));
+                }
+                break;
+            }
+
+            // ══ 黑暗：純粹傷害（短暫黑暗視野） ══
+            case "dark": {
+                // 施加短暫黑暗效果（視覺上強調純粹黑暗傷害）
+                target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.DARKNESS, 60, 0, false, true));
+                target.getWorld().spawnParticle(Particle.DRAGON_BREATH,
+                        target.getLocation().add(0, 1, 0), 20, 0.3, 0.6, 0.3, 0.03);
+                break;
+            }
+
+            // ══ 自然：純粹傷害（20%機率微量回血） ══
+            case "nature": {
+                target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER,
+                        target.getLocation().add(0, 1, 0), 10, 0.3, 0.6, 0.3, 0.02);
+                if (caster != null && random.nextDouble() < 0.20) {
+                    double heal = Math.max(1.0, damage * 0.05);
+                    org.bukkit.attribute.AttributeInstance maxHpAttr =
+                            caster.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                    double maxHp = maxHpAttr != null ? maxHpAttr.getValue() : 20.0;
+                    caster.setHealth(Math.min(maxHp, caster.getHealth() + heal));
+                    caster.getWorld().spawnParticle(Particle.HEART,
+                            caster.getLocation().add(0, 2, 0), 3, 0.2, 0.3, 0.2, 0.01);
+                }
+                break;
+            }
+
+            // ══ 生命 / 大地：攻擊吸血 ══
+            case "life":
+            case "earth": {
+                double pct = weaponData != null
+                        ? weaponData.getDoubleExtra("life-steal-percent", 15.0) : 15.0;
+                double heal = damage * (pct / 100.0);
+                if (caster != null && heal > 0) {
+                    org.bukkit.attribute.AttributeInstance maxHpAttr =
+                            caster.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                    double maxHp = maxHpAttr != null ? maxHpAttr.getValue() : 20.0;
+                    caster.setHealth(Math.min(maxHp, caster.getHealth() + heal));
+                    caster.getWorld().spawnParticle(Particle.HEART,
+                            caster.getLocation().add(0, 2, 0), 5, 0.3, 0.3, 0.3, 0.01);
+                    caster.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING,
+                            caster.getLocation().add(0, 1, 0), 8, 0.3, 0.5, 0.3, 0.05);
+                    caster.sendMessage("§a❤ 吸血 +" + String.format("%.1f", heal) + " HP");
+                }
+                break;
+            }
         }
     }
 

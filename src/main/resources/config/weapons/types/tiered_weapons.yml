@@ -1875,3 +1875,326 @@ destiny_bow_t10:
     required-level: 94
     two-handed: true
 
+
+# ═══════════════════════════════════════════════════════════════
+# 屬性法杖系列（各元素專屬）
+# ═══════════════════════════════════════════════════════════════
+
+# 風元素法杖 — 群體傷害
+wind_staff:
+  basic:
+    name: "颶風之杖"
+    material: STICK
+    rarity: "精良"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&f&l颶風之杖"
+    lore:
+      - "&7蘊含狂風之力的法杖"
+      - "&f命中時釋放衝擊波，傷及周圍敵人"
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 18
+    attack-speed: 1.4
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "魔力回復"
+    condition: "hit"
+    chance: 0.15
+    effect: "mana_restore"
+    value: 4.0
+  element:
+    element: "風"
+    aoe-radius: 3.5
+  limits:
+    droppable: true
+    required-level: 20
+
+# 冰元素法杖 — 緩速
+ice_staff:
+  basic:
+    name: "冰霜之杖"
+    material: STICK
+    rarity: "精良"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&b&l冰霜之杖"
+    lore:
+      - "&7凝固了極地寒氣的法杖"
+      - "&b命中敵人時附加緩速與凍結"
+  stats:
+    damage-multiplier: 1.1
+    base-damage: 15
+    attack-speed: 1.4
+    crit-chance: 7.0
+    crit-damage-multiplier: 1.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "寒霜護盾"
+    condition: "hit"
+    chance: 0.1
+    effect: "mana_restore"
+    value: 3.0
+  element:
+    element: "冰"
+    ice-duration-ticks: 80
+  limits:
+    droppable: true
+    required-level: 18
+
+# 火元素法杖 — 疊層灼燒 DOT
+fire_staff:
+  basic:
+    name: "炙焰之杖"
+    material: BLAZE_ROD
+    rarity: "精良"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&c&l炙焰之杖"
+    lore:
+      - "&7燃燒著永不熄滅烈焰的法杖"
+      - "&c每次命中疊加一層灼燒，最多10層"
+      - "&c每層每秒造成持續傷害"
+  stats:
+    damage-multiplier: 1.0
+    base-damage: 14
+    attack-speed: 1.4
+    crit-chance: 7.0
+    crit-damage-multiplier: 1.4
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "魔力回復"
+    condition: "hit"
+    chance: 0.15
+    effect: "mana_restore"
+    value: 3.0
+  element:
+    element: "火"
+    burn-max-stacks: 10
+  limits:
+    droppable: true
+    required-level: 18
+
+# 雷元素法杖 — 機率暈眩
+thunder_staff:
+  basic:
+    name: "雷霆之杖"
+    material: BREEZE_ROD
+    rarity: "稀有"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&e&l雷霆之杖"
+    lore:
+      - "&7蓄積了天雷之力的法杖"
+      - "&e命中時有機率召喚閃電並觸發暈眩效果"
+  stats:
+    damage-multiplier: 1.25
+    base-damage: 20
+    attack-speed: 1.4
+    crit-chance: 9.0
+    crit-damage-multiplier: 1.55
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "雷霆共鳴"
+    condition: "hit"
+    chance: 0.12
+    effect: "mana_restore"
+    value: 5.0
+  element:
+    element: "雷"
+    lightning-chance: 0.3
+    stun-chance: 0.25
+  limits:
+    droppable: true
+    required-level: 25
+
+# 光元素法杖 — 群體傷害 + 緩速
+light_staff:
+  basic:
+    name: "聖光之杖"
+    material: BLAZE_ROD
+    rarity: "稀有"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&e&l聖光之杖"
+    lore:
+      - "&7凝聚了神聖光輝的法杖"
+      - "&e命中時釋放聖光爆炸，傷及並緩速周圍敵人"
+  stats:
+    damage-multiplier: 1.2
+    base-damage: 19
+    attack-speed: 1.4
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "神聖庇護"
+    condition: "hit"
+    chance: 0.1
+    effect: "mana_restore"
+    value: 4.0
+  element:
+    element: "光"
+    aoe-radius: 3.5
+    ice-duration-ticks: 60
+  limits:
+    droppable: true
+    required-level: 28
+
+# 黑暗元素法杖 — 純粹高傷
+dark_staff:
+  basic:
+    name: "黑暗之杖"
+    material: BLAZE_ROD
+    rarity: "稀有"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&8&l黑暗之杖"
+    lore:
+      - "&7吞噬了光明的黑暗法杖"
+      - "&8純粹的黑暗力量，傷害更高無附加效果"
+  stats:
+    damage-multiplier: 1.45
+    base-damage: 24
+    attack-speed: 1.4
+    crit-chance: 10.0
+    crit-damage-multiplier: 1.6
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "黑暗汲取"
+    condition: "hit"
+    chance: 0.1
+    effect: "mana_restore"
+    value: 6.0
+  element:
+    element: "黑暗"
+  limits:
+    droppable: true
+    required-level: 28
+
+# 自然元素法杖 — 純粹傷害
+nature_staff:
+  basic:
+    name: "自然之杖"
+    material: STICK
+    rarity: "優良"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&a&l自然之杖"
+    lore:
+      - "&7融合了大地生命力的法杖"
+      - "&a純粹的自然傷害，偶爾為施法者小量回血"
+  stats:
+    damage-multiplier: 1.35
+    base-damage: 22
+    attack-speed: 1.4
+    crit-chance: 9.0
+    crit-damage-multiplier: 1.55
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "自然共生"
+    condition: "hit"
+    chance: 0.15
+    effect: "mana_restore"
+    value: 4.0
+  element:
+    element: "自然"
+  limits:
+    droppable: true
+    required-level: 22
+
+# 生命元素法杖 — 吸血回血
+life_staff:
+  basic:
+    name: "生命之杖"
+    material: STICK
+    rarity: "稀有"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&d&l生命之杖"
+    lore:
+      - "&7蘊含生命力量的法杖"
+      - "&d攻擊時吸收敵人生命力回復自身HP"
+  stats:
+    damage-multiplier: 1.1
+    base-damage: 16
+    attack-speed: 1.4
+    crit-chance: 7.0
+    crit-damage-multiplier: 1.45
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "生命汲取"
+    condition: "hit"
+    chance: 0.2
+    effect: "mana_restore"
+    value: 3.0
+  element:
+    element: "生命"
+    life-steal-percent: 18.0
+  limits:
+    droppable: true
+    required-level: 25
+
+# 大地元素法杖 — 生命汲取（強化版）
+earth_staff:
+  basic:
+    name: "大地之杖"
+    material: STICK
+    rarity: "史詩"
+    category: "STAFF"
+    bind-type: "無"
+  appearance:
+    display-name: "&2&l大地之杖"
+    lore:
+      - "&7蘊含大地厚重力量的法杖"
+      - "&2攻擊時從大地中汲取力量，大量回復施法者HP"
+  stats:
+    damage-multiplier: 1.15
+    base-damage: 26
+    attack-speed: 1.4
+    crit-chance: 8.0
+    crit-damage-multiplier: 1.5
+  special:
+    backstab-enabled: false
+    effect: "none"
+  passive:
+    name: "大地護佑"
+    condition: "hit"
+    chance: 0.15
+    effect: "mana_restore"
+    value: 5.0
+  element:
+    element: "大地"
+    life-steal-percent: 25.0
+  limits:
+    droppable: true
+    required-level: 35
+
+
+

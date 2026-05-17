@@ -69,11 +69,13 @@ public class WeaponManager {
     // ========================================
     public enum WeaponCategory {
         SWORD("劍", new String[]{"STRENGTH"}, new double[]{0.3}),
+        TWO_HAND_SWORD("雙手劍", new String[]{"STRENGTH"}, new double[]{0.4}),
         STAFF("法杖", new String[]{"MAGIC"}, new double[]{0.4}),
         SCYTHE("鐮刀", new String[]{"AGILITY"}, new double[]{0.35}),
         TWO_HAND_SCYTHE("雙手鐮刀", new String[]{"AGILITY", "STRENGTH"}, new double[]{0.3, 0.15}),
         AXE("斧", new String[]{"STRENGTH", "VITALITY"}, new double[]{0.25, 0.15}),
         TWO_HAND_AXE("雙手斧", new String[]{"STRENGTH", "VITALITY"}, new double[]{0.3, 0.2}),
+        TWO_HAND_STAFF("雙手長棍", new String[]{"STRENGTH", "AGILITY"}, new double[]{0.2, 0.15}),
         BOW("弓", new String[]{"AGILITY", "SPIRIT"}, new double[]{0.25, 0.15}),
         SPEAR("長槍", new String[]{"STRENGTH", "AGILITY"}, new double[]{0.2, 0.2}),
         UNKNOWN("未知", new String[]{}, new double[]{});
@@ -93,7 +95,7 @@ public class WeaponManager {
          */
         public static WeaponCategory detectFromMaterial(Material mat, boolean twoHanded) {
             String name = mat.name();
-            if (name.contains("SWORD")) return SWORD;
+            if (name.contains("SWORD")) return twoHanded ? TWO_HAND_SWORD : SWORD;
             if (name.contains("BOW") || name.equals("CROSSBOW")) return BOW;
             if (name.contains("HOE")) return twoHanded ? TWO_HAND_SCYTHE : SCYTHE;
             if (name.contains("AXE")) return twoHanded ? TWO_HAND_AXE : AXE;
@@ -387,14 +389,47 @@ public class WeaponManager {
             if (!elementType.equals("NONE") && !elementType.isEmpty()) {
                 lore.add("");
                 String elemIcon = switch (elementType) {
-                    case "FIRE", "BURN" -> "§c🔥 火焰";
-                    case "ICE", "FREEZE" -> "§b❄ 冰霜";
-                    case "LIGHTNING", "THUNDER" -> "§e⚡ 雷電";
+                    case "FIRE", "BURN" -> "§c🔥 火焰 §7(疊層灼燒)";
+                    case "ICE", "FREEZE" -> "§b❄ 冰霜 §7(緩速)";
+                    case "LIGHTNING", "THUNDER" -> "§e⚡ 雷電 §7(暈眩機率)";
                     case "POISON" -> "§2☠ 劇毒";
                     case "WATER" -> "§9💧 水流";
+                    case "WIND" -> "§f🌪 風 §7(群體傷害)";
+                    case "LIGHT" -> "§e✦ 光 §7(群體傷害+緩速)";
+                    case "DARK" -> "§8☽ 黑暗 §7(純粹傷害)";
+                    case "NATURE" -> "§a✿ 自然 §7(純粹傷害)";
+                    case "LIFE" -> "§d❤ 生命 §7(攻擊吸血)";
+                    case "EARTH" -> "§2⛰ 大地 §7(攻擊回血)";
                     default -> "§7✧ " + elementType;
                 };
                 lore.add(y + "✧ 元素: " + elemIcon);
+            }
+
+            // ─── 特殊機制 ───
+            boolean meleeAoe = weaponData.getBooleanExtra("melee-aoe-enabled", false);
+            boolean bleedEnabled = weaponData.getBooleanExtra("bleed-enabled", false);
+            boolean backstabAny = weaponData.getBooleanExtra("backstab-any-direction", false);
+
+            if (meleeAoe || bleedEnabled || backstabAny) {
+                lore.add("");
+                lore.add(y + "⚡ 特殊機制");
+                lore.add(bc + "──────────────────────");
+                if (meleeAoe) {
+                    double aoeRadius = weaponData.getDoubleExtra("melee-aoe-radius", 2.0);
+                    double aoeDmgRatio = weaponData.getDoubleExtra("melee-aoe-damage-ratio", 0.6);
+                    lore.add(g + "  ▸ 範圍攻擊: " + w + String.format("%.1f", aoeRadius) + " 格 ("
+                            + String.format("%.0f%%", aoeDmgRatio * 100) + " 傷害)");
+                }
+                if (bleedEnabled) {
+                    double bleedSec = weaponData.getIntExtra("bleed-duration-ticks", 60) / 20.0;
+                    int bleedLv = weaponData.getIntExtra("bleed-level", 0) + 1;
+                    lore.add(g + "  ▸ 流血: " + w + "Lv" + bleedLv + " § (" + String.format("%.1f", bleedSec) + " 秒)");
+                }
+                if (backstabAny) {
+                    double bsChance = weaponData.getDoubleExtra("backstab-chance", 0.3) * 100;
+                    lore.add(g + "  ▸ 背刺機率: " + w + String.format("%.0f%%", bsChance)
+                            + g + " (任意方向)");
+                }
             }
 
             // ─── 被動效果 ───

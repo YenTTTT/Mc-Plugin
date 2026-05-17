@@ -100,6 +100,29 @@ public class TalentSkillManager {
         return false;
     }
 
+    /**
+     * 透過快捷技能列直接施放指定技能 (繞過 mechanism 觸發條件)
+     *
+     * @param player   施放玩家
+     * @param talentId 天賦技能 ID
+     * @param item     當前手持物品 (用於計算武器傷害)
+     * @return 是否施放成功
+     */
+    public boolean castSkillDirectly(Player player, String talentId, ItemStack item) {
+        PlayerTalents pt = talentManager.getPlayerTalents(player);
+        Talent talent = talentManager.findTalent(talentId);
+        if (talent == null) {
+            player.sendMessage("§c找不到技能: §f" + talentId);
+            return false;
+        }
+        int level = pt.getTalentLevel(talentId);
+        if (level <= 0) {
+            player.sendMessage("§c你尚未學習技能: §f" + talent.getName());
+            return false;
+        }
+        return castSkill(player, talent, level, item);
+    }
+
     private boolean castSkill(Player player, Talent talent, int level, ItemStack item) {
         String cdKey = "talent:" + talent.getId() + ":" + player.getUniqueId();
         
@@ -4318,25 +4341,129 @@ public class TalentSkillManager {
     private boolean executeMiniTurret(Player player, Talent talent, int level, ItemStack item) {
         double damage = talent.getEffectDouble(level, "baseDamage", 15);
         int duration = (int) talent.getEffectDouble(level, "duration", 10);
-        Location loc = player.getLocation().clone();
+        double range = 10.0;
+
+        // 在玩家前方部署砲塔 ArmorStand
+        Location spawnLoc = player.getLocation().clone();
+        ArmorStand turret = spawnLoc.getWorld().spawn(spawnLoc, ArmorStand.class, stand -> {
+            stand.setGravity(true);
+            stand.setVisible(true);
+            stand.setSmall(false);
+            stand.setArms(true);
+            stand.setBasePlate(true);
+            stand.setCustomName("§b⚙ 迷你砲塔");
+            stand.setCustomNameVisible(true);
+            stand.setHeadPose(new EulerAngle(Math.toRadians(-10), 0, 0));
+            stand.setRightArmPose(new EulerAngle(Math.toRadians(-90), 0, Math.toRadians(20)));
+            if (stand.getEquipment() != null) {
+                stand.getEquipment().setHelmet(new ItemStack(Material.DISPENSER));
+                stand.getEquipment().setItemInMainHand(new ItemStack(Material.CROSSBOW));
+            }
+        });
+
         player.sendMessage("§b[迷你砲塔] §f部署砲塔！持續 " + duration + " 秒");
-        player.getWorld().playSound(loc, Sound.BLOCK_ANVIL_PLACE, 1.0f, 1.5f);
+        player.getWorld().playSound(spawnLoc, Sound.BLOCK_ANVIL_PLACE, 1.0f, 1.5f);
+
+        // 部署閃光
+        spawnLoc.getWorld().spawnParticle(Particle.CLOUD,          spawnLoc.clone().add(0, 1, 0), 20, 0.5, 0.5, 0.5, 0.05);
+        spawnLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, spawnLoc.clone().add(0, 1, 0), 20, 0.4, 0.4, 0.4, 0.15);
+        spawnLoc.getWorld().spawnParticle(Particle.CRIT,           spawnLoc.clone().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0.1);
 
         new BukkitRunnable() {
             int ticks = 0;
+            LivingEntity lockedTarget = null;
+
             @Override
             public void run() {
-                if (ticks >= duration * 20) { cancel(); return; }
-                if (ticks % 20 == 0) {
-                    loc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, loc.clone().add(0, 1.5, 0), 5, 0.2, 0.2, 0.2, 0);
-                    for (org.bukkit.entity.Entity e : loc.getWorld().getNearbyEntities(loc, 10, 5, 10)) {
-                        if (e instanceof LivingEntity le && !(e instanceof Player) && !le.isDead()) {
-                            damageManager.dealSkillDamage(player, le, damage);
-                            loc.getWorld().playSound(loc, Sound.ENTITY_ARROW_SHOOT, 0.5f, 2.0f);
-                            break;
+                if (ticks >= duration * 20 || turret.isDead()) {
+                    // 砲塔銷毀特效
+                    if (!turret.isDead()) {
+                        turret.getLocation().getWorld().spawnParticle(Particle.EXPLOSION, turret.getLocation().add(0, 1, 0), 4, 0.4, 0.4, 0.4, 0);
+                        turret.getLocation().getWorld().spawnParticle(Particle.SMOKE,     turret.getLocation().add(0, 1, 0), 15, 0.5, 0.5, 0.5, 0.05);
+                        turret.getLocation().getWorld().playSound(turret.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.6f, 1.8f);
+                        turret.remove();
+                    }
+                    cancel();
+                    return;
+                }
+
+                Location barrel = turret.getLocation().clone().add(0, 1.6, 0);
+
+                // ── 常駐環境效果（讓砲塔清晰可見）──
+                if (ticks % 4 == 0) {
+                    barrel.getWorld().spawnParticle(Particle.SMOKE, barrel, 2, 0.12, 0.1, 0.12, 0.008);
+                }
+                if (ticks % 8 == 0) {
+                    barrel.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, barrel, 1, 0.15, 0.15, 0.15, 0.02);
+                }
+                // 底座運轉光環
+                if (ticks % 10 == 0) {
+                    for (int i = 0; i < 8; i++) {
+                        double a = Math.toRadians(i * 45 + ticks * 3);
+                        Location ring = turret.getLocation().clone().add(Math.cos(a) * 0.5, 0.1, Math.sin(a) * 0.5);
+                        ring.getWorld().spawnParticle(Particle.DUST, ring, 1, 0, 0, 0, 0,
+                            new Particle.DustOptions(org.bukkit.Color.AQUA, 0.7f));
+                    }
+                }
+
+                // ── 尋找並追蹤最近敵人（排除玩家、ArmorStand 及砲塔本身）──
+                if (lockedTarget == null || lockedTarget.isDead() || lockedTarget.getLocation().distanceSquared(turret.getLocation()) > range * range * 1.5) {
+                    lockedTarget = null;
+                    double bestDist = Double.MAX_VALUE;
+                    for (Entity e : barrel.getWorld().getNearbyEntities(turret.getLocation(), range, 5, range)) {
+                        if (e instanceof LivingEntity le
+                                && !(e instanceof Player)
+                                && !(e instanceof ArmorStand)   // 排除砲塔本體及其他盔甲架
+                                && !le.isDead()) {
+                            double d = e.getLocation().distanceSquared(turret.getLocation());
+                            if (d < bestDist) { bestDist = d; lockedTarget = le; }
                         }
                     }
                 }
+
+                // ── 砲台旋轉朝向目標 ──
+                if (lockedTarget != null) {
+                    Vector toTarget = lockedTarget.getLocation().add(0, 1, 0).toVector()
+                            .subtract(turret.getLocation().toVector()).setY(0);
+                    if (toTarget.lengthSquared() > 0.001) {
+                        Location facing = turret.getLocation().clone();
+                        facing.setDirection(toTarget.normalize());
+                        turret.setRotation(facing.getYaw(), 0);
+                    }
+                    // 瞄準指示粒子
+                    if (ticks % 10 == 0) {
+                        barrel.getWorld().spawnParticle(Particle.DUST, barrel, 3, 0.05, 0.05, 0.05, 0,
+                            new Particle.DustOptions(org.bukkit.Color.LIME, 0.6f));
+                    }
+                }
+
+                // ── 每 20 tick 射擊 ──
+                if (ticks % 20 == 0 && lockedTarget != null && !lockedTarget.isDead()) {
+                    Location to = lockedTarget.getLocation().add(0, 1, 0);
+                    Vector beamDir = to.toVector().subtract(barrel.toVector());
+                    double beamLen = beamDir.length();
+                    beamDir.normalize();
+
+                    // 光束
+                    for (double d = 0; d < beamLen; d += 0.35) {
+                        Location p = barrel.clone().add(beamDir.clone().multiply(d));
+                        p.getWorld().spawnParticle(Particle.DUST, p, 1, 0, 0, 0, 0,
+                            new Particle.DustOptions(org.bukkit.Color.AQUA, 1.0f));
+                        if (((int)(d * 10)) % 5 == 0) {
+                            p.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, p, 1, 0.03, 0.03, 0.03, 0.01);
+                        }
+                    }
+                    // 命中特效
+                    to.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, to, 10, 0.25, 0.25, 0.25, 0.06);
+                    to.getWorld().spawnParticle(Particle.CRIT,           to,  6, 0.2,  0.2,  0.2,  0.05);
+                    to.getWorld().playSound(to, Sound.ENTITY_ARROW_SHOOT, 0.5f, 2.0f);
+
+                    damageManager.dealSkillDamage(player, lockedTarget, damage);
+
+                    // 砲管後坐煙霧
+                    barrel.getWorld().spawnParticle(Particle.SMOKE, barrel, 6, 0.1, 0.1, 0.1, 0.06);
+                }
+
                 ticks++;
             }
         }.runTaskTimer(plugin, 0L, 1L);
@@ -4357,25 +4484,164 @@ public class TalentSkillManager {
     private boolean executeTrackingDrone(Player player, Talent talent, int level, ItemStack item) {
         double damage = talent.getEffectDouble(level, "baseDamage", 20);
         int duration = (int) talent.getEffectDouble(level, "duration", 15);
+        double range = 12.0;
+
         player.sendMessage("§b[追蹤無人機] §f部署追蹤無人機！");
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BEE_LOOP, 0.6f, 2.0f);
 
+        // 起飛特效（純粒子，不生成任何實體）
+        Location launchLoc = player.getLocation().clone().add(0, 3.5, 0);
+        launchLoc.getWorld().spawnParticle(Particle.CLOUD,          launchLoc, 15, 0.3, 0.3, 0.3, 0.05);
+        launchLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, launchLoc, 12, 0.3, 0.3, 0.3, 0.1);
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 0.4f, 2.0f);
+
+        // 用 Location 陣列追蹤無人機在空中的位置（純粒子，無實體，不會被破壞）
+        final Location[] dronePos = { player.getLocation().clone().add(0, 3.5, 0) };
+
         new BukkitRunnable() {
             int ticks = 0;
+            double orbitAngle = 0;
+            double rotorAngle = 0;
+            LivingEntity lockedTarget = null;
+
             @Override
             public void run() {
-                if (ticks >= duration * 20 || !player.isOnline()) { cancel(); return; }
-                if (ticks % 30 == 0) {
-                    Location pLoc = player.getLocation().add(0, 3, 0);
-                    pLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, pLoc, 3, 0.2, 0.1, 0.2, 0);
-                    for (org.bukkit.entity.Entity e : pLoc.getWorld().getNearbyEntities(pLoc, 12, 6, 12)) {
-                        if (e instanceof LivingEntity le && !(e instanceof Player) && !le.isDead()) {
-                            damageManager.dealSkillDamage(player, le, damage);
-                            le.getWorld().spawnParticle(Particle.CRIT, le.getLocation().add(0,1,0), 10, 0.2, 0.2, 0.2, 0.1);
-                            break;
+                if (ticks >= duration * 20 || !player.isOnline()) {
+                    // 消散特效
+                    Location dl = dronePos[0];
+                    dl.getWorld().spawnParticle(Particle.EXPLOSION,      dl, 3, 0.3, 0.3, 0.3, 0);
+                    dl.getWorld().spawnParticle(Particle.CLOUD,          dl, 12, 0.4, 0.4, 0.4, 0.04);
+                    dl.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, dl, 10, 0.3, 0.3, 0.3, 0.1);
+                    dl.getWorld().playSound(dl, Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1.8f);
+                    cancel();
+                    return;
+                }
+
+                // ── 計算無人機目標位置：繞玩家軌道 + 上下飄動 ──
+                orbitAngle += 0.06;
+                rotorAngle += 0.4;      // 旋翼快速旋轉角
+
+                double bob = Math.sin(ticks * 0.12) * 0.35;
+                Location ideal = player.getLocation().clone().add(
+                    Math.cos(orbitAngle) * 1.8,
+                    3.5 + bob,
+                    Math.sin(orbitAngle) * 1.8
+                );
+
+                // 平滑插值（慣性感）
+                Location cur = dronePos[0];
+                dronePos[0] = new Location(
+                    cur.getWorld(),
+                    cur.getX() + (ideal.getX() - cur.getX()) * 0.25,
+                    cur.getY() + (ideal.getY() - cur.getY()) * 0.25,
+                    cur.getZ() + (ideal.getZ() - cur.getZ()) * 0.25
+                );
+                Location dl = dronePos[0];
+
+                // ── 無人機本體粒子（每 tick 繪製，清晰可見）──
+
+                // 機身中心核心
+                dl.getWorld().spawnParticle(Particle.DUST, dl, 2, 0.04, 0.04, 0.04, 0,
+                    new Particle.DustOptions(org.bukkit.Color.SILVER, 1.2f));
+
+                // 4 條旋翼臂 + 旋翼模糊弧
+                for (int w = 0; w < 4; w++) {
+                    double wa = rotorAngle + Math.toRadians(w * 90);
+                    double armX = Math.cos(wa) * 0.5;
+                    double armZ = Math.sin(wa) * 0.5;
+
+                    // 旋翼臂（灰色）
+                    dl.getWorld().spawnParticle(Particle.DUST,
+                        dl.clone().add(armX * 0.5, 0, armZ * 0.5), 1, 0, 0, 0, 0,
+                        new Particle.DustOptions(org.bukkit.Color.fromRGB(160, 160, 160), 0.7f));
+
+                    // 旋翼末端高速旋轉弧（水藍色）
+                    for (int r = 0; r < 5; r++) {
+                        double ra = rotorAngle * 3.5 + Math.toRadians(r * 72 + w * 90);
+                        Location rotor = dl.clone().add(
+                            armX + Math.cos(ra) * 0.22,
+                            0.04,
+                            armZ + Math.sin(ra) * 0.22
+                        );
+                        rotor.getWorld().spawnParticle(Particle.DUST, rotor, 1, 0, 0, 0, 0,
+                            new Particle.DustOptions(org.bukkit.Color.AQUA, 0.55f));
+                    }
+                }
+
+                // ── 引擎推力（腳下持續噴霧）──
+                if (ticks % 2 == 0) {
+                    dl.getWorld().spawnParticle(Particle.CLOUD,
+                        dl.clone().add(0, -0.45, 0), 2, 0.12, 0.04, 0.12, 0.014);
+                }
+                if (ticks % 4 == 0) {
+                    dl.getWorld().spawnParticle(Particle.END_ROD,
+                        dl.clone().add(0, -0.35, 0), 1, 0.04, 0.04, 0.04, 0.004);
+                }
+                if (ticks % 8 == 0) {
+                    dl.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, dl, 1, 0.1, 0.1, 0.1, 0.01);
+                }
+
+                // ── 蜂鳴聲 ──
+                if (ticks % 20 == 0) {
+                    dl.getWorld().playSound(dl, Sound.ENTITY_BEE_LOOP, 0.3f, 2.0f);
+                }
+
+                // ── 每 10 tick 重新鎖定目標 ──
+                if (ticks % 10 == 0) {
+                    if (lockedTarget == null || lockedTarget.isDead()
+                            || lockedTarget.getLocation().distanceSquared(dl) > range * range * 1.5) {
+                        lockedTarget = null;
+                        double bestDist = Double.MAX_VALUE;
+                        for (Entity e : dl.getWorld().getNearbyEntities(dl, range, range * 0.6, range)) {
+                            if (e instanceof LivingEntity le
+                                    && !(e instanceof Player)
+                                    && !(e instanceof ArmorStand)  // 排除砲塔等盔甲架
+                                    && !le.isDead()) {
+                                double d = e.getLocation().distanceSquared(dl);
+                                if (d < bestDist) { bestDist = d; lockedTarget = le; }
+                            }
                         }
                     }
                 }
+
+                // ── 鎖定指示（紅色 Dust 閃爍）──
+                if (lockedTarget != null && !lockedTarget.isDead() && ticks % 5 == 0) {
+                    dl.getWorld().spawnParticle(Particle.DUST,
+                        dl.clone().add(0, -0.2, 0), 3, 0.04, 0.04, 0.04, 0,
+                        new Particle.DustOptions(org.bukkit.Color.RED, 0.5f));
+                }
+
+                // ── 每 30 tick 發射光束攻擊 ──
+                if (ticks % 30 == 0 && lockedTarget != null && !lockedTarget.isDead()) {
+                    Location from = dl.clone();
+                    Location to   = lockedTarget.getLocation().clone().add(0, 1, 0);
+                    Vector beamDir = to.toVector().subtract(from.toVector());
+                    double beamLen = beamDir.length();
+                    beamDir.normalize();
+
+                    // 光束
+                    for (double d = 0; d < beamLen; d += 0.3) {
+                        Location p = from.clone().add(beamDir.clone().multiply(d));
+                        p.getWorld().spawnParticle(Particle.DUST, p, 1, 0, 0, 0, 0,
+                            new Particle.DustOptions(org.bukkit.Color.fromRGB(0, 200, 255), 0.8f));
+                        if (((int)(d * 10)) % 6 == 0) {
+                            p.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, p, 1, 0.03, 0.03, 0.03, 0.01);
+                        }
+                    }
+
+                    // 命中特效
+                    to.getWorld().spawnParticle(Particle.CRIT,           to, 12, 0.25, 0.25, 0.25, 0.1);
+                    to.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, to, 10, 0.25, 0.25, 0.25, 0.06);
+                    to.getWorld().spawnParticle(Particle.ENCHANTED_HIT,  to,  6, 0.2,  0.2,  0.2,  0.05);
+                    to.getWorld().playSound(to, Sound.ENTITY_ARROW_SHOOT, 0.5f, 2.0f);
+
+                    damageManager.dealSkillDamage(player, lockedTarget, damage);
+
+                    // 開火閃光（在無人機位置）
+                    dl.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, dl, 8, 0.15, 0.15, 0.15, 0.12);
+                    dl.getWorld().spawnParticle(Particle.END_ROD,        dl, 4, 0.1,  0.1,  0.1,  0.06);
+                }
+
                 ticks++;
             }
         }.runTaskTimer(plugin, 0L, 1L);

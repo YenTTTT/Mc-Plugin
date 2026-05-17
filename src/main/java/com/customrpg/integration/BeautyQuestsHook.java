@@ -32,10 +32,16 @@ public class BeautyQuestsHook {
     private NpcFactory  npcFactory;
     private CustomRPGMobFactory factory;
     private boolean mobIntegrationEnabled = false;
+    private QuestCooldownManager questCooldownManager;
 
     public BeautyQuestsHook(JavaPlugin plugin, MobManager mobManager) {
         this.plugin = plugin;
         this.mobManager = mobManager;
+        this.questCooldownManager = new QuestCooldownManager(plugin);
+    }
+
+    public QuestCooldownManager getQuestCooldownManager() {
+        return questCooldownManager;
     }
 
     /** 由 CustomRPG.initializeManagers() 呼叫，在 tryEnable() 前設定好 NpcManager。 */
@@ -187,5 +193,12 @@ public class BeautyQuestsHook {
 
     public NpcFactory getNpcFactory() {
         return npcFactory;
+    }
+
+    /** 伺服器關閉時呼叫，確保冷卻資料寫入磁碟。 */
+    public void shutdown() {
+        if (questCooldownManager != null) {
+            questCooldownManager.save();
+        }
     }
 }
