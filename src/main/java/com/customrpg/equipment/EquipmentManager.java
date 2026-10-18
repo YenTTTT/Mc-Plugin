@@ -36,6 +36,10 @@ public class EquipmentManager {
     // 玩家裝備數據 - UUID -> Slot -> EquipmentData
     private Map<UUID, Map<EquipmentSlot, EquipmentData>> playerEquipment;
 
+    // 保管欄位的實體物品 - UUID -> Slot -> ItemStack（寫入 data/equipment/<uuid>.yml）
+    private final Map<UUID, Map<EquipmentSlot, ItemStack>> storedItems = new ConcurrentHashMap<>();
+    private final Set<UUID> equipmentLoadFailed = ConcurrentHashMap.newKeySet();
+
     // 配置文件
     private File equipmentConfigFile;
     private FileConfiguration equipmentConfig;
@@ -376,6 +380,304 @@ public class EquipmentManager {
      */
     public Map<EquipmentSlot, EquipmentData> getPlayerEquipment(UUID playerUUID) {
         return playerEquipment.computeIfAbsent(playerUUID, k -> new EnumMap<>(EquipmentSlot.class));
+    }
+
+    // ===== 物品識別 =====
+
+    private static boolean slotMatches(EquipmentSlot templateSlot, EquipmentSlot slot) {
+        if (templateSlot == slot) return true;
+        return (templateSlot == EquipmentSlot.RING_1 || templateSlot == EquipmentSlot.RING_2)
+                && (slot == EquipmentSlot.RING_1 || slot == EquipmentSlot.RING_2);
+    }
+
+    private static String stripName(String name) {
+        String stripped = org.bukkit.ChatColor.stripColor(name);
+        return stripped == null ? "" : stripped.replaceAll("\\s*\\[\\+\\d+]$", "").trim();
+    }
+
+    /**
+     * 依物品 PDC 中的模板 ID 找出裝備模板。
+     * 舊版物品（沒有 ID）只在顯示名稱完全相同且帶有 lore 時才接受：鐵砧只能改名、無法加入 lore，
+     * 因此改名的原版物品不會被當成自訂裝備。
+     */
+    public EquipmentData findTemplate(ItemStack item, EquipmentSlot slot) {
+        if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return null;
+        ItemMeta meta = item.getItemMeta();
+        String id = meta.getPersistentDataContainer().get(EquipmentData.PDC_EQUIPMENT_ID, PersistentDataType.STRING);
+        if (id != null) {
+            EquipmentData template = equipmentTemplates.get(id);
+            return template != null && template.getMaterial() == item.getType()
+                    && slotMatches(template.getSlot(), slot) ? template : null;
+        }
+        if (!meta.hasDisplayName() || !meta.hasLore()) return null;
+        String itemName = stripName(meta.getDisplayName());
+        for (EquipmentData template : equipmentTemplates.values()) {
+            if (template.getMaterial() == item.getType() && slotMatches(template.getSlot(), slot)
+                    && itemName.equals(stripName(template.getName()))) {
+                return template;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 將物品轉換為裝備數據：自訂裝備使用模板（並還原強化等級），其他物品給予原版材質的基本屬性。
+     */
+    public EquipmentData toEquipmentData(ItemStack item, EquipmentSlot slot) {
+        if (item == null || item.getType() == Material.AIR) return null;
+        EquipmentData template = findTemplate(item, slot);
+        EquipmentData equipment;
+        if (template != null) {
+            equipment = createEquipment(template.getId());
+            equipment.setSlot(slot);
+        } else {
+            equipment = createBasicEquipment(item.getType(), slot);
+        }
+        Integer enhance = item.hasItemMeta() ? item.getItemMeta().getPersistentDataContainer()
+                .get(EquipmentData.PDC_ENHANCE_LEVEL, PersistentDataType.INTEGER) : null;
+        for (int i = 0; enhance != null && i < enhance; i++) {
+            if (!equipment.enhance()) break;
+        }
+        return equipment;
+    }
+
+    private EquipmentData createBasicEquipment(Material material, EquipmentSlot slot) {
+        EquipmentData equipment = new EquipmentData(
+                "minecraft_" + material.name().toLowerCase(), "§f" + material.name().replace("_", " "),
+                slot, EquipmentRarity.COMMON, material);
+        Map<EquipmentAttribute, Double> attributes = new HashMap<>();
+        String materialName = material.name();
+        if (materialName.contains("DIAMOND")) {
+            attributes.put(EquipmentAttribute.ATTACK_DAMAGE, 8.0);
+            attributes.put(EquipmentAttribute.DEFENSE, 3.0);
+        } else if (materialName.contains("IRON")) {
+            attributes.put(EquipmentAttribute.ATTACK_DAMAGE, 6.0);
+            attributes.put(EquipmentAttribute.DEFENSE, 2.0);
+        } else if (materialName.contains("GOLD")) {
+            attributes.put(EquipmentAttribute.ATTACK_DAMAGE, 4.0);
+            attributes.put(EquipmentAttribute.LUCK, 2.0);
+        } else {
+            attributes.put(EquipmentAttribute.ATTACK_DAMAGE, 3.0);
+        }
+        equipment.setBaseAttributes(attributes);
+        return equipment;
+    }
+
+    /**
+     * 是否符合裝備需求（等級）；不符合時通知玩家
+     */
+    public boolean meetsRequirements(Player player, EquipmentData equipment) {
+        return canEquip(player, equipment);
+    }
+
+    // ===== 實體物品（避免複製／遺失） =====
+
+    /**
+     * 非原版欄位（肩甲、披風、飾品、護符、腰帶）的實體物品由插件保管並寫入檔案；
+     * 護甲欄位的實體物品在原版護甲槽；手持欄位只由主手／副手自動同步，不可透過 GUI 放入或取出。
+     */
+    public static boolean isStoredSlot(EquipmentSlot slot) {
+        return !slot.isArmor() && !slot.isWeapon();
+    }
+
+    private Map<EquipmentSlot, ItemStack> getStoredItems(UUID playerUUID) {
+        return storedItems.computeIfAbsent(playerUUID, k -> new EnumMap<>(EquipmentSlot.class));
+    }
+
+    /**
+     * 以實際物品裝備到 GUI 可管理的欄位（護甲或保管欄位），保留物品原有 NBT（附魔、耐久、強化）。
+     *
+     * @return 原本在該欄位的實體物品（可能為 null），由呼叫端歸還給玩家；裝備失敗時回傳 source 本身不變且 success=false
+     */
+    public EquipResult equipFromItem(Player player, EquipmentSlot slot, ItemStack source) {
+        if (slot.isWeapon() || source == null || source.getType() == Material.AIR) {
+            return EquipResult.failed();
+        }
+        EquipmentData equipment = toEquipmentData(source, slot);
+        if (equipment == null || !canEquip(player, equipment)) {
+            return EquipResult.failed();
+        }
+        ItemStack single = source.clone();
+        single.setAmount(1);
+
+        ItemStack previous = takeBackingItem(player, slot);
+        if (slot.isArmor()) {
+            setArmorSlot(player, slot, single);
+        } else {
+            getStoredItems(player.getUniqueId()).put(slot, single);
+        }
+        getPlayerEquipment(player.getUniqueId()).put(slot, equipment);
+        updatePlayerAttributes(player);
+        return new EquipResult(true, previous, equipment);
+    }
+
+    /**
+     * 卸除 GUI 可管理欄位的裝備，回傳實際的物品（不是重新產生的複本）。手持欄位不可卸除。
+     */
+    public ItemStack unequipToItem(Player player, EquipmentSlot slot) {
+        if (slot.isWeapon()) {
+            return null;
+        }
+        ItemStack item = takeBackingItem(player, slot);
+        if (getPlayerEquipment(player.getUniqueId()).remove(slot) != null || item != null) {
+            updatePlayerAttributes(player);
+        }
+        return item;
+    }
+
+    private ItemStack takeBackingItem(Player player, EquipmentSlot slot) {
+        if (slot.isArmor()) {
+            ItemStack current = getArmorSlot(player, slot);
+            setArmorSlot(player, slot, null);
+            return current == null || current.getType() == Material.AIR ? null : current;
+        }
+        Map<EquipmentSlot, ItemStack> stored = storedItems.get(player.getUniqueId());
+        return stored == null ? null : stored.remove(slot);
+    }
+
+    private ItemStack getArmorSlot(Player player, EquipmentSlot slot) {
+        org.bukkit.inventory.PlayerInventory inv = player.getInventory();
+        return switch (slot) {
+            case HELMET -> inv.getHelmet();
+            case CHESTPLATE -> inv.getChestplate();
+            case LEGGINGS -> inv.getLeggings();
+            case BOOTS -> inv.getBoots();
+            default -> null;
+        };
+    }
+
+    private void setArmorSlot(Player player, EquipmentSlot slot, ItemStack item) {
+        org.bukkit.inventory.PlayerInventory inv = player.getInventory();
+        switch (slot) {
+            case HELMET -> inv.setHelmet(item);
+            case CHESTPLATE -> inv.setChestplate(item);
+            case LEGGINGS -> inv.setLeggings(item);
+            case BOOTS -> inv.setBoots(item);
+            default -> { }
+        }
+    }
+
+    /**
+     * 強化成功後把強化等級寫回實際物品，讓結果在重新同步、重登與重啟後保留。
+     */
+    public void persistEnhancement(Player player, EquipmentSlot slot, EquipmentData equipment) {
+        ItemStack item;
+        if (slot.isArmor()) {
+            item = getArmorSlot(player, slot);
+        } else if (slot == EquipmentSlot.MAIN_HAND) {
+            item = player.getInventory().getItemInMainHand();
+        } else if (slot == EquipmentSlot.OFF_HAND) {
+            item = player.getInventory().getItemInOffHand();
+        } else {
+            Map<EquipmentSlot, ItemStack> stored = storedItems.get(player.getUniqueId());
+            item = stored == null ? null : stored.get(slot);
+        }
+        if (item != null && item.getType() != Material.AIR) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                meta.getPersistentDataContainer().set(EquipmentData.PDC_ENHANCE_LEVEL,
+                        PersistentDataType.INTEGER, equipment.getEnhanceLevel());
+                if (meta.hasDisplayName()) {
+                    meta.setDisplayName(meta.getDisplayName().replaceAll("\\s*§7\\[\\+\\d+]$", "")
+                            + " §7[+" + equipment.getEnhanceLevel() + "]");
+                }
+                item.setItemMeta(meta);
+            }
+        }
+        updatePlayerAttributes(player);
+    }
+
+    // ===== 保管欄位存檔 =====
+
+    private File getEquipmentFile(UUID playerUUID) {
+        File folder = new File(plugin.getDataFolder(), "data/equipment");
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        return new File(folder, playerUUID + ".yml");
+    }
+
+    /**
+     * 玩家登入時載入保管欄位的實體物品並重建裝備數據。
+     */
+    public void loadPlayerEquipment(Player player) {
+        UUID uuid = player.getUniqueId();
+        File file = getEquipmentFile(uuid);
+        if (!file.exists()) {
+            return;
+        }
+        YamlConfiguration config = new YamlConfiguration();
+        try {
+            config.load(file);
+        } catch (IOException | org.bukkit.configuration.InvalidConfigurationException e) {
+            equipmentLoadFailed.add(uuid);
+            plugin.getLogger().severe("無法讀取玩家裝備存檔 " + file.getName() + "，本次不會覆寫: " + e.getMessage());
+            return;
+        }
+        equipmentLoadFailed.remove(uuid);
+        Map<EquipmentSlot, ItemStack> stored = getStoredItems(uuid);
+        Map<EquipmentSlot, EquipmentData> equipment = getPlayerEquipment(uuid);
+        ConfigurationSection section = config.getConfigurationSection("stored");
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                EquipmentSlot slot = EquipmentSlot.fromConfigKey(key);
+                ItemStack item = section.getItemStack(key);
+                if (slot == null || !isStoredSlot(slot) || item == null || item.getType() == Material.AIR) {
+                    continue;
+                }
+                stored.put(slot, item);
+                EquipmentData data = toEquipmentData(item, slot);
+                if (data != null) {
+                    equipment.put(slot, data);
+                }
+            }
+        }
+        updatePlayerAttributes(player);
+    }
+
+    public void savePlayerEquipment(UUID uuid) {
+        if (equipmentLoadFailed.contains(uuid)) {
+            plugin.getLogger().warning("略過儲存玩家裝備 " + uuid + "：原始存檔讀取失敗，避免覆寫");
+            return;
+        }
+        Map<EquipmentSlot, ItemStack> stored = storedItems.get(uuid);
+        File file = getEquipmentFile(uuid);
+        if ((stored == null || stored.isEmpty()) && !file.exists()) {
+            return;
+        }
+        YamlConfiguration config = new YamlConfiguration();
+        if (stored != null) {
+            for (Map.Entry<EquipmentSlot, ItemStack> entry : stored.entrySet()) {
+                config.set("stored." + entry.getKey().getConfigKey(), entry.getValue());
+            }
+        }
+        try {
+            com.customrpg.managers.PlayerStatsManager.saveAtomically(config, file);
+        } catch (IOException e) {
+            plugin.getLogger().severe("無法儲存玩家裝備 " + uuid + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * 玩家離線：儲存並釋放記憶體。
+     */
+    public void unloadPlayerEquipment(UUID uuid) {
+        savePlayerEquipment(uuid);
+        storedItems.remove(uuid);
+        playerEquipment.remove(uuid);
+        equipmentLoadFailed.remove(uuid);
+    }
+
+    public void saveAllPlayerEquipment() {
+        for (UUID uuid : new ArrayList<>(storedItems.keySet())) {
+            savePlayerEquipment(uuid);
+        }
+    }
+
+    public record EquipResult(boolean success, ItemStack previousItem, EquipmentData equipment) {
+        static EquipResult failed() {
+            return new EquipResult(false, null, null);
+        }
     }
 
     /**

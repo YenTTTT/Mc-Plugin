@@ -1,0 +1,58 @@
+# 原版世界模式：不使用舊地圖的固定安全區與 Boss 場地。設為 true 可重新啟用。
+legacy-regions-enabled: false
+zone-notifications: true
+level-variation: 2
+
+# 各世界預設以該世界的 World Spawn 為中心，僅計算 X/Z 水平距離。
+# 若要以已找到的原版村莊為中心，先用 /setworldspawn 設定世界出生點，
+# 或覆寫 worlds.<世界名稱>.origin: { x: ..., z: ... }。
+worlds: {}
+
+dimensions:
+  NORMAL:
+    min-level: 1
+    safe-radius: 150
+  NETHER:
+    min-level: 30
+    safe-radius: 0
+  THE_END:
+    min-level: 50
+    safe-radius: 0
+
+zones:
+  starter:
+    name: "新手荒野"
+    min-distance: 150
+    max-distance: 700
+    level-min: 1
+    level-max: 10
+  frontier:
+    name: "邊境"
+    min-distance: 700
+    max-distance: 1600
+    level-min: 8
+    level-max: 20
+  wilderness:
+    name: "荒野"
+    min-distance: 1600
+    max-distance: 2800
+    level-min: 18
+    level-max: 30
+  danger:
+    name: "危險地帶"
+    min-distance: 2800
+    max-distance: 4500
+    level-min: 28
+    level-max: 40
+  frontier_depths:
+    name: "深層邊境"
+    min-distance: 4500
+    max-distance: 6500
+    level-min: 38
+    level-max: 50
+  endgame:
+    name: "終局荒野"
+    min-distance: 6500
+    max-distance: 8500
+    level-min: 48
+    level-max: 60

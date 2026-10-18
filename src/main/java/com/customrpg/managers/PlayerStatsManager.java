@@ -29,6 +29,7 @@ public class PlayerStatsManager {
     private final CustomRPG plugin;
     private final File playerDataFolder;
     private final Map<UUID, PlayerStats> statsCache;
+    private final java.util.Set<UUID> loadFailed = ConcurrentHashMap.newKeySet();
 
     // 配置：每點 Vitality 增加多少血量 (預設 2.0)
     private static final double HP_PER_VITALITY = 2.0;
@@ -69,10 +70,21 @@ public class PlayerStatsManager {
 
         if (!file.exists()) {
             // 如果檔案不存在，回傳預設數據
+            loadFailed.remove(uuid);
             return new PlayerStats();
         }
 
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration config = new YamlConfiguration();
+        try {
+            config.load(file);
+            loadFailed.remove(uuid);
+        } catch (IOException | org.bukkit.configuration.InvalidConfigurationException e) {
+            // 讀取失敗時不可回傳預設值後再覆寫原檔：標記為載入失敗並停止寫入，保留原檔供管理員修復
+            loadFailed.add(uuid);
+            plugin.getLogger().severe("無法讀取玩家數據 " + file.getName()
+                    + "，本次不會覆寫該檔案，請手動檢查: " + e.getMessage());
+            return new PlayerStats();
+        }
 
         // 讀取數據
         Map<String, Object> data = new ConcurrentHashMap<>();
@@ -84,7 +96,7 @@ public class PlayerStatsManager {
         data.put("spirit", config.getInt("stats.spirit", 0));
 
         data.put("level", config.getInt("stats.level", 1));
-        data.put("exp", config.getInt("stats.exp", 0));
+        data.put("exp", config.getLong("stats.exp", 0L));
         data.put("statPoints", config.getInt("stats.statPoints", 0));
         data.put("talentPoints", config.getInt("stats.talentPoints", 0)); // 載入天賦點數
 
@@ -110,6 +122,10 @@ public class PlayerStatsManager {
         if (stats == null) {
             return;
         }
+        if (loadFailed.contains(uuid)) {
+            plugin.getLogger().warning("略過儲存玩家數據 " + uuid + "：原始檔案讀取失敗，避免以預設值覆寫");
+            return;
+        }
 
         File file = new File(playerDataFolder, uuid.toString() + ".yml");
         YamlConfiguration config = new YamlConfiguration();
@@ -132,10 +148,26 @@ public class PlayerStatsManager {
         config.set("stats.manaRegen", data.get("manaRegen"));
 
         try {
-            config.save(file);
+            saveAtomically(config, file);
         } catch (IOException e) {
             plugin.getLogger().warning("無法儲存玩家數據: " + uuid);
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * 先寫入暫存檔再取代原檔，避免寫到一半當機時留下截斷的存檔。
+     */
+    static void saveAtomically(YamlConfiguration config, File file) throws IOException {
+        File temp = new File(file.getParentFile(), file.getName() + ".tmp");
+        config.save(temp);
+        try {
+            java.nio.file.Files.move(temp.toPath(), file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+            java.nio.file.Files.move(temp.toPath(), file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
@@ -144,6 +176,14 @@ public class PlayerStatsManager {
      * 使用 Health Scale 讓血條固定顯示為 10 顆愛心
      */
     public void updateMaxHealth(Player player) {
+        updateMaxHealth(player, false);
+    }
+
+    /**
+     * @param healToFull true 時補滿血量（升級獎勵）；false 時依比例保留目前血量，
+     *                   避免換裝／天賦／種族重新計算時被當作免費補血。
+     */
+    public void updateMaxHealth(Player player, boolean healToFull) {
         PlayerStats stats = getStats(player);
 
         // 計算最大生命值：基礎血量 + (總 Vitality × 每點血量)
@@ -154,14 +194,21 @@ public class PlayerStatsManager {
         // 使用 Attribute API 設定最大血量
         AttributeInstance maxHealthAttr = player.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealthAttr != null) {
+            double oldMax = maxHealthAttr.getValue();
+            double oldHealth = player.getHealth();
+
             maxHealthAttr.setBaseValue(Math.max(1.0, newMaxHealth));
 
             // 使用 Health Scale 固定血條顯示為 10 顆愛心 (20.0 血量)
             player.setHealthScaled(true);
             player.setHealthScale(20.0);
 
-            // 治療玩家至滿血 (可選)
-            player.setHealth(maxHealthAttr.getValue());
+            if (player.isDead() || oldHealth <= 0) {
+                return;
+            }
+            double max = maxHealthAttr.getValue();
+            double health = healToFull || oldMax <= 0 ? max : oldHealth / oldMax * max;
+            player.setHealth(Math.min(max, Math.max(0.1, health)));
         }
     }
 
@@ -196,6 +243,7 @@ public class PlayerStatsManager {
      */
     public void unloadStats(UUID uuid) {
         statsCache.remove(uuid);
+        loadFailed.remove(uuid);
     }
 
     /**
@@ -211,9 +259,12 @@ public class PlayerStatsManager {
      * 給予玩家經驗值
      */
     public void addExp(Player player, long amount) {
+        if (amount <= 0) {
+            return;
+        }
         PlayerStats stats = getStats(player);
         long currentExp = stats.getExp();
-        long newExp = currentExp + amount;
+        long newExp = currentExp > Long.MAX_VALUE - amount ? Long.MAX_VALUE : currentExp + amount;
 
         stats.setExp(newExp);
 
@@ -289,8 +340,8 @@ public class PlayerStatsManager {
         double newManaRegen = 1.0 + (stats.getLevel() * baseManaRegenGrowth) + raceManaRegenBonus + stats.getBonusManaRegen();
         stats.setManaRegen(newManaRegen);
 
-        // 更新最大血量
-        updateMaxHealth(player);
+        // 更新最大血量（升級補滿血量）
+        updateMaxHealth(player, true);
 
         // 重新計算種族屬性加成 (因為成長倍率與等級相關)
         if (raceManager != null && raceManager.hasRace(player)) {

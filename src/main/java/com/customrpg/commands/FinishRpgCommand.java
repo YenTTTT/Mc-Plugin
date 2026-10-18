@@ -42,9 +42,10 @@ public class FinishRpgCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         sender.sendMessage(ChatColor.GREEN + "✓ 已啟動 RPG 自訂怪物生成系統");
-        sender.sendMessage(ChatColor.YELLOW + "- 距離重生點越遠，怪物等級越高");
-        sender.sendMessage(ChatColor.YELLOW + "- 安全區已開始阻止敵對怪物生成");
-        sender.sendMessage(ChatColor.YELLOW + "- Boss 區域排他生成已生效");
+        sender.sendMessage(ChatColor.YELLOW + "- 依世界出生點水平距離分區，不使用玩家等級縮放");
+        sender.sendMessage(ChatColor.YELLOW + (manager.isVanillaMode()
+                ? "- 原版自然生成 → 環境 / 時段 / 等級匹配後替換" : "- 玩家周圍定時補怪模式"));
+        sender.sendMessage(ChatColor.YELLOW + "- 安全區與追擊範圍限制已套用；舊地圖 Boss 區域需另行啟用");
         sender.sendMessage(ChatColor.GRAY + "可使用 /mobspawn status 查看診斷資訊。");
         // 啟動後立即做環境檢查，提前告知常見問題
         checkAndWarnIssues(sender);
@@ -86,6 +87,9 @@ public class FinishRpgCommand implements CommandExecutor, TabCompleter {
                     sender.sendMessage(ChatColor.YELLOW + "  安全區半徑為 " + (int)zone.getRadius() + " 格，安全區內 " + ChatColor.BOLD + "不會生成" + ChatColor.YELLOW + " 自訂怪物。");
                     sender.sendMessage(ChatColor.YELLOW + "  請移動到距當前位置 " + (int)zone.getRadius() + " 格以外的野外區域再測試。");
                     hasWarning = true;
+                } else if (safeZoneManager.isInSafeZone(player.getLocation())) {
+                    sender.sendMessage(ChatColor.YELLOW + "⚠ 你目前在世界出生點安全區內，請前往野外再測試。 ");
+                    hasWarning = true;
                 }
             }
 
@@ -98,7 +102,9 @@ public class FinishRpgCommand implements CommandExecutor, TabCompleter {
         }
 
         if (!hasWarning) {
-            sender.sendMessage(ChatColor.GREEN + "  環境檢查通過，怪物應在 " + ChatColor.WHITE + "3~10 秒" + ChatColor.GREEN + " 內出現在你附近。");
+            sender.sendMessage(ChatColor.GREEN + (plugin.getDistanceSpawnManager().isVanillaMode()
+                    ? "  環境檢查通過，請在原版允許敵怪生成的位置等待自然生成（需符合黑暗、距離及數量規則）。"
+                    : "  環境檢查通過，怪物將依配置的補怪週期嘗試生成。"));
             sender.sendMessage(ChatColor.GRAY + "  若仍無怪物，請執行 /mobspawn debug 後等待 30 秒查看 console 輸出。");
         }
     }

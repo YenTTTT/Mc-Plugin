@@ -366,7 +366,17 @@ public class TalentManager {
         }
 
         try {
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(playerFile);
+            YamlConfiguration config = new YamlConfiguration();
+            try {
+                config.load(playerFile);
+                talentLoadFailed.remove(uuid);
+            } catch (IOException | org.bukkit.configuration.InvalidConfigurationException e) {
+                // 讀取失敗時不可用空白天賦覆寫原檔
+                talentLoadFailed.add(uuid);
+                plugin.getLogger().severe("無法讀取玩家天賦數據 " + playerFile.getName()
+                        + "，本次不會覆寫該檔案，請手動檢查: " + e.getMessage());
+                return talents;
+            }
 
             // 從PlayerStats同步最新的天賦點數，而不是從檔案讀取
             try {
@@ -413,6 +423,19 @@ public class TalentManager {
                 talents.setSelectedSkill(i, selected.get(i));
             }
 
+            // 已套用到 PlayerStats 的天賦屬性加成；用於下次重新計算時先扣除，避免每次重啟重複疊加
+            ConfigurationSection appliedSection = config.getConfigurationSection("applied-stat-bonus");
+            Map<String, Integer> applied = new HashMap<>();
+            if (appliedSection != null) {
+                for (String attribute : STAT_ATTRIBUTES) {
+                    applied.put(attribute, appliedSection.getInt(attribute, 0));
+                }
+            } else {
+                // 舊版存檔沒有紀錄：舊流程在學習天賦時已把加成寫入屬性，視為目前加成已套用
+                applied = computeTalentStatBonuses(talents);
+            }
+            talentBonusCache.put(uuid, applied);
+
         } catch (Exception e) {
             plugin.getLogger().warning("載入玩家天賦數據失敗 " + uuid + ": " + e.getMessage());
         }
@@ -426,6 +449,10 @@ public class TalentManager {
      * @param talents 天賦數據
      */
     public void savePlayerTalents(UUID uuid, PlayerTalents talents) {
+        if (talentLoadFailed.contains(uuid)) {
+            plugin.getLogger().warning("略過儲存玩家天賦數據 " + uuid + "：原始檔案讀取失敗，避免覆寫");
+            return;
+        }
         File playerFile = new File(playerTalentFolder, uuid + ".yml");
 
         try {
@@ -447,7 +474,14 @@ public class TalentManager {
             // 儲存選取的技能
             config.set("selected-skills", Arrays.asList(talents.getSelectedSkills()));
 
-            config.save(playerFile);
+            Map<String, Integer> applied = talentBonusCache.get(uuid);
+            if (applied != null) {
+                for (String attribute : STAT_ATTRIBUTES) {
+                    config.set("applied-stat-bonus." + attribute, applied.getOrDefault(attribute, 0));
+                }
+            }
+
+            PlayerStatsManager.saveAtomically(config, playerFile);
 
         } catch (IOException e) {
             plugin.getLogger().warning("儲存玩家天賦數據失敗 " + uuid + ": " + e.getMessage());
@@ -640,45 +674,13 @@ public class TalentManager {
             com.customrpg.players.PlayerStats playerStats = statsManager.getStats(player);
 
             // 計算所有天賦提供的屬性加成
-            int totalStrengthBonus = 0;
-            int totalMagicBonus = 0;
-            int totalAgilityBonus = 0;
-            int totalVitalityBonus = 0;
-            int totalDefenseBonus = 0;
-            int totalSpiritBonus = 0;
-
-            // 遍歷所有學習過的天賦
-            for (Map.Entry<String, Integer> entry : playerTalents.getTalentLevels().entrySet()) {
-                String talentId = entry.getKey();
-                int level = entry.getValue();
-
-                if (level > 0) {
-                    Talent talent = findTalent(talentId);
-                    if (talent != null) {
-                        // 支持 ATTRIBUTE 和 PASSIVE 類型的屬性加成天賦
-                        if (talent.getType() == TalentType.ATTRIBUTE || talent.getType() == TalentType.PASSIVE) {
-                            Talent.TalentLevelData data = talent.getLevelData(level);
-                            if (data != null) {
-                                // 處理直接的屬性加成（舊格式）
-                                totalStrengthBonus += data.effects.getOrDefault("strength", 0.0).intValue();
-                                totalMagicBonus += data.effects.getOrDefault("magic", 0.0).intValue();
-                                totalAgilityBonus += data.effects.getOrDefault("agility", 0.0).intValue();
-                                totalVitalityBonus += data.effects.getOrDefault("vitality", 0.0).intValue();
-                                totalDefenseBonus += data.effects.getOrDefault("defense", 0.0).intValue();
-                                totalSpiritBonus += data.effects.getOrDefault("spirit", 0.0).intValue();
-
-                                // 處理 statBonus_ 前綴的效果（新格式）
-                                totalStrengthBonus += data.effects.getOrDefault("statBonus_strength", 0.0).intValue();
-                                totalMagicBonus += data.effects.getOrDefault("statBonus_magic", 0.0).intValue();
-                                totalAgilityBonus += data.effects.getOrDefault("statBonus_agility", 0.0).intValue();
-                                totalVitalityBonus += data.effects.getOrDefault("statBonus_vitality", 0.0).intValue();
-                                totalDefenseBonus += data.effects.getOrDefault("statBonus_defense", 0.0).intValue();
-                                totalSpiritBonus += data.effects.getOrDefault("statBonus_spirit", 0.0).intValue();
-                            }
-                        }
-                    }
-                }
-            }
+            Map<String, Integer> totals = computeTalentStatBonuses(playerTalents);
+            int totalStrengthBonus = totals.get("strength");
+            int totalMagicBonus = totals.get("magic");
+            int totalAgilityBonus = totals.get("agility");
+            int totalVitalityBonus = totals.get("vitality");
+            int totalDefenseBonus = totals.get("defense");
+            int totalSpiritBonus = totals.get("spirit");
 
             // 暫時獲取基礎屬性（沒有天賦加成的）
             int baseStrength = playerStats.getStrength() - getTalentAttributeBonus(player, "strength");
@@ -710,8 +712,9 @@ public class TalentManager {
             // 儲存更新後的屬性
             statsManager.saveStats(player);
 
-            // 快取天賦加成值以便下次使用
+            // 快取天賦加成值以便下次使用，並與天賦存檔一起持久化
             cacheTalentBonuses(player, totalStrengthBonus, totalMagicBonus, totalAgilityBonus, totalVitalityBonus, totalDefenseBonus, totalSpiritBonus);
+            savePlayerTalents(player.getUniqueId(), playerTalents);
 
             player.sendMessage("§a天賦效果已應用！");
             player.sendMessage("§7力量: +" + totalStrengthBonus + ", 智慧: +" + totalMagicBonus +
@@ -723,8 +726,49 @@ public class TalentManager {
         }
     }
 
-    // 快取玩家的天賦屬性加成
+    // 快取玩家的天賦屬性加成（已套用到 PlayerStats 的值，會寫入天賦存檔）
     private final Map<UUID, Map<String, Integer>> talentBonusCache = new ConcurrentHashMap<>();
+    private final java.util.Set<UUID> talentLoadFailed = ConcurrentHashMap.newKeySet();
+    private static final String[] STAT_ATTRIBUTES = {"strength", "magic", "agility", "vitality", "defense", "spirit"};
+
+    /**
+     * 計算天賦提供的六項屬性加成（ATTRIBUTE / PASSIVE 類型，支援舊格式與 statBonus_ 前綴）
+     */
+    private Map<String, Integer> computeTalentStatBonuses(PlayerTalents playerTalents) {
+        Map<String, Integer> totals = new HashMap<>();
+        for (String attribute : STAT_ATTRIBUTES) {
+            totals.put(attribute, 0);
+        }
+        for (Map.Entry<String, Integer> entry : playerTalents.getTalentLevels().entrySet()) {
+            int level = entry.getValue();
+            if (level <= 0) continue;
+            Talent talent = findTalent(entry.getKey());
+            if (talent == null
+                    || (talent.getType() != TalentType.ATTRIBUTE && talent.getType() != TalentType.PASSIVE)) {
+                continue;
+            }
+            Talent.TalentLevelData data = talent.getLevelData(level);
+            if (data == null) continue;
+            for (String attribute : STAT_ATTRIBUTES) {
+                int bonus = data.effects.getOrDefault(attribute, 0.0).intValue()
+                        + data.effects.getOrDefault("statBonus_" + attribute, 0.0).intValue();
+                totals.merge(attribute, bonus, Integer::sum);
+            }
+        }
+        return totals;
+    }
+
+    /**
+     * 玩家離線：儲存並釋放快取（加成紀錄已持久化，下次登入會重新載入）
+     */
+    public void unloadPlayer(UUID uuid) {
+        PlayerTalents talents = playerTalentsCache.remove(uuid);
+        if (talents != null) {
+            savePlayerTalents(uuid, talents);
+        }
+        talentBonusCache.remove(uuid);
+        talentLoadFailed.remove(uuid);
+    }
 
     /**
      * 快取天賦屬性加成

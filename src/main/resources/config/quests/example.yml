@@ -1,0 +1,58 @@
+﻿# CustomRPG 原生任務系統 - 範例設定檔
+# 每個 .yml 檔案都可以包含多個任務
+# 任務擊殺目標: target 填入 MobManager 中的怪物 key
+# 任務裝備目標: target 填入 EquipmentManager 中的裝備模板 ID
+# npc: 填入 NpcManager 中的 internalId (npc_1, npc_2...)，玩家對話 NPC 時顯示
+# prerequisites: 前置任務 ID 列表
+quests:
+  goblin_hunter_1:
+    name: "哥布林獵人 I"
+    description: "消滅哥布林，保護村莊安全。"
+    npc: "npc_1"
+    repeatable: false
+    prerequisites: []
+    objectives:
+      - type: KILL_MOB
+        target: goblin
+        amount: 5
+        description: "擊殺哥布林 {progress}/{total}"
+    rewards:
+      exp: 200
+      stat_points: 1
+      talent_points: 0
+      equipment: []
+  goblin_hunter_2:
+    name: "哥布林獵人 II"
+    description: "精英哥布林是個更大的威脅。"
+    npc: "npc_1"
+    repeatable: false
+    prerequisites:
+      - goblin_hunter_1
+    objectives:
+      - type: KILL_MOB
+        target: goblin_elite
+        amount: 3
+        description: "擊殺精英哥布林 {progress}/{total}"
+    rewards:
+      exp: 500
+      stat_points: 2
+      talent_points: 1
+      equipment:
+        - iron_sword_1
+  equipment_collector:
+    name: "裝備收集者"
+    description: "蒐集特殊裝備以展現你的力量。"
+    npc: "npc_2"
+    repeatable: true
+    prerequisites: []
+    objectives:
+      - type: OBTAIN_EQUIPMENT
+        target: iron_sword_1
+        amount: 1
+        description: "獲得 鐵劍+1 {progress}/{total}"
+    rewards:
+      exp: 300
+      stat_points: 1
+      talent_points: 0
+      equipment: []
+

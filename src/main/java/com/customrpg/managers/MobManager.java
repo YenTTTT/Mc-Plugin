@@ -553,7 +553,7 @@ public class MobManager {
         }
 
         World world = location.getWorld();
-        if (world == null) {
+        if (world == null || !world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)) {
             return null;
         }
 
@@ -592,7 +592,7 @@ public class MobManager {
         }
 
         World world = location.getWorld();
-        if (world == null) {
+        if (world == null || !world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)) {
             return null;
         }
 
@@ -608,6 +608,12 @@ public class MobManager {
 
     private boolean isSafeSpawnLocation(Location location) {
         if (location == null || location.getWorld() == null) {
+            return false;
+        }
+        if (!location.getWorld().getWorldBorder().isInside(location)
+                || (plugin.getSafeZoneManager() != null && plugin.getSafeZoneManager().isInSafeZone(location))
+                || (plugin.getProtectionAreaManager() != null
+                && plugin.getProtectionAreaManager().isInProtectedArea2D(location))) {
             return false;
         }
 

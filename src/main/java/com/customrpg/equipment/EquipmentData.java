@@ -21,7 +21,14 @@ public class EquipmentData {
 
     /** PDC key：儲存裝備的需求等級，供升級時動態重整 lore 使用 */
     public static final NamespacedKey PDC_REQUIRED_LEVEL =
-            new NamespacedKey("customrpg", "equipment_required_level");    // 基本信息
+            new NamespacedKey("customrpg", "equipment_required_level");
+    /** PDC key：裝備模板 ID，作為識別依據（不可用顯示名稱，鐵砧可改名） */
+    public static final NamespacedKey PDC_EQUIPMENT_ID =
+            new NamespacedKey("customrpg", "equipment_id");
+    /** PDC key：強化等級，讓強化結果跟著物品保存 */
+    public static final NamespacedKey PDC_ENHANCE_LEVEL =
+            new NamespacedKey("customrpg", "equipment_enhance_level");
+    // 基本信息
     private String id;
     private String name;
     private String description;
@@ -322,6 +329,12 @@ public class EquipmentData {
             if (requiredLevel > 1) {
                 meta.getPersistentDataContainer().set(
                         PDC_REQUIRED_LEVEL, PersistentDataType.INTEGER, requiredLevel);
+            }
+            if (id != null && !id.startsWith("minecraft_") && !id.startsWith("basic_")) {
+                meta.getPersistentDataContainer().set(PDC_EQUIPMENT_ID, PersistentDataType.STRING, id);
+            }
+            if (enhanceLevel > 0) {
+                meta.getPersistentDataContainer().set(PDC_ENHANCE_LEVEL, PersistentDataType.INTEGER, enhanceLevel);
             }
             meta.setLore(lore);
             item.setItemMeta(meta);

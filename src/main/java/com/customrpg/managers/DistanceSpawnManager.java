@@ -16,7 +16,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -29,7 +31,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 public class DistanceSpawnManager {
@@ -62,6 +63,7 @@ public class DistanceSpawnManager {
     private final Logger log;
     private final Random random = new Random();
     private final Set<UUID> spawnedMobs = new HashSet<>();
+    private final MobLeashManager leashManager;
 
     private BossZoneManager bossZoneManager;
     private BukkitTask spawnTask;
@@ -69,32 +71,23 @@ public class DistanceSpawnManager {
     private boolean enabled;
     private boolean active;
     private boolean debug;
+    private String spawnMode;
+    private Set<String> naturalSpawnReasons;
     private int intervalTicks;
     private int spawnsPerCycle;
     private int spawnRadiusMin;
     private int spawnRadiusMax;
     private int maxMobsPerPlayer;
+    private int maxMobsPerChunk;
+    private double minMobSpacing;
     private Set<String> disabledWorlds = new HashSet<>();
 
-    private String originWorld;
-    private double originX;
-    private double originY;
-    private double originZ;
-    private int baseLevel;
-    private double blocksPerLevel;
-
-    private int normalLevelOffsetMin;
-    private int normalLevelOffsetMax;
     private String normalNamePrefix;
 
     private double eliteChance;
-    private int eliteLevelOffsetMin;
-    private int eliteLevelOffsetMax;
     private double eliteStatMultiplier;
     private String eliteNamePrefix;
 
-    private int bossLevelOffsetMin;
-    private int bossLevelOffsetMax;
     private double bossStatMultiplier;
     private String bossNamePrefix;
     private String bossSpawnParticle;
@@ -118,7 +111,13 @@ public class DistanceSpawnManager {
         this.mobManager = mobManager;
         this.safeZoneManager = safeZoneManager;
         this.log = plugin.getLogger();
+        this.leashManager = new MobLeashManager(plugin);
         loadConfig();
+        for (World world : plugin.getServer().getWorlds()) {
+            for (LivingEntity entity : world.getLivingEntities()) {
+                restoreTrackedMob(entity);
+            }
+        }
         startSpawnTask();
     }
 
@@ -136,33 +135,30 @@ public class DistanceSpawnManager {
         enabled = config.getBoolean("enabled", true);
         active = false;
         debug = config.getBoolean("debug", false);
-        intervalTicks = config.getInt("interval-ticks", 60);
-        spawnsPerCycle = config.getInt("spawns-per-cycle", 3);
-        spawnRadiusMin = config.getInt("spawn-radius.min", 10);
-        spawnRadiusMax = config.getInt("spawn-radius.max", 35);
-        maxMobsPerPlayer = config.getInt("limits.max-mobs-per-player", 10);
+        spawnMode = config.getString("mode", "vanilla");
+        if (!"vanilla".equalsIgnoreCase(spawnMode) && !"supplemental".equalsIgnoreCase(spawnMode)) {
+            log.warning("[DistanceSpawn] Unknown mode '" + spawnMode + "', using vanilla");
+            spawnMode = "vanilla";
+        }
+        naturalSpawnReasons = new HashSet<>(config.contains("natural-spawn-reasons")
+                ? config.getStringList("natural-spawn-reasons") : List.of("NATURAL"));
+        intervalTicks = Math.max(20, config.getInt("interval-ticks", 60));
+        spawnsPerCycle = Math.max(0, config.getInt("spawns-per-cycle", 3));
+        spawnRadiusMin = Math.max(1, config.getInt("spawn-radius.min", 10));
+        spawnRadiusMax = Math.max(spawnRadiusMin + 1, config.getInt("spawn-radius.max", 35));
+        maxMobsPerPlayer = Math.max(1, config.getInt("limits.max-mobs-per-player", 10));
+        maxMobsPerChunk = Math.max(1, config.getInt("limits.max-mobs-per-chunk", 8));
+        minMobSpacing = Math.max(0, config.getDouble("spawn-radius.min-between-mobs", 4));
         disabledWorlds = new HashSet<>(config.getStringList("disabled-worlds"));
+        leashManager.configure(config.getDouble("leash.soft-distance", 48), config.getDouble("leash.hard-distance", 80));
 
-        originWorld = config.getString("difficulty-scaling.origin.world", "world");
-        originX = config.getDouble("difficulty-scaling.origin.x", 192.0);
-        originY = config.getDouble("difficulty-scaling.origin.y", 73.0);
-        originZ = config.getDouble("difficulty-scaling.origin.z", -70.0);
-        baseLevel = Math.max(1, config.getInt("difficulty-scaling.base-level", 1));
-        blocksPerLevel = Math.max(1.0, config.getDouble("difficulty-scaling.blocks-per-level", 80.0));
-
-        normalLevelOffsetMin = config.getInt("tiers.normal.level-offset-min", 0);
-        normalLevelOffsetMax = config.getInt("tiers.normal.level-offset-max", 1);
         normalNamePrefix = ChatColor.translateAlternateColorCodes('&', config.getString("tiers.normal.name-prefix", ""));
 
-        eliteChance = config.getDouble("tiers.elite.chance", 0.20);
-        eliteLevelOffsetMin = config.getInt("tiers.elite.level-offset-min", 1);
-        eliteLevelOffsetMax = config.getInt("tiers.elite.level-offset-max", 4);
-        eliteStatMultiplier = config.getDouble("tiers.elite.stat-multiplier", 1.5);
+        eliteChance = Math.clamp(config.getDouble("tiers.elite.chance", 0.01), 0.0, 0.07);
+        eliteStatMultiplier = Math.max(1, config.getDouble("tiers.elite.stat-multiplier", 1.5));
         eliteNamePrefix = ChatColor.translateAlternateColorCodes('&', config.getString("tiers.elite.name-prefix", "&6⚔ "));
 
-        bossLevelOffsetMin = config.getInt("tiers.boss.level-offset-min", 3);
-        bossLevelOffsetMax = config.getInt("tiers.boss.level-offset-max", 8);
-        bossStatMultiplier = config.getDouble("tiers.boss.stat-multiplier", 3.0);
+        bossStatMultiplier = Math.max(1, config.getDouble("tiers.boss.stat-multiplier", 3.0));
         bossNamePrefix = ChatColor.translateAlternateColorCodes('&', config.getString("tiers.boss.name-prefix", "&c✦ BOSS ✦ "));
         bossSpawnParticle = config.getString("tiers.boss.spawn-particle", "FLAME");
         bossParticleCount = config.getInt("tiers.boss.spawn-particle-count", 100);
@@ -171,7 +167,7 @@ public class DistanceSpawnManager {
         bossSoundPitch = (float) config.getDouble("tiers.boss.spawn-sound-pitch", 0.5);
 
         nightOnly = config.getBoolean("conditions.night-only", false);
-        maxLightLevel = config.getInt("conditions.max-light-level", 15);
+        maxLightLevel = Math.clamp(config.getInt("conditions.max-light-level", 15), 0, 15);
         requireSolidGround = config.getBoolean("conditions.require-solid-ground", true);
         requireAirSpace = config.getBoolean("conditions.require-air-space", true);
     }
@@ -184,6 +180,14 @@ public class DistanceSpawnManager {
         spawnTask = new BukkitRunnable() {
             @Override
             public void run() {
+                for (UUID uuid : new HashSet<>(spawnedMobs)) {
+                    Entity entity = plugin.getServer().getEntity(uuid);
+                    if (entity instanceof LivingEntity living && !living.isDead()) {
+                        leashManager.update(living);
+                    } else {
+                        spawnedMobs.remove(uuid);
+                    }
+                }
                 if (!enabled || !active) {
                     return;
                 }
@@ -223,6 +227,159 @@ public class DistanceSpawnManager {
         return enabled;
     }
 
+    public boolean handlesNaturalSpawn(CreatureSpawnEvent.SpawnReason reason) {
+        return enabled && active && "vanilla".equalsIgnoreCase(spawnMode)
+                && reason != CreatureSpawnEvent.SpawnReason.CUSTOM
+                && reason != CreatureSpawnEvent.SpawnReason.COMMAND
+                && naturalSpawnReasons.contains(reason.name());
+    }
+
+    public boolean isSpawnAllowed(Location location) {
+        if (location == null || location.getWorld() == null) {
+            return false;
+        }
+        World world = location.getWorld();
+        ProtectionAreaManager protection = plugin.getProtectionAreaManager();
+        return !disabledWorlds.contains(world.getName()) && world.getDifficulty() != Difficulty.PEACEFUL
+                && world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)
+                && world.getWorldBorder().isInside(location) && !safeZoneManager.isInSafeZone(location)
+                && (protection == null || !protection.isInProtectedArea2D(location));
+    }
+
+    public void restoreTrackedMob(LivingEntity entity) {
+        if (leashManager.hasHome(entity) && mobManager.getCustomMobKey(entity) != null) {
+            spawnedMobs.add(entity.getUniqueId());
+        }
+    }
+
+    public boolean shouldCancelTarget(Mob mob, LivingEntity target) {
+        return leashManager.shouldCancelTarget(mob, target);
+    }
+
+    public void replaceNaturalMob(LivingEntity original, CreatureSpawnEvent.SpawnReason reason) {
+        if (!handlesNaturalSpawn(reason)) {
+            return;
+        }
+        if (!original.isValid() || original.isDead() || original.getCustomName() != null
+                || original.isInsideVehicle() || !original.getPassengers().isEmpty()
+                || mobManager.getCustomMobKey(original) != null) {
+            return;
+        }
+        Location location = original.getLocation();
+        if (!isSpawnAllowed(location) || !hasSpawnCapacity(location)
+                || (bossZoneManager != null && bossZoneManager.isInsideBossZone(location))) {
+            return;
+        }
+        long time = location.getWorld().getTime();
+        if ((nightOnly && (time < 13000 || time >= 23000)) || location.getBlock().getLightLevel() > maxLightLevel) {
+            return;
+        }
+        boolean nearbyPlayer = false;
+        for (Player player : location.getWorld().getNearbyPlayers(location, 128)) {
+            if (player.getGameMode() == org.bukkit.GameMode.SURVIVAL || player.getGameMode() == org.bukkit.GameMode.ADVENTURE) {
+                nearbyPlayer = true;
+                if (countNearbyCustomMobs(player) >= maxMobsPerPlayer) {
+                    lastSkipReason = "自然怪附近自訂怪已達上限，保留原版怪";
+                    return;
+                }
+            }
+        }
+        if (!nearbyPlayer) {
+            return;
+        }
+        totalSpawnAttempts++;
+        Location exactLocation = mobManager.findSafeSpawnLocationExact(location);
+        if (exactLocation == null) {
+            totalLocationFails++;
+            lastSkipReason = "原版生成位置不適用陸地自訂怪，保留原版怪";
+            return;
+        }
+        location = exactLocation;
+        MobTier tier = determineNaturalTier(location);
+        int level = calculateLevelForLocation(location, tier);
+        List<String> pool = filterByEnvironment(filterBySpawnTime(mobManager.getNormalMobKeys(), location.getWorld()), location);
+        String key = selectMobTypeForLevel(pool, level);
+        if (key == null) {
+            lastSkipReason = "環境/時段/等級無匹配模板，保留原版怪 Lv." + level;
+            if (debug) log.info("[DistanceSpawn] " + lastSkipReason + " " + getEnvironmentTags(location));
+            return;
+        }
+        if (spawnTieredMob(key, location, level, tier)) {
+            original.remove();
+            totalSpawnSuccess++;
+            lastSkipReason = "自然生成替換: " + key + " [" + tier.name() + "] Lv." + level;
+            if (debug) log.info("[DistanceSpawn] " + lastSkipReason);
+        }
+    }
+
+    private List<String> filterByEnvironment(List<String> keys, Location location) {
+        Set<String> tags = getEnvironmentTags(location);
+        List<String> matches = new ArrayList<>();
+        for (String key : keys) {
+            MobManager.MobData data = mobManager.getMobData(key);
+            if (data != null && data.getTags().stream().anyMatch(tags::contains)) {
+                matches.add(key);
+            }
+        }
+        return matches;
+    }
+
+    private boolean hasSpawnCapacity(Location location) {
+        int count = 0;
+        for (Entity entity : location.getChunk().getEntities()) {
+            if (mobManager.getCustomMobKey(entity) != null && ++count >= maxMobsPerChunk) {
+                return false;
+            }
+        }
+        if (minMobSpacing > 0) {
+            for (Entity entity : location.getWorld().getNearbyEntities(location, minMobSpacing, minMobSpacing, minMobSpacing)) {
+                if (mobManager.getCustomMobKey(entity) != null
+                        && entity.getLocation().distanceSquared(location) < minMobSpacing * minMobSpacing) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private Set<String> getEnvironmentTags(Location location) {
+        World world = location.getWorld();
+        if (world.getEnvironment() == World.Environment.NETHER) {
+            return Set.of("nether");
+        }
+        if (world.getEnvironment() == World.Environment.THE_END) {
+            return Set.of("end");
+        }
+        String biome = location.getBlock().getBiome().getKey().getKey();
+        if (biome.contains("caves") || biome.equals("deep_dark")
+                || (location.getBlock().getLightFromSky() == 0
+                && location.getY() < world.getHighestBlockYAt(location.getBlockX(), location.getBlockZ()) - 8)) {
+            return Set.of("cave");
+        }
+        if (biome.contains("ocean") || biome.contains("river") || biome.contains("beach")) {
+            return Set.of("ocean");
+        }
+        if (biome.contains("snow") || biome.contains("frozen") || biome.contains("ice")) {
+            return Set.of("ice", "snow");
+        }
+        if (biome.contains("swamp")) {
+            return Set.of("swamp");
+        }
+        if (biome.contains("desert") || biome.contains("badlands")) {
+            return Set.of("desert");
+        }
+        if (biome.contains("jungle")) {
+            return Set.of("jungle", "forest");
+        }
+        if (biome.contains("forest") || biome.contains("taiga") || biome.contains("grove")) {
+            return Set.of("forest");
+        }
+        if (biome.contains("peak") || biome.contains("mountain") || biome.contains("hill") || biome.contains("slope")) {
+            return Set.of("mountain");
+        }
+        return Set.of("plains");
+    }
+
     private void processPlayer(Player player) {
         if (player.getGameMode() == org.bukkit.GameMode.SPECTATOR || player.getGameMode() == org.bukkit.GameMode.CREATIVE) {
             lastSkipReason = "玩家模式不生成";
@@ -255,6 +412,10 @@ public class DistanceSpawnManager {
 
         if (bossZoneManager != null) {
             bossZoneManager.trySpawnBossForPlayer(player);
+        }
+
+        if (!"supplemental".equalsIgnoreCase(spawnMode)) {
+            return;
         }
 
         int nearbyMobCount = countNearbyCustomMobs(player);
@@ -292,15 +453,16 @@ public class DistanceSpawnManager {
             return false;
         }
 
-        if (bossZoneManager != null && bossZoneManager.isInsideBossZone(spawnLoc)) {
+        if (!isSpawnAllowed(spawnLoc) || !hasSpawnCapacity(spawnLoc)
+                || (bossZoneManager != null && bossZoneManager.isInsideBossZone(spawnLoc))) {
             lastSkipReason = "Boss 區域排他範圍內";
             if (debug) log.info("[DistanceSpawn] 候選位置在 Boss 區域，跳過");
             return false;
         }
 
-        MobTier tier = determineNaturalTier();
+        MobTier tier = determineNaturalTier(spawnLoc);
         int level = calculateLevelForLocation(spawnLoc, tier);
-        List<String> timeFiltered = filterBySpawnTime(availableMobKeys, spawnLoc.getWorld());
+        List<String> timeFiltered = filterByEnvironment(filterBySpawnTime(availableMobKeys, spawnLoc.getWorld()), spawnLoc);
         String mobKey = selectMobTypeForLevel(timeFiltered, level);
 
         if (mobKey == null) {
@@ -338,41 +500,28 @@ public class DistanceSpawnManager {
                 filtered.add(key);
             }
         }
-        return filtered.isEmpty() ? mobKeys : filtered;
+        return filtered;
     }
 
-    private MobTier determineNaturalTier() {
-        return random.nextDouble() < eliteChance ? MobTier.ELITE : MobTier.NORMAL;
+    private MobTier determineNaturalTier(Location location) {
+        double chance = Math.min(0.07, eliteChance + calculateBaseLevel(location) / 10 * 0.01);
+        return random.nextDouble() < chance ? MobTier.ELITE : MobTier.NORMAL;
     }
 
     public int calculateBaseLevel(Location location) {
-        double distance = calculateDistanceFromOrigin(location);
-        return Math.max(1, baseLevel + (int) Math.floor(distance / blocksPerLevel));
+        return plugin.getWorldZoneManager().getBaseLevel(location);
     }
 
     public int calculateLevelForLocation(Location location, MobTier tier) {
-        return Math.max(1, calculateBaseLevel(location) + calculateTierLevelOffset(tier));
+        return plugin.getWorldZoneManager().clampLevel(location,
+                plugin.getWorldZoneManager().rollLevel(location));
     }
 
     public double calculateDistanceFromOrigin(Location location) {
         if (location == null || location.getWorld() == null) {
             return 0.0;
         }
-        if (!location.getWorld().getName().equalsIgnoreCase(originWorld)) {
-            return 0.0;
-        }
-        double dx = location.getX() - originX;
-        double dy = location.getY() - originY;
-        double dz = location.getZ() - originZ;
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
-    }
-
-    private int calculateTierLevelOffset(MobTier tier) {
-        return switch (tier) {
-            case ELITE -> ThreadLocalRandom.current().nextInt(eliteLevelOffsetMin, eliteLevelOffsetMax + 1);
-            case BOSS -> ThreadLocalRandom.current().nextInt(bossLevelOffsetMin, bossLevelOffsetMax + 1);
-            default -> ThreadLocalRandom.current().nextInt(normalLevelOffsetMin, normalLevelOffsetMax + 1);
-        };
+        return plugin.getWorldZoneManager().getDistance(location);
     }
 
     private Location findSpawnLocation(Player player) {
@@ -427,6 +576,9 @@ public class DistanceSpawnManager {
         }
 
         World world = center.getWorld();
+        if (!world.isChunkLoaded(center.getBlockX() >> 4, center.getBlockZ() >> 4)) {
+            return null;
+        }
         LinkedHashSet<Location> candidates = new LinkedHashSet<>();
         Location safeCenter = mobManager.findSafeSpawnLocation(center.clone());
         if (safeCenter != null) {
@@ -438,6 +590,9 @@ public class DistanceSpawnManager {
             double distance = random.nextDouble() * horizontalRadius;
             double x = center.getX() + Math.cos(angle) * distance;
             double z = center.getZ() + Math.sin(angle) * distance;
+            if (!world.isChunkLoaded(((int) Math.floor(x)) >> 4, ((int) Math.floor(z)) >> 4)) {
+                continue;
+            }
             int highestY = world.getHighestBlockYAt((int) Math.floor(x), (int) Math.floor(z));
             Location test = new Location(world, Math.floor(x) + 0.5, highestY + 1, Math.floor(z) + 0.5);
             Location safe = mobManager.findSafeSpawnLocation(test);
@@ -450,7 +605,7 @@ public class DistanceSpawnManager {
             if (!isValidSpawnLocation(candidate)) {
                 continue;
             }
-            if (safeZoneManager.isInSafeZone(candidate)) {
+            if (!isSpawnAllowed(candidate)) {
                 continue;
             }
             return candidate;
@@ -491,41 +646,25 @@ public class DistanceSpawnManager {
             return exactMatches.get(random.nextInt(exactMatches.size()));
         }
 
-        List<String> nearMatches = new ArrayList<>();
-        for (String key : mobKeys) {
-            MobManager.MobData data = mobManager.getMobData(key);
-            if (data != null && level >= data.getMinLevel() - 5 && level <= data.getMaxLevel() + 5) {
-                nearMatches.add(key);
-            }
-        }
-        if (!nearMatches.isEmpty()) {
-            return nearMatches.get(random.nextInt(nearMatches.size()));
-        }
-
-        String closest = null;
-        int closestDistance = Integer.MAX_VALUE;
-        for (String key : mobKeys) {
-            MobManager.MobData data = mobManager.getMobData(key);
-            if (data == null) {
-                continue;
-            }
-            int distance = Math.min(Math.abs(level - data.getMinLevel()), Math.abs(level - data.getMaxLevel()));
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closest = key;
-            }
-        }
-        return closest;
+        return null;
     }
 
     public boolean spawnTieredMob(String mobKey, Location location, int level, MobTier tier) {
-        LivingEntity mob = mobManager.spawnCustomMobWithLevel(mobKey, location, level);
-        if (mob == null) {
+        if (!isSpawnAllowed(location)) {
+            return false;
+        }
+        LivingEntity mob = mobManager.spawnCustomMobWithLevelExact(mobKey, location, level);
+        if (mob == null || !mob.isValid() || mob.isDead()) {
             return false;
         }
 
         mobManager.setMobTier(mob, tier.name());
         spawnedMobs.add(mob.getUniqueId());
+        leashManager.recordHome(mob);
+        if (mob instanceof Mob naturalMob && tier != MobTier.BOSS) {
+            naturalMob.setRemoveWhenFarAway(true);
+            naturalMob.setPersistent(false);
+        }
 
         switch (tier) {
             case ELITE -> applyEliteModifiers(mob);
@@ -648,8 +787,8 @@ public class DistanceSpawnManager {
         lines.add(ChatColor.GOLD + "========= DistanceSpawnManager 診斷 =========");
         lines.add(ChatColor.YELLOW + "配置啟用: " + (enabled ? ChatColor.GREEN + "是" : ChatColor.RED + "否"));
         lines.add(ChatColor.YELLOW + "RPG 已完成: " + (active ? ChatColor.GREEN + "是 (/finishrpg 已執行)" : ChatColor.RED + "否"));
-        lines.add(ChatColor.YELLOW + "重生點中心: " + ChatColor.WHITE + originWorld + " (" + originX + ", " + originY + ", " + originZ + ")");
-        lines.add(ChatColor.YELLOW + "等級公式: " + ChatColor.WHITE + "Lv = " + baseLevel + " + distance / " + String.format("%.1f", blocksPerLevel));
+        lines.add(ChatColor.YELLOW + "生成模式: " + ChatColor.WHITE + spawnMode);
+        lines.add(ChatColor.YELLOW + "等級公式: " + ChatColor.WHITE + "World Spawn 水平距離分區，區內插值 ±2（可配置），不使用玩家等級");
         lines.add(ChatColor.YELLOW + "安全區數量: " + ChatColor.WHITE + safeZoneManager.getZoneCount());
         lines.add(ChatColor.YELLOW + "Boss 區域數量: " + ChatColor.WHITE + (bossZoneManager != null ? bossZoneManager.getZoneCount() : 0));
         lines.add(ChatColor.YELLOW + "已註冊怪物: " + ChatColor.WHITE + mobManager.getMobKeys().size());
@@ -661,11 +800,15 @@ public class DistanceSpawnManager {
             lines.add(ChatColor.YELLOW + "世界: " + ChatColor.WHITE + player.getWorld().getName());
             lines.add(ChatColor.YELLOW + "難度: " + ChatColor.WHITE + player.getWorld().getDifficulty().name());
             lines.add(ChatColor.YELLOW + "距離中心: " + ChatColor.WHITE + String.format("%.2f", calculateDistanceFromOrigin(player.getLocation())));
-            lines.add(ChatColor.YELLOW + "當前基礎怪物等級: " + ChatColor.WHITE + "Lv." + calculateLevelForLocation(player.getLocation(), MobTier.NORMAL));
+            lines.add(ChatColor.YELLOW + "當前基礎怪物等級: " + ChatColor.WHITE + "Lv." + calculateBaseLevel(player.getLocation()));
+            lines.add(plugin.getWorldZoneManager().getDescription(player.getLocation()));
+            lines.add(ChatColor.YELLOW + "出生點中心: " + ChatColor.WHITE + plugin.getWorldZoneManager().getOrigin(player.getWorld()));
 
             SafeZoneManager.SafeZone safeZone = safeZoneManager.getZoneAt(player.getLocation());
             if (safeZone != null) {
                 lines.add(ChatColor.YELLOW + "安全區: " + ChatColor.GREEN + safeZone.getName() + ChatColor.GRAY + " (" + safeZone.getType() + ")");
+            } else if (safeZoneManager.isInSafeZone(player.getLocation())) {
+                lines.add(ChatColor.YELLOW + "安全區: " + ChatColor.GREEN + "世界出生點安全區");
             } else {
                 lines.add(ChatColor.YELLOW + "安全區: " + ChatColor.RED + "不在安全區內");
             }
@@ -708,8 +851,13 @@ public class DistanceSpawnManager {
         return debug;
     }
 
+    public boolean isVanillaMode() {
+        return "vanilla".equalsIgnoreCase(spawnMode);
+    }
+
     public void reload() {
         boolean wasActive = active;
+        plugin.getWorldZoneManager().reload();
         loadConfig();
         active = wasActive && enabled;
         safeZoneManager.reload();

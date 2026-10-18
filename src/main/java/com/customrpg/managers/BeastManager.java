@@ -702,6 +702,14 @@ public class BeastManager implements Listener {
     }
 
     public void shutdown() {
+        // Revert forms before disable; otherwise the boosted MAX_HEALTH base value is saved into player data.
+        for (UUID playerId : new ArrayList<>(activeForms.keySet())) {
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                deactivateBeastForm(player);
+            }
+        }
+
         // 清除所有召喚的野獸
         for (Map.Entry<UUID, List<UUID>> entry : playerBeasts.entrySet()) {
             for (UUID beastId : entry.getValue()) {

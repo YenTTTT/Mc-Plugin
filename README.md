@@ -2,6 +2,10 @@
 
 A professional Minecraft Paper plugin featuring custom weapons, skills with cooldowns, and custom mobs with special behaviors.
 
+## Current Project Status
+
+See [the feature inventory and implementation progress](docs/PROJECT_STATUS.md) for the current MMORPG systems, vanilla-world spawning rules, configuration migration, and verification checklist. The original feature overview below is not a complete inventory.
+
 ## Features
 
 ### Custom Weapons

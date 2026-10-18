@@ -147,7 +147,7 @@ public class WeaponListener implements Listener {
      * @param event EntityDamageByEntityEvent
      */
     @SuppressWarnings("deprecation")
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) {
             return;
@@ -156,7 +156,9 @@ public class WeaponListener implements Listener {
         Player player = (Player) event.getDamager();
 
         // ★ AoE 防遞迴守衛：若此玩家正在傳播 AoE 傷害，直接放行原始傷害值，不再疊加任何武器效果
-        if (aoeGuard.contains(player.getUniqueId())) {
+        // 技能／法杖彈道已自行計算最終傷害，不可再走一般攻擊流程（否則會被 base-damage 覆蓋並重複加成）
+        if (aoeGuard.contains(player.getUniqueId())
+                || com.customrpg.utils.SkillDamageGuard.isSkillDamage(player)) {
             return;
         }
         ItemStack weapon = player.getInventory().getItemInMainHand();
@@ -1126,7 +1128,7 @@ public class WeaponListener implements Listener {
                     if (target.isDead()) continue;
 
                     // 命中！
-                    target.damage(finalDamage, player);
+                    com.customrpg.utils.SkillDamageGuard.damage(target, finalDamage, player);
 
                     // 元素附加效果
                     applyStaffElementEffect(target, element, weaponData, player, finalDamage);
@@ -1238,7 +1240,7 @@ public class WeaponListener implements Listener {
                         .getNearbyEntities(target.getLocation(), aoeRadius, aoeRadius, aoeRadius)) {
                     if (nearby == target || nearby == caster) continue;
                     if (!(nearby instanceof LivingEntity nearLe) || nearLe.isDead()) continue;
-                    nearLe.damage(aoeDmg, caster);
+                    com.customrpg.utils.SkillDamageGuard.damage(nearLe, aoeDmg, caster);
                 }
                 break;
             }
@@ -1261,7 +1263,7 @@ public class WeaponListener implements Listener {
                         .getNearbyEntities(target.getLocation(), aoeRadius, aoeRadius, aoeRadius)) {
                     if (nearby == target || nearby == caster) continue;
                     if (!(nearby instanceof LivingEntity nearLe) || nearLe.isDead()) continue;
-                    nearLe.damage(aoeDmg, caster);
+                    com.customrpg.utils.SkillDamageGuard.damage(nearLe, aoeDmg, caster);
                     nearLe.addPotionEffect(new org.bukkit.potion.PotionEffect(
                             org.bukkit.potion.PotionEffectType.SLOWNESS, slowDur, 1, false, true));
                 }

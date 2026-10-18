@@ -61,6 +61,7 @@ public class CustomRPG extends JavaPlugin {
     private com.customrpg.managers.ProtectionAreaManager protectionAreaManager;
     private com.customrpg.managers.ZoneManager zoneManager;
     private com.customrpg.managers.SafeZoneManager safeZoneManager;
+    private com.customrpg.managers.WorldZoneManager worldZoneManager;
     private com.customrpg.managers.BossZoneManager bossZoneManager;
 
     // BossBar system
@@ -138,6 +139,23 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("=================================");
         getLogger().info("   CustomRPG Plugin Stopping");
         getLogger().info("=================================");
+
+        // 先還原野獸化身並移除召喚獸，避免加成後的最大生命值被寫入玩家存檔
+        if (beastManager != null) {
+            beastManager.shutdown();
+            getLogger().info("- BeastManager shutdown");
+        }
+
+        // 儲存 NPC 並移除實體（下次啟動重新生成，避免重複 NPC）
+        if (npcManager != null) {
+            npcManager.shutdown();
+            getLogger().info("- NpcManager shutdown");
+        }
+
+        if (equipmentManager != null) {
+            equipmentManager.saveAllPlayerEquipment();
+            getLogger().info("- Player equipment saved");
+        }
 
         // 儲存所有玩家數據
         if (statsManager != null) {
@@ -268,6 +286,7 @@ public class CustomRPG extends JavaPlugin {
         zoneManager = new com.customrpg.managers.ZoneManager(this);
         getLogger().info("- ZoneManager initialized with " + zoneManager.getZoneCount() + " zones");
 
+        worldZoneManager = new com.customrpg.managers.WorldZoneManager(this);
         safeZoneManager = new com.customrpg.managers.SafeZoneManager(this);
         getLogger().info("- SafeZoneManager initialized with " + safeZoneManager.getZoneCount() + " zones");
 
@@ -402,6 +421,11 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WeaponListener(this, weaponManager, statsManager), this);
         getLogger().info("- WeaponListener registered");
 
+        // Must be registered after WeaponListener and before MobListener: at HIGHEST priority,
+        // final defense / bow bonus run after weapon damage and before boss virtual-HP conversion.
+        getServer().getPluginManager().registerEvents(new StatsListener(this, statsManager), this);
+        getLogger().info("- StatsListener registered");
+
         // SkillListener for talent skills (uses mana)
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SkillListener(this, talentSkillManager, manaManager), this);
         getLogger().info("- SkillListener (talent skills) registered");
@@ -411,9 +435,6 @@ public class CustomRPG extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new SkillTriggerListener(newSkillManager), this);
         getLogger().info("- SkillTriggerListener registered");
-
-        getServer().getPluginManager().registerEvents(new StatsListener(this, statsManager), this);
-        getLogger().info("- StatsListener registered");
 
         getServer().getPluginManager().registerEvents(statsGUI, this);
         getLogger().info("- StatsGUI registered");
@@ -455,6 +476,7 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("- ProtectAreaListener registered");
 
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SafeZoneSpawnListener(safeZoneManager), this);
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.WorldSpawnListener(this), this);
         getLogger().info("- SafeZoneSpawnListener registered");
 
         // SetMob zone listener
@@ -797,6 +819,10 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.managers.SafeZoneManager getSafeZoneManager() {
         return safeZoneManager;
+    }
+
+    public com.customrpg.managers.WorldZoneManager getWorldZoneManager() {
+        return worldZoneManager;
     }
 
     public com.customrpg.managers.BossZoneManager getBossZoneManager() {

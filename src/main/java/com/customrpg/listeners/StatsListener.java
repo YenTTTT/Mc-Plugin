@@ -71,12 +71,22 @@ public class StatsListener implements Listener {
     }
 
     /**
-     * 處理傷害事件 - 防禦減免
+     * 最終傷害階段：先套用弓箭 Agility 加成，再套用防禦減免。
      *
-     * Priority = LOW: 在 WeaponListener (HIGHEST) 之後，所以先計算武器傷害，再套用防禦
+     * Priority = HIGHEST，且 StatsListener 在 WeaponListener 之後、MobListener 之前註冊：
+     * 同優先級依註冊順序執行，因此武器傷害計算完成後才套用防禦，
+     * 並在 Boss 虛擬血量換算之前完成。
      */
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onEntityDamageDefense(EntityDamageByEntityEvent event) {
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityDamageFinal(EntityDamageByEntityEvent event) {
+        applyBowAgilityBonus(event);
+        applyDefenseReduction(event);
+    }
+
+    /**
+     * 防禦減免（受害者為玩家）
+     */
+    private void applyDefenseReduction(EntityDamageByEntityEvent event) {
         // 只處理受害者為玩家的情況
         if (!(event.getEntity() instanceof Player victim)) {
             return;
@@ -103,12 +113,9 @@ public class StatsListener implements Listener {
     }
 
     /**
-     * 處理傷害事件 - 弓箭 Agility 加成
-     *
-     * Priority = HIGHEST: 在 WeaponListener 之前，優先處理弓箭傷害
+     * 弓箭 Agility 加成（射手為玩家）
      */
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onEntityDamageBow(EntityDamageByEntityEvent event) {
+    private void applyBowAgilityBonus(EntityDamageByEntityEvent event) {
         // 只處理弓箭攻擊
         if (!(event.getDamager() instanceof Arrow arrow)) {
             return;

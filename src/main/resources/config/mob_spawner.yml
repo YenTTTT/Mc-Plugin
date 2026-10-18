@@ -1,11 +1,23 @@
 # ========================================
 # 動態怪物生成系統配置
-# MobSpawnManager Configuration
+# DistanceSpawnManager Configuration
 # ========================================
 
 # 是否啟用自動生成系統 (配置總開關)
 # 注意：即使這裡是 true，伺服器啟動後仍需管理員輸入 /finishrpg 才會開始生成自訂怪
 enabled: true
+
+# vanilla = 原版自然怪事件驅動；supplemental = 舊式玩家周圍定時補怪。
+# 不可同時啟用兩套流程，避免怪物數量翻倍。
+mode: vanilla
+
+# 預設不接管刷怪籠、指令、突襲、試煉、繁殖及其他插件的 CUSTOM 生成。
+natural-spawn-reasons:
+  - NATURAL
+
+leash:
+  soft-distance: 48
+  hard-distance: 80
 
 # 是否啟用 debug 日誌 (在 console 輸出詳細生成過程，測試時建議開啟)
 debug: false
@@ -13,7 +25,7 @@ debug: false
 # 生成檢查間隔 (ticks, 20 ticks = 1 秒)
 interval-ticks: 60
 
-# 每次檢查每位玩家最多嘗試生成幾隻怪
+# supplemental 模式每次檢查每位玩家最多嘗試生成幾隻怪
 spawns-per-cycle: 3
 
 # ===== 生成範圍 =====
@@ -23,47 +35,29 @@ spawn-radius:
   # 最大生成距離
   max: 35
   # 怪物之間最小距離
-  min-between-mobs: 8
+  min-between-mobs: 4
 
 # ===== 數量限制 =====
 limits:
   # 每位玩家附近最大自定義怪物數量
   max-mobs-per-player: 10
+  max-mobs-per-chunk: 8
 
 # ===== 怪物階級 =====
 tiers:
   # 普通怪
   normal:
-    # 等級偏移範圍: playerLevel + offset
-    level-offset-min: -3
-    level-offset-max: 3
-    # 屬性倍率
-    stat-multiplier: 1.0
     # 名稱前綴 (空 = 不加)
     name-prefix: ""
 
-  # 精英怪 (20% 機率)
+  # 精英怪：最低 1%，每 10 級增加 1%，最高 7%；不突破區域等級上限。
   elite:
-    chance: 0.20
-    level-offset-min: 1
-    level-offset-max: 5
+    chance: 0.01
     stat-multiplier: 1.5
     name-prefix: "&6⚔ "
 
-  # BOSS 怪 — 累積機率系統 (保底機制)
-  # 每次生成周期擲骰，沒出BOSS → 機率累積，出了 → 重置
+  # Boss 僅由已啟用的舊式 Boss 區域或管理員指令生成，不混入普通自然怪池。
   boss:
-    # 基礎機率 (0.2%)
-    base-chance: 0.002
-    # 每次沒出時累積增加的機率 (+0.3%)
-    pity-increment: 0.003
-    # 冷卻時間 (秒) — BOSS 出現後 30 分鐘內不會再出
-    cooldown-seconds: 1800
-    # BOSS 生成距離玩家的範圍 (比普通怪更遠，讓玩家去找)
-    spawn-radius-min: 40
-    spawn-radius-max: 80
-    level-offset-min: 3
-    level-offset-max: 8
     stat-multiplier: 3.0
     name-prefix: "&c✦ BOSS ✦ "
     # BOSS 生成時的粒子效果
@@ -74,27 +68,15 @@ tiers:
     spawn-sound-volume: 2.0
     spawn-sound-pitch: 0.5
 
-# ===== 距離加成 =====
-# 以固定中心點為基準，距離越遠怪物等級越高
-difficulty-scaling:
-  enabled: true
-  # 地圖中心 / 重生點座標
-  origin:
-    world: "world"
-    x: 192
-    y: 73
-    z: -70
-  # 基礎等級
-  base-level: 1
-  # 每多少格距離增加 1 級
-  # 公式：Level = base-level + floor(distance / blocks-per-level)
-  blocks-per-level: 80
+# 距離分區、各世界中心與維度等級改由 config/world_zones.yml 管理。
+# 怪物 tags 決定環境池，spawn-time 決定時段，level-range 必須包含計算等級。
+# 無匹配模板或生成失敗時保留原版怪物，不使用跨區域或跨時段備援怪物。
 
 # ===== 生成條件 =====
 conditions:
   # 是否只在夜晚生成 (false = 白天也生成)
   night-only: false
-  # 最低光照等級才生成 (0 = 無限制)
+  # 最高允許光照 (15 = 無限制，0 = 只允許完全黑暗)
   max-light-level: 15
   # 地面上才生成 (排除空中)
   require-solid-ground: true
@@ -105,10 +87,5 @@ conditions:
 disabled-worlds:
   - "world_the_end"
 
-# ===== 安全區 =====
-# 在世界出生點附近不會生成自定義怪物
-safe-zone:
-  enabled: true
-  # 安全區半徑 (格)
-  radius: 20
+# 出生點安全區亦由 world_zones.yml 管理；舊地圖區域預設停用但不刪除。
 

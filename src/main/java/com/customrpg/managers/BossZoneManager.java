@@ -70,6 +70,7 @@ public class BossZoneManager {
     }
 
     public void reload() {
+        despawnAllTracked();
         load();
     }
 
@@ -88,6 +89,9 @@ public class BossZoneManager {
         }
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+        if (!plugin.getWorldZoneManager().isLegacyRegionsEnabled()) {
+            return;
+        }
         ConfigurationSection section = config.getConfigurationSection("boss-zones");
         if (section == null) {
             plugin.getLogger().warning("[BossZoneManager] No boss-zones section found in config/boss_zones.yml");
@@ -167,19 +171,20 @@ public class BossZoneManager {
         }
 
         Location zoneCenter = zone.getCenter(player.getWorld());
+        if (!distanceSpawnManager.isSpawnAllowed(zoneCenter)) {
+            return;
+        }
         Location spawnLocation = mobManager.findSafeSpawnLocationExact(zoneCenter);
         if (spawnLocation == null) {
             spawnLocation = distanceSpawnManager.findSpawnNear(zoneCenter, 8);
         }
-        if (spawnLocation == null) {
-            spawnLocation = mobManager.findSafeSpawnLocation(zoneCenter);
-        }
-        if (spawnLocation == null) {
+        if (spawnLocation == null || !distanceSpawnManager.isSpawnAllowed(spawnLocation)
+                || getZoneAt(spawnLocation) != zone) {
             return;
         }
 
         int level = distanceSpawnManager.calculateLevelForLocation(spawnLocation, DistanceSpawnManager.MobTier.BOSS);
-        LivingEntity boss = mobManager.spawnCustomMobWithLevel(zone.getBossMobKey(), spawnLocation, level);
+        LivingEntity boss = mobManager.spawnCustomMobWithLevelExact(zone.getBossMobKey(), spawnLocation, level);
         if (boss == null) {
             return;
         }
@@ -262,12 +267,13 @@ public class BossZoneManager {
 
         String minionKey = zone.getLinkedMinions().get(random.nextInt(zone.getLinkedMinions().size()));
         Location spawnLocation = distanceSpawnManager.findSpawnNear(boss.getLocation(), 8);
-        if (spawnLocation == null) {
+        if (spawnLocation == null || !distanceSpawnManager.isSpawnAllowed(spawnLocation)
+                || getZoneAt(spawnLocation) != zone) {
             return;
         }
 
         int level = distanceSpawnManager.calculateLevelForLocation(spawnLocation, DistanceSpawnManager.MobTier.NORMAL);
-        LivingEntity minion = mobManager.spawnCustomMobWithLevel(minionKey, spawnLocation, level);
+        LivingEntity minion = mobManager.spawnCustomMobWithLevelExact(minionKey, spawnLocation, level);
         if (minion == null) {
             return;
         }
@@ -462,12 +468,10 @@ public class BossZoneManager {
         BossZone zone = zones.get(zoneId.toLowerCase());
         if (zone == null || zone.getBossMobKey().isBlank()) return null;
 
-        removeAllBossesInZone(zone);
-        bossCooldownUntil.remove(zone.getId());
-
         World world = plugin.getServer().getWorld(zone.getWorld());
         if (world == null) return null;
         Location center = zone.getCenter(world);
+        if (!distanceSpawnManager.isSpawnAllowed(center)) return null;
         Location spawnLoc = mobManager.findSafeSpawnLocationExact(center);
         if (spawnLoc == null) {
             plugin.getLogger().warning("[BossZoneManager] Force spawn failed for zone '" + zone.getId()
@@ -475,6 +479,8 @@ public class BossZoneManager {
             return null;
         }
 
+        removeAllBossesInZone(zone);
+        bossCooldownUntil.remove(zone.getId());
         int level = distanceSpawnManager.calculateLevelForLocation(spawnLoc, DistanceSpawnManager.MobTier.BOSS);
         LivingEntity boss = mobManager.spawnCustomMobWithLevelExact(zone.getBossMobKey(), spawnLoc, level);
         if (boss == null) return null;

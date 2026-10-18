@@ -423,7 +423,7 @@ public class MobListener implements Listener {
      * 處理玩家攻擊 BlockDisplay 偽裝系統的情況
      * @param event EntityDamageByEntityEvent
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onMobAttack(EntityDamageByEntityEvent event) {
         // === 情況 1：玩家攻擊 BlockDisplay 或名稱標籤 ArmorStand ===
         // BlockDisplay 和 ArmorStand 不是 LivingEntity，需要找到對應的隱形核心
@@ -1196,8 +1196,11 @@ public class MobListener implements Listener {
     /**
      * 攔截對「虛擬 HP 怪物」的所有傷害事件
      * 將 MC 傷害按比例轉換為虛擬傷害，並同步 MC HP
+     *
+     * 必須在 HIGHEST 執行（MobListener 註冊於 WeaponListener / StatsListener 之後），
+     * 才能讀取武器、屬性、暴擊計算完成後的最終傷害。
      */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onVirtualHPDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
         if (!MobManager.hasVirtualHP(mob)) return;

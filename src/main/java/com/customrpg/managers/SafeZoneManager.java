@@ -39,6 +39,9 @@ public class SafeZoneManager {
         }
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+        if (!plugin.getWorldZoneManager().isLegacyRegionsEnabled()) {
+            return;
+        }
         ConfigurationSection zonesSection = config.getConfigurationSection("zones");
         if (zonesSection == null) {
             plugin.getLogger().warning("[SafeZoneManager] No zones section found in config/safe_zones.yml");
@@ -66,7 +69,7 @@ public class SafeZoneManager {
     }
 
     public boolean isInSafeZone(Location location) {
-        return getZoneAt(location) != null;
+        return plugin.getWorldZoneManager().isSafeZone(location) || getZoneAt(location) != null;
     }
 
     public SafeZone getZoneAt(Location location) {
@@ -120,9 +123,8 @@ public class SafeZoneManager {
                 return false;
             }
             double dx = targetX - x;
-            double dy = targetY - y;
             double dz = targetZ - z;
-            return (dx * dx) + (dy * dy) + (dz * dz) <= radiusSquared;
+            return (dx * dx) + (dz * dz) <= radiusSquared;
         }
 
         public String getId() {

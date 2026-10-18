@@ -33,7 +33,7 @@ public class DamageManager {
         if (amount <= 0) {
             return;
         }
-        target.damage(amount, caster);
+        com.customrpg.utils.SkillDamageGuard.damage(target, amount, caster);
     }
 
     /**
@@ -87,6 +87,6 @@ public class DamageManager {
             }
         }
 
-        target.damage(finalDamage, caster);
+        com.customrpg.utils.SkillDamageGuard.damage(target, finalDamage, caster);
     }
 }

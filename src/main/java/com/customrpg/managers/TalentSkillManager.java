@@ -2786,7 +2786,7 @@ public class TalentSkillManager {
                     if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                     if (hitCooldown.contains(target.getUniqueId())) continue;
                     hitCooldown.add(target.getUniqueId());
-                    target.damage(damage, player);
+                    com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
                     target.setFireTicks(60);
                     current.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0);
                 }
@@ -2847,7 +2847,7 @@ public class TalentSkillManager {
                 if (ticks % 20 == 0) {
                     for (org.bukkit.entity.Entity entity : target.getWorld().getNearbyEntities(target, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity t) || t.isDead()) continue;
-                        t.damage(damagePerTick, player);
+                        com.customrpg.utils.SkillDamageGuard.damage(t, damagePerTick, player);
                         t.setFireTicks(40);
                     }
                     target.getWorld().playSound(target, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.8f);
@@ -2993,7 +2993,7 @@ public class TalentSkillManager {
                         Location checkLoc = eyeLoc.clone().add(direction.clone().multiply(d));
                         for (org.bukkit.entity.Entity entity : checkLoc.getWorld().getNearbyEntities(checkLoc, 1, 1, 1)) {
                             if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                            target.damage(damagePerHit, player);
+                            com.customrpg.utils.SkillDamageGuard.damage(target, damagePerHit, player);
                             target.setFireTicks(burnDuration * 20);
                         }
                     }
@@ -3054,7 +3054,7 @@ public class TalentSkillManager {
                     if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                     if (alreadyHit.contains(target.getUniqueId())) continue;
                     alreadyHit.add(target.getUniqueId());
-                    target.damage(damage, player);
+                    com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
                     target.setFireTicks(burnDuration * 20);
                     center.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 8, 0.2, 0.2, 0.2, 0);
                 }
@@ -3112,7 +3112,7 @@ public class TalentSkillManager {
                 if (ticks % 20 == 0) {
                     for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        target.damage(damagePerSecond, player);
+                        com.customrpg.utils.SkillDamageGuard.damage(target, damagePerSecond, player);
                         target.setFireTicks(burnDuration * 20);
                     }
                     center.getWorld().playSound(center, Sound.BLOCK_FIRE_AMBIENT, 0.6f, 0.8f);
@@ -3185,7 +3185,7 @@ public class TalentSkillManager {
                 if (ticks % 10 == 0) {
                     for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        target.damage(damagePerTick / 2, player); // 每0.5秒造成一半傷害
+                        com.customrpg.utils.SkillDamageGuard.damage(target, damagePerTick / 2, player); // 每0.5秒造成一半傷害
                         target.setFireTicks(burnDuration * 20);
                         // 緩速效果
                         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 1, false, false));
@@ -3288,7 +3288,7 @@ public class TalentSkillManager {
         player.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f);
 
         // 造成傷害
-        target.damage(damage, player);
+        com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
         player.sendMessage("§8[影襲] §7背刺！造成 §c" + String.format("%.0f", damage) + " §7傷害");
 
         // 解除隱身
@@ -3368,7 +3368,7 @@ public class TalentSkillManager {
                 player.teleport(teleportLoc);
 
                 // 攻擊
-                target.damage(damagePerStrike, player);
+                com.customrpg.utils.SkillDamageGuard.damage(target, damagePerStrike, player);
 
                 // 效果
                 player.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.3);
@@ -3418,7 +3418,7 @@ public class TalentSkillManager {
                     Vector toEntity = target.getLocation().toVector().subtract(currentLoc.toVector()).normalize();
                     double dot = currentDir.dot(toEntity);
                     if (dot > 0.3) { // 前方約120度
-                        target.damage(damagePerHit, player);
+                        com.customrpg.utils.SkillDamageGuard.damage(target, damagePerHit, player);
                     }
                 }
 
@@ -3492,7 +3492,7 @@ public class TalentSkillManager {
                     hitEntities.add(target.getUniqueId());
                     hitCount[0]++;
                     double finalDamage = baseDamage * (1.0 + (hitCount[0] - 1) * multiHitBonus);
-                    target.damage(finalDamage, player);
+                    com.customrpg.utils.SkillDamageGuard.damage(target, finalDamage, player);
                     target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0.2);
                     target.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.6f, 1.3f);
                 }
@@ -3551,7 +3551,7 @@ public class TalentSkillManager {
                     // 對範圍內敵人造成傷害
                     for (org.bukkit.entity.Entity entity : loc.getWorld().getNearbyEntities(loc, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        target.damage(damagePerHit, player);
+                        com.customrpg.utils.SkillDamageGuard.damage(target, damagePerHit, player);
                     }
 
                     loc.getWorld().playSound(loc, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.6f, 1.0f + (float)(Math.random() * 0.5));
@@ -3606,7 +3606,7 @@ public class TalentSkillManager {
             Vector toEntity = target.getLocation().toVector().subtract(origin.toVector()).setY(0).normalize();
             double angle = Math.acos(Math.max(-1, Math.min(1, dir.dot(toEntity))));
             if (angle <= halfAngle) {
-                target.damage(damage, player);
+                com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
                 target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 8, 0.2, 0.2, 0.2, 0.2);
             }
         }
@@ -3655,7 +3655,7 @@ public class TalentSkillManager {
             if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
             Vector toEntity = target.getLocation().toVector().subtract(center.toVector()).setY(0).normalize();
             if (dir.dot(toEntity) > 0) { // 前方
-                target.damage(damage, player);
+                com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
                 target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.3);
                 target.getWorld().spawnParticle(Particle.EXPLOSION, target.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
             }
@@ -5538,7 +5538,7 @@ public class TalentSkillManager {
                                 .normalize().multiply(pullForce);
                         le.setVelocity(le.getVelocity().add(pull));
                         // 傷害
-                        le.damage(dmgPerTick, player);
+                        com.customrpg.utils.SkillDamageGuard.damage(le, dmgPerTick, player);
                         le.getWorld().spawnParticle(Particle.CRIT,
                                 le.getLocation().add(0, 1, 0), 3, 0.2, 0.2, 0.2, 0.05);
                     }

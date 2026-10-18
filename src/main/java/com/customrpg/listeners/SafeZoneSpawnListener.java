@@ -1,6 +1,6 @@
 package com.customrpg.listeners;
 import com.customrpg.managers.SafeZoneManager;
-import org.bukkit.entity.Monster;
+import org.bukkit.entity.Enemy;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -19,7 +19,7 @@ public class SafeZoneSpawnListener implements Listener {
         if (reason == CreatureSpawnEvent.SpawnReason.COMMAND || reason == CreatureSpawnEvent.SpawnReason.CUSTOM) {
             return;
         }
-        if (!(event.getEntity() instanceof Monster)) {
+        if (!(event.getEntity() instanceof Enemy)) {
             return;
         }
         if (safeZoneManager.isInSafeZone(event.getLocation())) {
