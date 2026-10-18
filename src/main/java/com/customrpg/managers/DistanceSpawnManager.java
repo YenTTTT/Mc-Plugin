@@ -3,6 +3,8 @@ package com.customrpg.managers;
 import com.customrpg.CustomRPG;
 import org.bukkit.ChatColor;
 import org.bukkit.Difficulty;
+import org.bukkit.GameRules;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -18,6 +20,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -28,6 +31,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -61,9 +67,11 @@ public class DistanceSpawnManager {
     private final MobManager mobManager;
     private final SafeZoneManager safeZoneManager;
     private final Logger log;
+    private final java.util.function.Function<World, Boolean> mobSpawningRule;
     private final Random random = new Random();
     private final Set<UUID> spawnedMobs = new HashSet<>();
     private final MobLeashManager leashManager;
+    private final com.customrpg.mobs.WildernessBossManager wildernessBosses;
 
     private BossZoneManager bossZoneManager;
     private BukkitTask spawnTask;
@@ -105,20 +113,34 @@ public class DistanceSpawnManager {
     private int totalSpawnSuccess;
     private int totalLocationFails;
     private String lastSkipReason = "尚未執行 /finishrpg";
+    private String lastNaturalReason = "尚未收到符合來源設定的原版敵怪生成事件";
+    private long naturalEvents, cancelledNaturalEvents, naturalSuccesses;
+    private final Map<String, Long> naturalSkips = new LinkedHashMap<>();
+    private int debugTicks;
 
     public DistanceSpawnManager(CustomRPG plugin, MobManager mobManager, SafeZoneManager safeZoneManager) {
+        this(plugin, mobManager, safeZoneManager, world -> world.getGameRuleValue(GameRules.SPAWN_MOBS));
+    }
+
+    DistanceSpawnManager(CustomRPG plugin, MobManager mobManager, SafeZoneManager safeZoneManager,
+                         java.util.function.Function<World, Boolean> mobSpawningRule) {
         this.plugin = plugin;
+        this.mobSpawningRule = mobSpawningRule;
         this.mobManager = mobManager;
         this.safeZoneManager = safeZoneManager;
         this.log = plugin.getLogger();
         this.leashManager = new MobLeashManager(plugin);
         loadConfig();
+        wildernessBosses = new com.customrpg.mobs.WildernessBossManager(plugin, this);
+        wildernessBosses.restoreLoaded();
         for (World world : plugin.getServer().getWorlds()) {
             for (LivingEntity entity : world.getLivingEntities()) {
                 restoreTrackedMob(entity);
             }
         }
         startSpawnTask();
+        log.info("[DistanceSpawn] enabled=" + enabled + ", mode=" + spawnMode
+                + "; 自訂怪生成等待管理員執行 /finishrpg（每次伺服器重啟後需要重新啟動）");
     }
 
     public void setBossZoneManager(BossZoneManager bossZoneManager) {
@@ -140,8 +162,17 @@ public class DistanceSpawnManager {
             log.warning("[DistanceSpawn] Unknown mode '" + spawnMode + "', using vanilla");
             spawnMode = "vanilla";
         }
-        naturalSpawnReasons = new HashSet<>(config.contains("natural-spawn-reasons")
-                ? config.getStringList("natural-spawn-reasons") : List.of("NATURAL"));
+        naturalSpawnReasons = new HashSet<>();
+        for (String value : config.contains("natural-spawn-reasons")
+                ? config.getStringList("natural-spawn-reasons") : List.of("NATURAL")) {
+            try {
+                var reason = CreatureSpawnEvent.SpawnReason.valueOf(value.trim().toUpperCase(Locale.ROOT));
+                if (reason != CreatureSpawnEvent.SpawnReason.CUSTOM && reason != CreatureSpawnEvent.SpawnReason.COMMAND)
+                    naturalSpawnReasons.add(reason.name());
+            } catch (IllegalArgumentException error) {
+                log.warning("[DistanceSpawn] Unknown natural-spawn-reason: " + value);
+            }
+        }
         intervalTicks = Math.max(20, config.getInt("interval-ticks", 60));
         spawnsPerCycle = Math.max(0, config.getInt("spawns-per-cycle", 3));
         spawnRadiusMin = Math.max(1, config.getInt("spawn-radius.min", 10));
@@ -177,26 +208,30 @@ public class DistanceSpawnManager {
             spawnTask.cancel();
         }
 
-        spawnTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (UUID uuid : new HashSet<>(spawnedMobs)) {
-                    Entity entity = plugin.getServer().getEntity(uuid);
-                    if (entity instanceof LivingEntity living && !living.isDead()) {
-                        leashManager.update(living);
-                    } else {
-                        spawnedMobs.remove(uuid);
-                    }
-                }
-                if (!enabled || !active) {
-                    return;
-                }
-
-                for (Player player : plugin.getServer().getOnlinePlayers()) {
-                    processPlayer(player);
+        spawnTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            for (UUID uuid : new HashSet<>(spawnedMobs)) {
+                Entity entity = plugin.getServer().getEntity(uuid);
+                if (entity instanceof LivingEntity living && !living.isDead()) {
+                    leashManager.update(living);
+                } else {
+                    spawnedMobs.remove(uuid);
                 }
             }
-        }.runTaskTimer(plugin, 40L, intervalTicks);
+            wildernessBosses.tick();
+            if (debug && (debugTicks += intervalTicks) >= 600) {
+                debugTicks = 0;
+                log.info("[DistanceSpawn] enabled=" + enabled + ", active=" + active + ", mode=" + spawnMode
+                        + ", natural-events=" + naturalEvents + ", cancelled=" + cancelledNaturalEvents
+                        + ", replacements=" + naturalSuccesses + ", skips=" + naturalSkips + "; " + lastNaturalReason);
+            }
+            if (!enabled || !active) {
+                return;
+            }
+
+            for (Player player : plugin.getServer().getOnlinePlayers()) {
+                processPlayer(player);
+            }
+        }, 40L, intervalTicks);
     }
 
     public boolean activateSystem() {
@@ -234,6 +269,24 @@ public class DistanceSpawnManager {
                 && naturalSpawnReasons.contains(reason.name());
     }
 
+    /** MONITOR observation includes cancellations, without queuing a replacement for a rejected spawn. */
+    public void observeNaturalSpawn(CreatureSpawnEvent.SpawnReason reason, boolean cancelled) {
+        if (!naturalSpawnReasons.contains(reason.name())) return;
+        naturalEvents++;
+        if (cancelled) {
+            cancelledNaturalEvents++;
+            lastNaturalReason = "原版生成事件被取消（可能是安全區或其他插件）";
+        } else if (!enabled || !active) {
+            lastNaturalReason = enabled ? "已收到原版事件，但尚未執行 /finishrpg" : "已收到原版事件，但 enabled=false";
+        }
+    }
+
+    private void skipNatural(String code, String reason) {
+        naturalSkips.merge(code, 1L, Long::sum);
+        lastNaturalReason = reason;
+        lastSkipReason = reason;
+    }
+
     public boolean isSpawnAllowed(Location location) {
         if (location == null || location.getWorld() == null) {
             return false;
@@ -263,15 +316,25 @@ public class DistanceSpawnManager {
         if (!original.isValid() || original.isDead() || original.getCustomName() != null
                 || original.isInsideVehicle() || !original.getPassengers().isEmpty()
                 || mobManager.getCustomMobKey(original) != null) {
+            skipNatural("原怪狀態", "原怪已消失、命名、有乘客或已是自訂怪，未替換");
             return;
         }
         Location location = original.getLocation();
-        if (!isSpawnAllowed(location) || !hasSpawnCapacity(location)
-                || (bossZoneManager != null && bossZoneManager.isInsideBossZone(location))) {
+        if (!isSpawnAllowed(location)) {
+            skipNatural("世界或保護", "世界停用／和平／未載入／邊界／安全區或保護區，保留原版怪");
+            return;
+        }
+        if (!hasSpawnCapacity(location)) {
+            skipNatural("數量或間距", "區塊自訂怪數量或怪物間距限制，保留原版怪");
+            return;
+        }
+        if (bossZoneManager != null && bossZoneManager.isInsideBossZone(location)) {
+            skipNatural("Boss 區域", "Boss 排他區，保留原版怪");
             return;
         }
         long time = location.getWorld().getTime();
         if ((nightOnly && (time < 13000 || time >= 23000)) || location.getBlock().getLightLevel() > maxLightLevel) {
+            skipNatural("時段或光照", "額外夜間／光照條件不符，保留原版怪");
             return;
         }
         boolean nearbyPlayer = false;
@@ -279,36 +342,50 @@ public class DistanceSpawnManager {
             if (player.getGameMode() == org.bukkit.GameMode.SURVIVAL || player.getGameMode() == org.bukkit.GameMode.ADVENTURE) {
                 nearbyPlayer = true;
                 if (countNearbyCustomMobs(player) >= maxMobsPerPlayer) {
-                    lastSkipReason = "自然怪附近自訂怪已達上限，保留原版怪";
+                    skipNatural("玩家上限", "自然怪附近自訂怪已達上限，保留原版怪");
                     return;
                 }
             }
         }
         if (!nearbyPlayer) {
+            skipNatural("缺少合格玩家", "原怪 128 格內沒有生存／冒險玩家，保留原版怪");
             return;
         }
         totalSpawnAttempts++;
         Location exactLocation = mobManager.findSafeSpawnLocationExact(location);
         if (exactLocation == null) {
             totalLocationFails++;
-            lastSkipReason = "原版生成位置不適用陸地自訂怪，保留原版怪";
+            skipNatural("落點不適合", "原版生成位置不適用陸地自訂怪，保留原版怪");
             return;
         }
         location = exactLocation;
         MobTier tier = determineNaturalTier(location);
         int level = calculateLevelForLocation(location, tier);
-        List<String> pool = filterByEnvironment(filterBySpawnTime(mobManager.getNormalMobKeys(), location.getWorld()), location);
+        String boss = wildernessBosses.trySpawn(location, level, wildernessPool(location, level));
+        if (boss != null) {
+            original.remove(); totalSpawnSuccess++; naturalSuccesses++;
+            lastSkipReason = lastNaturalReason = "荒野首領遭遇：" + boss + " Lv." + level;
+            return;
+        }
+        List<String> normal = mobManager.getNormalMobKeys();
+        List<String> timed = filterBySpawnTime(normal, location.getWorld());
+        List<String> pool = filterByEnvironment(timed, location);
         String key = selectMobTypeForLevel(pool, level);
         if (key == null) {
-            lastSkipReason = "環境/時段/等級無匹配模板，保留原版怪 Lv." + level;
+            skipNatural("無匹配模板", "環境/時段/等級無匹配模板，保留原版怪 Lv." + level
+                    + "（普通 " + normal.size() + " → 時段 " + timed.size() + " → 環境 " + pool.size() + " → 等級 0）");
             if (debug) log.info("[DistanceSpawn] " + lastSkipReason + " " + getEnvironmentTags(location));
             return;
         }
         if (spawnTieredMob(key, location, level, tier)) {
             original.remove();
             totalSpawnSuccess++;
+            naturalSuccesses++;
             lastSkipReason = "自然生成替換: " + key + " [" + tier.name() + "] Lv." + level;
+            lastNaturalReason = lastSkipReason;
             if (debug) log.info("[DistanceSpawn] " + lastSkipReason);
+        } else {
+            skipNatural("生成被拒", "自訂怪生成失敗或被取消，保留原版怪：" + key);
         }
     }
 
@@ -353,10 +430,10 @@ public class DistanceSpawnManager {
         String biome = location.getBlock().getBiome().getKey().getKey();
         if (biome.contains("caves") || biome.equals("deep_dark")
                 || (location.getBlock().getLightFromSky() == 0
-                && location.getY() < world.getHighestBlockYAt(location.getBlockX(), location.getBlockZ()) - 8)) {
+                && location.getY() < world.getHighestBlockYAt(location.getBlockX(), location.getBlockZ(), org.bukkit.HeightMap.MOTION_BLOCKING_NO_LEAVES) - 8)) {
             return Set.of("cave");
         }
-        if (biome.contains("ocean") || biome.contains("river") || biome.contains("beach")) {
+        if (biome.contains("ocean") || biome.contains("river") || biome.contains("beach") || biome.contains("shore")) {
             return Set.of("ocean");
         }
         if (biome.contains("snow") || biome.contains("frozen") || biome.contains("ice")) {
@@ -462,6 +539,8 @@ public class DistanceSpawnManager {
 
         MobTier tier = determineNaturalTier(spawnLoc);
         int level = calculateLevelForLocation(spawnLoc, tier);
+        String boss = wildernessBosses.trySpawn(spawnLoc, level, wildernessPool(spawnLoc, level));
+        if (boss != null) { totalSpawnSuccess++; lastSkipReason = "荒野首領遭遇：" + boss + " Lv." + level; return true; }
         List<String> timeFiltered = filterByEnvironment(filterBySpawnTime(availableMobKeys, spawnLoc.getWorld()), spawnLoc);
         String mobKey = selectMobTypeForLevel(timeFiltered, level);
 
@@ -482,6 +561,18 @@ public class DistanceSpawnManager {
             if (debug) log.info("[DistanceSpawn] ✗ spawnTieredMob 失敗：" + mobKey);
         }
         return success;
+    }
+
+    private List<String> wildernessPool(Location location, int level) {
+        return filterByEnvironment(filterBySpawnTime(mobManager.getBossMobKeys(), location.getWorld()), location).stream()
+                .filter(key -> { var data = mobManager.getMobData(key); return data != null
+                        && data.getTags().contains("wilderness-boss") && !data.getTags().contains("event-only")
+                        && level >= data.getMinLevel() && level <= data.getMaxLevel(); }).toList();
+    }
+    public com.customrpg.mobs.WildernessBossManager getWildernessBosses() { return wildernessBosses; }
+    public void trackWildernessBoss(LivingEntity mob, Location location, int level) {
+        mobManager.setMobTier(mob, "BOSS"); spawnedMobs.add(mob.getUniqueId()); leashManager.recordHome(mob);
+        applyBossModifiers(mob, location, level);
     }
 
     private List<String> filterBySpawnTime(List<String> mobKeys, World world) {
@@ -792,13 +883,36 @@ public class DistanceSpawnManager {
         lines.add(ChatColor.YELLOW + "安全區數量: " + ChatColor.WHITE + safeZoneManager.getZoneCount());
         lines.add(ChatColor.YELLOW + "Boss 區域數量: " + ChatColor.WHITE + (bossZoneManager != null ? bossZoneManager.getZoneCount() : 0));
         lines.add(ChatColor.YELLOW + "已註冊怪物: " + ChatColor.WHITE + mobManager.getMobKeys().size());
+        lines.add(ChatColor.YELLOW + "普通自然怪模板: " + ChatColor.WHITE + mobManager.getNormalMobKeys().size());
         lines.add(ChatColor.YELLOW + "最後狀態: " + ChatColor.WHITE + lastSkipReason);
+        lines.add(ChatColor.YELLOW + "自然替換最後結果: " + ChatColor.WHITE + lastNaturalReason);
+        lines.add("§e" + wildernessBosses.diagnostic());
+        lines.add(ChatColor.YELLOW + "接管來源: " + ChatColor.WHITE + naturalSpawnReasons);
+        if (!enabled) lines.add("§c目前阻擋：mob_spawner.yml 的 enabled=false");
+        else if (!active) lines.add("§c目前阻擋：請先執行 /finishrpg；伺服器重啟後需重新啟動");
+        if (isVanillaMode()) lines.add("§7vanilla 只替換原版敵怪自然生成，不會定時補怪；/summon 不會觸發替換。");
+        if (naturalSpawnReasons.isEmpty()) lines.add("§c目前阻擋：沒有有效 natural-spawn-reasons，請設定 NATURAL");
 
         if (player != null) {
             lines.add("");
             lines.add(ChatColor.AQUA + "--- 你的位置 ---");
             lines.add(ChatColor.YELLOW + "世界: " + ChatColor.WHITE + player.getWorld().getName());
             lines.add(ChatColor.YELLOW + "難度: " + ChatColor.WHITE + player.getWorld().getDifficulty().name());
+            lines.add(ChatColor.YELLOW + "玩家模式: " + ChatColor.WHITE + player.getGameMode());
+            lines.add(ChatColor.YELLOW + "原版生怪: spawn_mobs（舊 doMobSpawning）=" + mobSpawningRule.apply(player.getWorld())
+                    + ", allowMonsters=" + player.getWorld().getAllowMonsters()
+                    + ", monster-limit=" + player.getWorld().getSpawnLimit(SpawnCategory.MONSTER));
+            for (String warning : getSpawnWarnings(player)) lines.add("§c目前阻擋：" + warning);
+            List<String> normal = mobManager.getNormalMobKeys();
+            List<String> timed = filterBySpawnTime(normal, player.getWorld());
+            List<String> environment = filterByEnvironment(timed, player.getLocation());
+            int level = calculateBaseLevel(player.getLocation());
+            long matched = environment.stream().map(mobManager::getMobData)
+                    .filter(data -> data != null && level >= data.getMinLevel() && level <= data.getMaxLevel()).count();
+            lines.add("§e腳下環境／時段: §f" + getEnvironmentTags(player.getLocation()) + " / "
+                    + (player.getWorld().getTime() >= 13000 && player.getWorld().getTime() < 23000 ? "night" : "day"));
+            lines.add("§e腳下基礎等級池: §f普通 " + normal.size() + " → 時段 " + timed.size() + " → 環境 " + environment.size() + " → Lv." + level + " " + matched);
+            if (matched == 0) lines.add("§c腳下條件沒有匹配模板；實際生成會依怪物落點與隨機等級重新篩選。");
             lines.add(ChatColor.YELLOW + "距離中心: " + ChatColor.WHITE + String.format("%.2f", calculateDistanceFromOrigin(player.getLocation())));
             lines.add(ChatColor.YELLOW + "當前基礎怪物等級: " + ChatColor.WHITE + "Lv." + calculateBaseLevel(player.getLocation()));
             lines.add(plugin.getWorldZoneManager().getDescription(player.getLocation()));
@@ -824,13 +938,36 @@ public class DistanceSpawnManager {
         }
 
         lines.add("");
-        lines.add(ChatColor.AQUA + "--- 統計 ---");
+        lines.add(ChatColor.AQUA + "--- 全服統計（本次插件啟動後） ---");
         lines.add(ChatColor.YELLOW + "總嘗試: " + ChatColor.WHITE + totalSpawnAttempts);
         lines.add(ChatColor.YELLOW + "總成功: " + ChatColor.GREEN + totalSpawnSuccess);
         lines.add(ChatColor.YELLOW + "位置失敗: " + ChatColor.RED + totalLocationFails);
+        lines.add("§e原版敵怪事件／被取消／替換成功: §f" + naturalEvents + " / " + cancelledNaturalEvents + " / " + naturalSuccesses);
+        lines.add("§e自然替換跳過統計: §f" + naturalSkips);
+        if (isVanillaMode() && naturalEvents == 0) lines.add("§7未觀測到接管來源的敵怪事件：檢查原版生怪、玩家距離、亮度、數量上限與其他插件。");
         lines.add(ChatColor.YELLOW + "追蹤中怪物: " + ChatColor.WHITE + getSpawnedMobCount());
         lines.add(ChatColor.GOLD + "===========================================");
         return lines;
+    }
+
+    /** Read-only diagnostics; never changes world gamerules, difficulty or protection settings. */
+    public List<String> getSpawnWarnings(Player player) {
+        List<String> warnings = new ArrayList<>();
+        World world = player.getWorld();
+        if (player.getGameMode() != GameMode.SURVIVAL && player.getGameMode() != GameMode.ADVENTURE)
+            warnings.add("需要生存／冒險玩家，創造／旁觀模式不參與自然替換");
+        if (disabledWorlds.contains(world.getName())) warnings.add("世界 " + world.getName() + " 位於 disabled-worlds");
+        if (world.getDifficulty() == Difficulty.PEACEFUL) warnings.add("世界難度為和平");
+        if (safeZoneManager.isInSafeZone(player.getLocation())) warnings.add("位於安全區，請離開出生點預設 150 格安全圈或既有安全區");
+        if (plugin.getProtectionAreaManager() != null && plugin.getProtectionAreaManager().isInProtectedArea2D(player.getLocation()))
+            warnings.add("位於本插件保護區");
+        if (nightOnly && (world.getTime() < 13000 || world.getTime() >= 23000)) warnings.add("conditions.night-only=true，目前不是夜間");
+        if (isVanillaMode()) {
+            if (Boolean.FALSE.equals(mobSpawningRule.apply(world))) warnings.add("spawn_mobs=false（舊 doMobSpawning=false），原版不會提供自然生怪來源");
+            if (!world.getAllowMonsters()) warnings.add("世界 allowMonsters=false");
+            if (world.getSpawnLimit(SpawnCategory.MONSTER) == 0) warnings.add("世界 MONSTER 生怪上限為 0");
+        }
+        return warnings;
     }
 
     public int clearAllSpawnedMobs() {
@@ -859,6 +996,7 @@ public class DistanceSpawnManager {
         boolean wasActive = active;
         plugin.getWorldZoneManager().reload();
         loadConfig();
+        wildernessBosses.reload();
         active = wasActive && enabled;
         safeZoneManager.reload();
         if (bossZoneManager != null) {
@@ -869,6 +1007,7 @@ public class DistanceSpawnManager {
     }
 
     public void shutdown() {
+        wildernessBosses.shutdown();
         if (spawnTask != null) {
             spawnTask.cancel();
             spawnTask = null;

@@ -1,364 +1,209 @@
 package com.customrpg.races;
 
 import com.customrpg.CustomRPG;
+import com.customrpg.managers.PlayerStatsManager;
 import com.customrpg.players.PlayerStats;
+import org.bukkit.*;
+import org.bukkit.attribute.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-
-import java.io.File;
-import java.io.IOException;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.scheduler.BukkitTask;
+import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * RaceManager - 種族管理系統
- *
- * 功能：
- * - 從 YAML 載入所有種族定義
- * - 管理玩家的種族選擇
- * - 計算並套用種族屬性加成
- * - 提供武器限制查詢
- * - 玩家數據持久化
- */
+/** Main-thread race definitions, durable selections, and one shared recovery timer. */
 public class RaceManager {
-
     private final CustomRPG plugin;
-    private final Map<String, RaceData> raceRegistry = new LinkedHashMap<>();
-    private final Map<UUID, String> playerRaces = new ConcurrentHashMap<>();
+    private final java.util.function.LongSupplier clock;
+    private final java.util.function.Function<Player,AttributeInstance> movementAttribute, healthAttribute;
+    private final Map<String,RaceData> raceRegistry=new LinkedHashMap<>();
+    private final Map<UUID,String> playerRaces=new HashMap<>();
+    private final Set<UUID> loaded=new HashSet<>(), loadFailed=new HashSet<>();
+    private final Map<UUID,Long> combatUntil=new HashMap<>();
     private final File raceDataFolder;
+    private final NamespacedKey speedKey=new NamespacedKey("customrpg","race_speed");
+    private BukkitTask recoveryTask;
+    private double recoveryBase=0.5;
+    private long combatDelay=8000;
+    private String lastError="";
 
     public RaceManager(CustomRPG plugin) {
-        this.plugin = plugin;
-        this.raceDataFolder = new File(plugin.getDataFolder(), "data/races");
-        if (!raceDataFolder.exists()) {
-            raceDataFolder.mkdirs();
-        }
-
+        this(plugin,System::currentTimeMillis);
+    }
+    RaceManager(CustomRPG plugin,java.util.function.LongSupplier clock) {
+        this(plugin,clock,player->player.getAttribute(Attribute.MOVEMENT_SPEED),player->player.getAttribute(Attribute.MAX_HEALTH));
+    }
+    RaceManager(CustomRPG plugin,java.util.function.LongSupplier clock,
+                java.util.function.Function<Player,AttributeInstance> movementAttribute,
+                java.util.function.Function<Player,AttributeInstance> healthAttribute) {
+        this.plugin=plugin; this.clock=clock; this.movementAttribute=movementAttribute; this.healthAttribute=healthAttribute;
+        raceDataFolder=new File(plugin.getDataFolder(),"data/races");
+        if(!raceDataFolder.isDirectory()&&!raceDataFolder.mkdirs()) plugin.getLogger().severe("[RaceManager] Cannot create race data directory");
         loadRaceConfig();
-        plugin.getLogger().info("[RaceManager] 已載入 " + raceRegistry.size() + " 個種族");
     }
-
-    // ===== 載入種族配置 =====
-
-    private void loadRaceConfig() {
-        // 確保默認配置檔案存在
-        File configFile = new File(plugin.getDataFolder(), "config/races.yml");
-        if (!configFile.exists()) {
-            configFile.getParentFile().mkdirs();
-            try {
-                plugin.saveResource("config/races.yml", false);
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("[RaceManager] 未找到內建 races.yml，將建立空配置");
-                try {
-                    configFile.createNewFile();
-                } catch (IOException ex) {
-                    plugin.getLogger().severe("[RaceManager] 無法建立 races.yml: " + ex.getMessage());
-                }
-            }
-        }
-
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-        ConfigurationSection racesSection = config.getConfigurationSection("races");
-        if (racesSection == null) {
-            plugin.getLogger().warning("[RaceManager] races.yml 中沒有 'races' 段落");
-            return;
-        }
-
-        for (String raceId : racesSection.getKeys(false)) {
-            ConfigurationSection section = racesSection.getConfigurationSection(raceId);
-            if (section == null) continue;
-
-            try {
-                RaceData data = parseRaceData(raceId, section);
-                raceRegistry.put(raceId.toLowerCase(), data);
-                plugin.getLogger().info("[RaceManager] 載入種族: " + raceId + " (" + data.getDisplayName() + ")");
-            } catch (Exception e) {
-                plugin.getLogger().warning("[RaceManager] 載入種族 '" + raceId + "' 失敗: " + e.getMessage());
-            }
+    private boolean loadRaceConfig() {
+        try {
+            var definitions=new LinkedHashMap<String,YamlConfiguration>();
+            readDefinitions("config/races_additional.yml",definitions);
+            YamlConfiguration main=readDefinitions("config/races.yml",definitions);
+            var candidate=new LinkedHashMap<String,RaceData>();
+            for(var entry:definitions.entrySet()) if(entry.getValue().getBoolean("enabled",true))
+                candidate.put(entry.getKey(),parseRaceData(entry.getKey(),entry.getValue()));
+            if(candidate.isEmpty()) throw new IllegalArgumentException("No enabled races");
+            double nextBase=main.getDouble("settings.passive-health-regen-base",0.5);
+            double delay=main.getDouble("settings.recovery-combat-delay-seconds",8);
+            if(!Double.isFinite(nextBase)||nextBase<0||nextBase>10||!Double.isFinite(delay)||delay<0||delay>300) throw new IllegalArgumentException("Invalid recovery settings");
+            raceRegistry.clear(); raceRegistry.putAll(candidate); recoveryBase=nextBase; combatDelay=(long)(delay*1000);
+            lastError=""; plugin.getLogger().info("[RaceManager] Loaded "+raceRegistry.size()+" races"); return true;
+        } catch(Exception error) {
+            lastError="種族設定載入失敗："+error.getMessage(); plugin.getLogger().severe("[RaceManager] "+lastError+"; previous definitions retained"); return false;
         }
     }
-
-    private RaceData parseRaceData(String id, ConfigurationSection section) {
-        RaceData.Builder builder = new RaceData.Builder(id);
-
-        // 名稱與描述
-        builder.displayName(section.getString("name", "§f" + id));
-        builder.description(section.getString("description", ""));
-
-        // 基礎屬性
-        ConfigurationSection baseStats = section.getConfigurationSection("base-stats");
-        if (baseStats != null) {
-            builder.baseStrength(baseStats.getInt("strength", 5));
-            builder.baseMagic(baseStats.getInt("magic", 5));
-            builder.baseAgility(baseStats.getInt("agility", 5));
-            builder.baseVitality(baseStats.getInt("vitality", 5));
-            builder.baseDefense(baseStats.getInt("defense", 5));
-            builder.baseSpirit(baseStats.getInt("spirit", 5));
-            builder.baseMana(baseStats.getInt("mana", 0));
-            builder.baseManaRegen(baseStats.getDouble("mana-regen", 0.0));
+    private YamlConfiguration readDefinitions(String resource,Map<String,YamlConfiguration> target) throws Exception {
+        File file=new File(plugin.getDataFolder(),resource);
+        if(!file.exists()) plugin.saveResource(resource,false);
+        var yaml=new YamlConfiguration(); yaml.load(file);
+        ConfigurationSection races=yaml.getConfigurationSection("races");
+        if(races==null) throw new IllegalArgumentException(resource+": missing races section");
+        Set<String> seen=new HashSet<>();
+        for(String raw:races.getKeys(false)) {
+            String id=raw.toLowerCase(Locale.ROOT);
+            if(!seen.add(id)) throw new IllegalArgumentException("Duplicate race ID: "+raw);
+            var section=races.getConfigurationSection(raw);
+            if(section==null) throw new IllegalArgumentException("Invalid race definition: "+raw);
+            var combined=target.computeIfAbsent(id,ignored->new YamlConfiguration());
+            for(var entry:section.getValues(true).entrySet()) if(!(entry.getValue() instanceof ConfigurationSection))
+                combined.set(entry.getKey(),entry.getValue());
         }
-
-        // 成長倍率
-        ConfigurationSection growth = section.getConfigurationSection("growth");
-        if (growth != null) {
-            builder.growthStrength(growth.getDouble("strength", 1.0));
-            builder.growthMagic(growth.getDouble("magic", 1.0));
-            builder.growthAgility(growth.getDouble("agility", 1.0));
-            builder.growthVitality(growth.getDouble("vitality", 1.0));
-            builder.growthDefense(growth.getDouble("defense", 1.0));
-            builder.growthSpirit(growth.getDouble("spirit", 1.0));
-            builder.growthMana(growth.getDouble("mana", 0.0));
-            builder.growthManaRegen(growth.getDouble("mana-regen", 0.0));
+        return yaml;
+    }
+    private RaceData parseRaceData(String id,ConfigurationSection section) {
+        var builder=new RaceData.Builder(id).displayName(section.getString("name","§f"+id)).description(section.getString("description",""));
+        builder.baseStrength(section.getInt("base-stats.strength",5)).baseMagic(section.getInt("base-stats.magic",5))
+                .baseAgility(section.getInt("base-stats.agility",5)).baseVitality(section.getInt("base-stats.vitality",5))
+                .baseDefense(section.getInt("base-stats.defense",5)).baseSpirit(section.getInt("base-stats.spirit",5))
+                .baseMana(section.getInt("base-stats.mana",0)).baseManaRegen(section.getDouble("base-stats.mana-regen",0));
+        builder.growthStrength(section.getDouble("growth.strength",1)).growthMagic(section.getDouble("growth.magic",1))
+                .growthAgility(section.getDouble("growth.agility",1)).growthVitality(section.getDouble("growth.vitality",1))
+                .growthDefense(section.getDouble("growth.defense",1)).growthSpirit(section.getDouble("growth.spirit",1))
+                .growthMana(section.getDouble("growth.mana",0)).growthManaRegen(section.getDouble("growth.mana-regen",0));
+        Map<String,Double> weapons=new LinkedHashMap<>(); var bonuses=section.getConfigurationSection("weapon.bonuses");
+        if(bonuses!=null) for(String key:bonuses.getKeys(false)) weapons.put(key,bonuses.getDouble(key,1));
+        return builder.skills(section.getStringList("skills")).weaponBonuses(weapons).defaultWeaponBonus(section.getDouble("weapon.default",1))
+                .bonusCritChance(section.getDouble("passives.crit-chance",0)).bonusCritDamage(section.getDouble("passives.crit-damage",0))
+                .bonusMoveSpeed(section.getDouble("passives.move-speed",0)).bonusHealthRegen(section.getDouble("passives.health-regen",0)).build();
+    }
+    public Collection<RaceData> getAllRaces() { return List.copyOf(raceRegistry.values()); }
+    public Set<String> getAllRaceIds() { return Collections.unmodifiableSet(new LinkedHashSet<>(raceRegistry.keySet())); }
+    public RaceData getRaceData(String id) { return id==null?null:raceRegistry.get(id.toLowerCase(Locale.ROOT)); }
+    public int getRaceCount() { return raceRegistry.size(); }
+    public String getLastError() { return lastError; }
+    public String getPlayerRaceId(Player player) { return getPlayerRaceId(player.getUniqueId()); }
+    public String getPlayerRaceId(UUID id) { if(!loaded.contains(id)) loadPlayerRace(id); return playerRaces.get(id); }
+    public RaceData getPlayerRaceData(Player player) { return getPlayerRaceData(player.getUniqueId()); }
+    public RaceData getPlayerRaceData(UUID id) { return getRaceData(getPlayerRaceId(id)); }
+    public boolean hasRace(Player player) {
+        String id=getPlayerRaceId(player); return id!=null||loadFailed.contains(player.getUniqueId());
+    }
+    public boolean isPlayerDataAvailable(Player player) {
+        getPlayerRaceId(player); return !loadFailed.contains(player.getUniqueId());
+    }
+    /** Ordinary selection is one-time even if a stale GUI tries again. */
+    public boolean choosePlayerRace(Player player,String raceId) { return !hasRace(player)&&setPlayerRace(player,raceId); }
+    /** Admin replacement commits directly; never reset the previous selection before saving. */
+    public boolean setPlayerRace(Player player,String raceId) {
+        UUID id=player.getUniqueId(); getPlayerRaceId(id); RaceData race=getRaceData(raceId);
+        if(race==null||loadFailed.contains(id)) return false;
+        if(!writeRace(id,race.getId())) return false;
+        if(plugin.getRacialSkillManager()!=null) plugin.getRacialSkillManager().cancel(player);
+        playerRaces.put(id,race.getId()); applyRaceStats(player); return true;
+    }
+    public void resetPlayerRace(Player player) { tryResetPlayerRace(player); }
+    public boolean tryResetPlayerRace(Player player) {
+        UUID id=player.getUniqueId(); getPlayerRaceId(id);
+        if(loadFailed.contains(id)||!writeRace(id,"")) return false;
+        if(plugin.getRacialSkillManager()!=null) plugin.getRacialSkillManager().cancel(player);
+        playerRaces.remove(id); applyRaceStats(player); return true;
+    }
+    public void applyRaceStats(Player player) {
+        RaceData race=getPlayerRaceData(player); PlayerStats stats=plugin.getPlayerStatsManager().getStats(player); int level=stats.getLevel();
+        stats.setRaceStrength(race==null?0:race.calculateStrengthBonus(level)); stats.setRaceMagic(race==null?0:race.calculateMagicBonus(level));
+        stats.setRaceAgility(race==null?0:race.calculateAgilityBonus(level)); stats.setRaceVitality(race==null?0:race.calculateVitalityBonus(level));
+        stats.setRaceDefense(race==null?0:race.calculateDefenseBonus(level)); stats.setRaceSpirit(race==null?0:race.calculateSpiritBonus(level));
+        plugin.getPlayerStatsManager().recalculateMana(player); plugin.getPlayerStatsManager().updateMaxHealth(player);
+        removeSpeed(player); var attribute=movementAttribute.apply(player);
+        if(race!=null&&attribute!=null&&race.getBonusMoveSpeed()!=0)
+            attribute.addTransientModifier(new AttributeModifier(speedKey,race.getBonusMoveSpeed(),AttributeModifier.Operation.ADD_SCALAR));
+    }
+    private void removeSpeed(Player player) {
+        var attribute=movementAttribute.apply(player);
+        if(attribute!=null) for(var modifier:new ArrayList<>(attribute.getModifiers())) if(speedKey.equals(modifier.getKey())) attribute.removeModifier(modifier);
+    }
+    public double getWeaponDamageBonus(Player player,String weaponType) {
+        RaceData race=getPlayerRaceData(player); return race==null?1:race.getWeaponBonus(weaponType);
+    }
+    public void loadPlayerRace(UUID id) {
+        if(loaded.contains(id)) return;
+        loaded.add(id); File file=new File(raceDataFolder,id+".yml"); if(!file.exists()) return;
+        try {
+            var yaml=new YamlConfiguration(); yaml.load(file);
+            if(!yaml.isString("race")) throw new IOException("Missing or invalid race ID");
+            String race=yaml.getString("race").toLowerCase(Locale.ROOT);
+            if(!race.isEmpty()&&!race.matches("[a-z0-9_]+")) throw new IOException("Invalid race ID");
+            if(!race.isEmpty()) playerRaces.put(id,race); // removed definitions still reserve the player's choice
+        } catch(Exception error) {
+            loadFailed.add(id); lastError="玩家種族資料讀取失敗；原檔保留："+id;
+            plugin.getLogger().severe("[RaceManager] "+lastError+": "+error.getMessage());
         }
-
-        // 技能
-        List<String> skills = section.getStringList("skills");
-        if (skills.size() > 2) {
-            skills = skills.subList(0, 2); // 最多2個技能
+    }
+    private boolean writeRace(UUID id,String race) {
+        if(loadFailed.contains(id)) return false;
+        var yaml=new YamlConfiguration(); yaml.set("race",race);
+        try { PlayerStatsManager.saveAtomically(yaml,new File(raceDataFolder,id+".yml")); lastError=""; return true; }
+        catch(IOException error) { lastError="種族儲存失敗；原有選擇未變更"; plugin.getLogger().severe("[RaceManager] "+lastError+": "+error.getMessage()); return false; }
+    }
+    public void savePlayerRace(UUID id) { if(playerRaces.containsKey(id)) writeRace(id,playerRaces.get(id)); }
+    public void unloadPlayer(UUID id) {
+        if(!playerRaces.containsKey(id)||writeRace(id,playerRaces.get(id))) { playerRaces.remove(id); loaded.remove(id); loadFailed.remove(id); }
+        combatUntil.remove(id);
+    }
+    public void saveAll() { for(UUID id:new ArrayList<>(playerRaces.keySet())) savePlayerRace(id); }
+    public void reload() { reloadConfiguration(); }
+    public boolean reloadConfiguration() {
+        if(!loadRaceConfig()) return false;
+        for(Player player:plugin.getServer().getOnlinePlayers()) {
+            UUID id=player.getUniqueId(); if(loadFailed.remove(id)) { loaded.remove(id); loadPlayerRace(id); }
+            if(plugin.getRacialSkillManager()!=null) plugin.getRacialSkillManager().cancel(player);
+            applyRaceStats(player);
         }
-        builder.skills(skills);
-
-        // 武器類型加成
-        ConfigurationSection weaponSection = section.getConfigurationSection("weapon");
-        if (weaponSection != null) {
-            builder.defaultWeaponBonus(weaponSection.getDouble("default", 1.0));
-
-            ConfigurationSection bonuses = weaponSection.getConfigurationSection("bonuses");
-            if (bonuses != null) {
-                java.util.Map<String, Double> weaponBonuses = new java.util.LinkedHashMap<>();
-                for (String weaponType : bonuses.getKeys(false)) {
-                    weaponBonuses.put(weaponType.toUpperCase(), bonuses.getDouble(weaponType, 1.0));
-                }
-                builder.weaponBonuses(weaponBonuses);
-            }
-        }
-
-        // 被動效果
-        ConfigurationSection passives = section.getConfigurationSection("passives");
-        if (passives != null) {
-            builder.bonusCritChance(passives.getDouble("crit-chance", 0.0));
-            builder.bonusCritDamage(passives.getDouble("crit-damage", 0.0));
-            builder.bonusMoveSpeed(passives.getDouble("move-speed", 0.0));
-            builder.bonusHealthRegen(passives.getDouble("health-regen", 0.0));
-        }
-
-        return builder.build();
-    }
-
-    // ===== 種族查詢 =====
-
-    /**
-     * 取得所有已註冊的種族
-     */
-    public Collection<RaceData> getAllRaces() {
-        return raceRegistry.values();
-    }
-
-    /**
-     * 取得所有種族 ID
-     */
-    public Set<String> getAllRaceIds() {
-        return raceRegistry.keySet();
-    }
-
-    /**
-     * 取得指定種族資料
-     */
-    public RaceData getRaceData(String raceId) {
-        if (raceId == null) return null;
-        return raceRegistry.get(raceId.toLowerCase());
-    }
-
-    /**
-     * 取得種族數量
-     */
-    public int getRaceCount() {
-        return raceRegistry.size();
-    }
-
-    // ===== 玩家種族管理 =====
-
-    /**
-     * 取得玩家的種族 ID
-     */
-    public String getPlayerRaceId(Player player) {
-        return getPlayerRaceId(player.getUniqueId());
-    }
-
-    public String getPlayerRaceId(UUID uuid) {
-        return playerRaces.get(uuid);
-    }
-
-    /**
-     * 取得玩家的種族資料
-     */
-    public RaceData getPlayerRaceData(Player player) {
-        String raceId = getPlayerRaceId(player);
-        if (raceId == null) return null;
-        return getRaceData(raceId);
-    }
-
-    public RaceData getPlayerRaceData(UUID uuid) {
-        String raceId = getPlayerRaceId(uuid);
-        if (raceId == null) return null;
-        return getRaceData(raceId);
-    }
-
-    /**
-     * 設定玩家的種族
-     * @return true 如果設定成功
-     */
-    public boolean setPlayerRace(Player player, String raceId) {
-        if (raceId == null || !raceRegistry.containsKey(raceId.toLowerCase())) {
-            return false;
-        }
-
-        playerRaces.put(player.getUniqueId(), raceId.toLowerCase());
-        applyRaceStats(player);
-        savePlayerRace(player.getUniqueId());
         return true;
     }
-
-    /**
-     * 檢查玩家是否已選擇種族
-     */
-    public boolean hasRace(Player player) {
-        return playerRaces.containsKey(player.getUniqueId());
+    public void markCombat(Player player) { combatUntil.put(player.getUniqueId(),clock.getAsLong()+combatDelay); }
+    public double getRecoveryPerSecond(RaceData race) { return race==null?0:Math.max(0,recoveryBase+race.getBonusHealthRegen()); }
+    public void start() {
+        if(recoveryTask!=null) return;
+        for(Player player:plugin.getServer().getOnlinePlayers()) { applyRaceStats(player); markCombat(player); }
+        recoveryTask=plugin.getServer().getScheduler().runTaskTimer(plugin,this::recoverPlayers,20L,20L);
     }
-
-    /**
-     * 重置玩家的種族 (管理員功能)
-     */
-    public void resetPlayerRace(Player player) {
-        playerRaces.remove(player.getUniqueId());
-
-        // 清除種族屬性加成
-        PlayerStats stats = plugin.getPlayerStatsManager().getStats(player);
-        stats.setRaceStrength(0);
-        stats.setRaceMagic(0);
-        stats.setRaceAgility(0);
-        stats.setRaceVitality(0);
-        stats.setRaceDefense(0);
-        stats.setRaceSpirit(0);
-
-        // 更新血量
-        plugin.getPlayerStatsManager().updateMaxHealth(player);
-
-        // 刪除檔案
-        File file = new File(raceDataFolder, player.getUniqueId().toString() + ".yml");
-        if (file.exists()) {
-            file.delete();
+    private void recoverPlayers() {
+        long now=clock.getAsLong();
+        for(Player player:plugin.getServer().getOnlinePlayers()) {
+            if(!player.isOnline()||player.isDead()||(player.getGameMode()!=GameMode.SURVIVAL&&player.getGameMode()!=GameMode.ADVENTURE)
+                    ||combatUntil.getOrDefault(player.getUniqueId(),0L)>now) continue;
+            double amount=getRecoveryPerSecond(getPlayerRaceData(player)); var health=healthAttribute.apply(player);
+            if(amount<=0||health==null||player.getHealth()>=health.getValue()) continue;
+            var event=new EntityRegainHealthEvent(player,amount,EntityRegainHealthEvent.RegainReason.CUSTOM);
+            plugin.getServer().getPluginManager().callEvent(event);
+            if(!event.isCancelled()&&Double.isFinite(event.getAmount())&&event.getAmount()>0&&!player.isDead())
+                player.setHealth(Math.min(health.getValue(),player.getHealth()+event.getAmount()));
         }
     }
-
-    // ===== 套用種族效果 =====
-
-    /**
-     * 套用種族屬性加成到玩家
-     */
-    public void applyRaceStats(Player player) {
-        RaceData raceData = getPlayerRaceData(player);
-        if (raceData == null) return;
-
-        PlayerStats stats = plugin.getPlayerStatsManager().getStats(player);
-        int level = stats.getLevel();
-
-        // 設定種族屬性加成 (基礎 + 等級成長)
-        stats.setRaceStrength(raceData.calculateStrengthBonus(level));
-        stats.setRaceMagic(raceData.calculateMagicBonus(level));
-        stats.setRaceAgility(raceData.calculateAgilityBonus(level));
-        stats.setRaceVitality(raceData.calculateVitalityBonus(level));
-        stats.setRaceDefense(raceData.calculateDefenseBonus(level));
-        stats.setRaceSpirit(raceData.calculateSpiritBonus(level));
-
-        // 設定種族魔力加成 (基礎魔力 100 + 種族基礎 + 等級成長)
-        double raceManaBonus = raceData.calculateManaBonus(level);
-        double raceManaRegenBonus = raceData.calculateManaRegenBonus(level);
-
-        // 計算最終最大魔力：基礎100 + 種族加成 + 裝備加成
-        double baseMaxMana = 100.0 + raceManaBonus + stats.getBonusMaxMana();
-        stats.setMaxMana(baseMaxMana);
-
-        // 計算最終魔力回復：基礎1.0 + 種族加成 + 裝備加成
-        double baseManaRegen = 1.0 + raceManaRegenBonus + stats.getBonusManaRegen();
-        stats.setManaRegen(baseManaRegen);
-
-        // 更新血量
-        plugin.getPlayerStatsManager().updateMaxHealth(player);
-    }
-
-    /**
-     * 取得玩家對指定武器類型的傷害加成倍率
-     * @param player 玩家
-     * @param weaponType 武器類型名稱 (如 "SWORD", "BOW", "AXE" 等)
-     * @return 傷害倍率 (例: 1.3 = 130% 傷害)
-     */
-    public double getWeaponDamageBonus(Player player, String weaponType) {
-        RaceData raceData = getPlayerRaceData(player);
-        if (raceData == null) return 1.0;
-        return raceData.getWeaponBonus(weaponType);
-    }
-
-    // ===== 資料持久化 =====
-
-    /**
-     * 載入玩家的種族資料 (登入時呼叫)
-     */
-    public void loadPlayerRace(UUID uuid) {
-        File file = new File(raceDataFolder, uuid.toString() + ".yml");
-        if (!file.exists()) return;
-
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-        String raceId = config.getString("race");
-        if (raceId != null && raceRegistry.containsKey(raceId.toLowerCase())) {
-            playerRaces.put(uuid, raceId.toLowerCase());
-        }
-    }
-
-    /**
-     * 儲存玩家的種族資料
-     */
-    public void savePlayerRace(UUID uuid) {
-        String raceId = playerRaces.get(uuid);
-        if (raceId == null) return;
-
-        File file = new File(raceDataFolder, uuid.toString() + ".yml");
-        YamlConfiguration config = new YamlConfiguration();
-        config.set("race", raceId);
-
-        try {
-            config.save(file);
-        } catch (IOException e) {
-            plugin.getLogger().warning("[RaceManager] 無法儲存玩家種族資料: " + uuid);
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 卸載玩家資料 (登出時呼叫)
-     */
-    public void unloadPlayer(UUID uuid) {
-        savePlayerRace(uuid);
-        playerRaces.remove(uuid);
-    }
-
-    /**
-     * 儲存所有玩家的種族資料
-     */
-    public void saveAll() {
-        for (UUID uuid : playerRaces.keySet()) {
-            savePlayerRace(uuid);
-        }
-    }
-
-    /**
-     * 重新載入種族配置
-     */
-    public void reload() {
-        raceRegistry.clear();
-        loadRaceConfig();
-        plugin.getLogger().info("[RaceManager] 種族配置已重新載入，共 " + raceRegistry.size() + " 個種族");
+    public void detach(Player player) { removeSpeed(player); unloadPlayer(player.getUniqueId()); }
+    public void shutdown() {
+        if(recoveryTask!=null) { recoveryTask.cancel(); recoveryTask=null; }
+        for(Player player:plugin.getServer().getOnlinePlayers()) removeSpeed(player);
+        saveAll(); combatUntil.clear();
     }
 }
-

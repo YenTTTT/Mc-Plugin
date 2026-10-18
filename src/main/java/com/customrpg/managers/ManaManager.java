@@ -75,7 +75,8 @@ public class ManaManager {
         }
 
         // 計算總回復速度（基礎 + 裝備加成）
-        double totalRegen = stats.getManaRegen() + getEquipmentManaRegen(player);
+        // Equipment and race regeneration are already included by recalculateMana; never parse lore a second time.
+        double totalRegen = stats.getManaRegen();
 
         // 回復魔力
         stats.restoreMana(totalRegen);

@@ -78,6 +78,11 @@ public class MobListener implements Listener {
         startCustomMobBehaviors();
     }
 
+    private String behaviorFor(MobManager.MobData data) {
+        var encounters = plugin.getMobEncounterManager();
+        return encounters != null && encounters.usesNewBehavior(data.getKey()) ? "encounter" : data.getSpecialBehavior();
+    }
+
     /**
      * Start periodic behaviors for custom mobs
      */
@@ -85,16 +90,13 @@ public class MobListener implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (org.bukkit.World world : plugin.getServer().getWorlds()) {
-                    for (Entity entity : world.getEntities()) {
-                        String mobKey = mobManager.getCustomMobKey(entity);
-                        if (mobKey == null) continue;
-
-                        MobManager.MobData mobData = mobManager.getMobData(mobKey);
-                        if (mobData == null) continue;
-
-                        applyPeriodicBehavior(entity, mobData);
-                    }
+                var encounters = plugin.getMobEncounterManager();
+                if (encounters == null) return;
+                for (LivingEntity entity : encounters.legacyMobs()) {
+                    if (!entity.isValid() || entity.isDead()) continue;
+                    String mobKey = mobManager.getCustomMobKey(entity);
+                    MobManager.MobData mobData = mobManager.getMobData(mobKey);
+                    if (mobData != null) applyPeriodicBehavior(entity, mobData);
                 }
             }
         }.runTaskTimer(plugin, 0L, 60L);
@@ -111,7 +113,7 @@ public class MobListener implements Listener {
         }
 
         LivingEntity mob = (LivingEntity) entity;
-        String behavior = mobData.getSpecialBehavior().toLowerCase();
+        String behavior = behaviorFor(mobData).toLowerCase();
 
         switch (behavior) {
             case "snowball_thrower" -> {
@@ -241,17 +243,17 @@ public class MobListener implements Listener {
 
             // Handle custom mob drops or effects
             // For example, splitting slimes
-            if (mobData.getSpecialBehavior().equalsIgnoreCase("split_on_death")) {
+            if (behaviorFor(mobData).equalsIgnoreCase("split_on_death")) {
                 splitSlime(event.getEntity(), mobData);
             }
 
             // 黏液爆破者：延遲爆炸
-            if (mobData.getSpecialBehavior().equalsIgnoreCase("delayed_explosion")) {
+            if (behaviorFor(mobData).equalsIgnoreCase("delayed_explosion")) {
                 delayedExplosion(event.getEntity().getLocation(), mobLevel);
             }
 
             // 熔核巨獸：Boss 死亡 → 清理狀態 + 公告
-            if (mobData.getSpecialBehavior().equalsIgnoreCase("boss_magma_core")) {
+            if (behaviorFor(mobData).equalsIgnoreCase("boss_magma_core")) {
                 MagmaCoreState bossState = magmaCoreStates.remove(event.getEntity().getUniqueId());
                 if (bossState != null) {
                     for (UUID splitUuid : bossState.activeSplits) {
@@ -271,7 +273,7 @@ public class MobListener implements Listener {
             }
 
             // 熔核分裂體：死亡 → 分裂成 2 隻小型碎體
-            if (mobData.getSpecialBehavior().equalsIgnoreCase("magma_core_medium")) {
+            if (behaviorFor(mobData).equalsIgnoreCase("magma_core_medium")) {
                 spawnSmallSplits(event.getEntity(), 2);
             }
 
@@ -502,7 +504,7 @@ public class MobListener implements Listener {
                 MobManager.MobData targetData = mobManager.getMobData(targetMobKey);
                 if (targetData != null) {
                     // 南瓜騎士：35% 格擋 → 減傷60%
-                    if (targetData.getSpecialBehavior().equalsIgnoreCase("boss_pumpkin_knight")) {
+                    if (behaviorFor(targetData).equalsIgnoreCase("boss_pumpkin_knight")) {
                         if (random.nextDouble() < 0.35) {
                             event.setDamage(event.getDamage() * 0.4);
                             target.getWorld().spawnParticle(Particle.ENCHANTED_HIT, target.getLocation().add(0, 1, 0),
@@ -540,6 +542,7 @@ public class MobListener implements Listener {
         }
 
         LivingEntity attacker = (LivingEntity) event.getDamager();
+        if (com.customrpg.utils.SkillDamageGuard.isSkillDamage(attacker)) return;
         String mobKey = mobManager.getCustomMobKey(attacker);
 
         if (mobKey == null) {
@@ -556,7 +559,7 @@ public class MobListener implements Listener {
         double scaledDamage = mobData.calculateDamage(mobLevel);
 
         // 狂戰殭屍：HP < 30% → +50% 傷害
-        if (mobData.getSpecialBehavior().equalsIgnoreCase("berserker_rage")) {
+        if (behaviorFor(mobData).equalsIgnoreCase("berserker_rage")) {
             double hpPercent = MobManager.hasVirtualHP(attacker)
                     ? MobManager.getVirtualCurrentHP(attacker) / MobManager.getVirtualMaxHP(attacker)
                     : attacker.getHealth() / attacker.getMaxHealth();
@@ -569,7 +572,7 @@ public class MobListener implements Listener {
         }
 
         // 潛伏蜘蛛：隱形狀態下第一擊 +80% 傷害
-        if (mobData.getSpecialBehavior().equalsIgnoreCase("stalker_stealth")) {
+        if (behaviorFor(mobData).equalsIgnoreCase("stalker_stealth")) {
             if (attacker.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
                 scaledDamage *= 1.8;
                 attacker.removePotionEffect(PotionEffectType.INVISIBILITY);
@@ -586,7 +589,7 @@ public class MobListener implements Listener {
         event.setDamage(scaledDamage);
 
         // 冰霜殭屍：攻擊附帶緩速
-        if (mobData.getSpecialBehavior().equalsIgnoreCase("frost_attack")) {
+        if (behaviorFor(mobData).equalsIgnoreCase("frost_attack")) {
             if (event.getEntity() instanceof Player victim) {
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 1)); // 3秒 緩速II
                 victim.getWorld().spawnParticle(Particle.SNOWFLAKE, victim.getLocation().add(0, 1, 0),
@@ -596,7 +599,7 @@ public class MobListener implements Listener {
         }
 
         // ═══ 南瓜騎士：30% 重擊（2倍傷害 + 擊退） ═══
-        if (mobData.getSpecialBehavior().equalsIgnoreCase("boss_pumpkin_knight")) {
+        if (behaviorFor(mobData).equalsIgnoreCase("boss_pumpkin_knight")) {
             if (random.nextDouble() < 0.3) {
                 scaledDamage *= 2.0;
                 event.setDamage(scaledDamage);
@@ -612,7 +615,7 @@ public class MobListener implements Listener {
         }
 
         // ═══ 瘋狂剪刀手：每次攻擊附帶流血（凋零 1 秒）+ 雙重攻擊（40% 機率連擊）═══
-        if (mobData.getSpecialBehavior().equalsIgnoreCase("boss_scissor_frenzy")) {
+        if (behaviorFor(mobData).equalsIgnoreCase("boss_scissor_frenzy")) {
             if (event.getEntity() instanceof Player victim) {
                 // 流血
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 20, 0, false, true)); // 1秒凋零
@@ -628,7 +631,7 @@ public class MobListener implements Listener {
                         public void run() {
                             if (attacker.isDead() || victim.isDead()) return;
                             if (attacker.getLocation().distance(victim.getLocation()) > 4) return;
-                            victim.damage(comboDamage, attacker);
+                            if (!specialHit(attacker, victim, comboDamage)) return;
                             attacker.getWorld().spawnParticle(Particle.SWEEP_ATTACK, victim.getLocation().add(0, 1, 0),
                                     3, 0.3, 0.3, 0.3, 0);
                             attacker.getWorld().playSound(victim.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.8f, 1.8f);
@@ -685,7 +688,7 @@ public class MobListener implements Listener {
             return;
         }
 
-        if (mobData.getSpecialBehavior().equalsIgnoreCase("fire_arrows")) {
+        if (behaviorFor(mobData).equalsIgnoreCase("fire_arrows")) {
             if (event.getEntity() instanceof Arrow) {
                 Arrow arrow = (Arrow) event.getEntity();
                 arrow.setFireTicks(1000);
@@ -693,7 +696,7 @@ public class MobListener implements Listener {
         }
 
         // 爆裂骷髏：標記箭矢為爆炸箭
-        if (mobData.getSpecialBehavior().equalsIgnoreCase("explosive_arrow")) {
+        if (behaviorFor(mobData).equalsIgnoreCase("explosive_arrow")) {
             if (event.getEntity() instanceof Arrow arrow) {
                 arrow.getPersistentDataContainer().set(
                         new org.bukkit.NamespacedKey(plugin, "explosive_arrow"),
@@ -725,6 +728,32 @@ public class MobListener implements Listener {
         snowball.setShooter(mob);
     }
 
+    private boolean specialEligible(LivingEntity source, Player victim) {
+        if (!source.isValid() || source.isDead() || !victim.isOnline() || victim.isDead()
+                || !source.getWorld().equals(victim.getWorld()) || !source.hasLineOfSight(victim)
+                || (victim.getGameMode() != GameMode.SURVIVAL && victim.getGameMode() != GameMode.ADVENTURE)) return false;
+        if (plugin.getSafeZoneManager() != null && plugin.getSafeZoneManager().isInSafeZone(victim.getLocation())) return false;
+        if (plugin.getProtectionAreaManager() != null && plugin.getProtectionAreaManager().isInProtectedArea2D(victim.getLocation())) return false;
+        return !(source instanceof Mob ai) || plugin.getDistanceSpawnManager() == null
+                || !plugin.getDistanceSpawnManager().shouldCancelTarget(ai, victim);
+    }
+    private boolean specialHit(LivingEntity source, Player victim, double amount) {
+        if (!specialEligible(source, victim)) return false;
+        double before = victim.getHealth() + victim.getAbsorptionAmount();
+        com.customrpg.utils.SkillDamageGuard.damage(victim, amount, source);
+        return victim.getHealth() + victim.getAbsorptionAmount() < before;
+    }
+    private double specialDamage(LivingEntity source, double multiplier) {
+        var data = mobManager.getMobData(mobManager.getCustomMobKey(source));
+        return data == null ? 1 : Math.max(1, data.calculateDamage(mobManager.getMobLevel(source)) * multiplier);
+    }
+    private void specialIgnite(LivingEntity source, Player player, int seconds) {
+        var event = new org.bukkit.event.entity.EntityCombustByEntityEvent(source, player, (float)seconds);
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (!event.isCancelled() && Float.isFinite(event.getDuration()) && event.getDuration() > 0)
+            player.setFireTicks(Math.max(player.getFireTicks(), Math.min(200, (int)(event.getDuration() * 20))));
+    }
+
     /**
      * Get the nearest player to a mob within range
      * @param mob The mob entity
@@ -737,7 +766,7 @@ public class MobListener implements Listener {
 
         for (Entity entity : mob.getNearbyEntities(range, range, range)) {
             if (entity instanceof Player player) {
-                if (player.getGameMode() == org.bukkit.GameMode.CREATIVE || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
+                if (!specialEligible(mob, player)) continue;
                 double distance = mob.getLocation().distance(player.getLocation());
                 if (distance < nearestDistance) {
                     nearest = player;
@@ -1164,7 +1193,7 @@ public class MobListener implements Listener {
                             MobManager.MobData data = mobManager.getMobData(key);
                             if (data != null) chargeDmg = data.calculateDamage(level) * 2.5;
                         }
-                        player.damage(chargeDmg, mob);
+                        if (!specialHit(mob, player, chargeDmg)) continue;
 
                         // 擊飛
                         Vector knockback = direction.clone().multiply(1.5).setY(0.7);
@@ -1513,25 +1542,17 @@ public class MobListener implements Listener {
                     }
                 }
 
-                // 地面點火
-                for (int x = -5; x <= 5; x++) {
-                    for (int z = -5; z <= 5; z++) {
-                        if (random.nextDouble() < 0.35) {
-                            org.bukkit.block.Block above = landLoc.clone().add(x, 0, z).getBlock();
-                            org.bukkit.block.Block below = landLoc.clone().add(x, -1, z).getBlock();
-                            if (above.getType().isAir() && below.getType().isSolid() && !below.isLiquid()) {
-                                above.setType(org.bukkit.Material.FIRE);
-                            }
-                        }
-                    }
-                }
+                // 火焰只作視覺提示，不放置可蔓延的方塊。
+                landLoc.getWorld().spawnParticle(Particle.FLAME, landLoc.clone().add(0, 0.1, 0), 50, 4, 0.1, 4, 0.02);
 
                 // 擊退 + 傷害玩家
                 for (Entity e : landLoc.getWorld().getNearbyEntities(landLoc, 7, 5, 7)) {
                     if (!(e instanceof Player p) || p.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
-                    Vector kb = p.getLocation().toVector().subtract(landLoc.toVector()).normalize().multiply(1.8).setY(0.6);
+                    if (p.getLocation().distanceSquared(landLoc) > 49 || !specialHit(mob, p, specialDamage(mob, 1.2))) continue;
+                    Vector kb = p.getLocation().toVector().subtract(landLoc.toVector());
+                    if (kb.lengthSquared() > 0.001) kb.normalize().multiply(1.8);
+                    kb.setY(0.6);
                     p.setVelocity(kb);
-                    p.damage(18.0, mob);
                     p.sendMessage(ChatColor.RED + "💥 熔核重壓震波！");
                 }
                 cancel();
@@ -1553,8 +1574,8 @@ public class MobListener implements Listener {
             SmallFireball fb = mob.getWorld().spawn(loc, SmallFireball.class);
             fb.setVelocity(dir);
             fb.setShooter(mob);
-            fb.setIsIncendiary(true);
-            fb.setYield(2.0f);
+            fb.setIsIncendiary(false);
+            fb.setYield(0);
         }
     }
 
@@ -1562,62 +1583,33 @@ public class MobListener implements Listener {
     private void magmaAbsorb(LivingEntity mob, MagmaCoreState state) {
         state.lastAbsorbMs = System.currentTimeMillis();
         Location loc = mob.getLocation();
-        broadcast(loc, 30, ChatColor.GOLD + "⚠ 熔核吞噬！摧毀附近的熔岩阻止回血！");
+        broadcast(loc, 30, ChatColor.GOLD + "⚠ 熔核吞噬！5 秒內靠近橘色能量點，壓制它的回復！");
         mob.getWorld().playSound(loc, Sound.BLOCK_LAVA_AMBIENT, 2.0f, 0.5f);
-
-        // 在周圍放 3 塊熔岩（玩家可以清除）
-        List<org.bukkit.block.Block> lavaBlocks = new ArrayList<>();
-        for (int t = 0; t < 3; t++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            int dist = 4 + random.nextInt(4);
-            org.bukkit.block.Block above = loc.clone().add(Math.cos(angle) * dist, 0, Math.sin(angle) * dist).getBlock();
-            org.bukkit.block.Block below = above.getRelative(org.bukkit.block.BlockFace.DOWN);
-            if (above.getType().isAir() && below.getType().isSolid() && !below.isLiquid()) {
-                above.setType(org.bukkit.Material.LAVA);
-                lavaBlocks.add(above);
-            }
+        List<Location> energyPoints = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            double angle = Math.PI * 2 * i / 3;
+            Location point = loc.clone().add(Math.cos(angle) * 5, 0.2, Math.sin(angle) * 5);
+            if (point.getWorld().isChunkLoaded(point.getBlockX() >> 4, point.getBlockZ() >> 4)) energyPoints.add(point);
         }
-
-        // 吸收粒子動畫
         new BukkitRunnable() {
-            int ticks = 0;
-            @Override
-            public void run() {
-                if (mob.isDead() || ticks >= 20) { cancel(); return; }
-                Location center = mob.getLocation().add(0, 1, 0);
-                for (int k = 0; k < 8; k++) {
-                    double px = center.getX() + (random.nextDouble() - 0.5) * 12;
-                    double py = center.getY() + (random.nextDouble() - 0.5) * 4;
-                    double pz = center.getZ() + (random.nextDouble() - 0.5) * 12;
-                    center.getWorld().spawnParticle(Particle.DRIPPING_LAVA, new Location(center.getWorld(), px, py, pz), 1, 0, 0, 0, 0);
-                }
-                ticks++;
+            int ticks;
+            @Override public void run() {
+                if (!mob.isValid() || mob.isDead()) { cancel(); return; }
+                energyPoints.removeIf(point -> point.getWorld().getNearbyPlayers(point, 2).stream().anyMatch(player ->
+                        (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)
+                        && player.getLocation().distanceSquared(point) <= 4 && player.hasLineOfSight(mob)));
+                for (Location point : energyPoints) point.getWorld().spawnParticle(Particle.FLAME, point, 6, 0.3, 0.4, 0.3, 0.01);
+                if ((ticks += 5) < 100) return;
+                if (!energyPoints.isEmpty()) {
+                    var heal = new EntityRegainHealthEvent(mob, mob.getMaxHealth() * 0.05 * energyPoints.size(), EntityRegainHealthEvent.RegainReason.CUSTOM);
+                    plugin.getServer().getPluginManager().callEvent(heal);
+                    if (!heal.isCancelled() && Double.isFinite(heal.getAmount()) && heal.getAmount() > 0)
+                        mob.setHealth(Math.min(mob.getMaxHealth(), mob.getHealth() + heal.getAmount()));
+                    broadcast(mob.getLocation(), 35, ChatColor.RED + "[熔核巨獸] 吸收了未被壓制的能量！");
+                } else broadcast(mob.getLocation(), 35, ChatColor.GREEN + "[熔核巨獸] 能量已全數壓制！回血被阻止！");
+                cancel();
             }
         }.runTaskTimer(plugin, 0L, 5L);
-
-        // 5 秒後判定
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (mob.isDead()) { lavaBlocks.forEach(b -> { if (b.getType() == org.bukkit.Material.LAVA) b.setType(org.bukkit.Material.AIR); }); return; }
-                long remaining = lavaBlocks.stream().filter(b -> b.getType() == org.bukkit.Material.LAVA).count();
-                if (remaining > 0) {
-                    double heal = mob.getMaxHealth() * 0.05 * remaining;
-                    if (MobManager.hasVirtualHP(mob)) {
-                        MobManager.healVirtualHP(mob, heal);
-                        double vCurrent = MobManager.getVirtualCurrentHP(mob);
-                        broadcast(mob.getLocation(), 35, ChatColor.RED + "[熔核巨獸] 吸收了熔岩！回復 " + ChatColor.YELLOW + (int)(heal * MobManager.getVirtualMaxHP(mob) / MobManager.getMcMaxHealthCap()) + ChatColor.RED + " 生命值！");
-                    } else {
-                        mob.setHealth(Math.min(mob.getHealth() + heal, mob.getMaxHealth()));
-                        broadcast(mob.getLocation(), 35, ChatColor.RED + "[熔核巨獸] 吸收了熔岩！回復 " + ChatColor.YELLOW + (int) heal + ChatColor.RED + " 生命值！");
-                    }
-                    mob.getWorld().spawnParticle(Particle.HEART, mob.getLocation().add(0, 3, 0), 10, 0.5, 0.5, 0.5, 0.1);
-                } else {
-                    broadcast(mob.getLocation(), 35, ChatColor.GREEN + "[熔核巨獸] 熔岩被全數摧毀！回血被阻止！");
-                }
-                lavaBlocks.forEach(b -> { if (b.getType() == org.bukkit.Material.LAVA) b.setType(org.bukkit.Material.AIR); });
-            }
-        }.runTaskLater(plugin, 100L);
     }
 
     // ── 技能 4：岩漿浪潮 ─────────────────────────────────────
@@ -1649,9 +1641,9 @@ public class MobListener implements Listener {
                 Location waveCenter = mobLoc.clone().add(toward.clone().multiply(dist)).add(0, 0.5, 0);
                 for (Entity e : waveCenter.getWorld().getNearbyEntities(waveCenter, 3, 2, 3)) {
                     if (!(e instanceof Player p) || p.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
+                    if (!specialHit(mob, p, specialDamage(mob, 0.8))) continue;
                     p.setVelocity(toward.clone().multiply(1.5).setY(0.35));
-                    p.setFireTicks(80);
-                    p.damage(8.0, mob);
+                    specialIgnite(mob, p, 4);
                     p.sendMessage(ChatColor.RED + "🌊 岩漿浪潮衝擊！");
                 }
                 wave++;
@@ -1687,8 +1679,8 @@ public class MobListener implements Listener {
                 }
                 for (Entity e : finalLoc.getWorld().getNearbyEntities(finalLoc, 1.5, 6, 1.5)) {
                     if (!(e instanceof Player p) || p.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
-                    p.setFireTicks(60);
-                    p.damage(5.0, mob);
+                    if (!specialHit(mob, p, specialDamage(mob, 0.6))) continue;
+                    specialIgnite(mob, p, 3);
                 }
                 ticks += 5;
             }

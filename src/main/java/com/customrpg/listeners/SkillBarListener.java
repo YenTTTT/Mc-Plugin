@@ -2,206 +2,82 @@ package com.customrpg.listeners;
 
 import com.customrpg.CustomRPG;
 import com.customrpg.managers.SkillBarManager;
-import com.customrpg.managers.TalentManager;
-import com.customrpg.managers.TalentSkillManager;
-import com.customrpg.players.PlayerTalents;
-import com.customrpg.talents.Talent;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.ChatColor;
-import org.bukkit.Sound;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerItemHeldEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.event.*;
+import org.bukkit.event.player.*;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-/**
- * SkillBarListener - 快捷技能列監聽器
- *
- * 當玩家啟用快捷技能列模式後，按下鍵盤 1~4 會攔截熱鍵欄切換事件，
- * 直接施放對應技能槽中的已攜帶天賦技能。
- * 關閉模式後恢復原生熱鍵欄行為，技能仍可透過正常 mechanism 施放。
- */
+/** Vanilla hotbar selection bindings: talent slots 1-4, racial ability 5, held equipment 6-9. */
 public class SkillBarListener implements Listener {
-
     private final CustomRPG plugin;
-    private final SkillBarManager skillBarManager;
+    private final SkillBarManager manager;
+    private final Map<UUID, BukkitTask> hudTasks = new HashMap<>();
 
-    // 快捷列 HUD 顯示任務
-    private final Map<UUID, BukkitRunnable> hudTasks = new HashMap<>();
+    public SkillBarListener(CustomRPG plugin, SkillBarManager manager) { this.plugin = plugin; this.manager = manager; }
 
-    public SkillBarListener(CustomRPG plugin, SkillBarManager skillBarManager) {
-        this.plugin = plugin;
-        this.skillBarManager = skillBarManager;
-    }
-
-    /**
-     * 攔截熱鍵欄切換事件（玩家按 1~4 時觸發）
-     */
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemHeld(PlayerItemHeldEvent event) {
         Player player = event.getPlayer();
-        int newSlot = event.getNewSlot(); // 0~8 對應鍵盤 1~9
-
-        // 只處理 0~3 (鍵盤 1~4)
-        if (newSlot < 0 || newSlot > 3) return;
-
-        // 未啟用技能列則不攔截
-        if (!skillBarManager.isEnabled(player)) return;
-
-        // 取消熱鍵欄切換，改為施放技能
+        int slot = event.getNewSlot();
+        if (slot < 0 || slot > 4 || !manager.isEnabled(player)) return;
         event.setCancelled(true);
-
-        TalentManager talentManager = plugin.getTalentManager();
-        if (talentManager == null) return;
-
-        PlayerTalents pt = talentManager.getPlayerTalents(player);
-        String[] selectedSkills = pt.getSelectedSkills();
-
-        // 槽位由 newSlot (0~3) 對應
-        if (selectedSkills == null || newSlot >= selectedSkills.length || selectedSkills[newSlot] == null) {
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
-                new TextComponent(buildHudText(player, newSlot, "§c空槽")));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.5f, 0.5f);
-            return;
+        if (player.isDead() || player.getGameMode() == GameMode.SPECTATOR) return;
+        // Also repairs an externally-selected reserved slot before the next repeated key press.
+        manager.prepareHeldSlot(player);
+        boolean success = false;
+        if (slot == 4) {
+            if (plugin.getRacialSkillManager() != null) success = plugin.getRacialSkillManager().cast(player);
+        } else if (plugin.getTalentManager() != null && plugin.getTalentSkillManager() != null) {
+            String id = plugin.getTalentManager().getPlayerTalents(player).getSelectedSkills()[slot];
+            if (id == null) player.sendMessage("§c技能槽 " + (slot + 1) + " 是空的，請在天賦介面攜帶已學習的主動技能。");
+            else success = plugin.getTalentSkillManager().castSkillDirectly(player, id, player.getInventory().getItemInMainHand());
         }
-
-        String talentId = selectedSkills[newSlot];
-        Talent talent = talentManager.findTalent(talentId);
-        if (talent == null) {
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
-                new TextComponent("§c找不到技能: §f" + talentId));
-            return;
-        }
-
-        // 使用目前手持武器作為施放基礎
-        ItemStack item = player.getInventory().getItemInMainHand();
-
-        TalentSkillManager tsm = plugin.getTalentSkillManager();
-        if (tsm == null) {
-            player.sendMessage(ChatColor.RED + "技能管理器尚未就緒！");
-            return;
-        }
-
-        // 直接施放技能（繞過 mechanism 觸發條件）
-        boolean success = tsm.castSkillDirectly(player, talentId, item);
-
-        // 刷新 HUD
-        showSkillBarHud(player, newSlot);
-
-        if (!success) {
-            // 失敗音效
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.6f, 0.7f);
-        }
+        showSkillBarHud(player, slot);
+        if (!success) player.playSound(player.getLocation(), "block.note_block.bass", 0.5f, 0.7f);
     }
-
-    /**
-     * 玩家離線時清除狀態
-     */
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
+    @EventHandler public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        skillBarManager.disable(player);
-        stopHudTask(player);
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline() || !manager.isEnabled(player)) return;
+            manager.prepareHeldSlot(player);
+            player.sendMessage("§e快捷技能已啟用：1～4 天賦、5 種族；請將武器放在 6～9。/skillbar 切換模式。");
+            showSkillBarHud(player, -1);
+        });
     }
+    @EventHandler public void onQuit(PlayerQuitEvent event) { stopHudTask(event.getPlayer()); }
 
-    // ===== HUD 顯示 =====
-
-    /**
-     * 顯示快捷技能列 HUD（持續 5 秒然後淡出）
-     *
-     * @param player      玩家
-     * @param activeSlot  剛觸發的槽位 (-1 表示全局開關時顯示)
-     */
     public void showSkillBarHud(Player player, int activeSlot) {
         stopHudTask(player);
-
-        BukkitRunnable task = new BukkitRunnable() {
-            int ticks = 0;
-            final int DURATION = 100; // 5 秒
-
-            @Override
-            public void run() {
-                if (ticks >= DURATION || !player.isOnline() || !skillBarManager.isEnabled(player)) {
-                    cancel();
-                    hudTasks.remove(player.getUniqueId());
-                    return;
-                }
-                String hud = buildHudText(player, activeSlot, null);
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(hud));
-                ticks++;
-            }
-        };
-        task.runTaskTimer(plugin, 0L, 1L);
+        final int[] elapsed = {0};
+        BukkitTask task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (!player.isOnline() || !manager.isEnabled(player) || elapsed[0] >= 100) { stopHudTask(player); return; }
+            elapsed[0] += 10;
+            player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(buildHudText(player, activeSlot)));
+        }, 0L, 10L);
         hudTasks.put(player.getUniqueId(), task);
     }
-
-    /**
-     * 建立技能列 HUD 文字
-     *
-     * @param player     玩家
-     * @param activeSlot 當前觸發的槽位 (-1 = 無高亮)
-     * @param extra      額外提示文字 (可為 null)
-     * @return HUD 文字
-     */
-    private String buildHudText(Player player, int activeSlot, String extra) {
-        TalentManager talentManager = plugin.getTalentManager();
-        if (talentManager == null) return "§c[技能列] 載入失敗";
-
-        PlayerTalents pt = talentManager.getPlayerTalents(player);
-        String[] selectedSkills = pt.getSelectedSkills();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("§8⚡ §7[");
-
-        for (int i = 0; i < 4; i++) {
-            String skillName = "§8空";
-            if (selectedSkills != null && i < selectedSkills.length && selectedSkills[i] != null) {
-                Talent t = talentManager.findTalent(selectedSkills[i]);
-                if (t != null) {
-                    skillName = (i == activeSlot) ? "§e§l" + t.getName() : "§f" + t.getName();
-                }
-            } else if (i == activeSlot) {
-                skillName = "§c空槽";
-            }
-            sb.append((i == activeSlot ? "§6" : "§7")).append(i + 1).append(":").append(skillName);
-            if (i < 3) sb.append("§7 | ");
+    private String buildHudText(Player player, int activeSlot) {
+        StringBuilder text = new StringBuilder("§7[");
+        var talents = plugin.getTalentManager();
+        String[] selected = talents == null ? new String[4] : talents.getPlayerTalents(player).getSelectedSkills();
+        for (int slot = 0; slot < 4; slot++) {
+            var talent = selected[slot] == null || talents == null ? null : talents.findTalent(selected[slot]);
+            text.append(slot == activeSlot ? "§e" : "§f").append(slot + 1).append(":")
+                    .append(talent == null ? "空" : talent.getName()).append(" §7| ");
         }
-        sb.append("§7]");
-
-        if (extra != null) {
-            sb.append(" ").append(extra);
-        }
-
-        return sb.toString();
+        var racial = plugin.getRacialSkillManager();
+        var skill = racial == null ? null : racial.getSkill(player);
+        text.append(activeSlot == 4 ? "§e" : "§d").append("5:").append(skill == null ? "未選種族" : skill.displayName());
+        if (racial != null && skill != null && racial.remainingSeconds(player) > 0) text.append(" ").append(racial.remainingSeconds(player)).append("s");
+        return text.append("§7]").toString();
     }
-
-    /**
-     * 停止並移除 HUD 任務
-     */
     private void stopHudTask(Player player) {
-        BukkitRunnable old = hudTasks.remove(player.getUniqueId());
-        if (old != null) {
-            try { old.cancel(); } catch (Exception ignored) {}
-        }
+        BukkitTask task = hudTasks.remove(player.getUniqueId());
+        if (task != null) task.cancel();
     }
-
-    /**
-     * 插件關閉時清理
-     */
-    public void cleanup() {
-        for (BukkitRunnable task : hudTasks.values()) {
-            try { task.cancel(); } catch (Exception ignored) {}
-        }
-        hudTasks.clear();
-    }
+    public void cleanup() { hudTasks.values().forEach(BukkitTask::cancel); hudTasks.clear(); }
 }
-

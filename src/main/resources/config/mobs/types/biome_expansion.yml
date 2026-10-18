@@ -1,0 +1,824 @@
+# Ten ecosystems: two ordinary templates and one rare boss each. No resource pack required.
+prairie_hornbeast:
+  name: '&b草原角獸'
+  type: RAVAGER
+  boss: false
+  level-range:
+    min: 1
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: LEATHER
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - plains
+  spawn-time: all
+sunfield_sentinel:
+  name: '&b烈日守望者'
+  type: HUSK
+  boss: false
+  level-range:
+    min: 20
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: LEATHER
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - plains
+  spawn-time: all
+boss_prairie_alpha:
+  name: '&6&l荒原角王'
+  type: RAVAGER
+  boss: true
+  level-range:
+    min: 8
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: LEATHER
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - plains
+  - wilderness-boss
+  spawn-time: all
+mossback_boar:
+  name: '&b苔背野豬'
+  type: HOGLIN
+  boss: false
+  level-range:
+    min: 1
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: OAK_SAPLING
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - forest
+  spawn-time: all
+thornbark_guardian:
+  name: '&b荊棘樹衛'
+  type: IRON_GOLEM
+  boss: false
+  level-range:
+    min: 20
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: OAK_SAPLING
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - forest
+  spawn-time: all
+boss_ancient_oak:
+  name: '&6&l古樹守望者'
+  type: IRON_GOLEM
+  boss: true
+  level-range:
+    min: 8
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: OAK_SAPLING
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - forest
+  - wilderness-boss
+  spawn-time: all
+dune_scorpion:
+  name: '&b沙丘毒蠍'
+  type: CAVE_SPIDER
+  boss: false
+  level-range:
+    min: 1
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: QUARTZ
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - desert
+  spawn-time: all
+glassstorm_caster:
+  name: '&b沙晶術士'
+  type: HUSK
+  boss: false
+  level-range:
+    min: 20
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: QUARTZ
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - desert
+  spawn-time: all
+boss_sandstorm_colossus:
+  name: '&6&l沙暴巨像'
+  type: RAVAGER
+  boss: true
+  level-range:
+    min: 8
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: QUARTZ
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - desert
+  - wilderness-boss
+  spawn-time: all
+bog_frog:
+  name: '&b毒沼巨蛙'
+  type: FROG
+  boss: false
+  level-range:
+    min: 1
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: SLIME_BALL
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - swamp
+  spawn-time: all
+rotspore_shambler:
+  name: '&b腐孢巡行者'
+  type: BOGGED
+  boss: false
+  level-range:
+    min: 20
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: SLIME_BALL
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - swamp
+  spawn-time: all
+boss_marsh_matriarch:
+  name: '&6&l瘴沼巨獸'
+  type: PANDA
+  boss: true
+  level-range:
+    min: 8
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: SLIME_BALL
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - swamp
+  - wilderness-boss
+  spawn-time: all
+crystal_mite:
+  name: '&b晶簇螨'
+  type: SILVERFISH
+  boss: false
+  level-range:
+    min: 1
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: AMETHYST_SHARD
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - cave
+  spawn-time: all
+echo_golem:
+  name: '&b迴響傀儡'
+  type: IRON_GOLEM
+  boss: false
+  level-range:
+    min: 20
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: AMETHYST_SHARD
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - cave
+  spawn-time: all
+boss_crystal_heart:
+  name: '&6&l晶心守護者'
+  type: IRON_GOLEM
+  boss: true
+  level-range:
+    min: 8
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: AMETHYST_SHARD
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - cave
+  - wilderness-boss
+  spawn-time: all
+rime_lynx:
+  name: '&b霜牙山貓'
+  type: OCELOT
+  boss: false
+  level-range:
+    min: 1
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: SNOWBALL
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - ice
+  - snow
+  spawn-time: all
+icebound_revenant:
+  name: '&b封霜亡魂'
+  type: STRAY
+  boss: false
+  level-range:
+    min: 20
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: SNOWBALL
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - ice
+  - snow
+  spawn-time: all
+boss_glacier_ursine:
+  name: '&6&l冰川熊王'
+  type: POLAR_BEAR
+  boss: true
+  level-range:
+    min: 8
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: SNOWBALL
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - ice
+  - snow
+  - wilderness-boss
+  spawn-time: all
+storm_goat:
+  name: '&b風暴山羊'
+  type: GOAT
+  boss: false
+  level-range:
+    min: 1
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: COPPER_INGOT
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - mountain
+  spawn-time: all
+cliff_harrier:
+  name: '&b峭壁掠翼'
+  type: PHANTOM
+  boss: false
+  level-range:
+    min: 20
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: COPPER_INGOT
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - mountain
+  spawn-time: all
+boss_thunderhorn:
+  name: '&6&l雷角霸主'
+  type: RAVAGER
+  boss: true
+  level-range:
+    min: 8
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: COPPER_INGOT
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - mountain
+  - wilderness-boss
+  spawn-time: all
+ash_hound:
+  name: '&b燼牙獵犬'
+  type: WOLF
+  boss: false
+  level-range:
+    min: 30
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: MAGMA_CREAM
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - nether
+  spawn-time: all
+basalt_warden:
+  name: '&b玄武岩衛士'
+  type: WITHER_SKELETON
+  boss: false
+  level-range:
+    min: 30
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: MAGMA_CREAM
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - nether
+  spawn-time: all
+boss_ember_forge:
+  name: '&6&l熾爐領主'
+  type: MAGMA_CUBE
+  boss: true
+  level-range:
+    min: 30
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: MAGMA_CREAM
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - nether
+  - wilderness-boss
+  spawn-time: all
+reef_crab:
+  name: '&b礁岸甲蟹'
+  type: SPIDER
+  boss: false
+  level-range:
+    min: 1
+    max: 35
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: PRISMARINE_SHARD
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - ocean
+  spawn-time: all
+tide_reaver:
+  name: '&b潮汐掠奪者'
+  type: DROWNED
+  boss: false
+  level-range:
+    min: 20
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: PRISMARINE_SHARD
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - ocean
+  spawn-time: all
+boss_tidebreaker:
+  name: '&6&l裂潮巨像'
+  type: IRON_GOLEM
+  boss: true
+  level-range:
+    min: 8
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: PRISMARINE_SHARD
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - ocean
+  - wilderness-boss
+  spawn-time: all
+void_skitter:
+  name: '&b虛空爬行者'
+  type: ENDERMITE
+  boss: false
+  level-range:
+    min: 45
+    max: 60
+  base-stats:
+    health: 20
+    damage: 2.5
+  stat-scaling:
+    health-per-level: 4.0
+    damage-per-level: 0.32
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: ENDER_PEARL
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - end
+  spawn-time: all
+rift_sentinel:
+  name: '&b裂隙哨衛'
+  type: ENDERMAN
+  boss: false
+  level-range:
+    min: 50
+    max: 60
+  base-stats:
+    health: 30
+    damage: 3.5
+  stat-scaling:
+    health-per-level: 4.6
+    damage-per-level: 0.38
+  exp:
+    base: 7
+    per-level: 3
+  drops:
+    vanilla-items:
+    - material: ENDER_PEARL
+      amount: 1-2
+      chance: 0.45
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - end
+  spawn-time: all
+boss_rift_sovereign:
+  name: '&6&l裂隙君王'
+  type: ENDERMAN
+  boss: true
+  level-range:
+    min: 50
+    max: 60
+  base-stats:
+    health: 65
+    damage: 4
+  stat-scaling:
+    health-per-level: 8.0
+    damage-per-level: 0.6
+  exp:
+    base: 30
+    per-level: 8
+  drops:
+    vanilla-items:
+    - material: ENDER_PEARL
+      amount: 2-4
+      chance: 0.85
+    - material: DIAMOND
+      amount: '1'
+      chance: 0.15
+  special-behavior: encounter
+  show-level-in-name: true
+  tags:
+  - end
+  - wilderness-boss
+  spawn-time: all

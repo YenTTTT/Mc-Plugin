@@ -2,6 +2,8 @@
 
 最後更新：2026-10-18
 
+自然生怪排查與最新診斷見 [MOB_SPAWNING.md](MOB_SPAWNING.md)。每次重啟後仍需 `/finishrpg`；預設 vanilla 只替換原版自然敵怪。怪物外觀與地形 Boss 見 [MOB_ENCOUNTERS.md](MOB_ENCOUNTERS.md)。新天賦見 [TALENT_EXPANSION.md](TALENT_EXPANSION.md)。完整測試最新為 285 項，下方各階段數字保留為歷史紀錄。
+
 前輪紀錄的設計依據：`PLUGIN_DESIGN_VANILLA_WORLD_ZERO_BUILDING.md`（使用者提供的 143 節設計稿）。該原稿未存於目前 Repository；本輪以實際程式、Git 與使用者要求的原版世界原則核對，不宣稱已重新審閱原稿。
 
 2026-10-18 接手結果與完整審查／後續工作見 [AI_AGENT_HANDOFF.md](AI_AGENT_HANDOFF.md)。下方第 2–3 節為前輪功能紀錄，本輪保留其生怪設計，補完裝備接線並修復編譯與生命週期問題。
@@ -13,10 +15,10 @@
 | 系統 | 原有實作範圍 | 主要程式入口 |
 | --- | --- | --- |
 | 角色成長 | 等級、經驗、屬性點、天賦點；力量、魔力、敏捷、體質、防禦、精神；玩家 YAML 儲存 | [PlayerStats](../src/main/java/com/customrpg/players/PlayerStats.java)、[PlayerStatsManager](../src/main/java/com/customrpg/managers/PlayerStatsManager.java) |
-| 種族 | 人類、精靈、獸人、矮人、不死族、惡魔、天使；基礎屬性、成長、武器加成與被動設定 | [RaceManager](../src/main/java/com/customrpg/races/RaceManager.java)、[種族設定](../src/main/resources/config/races.yml) |
+| 種族 | 原七族＋龍裔、獸裔、暗精靈、半身人、魔像族，共十二族；屬性成長、武器／箭矢親和、暴擊、移速、脫戰回復；十二族各有主動技能，快捷鍵 5 施放 | [RaceManager](../src/main/java/com/customrpg/races/RaceManager.java)、[種族評估](RACES.md)、[新增設定](../src/main/resources/config/races_additional.yml) |
 | 自訂武器 | YAML 武器模板、稀有度、需求、特殊攻擊效果與武器技能 | [WeaponManager](../src/main/java/com/customrpg/managers/WeaponManager.java)、[WeaponListener](../src/main/java/com/customrpg/listeners/WeaponListener.java) |
 | 裝備 | 護甲、飾品、欄位與需求檢查、屬性同步、套裝與符文資料載入；不等於完整鍛造／鑲嵌玩法已完成 | [EquipmentManager](../src/main/java/com/customrpg/equipment/EquipmentManager.java)、[ArmorManager](../src/main/java/com/customrpg/equipment/ArmorManager.java) |
-| 天賦 | 烈焰、暗黑、武器、科技、自然、宿儺、赤血、刺客、野獸、弓系分支；天賦樹、主動／被動效果與切換 | [TalentBranch](../src/main/java/com/customrpg/talents/TalentBranch.java)、[TalentManager](../src/main/java/com/customrpg/managers/TalentManager.java)、[TalentSkillManager](../src/main/java/com/customrpg/managers/TalentSkillManager.java) |
+| 天賦 | 烈焰、暗黑、武器、科技、自然、宿儺、赤血、刺客、野獸、弓系，以及新增冰霜／雷霆／大地／聖光，共十四分支、164 天賦；主動快捷鍵 1～4 | [TalentBranch](../src/main/java/com/customrpg/talents/TalentBranch.java)、[TalentManager](../src/main/java/com/customrpg/managers/TalentManager.java)、[TalentSkillManager](../src/main/java/com/customrpg/managers/TalentSkillManager.java) |
 | 戰鬥資源 | 魔力與回復、血液資源、弓系專注、野獸相關技能、技能冷卻與增益管理 | [managers](../src/main/java/com/customrpg/managers/)、[武器技能框架](../src/main/java/com/customrpg/weaponSkills/) |
 | 技能操作與 GUI | 選單、屬性、種族、裝備、天賦介面；技能欄、快捷施法與切換提示 | [gui](../src/main/java/com/customrpg/gui/)、[SkillBarManager](../src/main/java/com/customrpg/managers/SkillBarManager.java) |
 | 自訂怪物 | 模板等級範圍、生命／傷害成長、裝備、技能／特殊行為、時段與環境標籤、掉落物、武器與裝備掉落、擊殺經驗 | [MobManager](../src/main/java/com/customrpg/managers/MobManager.java)、[MobListener](../src/main/java/com/customrpg/listeners/MobListener.java)、[怪物模板](../src/main/resources/config/mobs/types/) |
@@ -50,7 +52,7 @@
 | `4500 <= distance < 6500` | Lv.38–50 |
 | `6500 <= distance` | Lv.48–60，8500 後基礎等級封頂 |
 
-Nether 與 End 使用各自的世界中心，預設沒有出生點安全圈，最低等級分別為 30、50；維度最低等級可高於距離分區的範圍。End 目前仍在生怪設定的預設排除清單內，且現有內容尚未提供完整 End 怪物池。
+Nether 與 End 使用各自的世界中心，預設沒有出生點安全圈，最低等級分別為 30、50；維度最低等級可高於距離分區的範圍。新增終界普通怪與荒野首領後，新安裝不再預設排除 End；舊部署若仍排除，需自行從 disabled-worlds 移除該世界。這不是完整終界玩法或主線。
 
 ### 2.2 以原版自然生成事件驅動
 
@@ -132,7 +134,7 @@ Nether 與 End 使用各自的世界中心，預設沒有出生點安全圈，�
 | 1. 原版世界生怪核心 | 程式完成，待實服驗收 | 水平距離分區、自然生成替換、環境／時段／等級篩選、上限、普通／精英、追擊限制、通知與設定遷移 |
 | 2. 村莊與 Bell | 未開始 | 真正村莊／鐘發現、持久 Village ID、動態村莊安全區、玩家發現紀錄、Waypoint 解鎖與傳送 |
 | 3. 原版結構 | 未開始 | Structure 偵測與區塊快取、結構保護／優先怪物池、Mineshaft／Trial Chamber 等開放式副本、進度與個人寶箱 |
-| 4. 事件與 Boss | 部分程式完成，待實服驗收 | 動態事件 Framework＋Meteor Impact 已實作與本機測試；村外防禦、Demon Rift、其他世界 Boss 尚未開發，既有固定 Boss 區域保留 |
+| 4. 事件與 Boss | 部分程式完成，待實服驗收 | 動態事件 Framework＋Meteor Impact 已實作與本機測試；村外防禦、Demon Rift、十種地形荒野 Boss 已加入，既有固定 Boss 區域保留 |
 | 5. 採集與製作 | 未開始 | 原版礦物／樹木／植物／釣魚職業、原版工作站互動、鍛造／強化／分解／鍊金與材料倉庫 |
 | 6. 長期進度 | 未開始 | 聲望、經濟、Codex、原生動態任務模板、主線、World Tier、Nether／End 完整內容與資料庫服務 |
 
@@ -194,3 +196,47 @@ mvn verify
 - **待 Paper 實服驗收**：視覺、AI／碰撞、真實傷害與第三方插件、完整世界存檔耐久性、chunk 卸載與效能。不能把本機測試當成實服成功。
 
 操作、保護邊界、擴充點與完整驗收清單見 [WORLD_EVENTS.md](WORLD_EVENTS.md)；開發階段／驗證結果見 [AI_AGENT_HANDOFF.md](AI_AGENT_HANDOFF.md)。
+
+## 8. 種族擴充與修正（2026-10-18）
+
+新增龍裔／獸裔／暗精靈／半身人／魔像族；新增檔獨立載入，原設定逐欄位優先，不覆寫玩家已選 ID 或七族自訂數值。選單擴至 54 格並分頁，保護圖示與清理狀態。
+
+修正第一級成長偏移、種族覆寫等級魔力、裝備／種族／天賦魔力互相干擾、重置殘留加成、普通選族繞過、管理員換族先刪後存、壞檔與重載失敗；實作移速與單一共用脫戰回復 timer，接上原版箭矢種族親和與暴擊。該階段的舊技能名稱已由第 9 節的實際主動技能取代。
+
+22 項新增測試，完整 `mvn verify` 為 138 tests／0 failures／0 errors／0 skipped；32 份 YAML 可解析，輸出 `target/CustomRPG-1.0.jar`。既有七族的數值差異、優先平衡對象與未完成範圍見 [RACES.md](RACES.md)。沒有實服傷害／多人平衡驗收，沒有自動調整原七族數值。
+
+## 9. 技能快捷鍵與十二族主動技能（2026-10-18）
+
+依使用者要求移除天賦機制材料與點擊／蹲下切換入口，改為預設開啟的快捷技能列：1～4 施放已學且攜帶的天賦，5 固定施放種族技能，6～9 選取手持裝備；`/skillbar` 切回原版物品欄，偏好以 PDC 保存。天賦仍檢查資源與冷卻，空手也能施放；武器自帶技能保留原操作。
+
+十二族各有不同主動能力，GUI／資訊指令顯示真正的能力、消耗與冷卻。龍裔展開粒子雙翼並飛行 12 秒，普攻追加傷害與點燃；效果到期、換族、死亡、登出、傳送及停用均處理清理，僅回收本技能授予的飛行。加入空中收翼的下降保護及 PDC 殘留授權回收；種族共用冷卻不因換族／重登重置。
+
+新增 41 項回歸案例，完整 `mvn clean verify` 共 **179 tests／0 failures／0 errors／0 skipped**，輸出 `target/CustomRPG-1.0.jar`。實際 Paper 客戶端按鍵、粒子外觀、飛行手感及多人插件相容仍待實服驗收。操作、十二族效果及原版按鍵限制見 [SKILL_SWITCH_SYSTEM.md](../SKILL_SWITCH_SYSTEM.md)。
+
+## 10. 自然生怪診斷補修（2026-10-18）
+
+使用者回報看不到自訂怪自然生成。確認原有啟動門檻與 vanilla 事件替換設計，未取得實服 status，尚不能判定該伺服器的實際阻擋原因。修正來源設定大小寫／空白導致完全不匹配；補上原本靜默跳過的結果、原版事件與取消統計、世界生怪開關／上限及當前模板池診斷。Debug 即使沒有事件也每約 30 秒 tick 時間輸出摘要，`/finishrpg` 也會提示世界生怪阻擋。
+
+未改動預設模式、重啟啟動門檻、安全區、世界規則或模板內容；取消事件只觀測、不排程，替換失敗保留原怪。新增 14 項回歸測試，完整 `mvn verify` 為 **193 tests／0 failures／0 errors／0 skipped**；輸出 `target/CustomRPG-1.0.jar`。實服驗收及真正原因仍待使用者回傳狀態；操作見 [MOB_SPAWNING.md](MOB_SPAWNING.md)。
+
+## 11. 怪物外觀、戰鬥招式與十種地形 Boss（2026-10-18）
+
+使用者選定原版客戶端即可。新增外觀／機制 overlay，為資源中的 123 個既有 ID 加上原版生物、尺寸、裝備與特效；再新增 20 普通怪及 10 荒野 Boss，共 153 profiles。暴怒熊人改為 1.3 倍棕色熊貓，衝鋒／震地、35% 生命狂暴。保留六個專屬 Boss／熔核分裂 ID 的原機制，其餘 147 profiles 使用可蓄力躲避的招式序列。
+
+新增內容涵蓋平原、森林、沙漠、沼澤、洞穴、冰雪、山地、Nether、海岸與 End。十個帶 wilderness-boss 標籤的首領共用正常生成嘗試，預設 1% 機率、每世界上限二、1024 格區域冷卻 30 分鐘、存活 20 分鐘；身分與冷卻先原子保存，資料故障只停荒野首領。既有 event-only 與召喚物不混入普通池。
+
+傷害檢查視線、安全區與追擊限制，命中取消不追加效果；衝鋒依實際移動路徑，投射物有上限／期限並在命中再驗證。尺寸只改自身 transient modifier。原版爆炸／改方塊／雪跡被攔截，舊熔核的火／岩漿技能改粒子能量點，不殘留地形。共用 timer 限每五 ticks 128 隻，卸載、重載與停用清除自身狀態／投射物。
+
+新檔自動補建，舊模板數值／掉落不覆寫；新安裝移除 End 預設排除，舊部署仍需自行合併。`/custommob spawn <id> [level]` 可指定測試等級，`/custommob info` 顯示實際外觀／招式，`/mobspawn reload` 重讀 overlay 與荒野 Boss 規則，改 MobData 模板需重啟。自然替換仍需每次 `/finishrpg`，沒有默改預設模式。
+
+新增五類／38 項測試，完整 `mvn clean verify` **231 tests／0 failures／0 errors／0 skipped**；149 production Java、39 test 類別、35 YAML；JAR `target/CustomRPG-1.0.jar`。未啟動 Paper，外觀、真實 AI／碰撞、多人平衡及效能仍需實服驗收。完整名冊、設定及測試指令見 [MOB_ENCOUNTERS.md](MOB_ENCOUNTERS.md)。
+
+## 12. 四種新天賦流派與 24 個天賦（2026-10-18）
+
+保留原十流派／140 個定義，新增冰霜控場、雷霆連鎖、大地守衛、聖光支援四流派，各四主動＋兩被動、每招三級，每級一點，合計十四流派／164 天賦。新增檔 config/talents_additional.yml 自動建立，舊 talents.yml 同 ID 整個定義優先，玩家投點與快捷鍵綁定保留。1～4 仍施放主動天賦，5 仍為種族技能。
+
+ExpandedTalentSkills 使用共用有界領域 timer，接上射線／碎冰、連鎖／擊退／安全位移、岩甲／同隊減傷陣、治療／淨化／同隊聖域。傷害尊重保護、遮擋及取消；無有效命中不追加效果；Boss 緩速時間減半。治療走 CUSTOM 事件，減傷陣取最高值，領域到期／卸載／死亡／登出／傳送／重置／重載／停用清除，沒有放置或破壞地形。
+
+主選單擴到 54 格，顯示十四流派並加上實際 Inventory 身分、拖曳與關閉清理。分支指令／Tab 接上全部 enum，修正 warrior／mage 別名。/talent reload 從假成功訊息改成實際讀取兩檔、驗證後交換；錯誤保留原樹與持續狀態，成功重算線上玩家並清新領域。
+
+新增四類測試與既有施法測試兩案，共 54 項；完整 `mvn clean verify` **285 tests／0 failures／0 errors／0 skipped**。150 production Java、43 test 類別、36 YAML；JAR target/CustomRPG-1.0.jar。未啟動 Paper，實服外觀、多人支援與戰鬥平衡仍待驗收。名冊、等級效果與操作見 [TALENT_EXPANSION.md](TALENT_EXPANSION.md)。

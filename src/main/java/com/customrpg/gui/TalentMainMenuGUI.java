@@ -16,6 +16,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 
 /**
  * TalentMainMenuGUI - 天賦主選單 (流派選擇畫面)
@@ -27,7 +32,9 @@ public class TalentMainMenuGUI implements Listener {
     private final TalentTreeGUI talentTreeGUI;
 
     private static final String GUI_TITLE = "§6§l選擇天賦流派";
-    private static final int GUI_SIZE = 45; // 擴大以容納更多流派
+    private static final int GUI_SIZE = 54;
+    private static final int[] BRANCH_SLOTS = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
+    private final Map<UUID, Inventory> openViews = new HashMap<>();
 
     public TalentMainMenuGUI(CustomRPG plugin, TalentManager talentManager, TalentTreeGUI talentTreeGUI) {
         this.plugin = plugin;
@@ -49,17 +56,9 @@ public class TalentMainMenuGUI implements Listener {
             gui.setItem(i, filler);
         }
 
-        // 天賦分支對應：
-        gui.setItem(11, createBranchIcon(TalentBranch.FIRE, Material.BLAZE_POWDER));
-        gui.setItem(12, createBranchIcon(TalentBranch.DARK, Material.WITHER_SKELETON_SKULL));
-        gui.setItem(13, createBranchIcon(TalentBranch.WEAPON, Material.NETHERITE_SWORD));
-        gui.setItem(14, createBranchIcon(TalentBranch.TECH, Material.REPEATER));
-        gui.setItem(15, createBranchIcon(TalentBranch.NATURE, Material.OAK_SAPLING));
-        gui.setItem(22, createBranchIcon(TalentBranch.SUKUNA, Material.DIAMOND_SWORD)); // 宿儺系
-        gui.setItem(23, createBranchIcon(TalentBranch.BLOOD, Material.REDSTONE)); // 赤血操術系
-        gui.setItem(24, createBranchIcon(TalentBranch.ASSASSIN, Material.SPIDER_EYE)); // 刺客系
-        gui.setItem(25, createBranchIcon(TalentBranch.BEAST, Material.BONE)); // 野獸系
-        gui.setItem(33, createBranchIcon(TalentBranch.BOW, Material.BOW)); // 風獵者之道
+        TalentBranch[] branches = TalentBranch.values();
+        for (int i = 0; i < branches.length; i++) gui.setItem(BRANCH_SLOTS[i], createBranchIcon(branches[i], icon(branches[i])));
+        openViews.put(player.getUniqueId(), gui);
 
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
@@ -82,29 +81,33 @@ public class TalentMainMenuGUI implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!event.getView().getTitle().equals(GUI_TITLE)) return;
+        if (!(event.getWhoClicked() instanceof Player player)
+                || openViews.get(player.getUniqueId()) != event.getView().getTopInventory()) return;
         event.setCancelled(true);
-
-        if (!(event.getWhoClicked() instanceof Player)) return;
-        Player player = (Player) event.getWhoClicked();
         int slot = event.getRawSlot();
-
         TalentBranch branch = null;
-        switch (slot) {
-            case 11: branch = TalentBranch.FIRE; break;
-            case 12: branch = TalentBranch.DARK; break;
-            case 13: branch = TalentBranch.WEAPON; break;
-            case 14: branch = TalentBranch.TECH; break;
-            case 15: branch = TalentBranch.NATURE; break;
-            case 22: branch = TalentBranch.SUKUNA; break;
-            case 23: branch = TalentBranch.BLOOD; break;
-            case 24: branch = TalentBranch.ASSASSIN; break;
-            case 25: branch = TalentBranch.BEAST; break; // 修正：支援野獸系
-            case 33: branch = TalentBranch.BOW; break;
-        }
+        for (int i = 0; i < TalentBranch.values().length; i++)
+            if (BRANCH_SLOTS[i] == slot) { branch = TalentBranch.values()[i]; break; }
 
         if (branch != null) {
             talentTreeGUI.open(player, branch);
         }
     }
+    private Material icon(TalentBranch branch) {
+        return switch (branch) {
+            case FIRE -> Material.BLAZE_POWDER; case DARK -> Material.WITHER_SKELETON_SKULL;
+            case WEAPON -> Material.NETHERITE_SWORD; case TECH -> Material.REPEATER;
+            case NATURE -> Material.OAK_SAPLING; case SUKUNA -> Material.DIAMOND_SWORD;
+            case BLOOD -> Material.REDSTONE; case ASSASSIN -> Material.SPIDER_EYE;
+            case BEAST -> Material.BONE; case BOW -> Material.BOW;
+            case FROST -> Material.BLUE_ICE; case STORM -> Material.LIGHTNING_ROD;
+            case EARTH -> Material.SHIELD; case LIGHT -> Material.BEACON;
+        };
+    }
+    @EventHandler public void onDrag(InventoryDragEvent event) {
+        if (openViews.get(event.getWhoClicked().getUniqueId()) == event.getView().getTopInventory()) event.setCancelled(true);
+    }
+    @EventHandler public void onClose(InventoryCloseEvent event) { openViews.remove(event.getPlayer().getUniqueId(), event.getInventory()); }
+    public void cleanup() { openViews.clear(); }
+
 }

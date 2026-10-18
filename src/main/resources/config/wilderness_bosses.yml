@@ -1,0 +1,8 @@
+# Reuses an eligible natural replacement / supplemental attempt; no second spawn timer.
+# /finishrpg remains required. Only boss:true + wilderness-boss tagged templates qualify.
+enabled: true
+chance-per-spawn: 0.01
+cell-size: 1024
+max-per-world: 2
+cooldown-seconds: 1800
+lifetime-seconds: 1200

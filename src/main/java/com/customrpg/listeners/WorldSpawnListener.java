@@ -30,10 +30,12 @@ public class WorldSpawnListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onSpawn(CreatureSpawnEvent event) {
-        if (event.getEntity() instanceof Enemy
-                && plugin.getDistanceSpawnManager().handlesNaturalSpawn(event.getSpawnReason())) {
+        if (!(event.getEntity() instanceof Enemy)) return;
+        plugin.getDistanceSpawnManager().observeNaturalSpawn(event.getSpawnReason(), event.isCancelled());
+        if (event.isCancelled()) return;
+        if (plugin.getDistanceSpawnManager().handlesNaturalSpawn(event.getSpawnReason())) {
             LivingEntity original = event.getEntity();
             CreatureSpawnEvent.SpawnReason reason = event.getSpawnReason();
             plugin.getServer().getScheduler().runTask(plugin,

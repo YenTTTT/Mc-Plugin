@@ -1,6 +1,5 @@
 package com.customrpg.listeners;
 
-import com.customrpg.talents.Talent;
 import com.customrpg.weaponSkills.SkillTriggerType;
 import com.customrpg.weaponSkills.managers.SkillManager;
 import org.bukkit.Material;
@@ -11,7 +10,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Map;
 
 /**
  * SkillTriggerListener
@@ -53,14 +51,6 @@ public class SkillTriggerListener implements Listener {
         // 1) 嘗試觸發武器內建技能 (舊系統)
         boolean handled = skillManager.tryCastWeaponSkill(player, trigger, item);
         
-        // 2) 嘗試觸發天賦技能
-        if (!handled) {
-            com.customrpg.managers.TalentSkillManager tsm = skillManager.getWeaponManager().getPlugin().getTalentSkillManager();
-            if (tsm != null) {
-                handled = tsm.executeTalentSkill(player, trigger.name(), item);
-            }
-        }
-
         if (handled) {
             event.setCancelled(true);
         }

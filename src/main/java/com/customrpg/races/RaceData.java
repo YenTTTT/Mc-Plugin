@@ -5,6 +5,9 @@ import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Collections;
+import java.util.Objects;
 
 /**
  * RaceData - 種族資料模型
@@ -56,7 +59,8 @@ public class RaceData {
     private final double bonusHealthRegen;    // 生命回復加成
 
     private RaceData(Builder builder) {
-        this.id = builder.id;
+        this.id = Objects.requireNonNull(builder.id).toLowerCase(Locale.ROOT);
+        if(!id.matches("[a-z0-9_]+")) throw new IllegalArgumentException("Invalid race ID: "+id);
         this.displayName = builder.displayName;
         this.description = builder.description;
 
@@ -78,15 +82,33 @@ public class RaceData {
         this.growthMana = builder.growthMana;
         this.growthManaRegen = builder.growthManaRegen;
 
-        this.skills = builder.skills;
-        this.weaponBonuses = builder.weaponBonuses;
+        this.skills = List.copyOf(builder.skills);
+        if(skills.size()>2) throw new IllegalArgumentException("A race supports at most two planned skills");
+        Map<String,Double> bonuses=new LinkedHashMap<>();
+        builder.weaponBonuses.forEach((key,value)->{
+            String type=key.toUpperCase(Locale.ROOT);
+            com.customrpg.managers.WeaponManager.WeaponCategory.valueOf(type);
+            range("weapon multiplier",value,0.1,3); bonuses.put(type,value);
+        });
+        this.weaponBonuses = Collections.unmodifiableMap(bonuses);
         this.defaultWeaponBonus = builder.defaultWeaponBonus;
 
         this.bonusCritChance = builder.bonusCritChance;
         this.bonusCritDamage = builder.bonusCritDamage;
         this.bonusMoveSpeed = builder.bonusMoveSpeed;
         this.bonusHealthRegen = builder.bonusHealthRegen;
+        for(double value:new double[]{baseStrength,baseMagic,baseAgility,baseVitality,baseDefense,baseSpirit}) range("base stat",value,0,1000);
+        range("base mana",baseMana,0,10000); range("base mana regen",baseManaRegen,0,100);
+        for(double value:new double[]{growthStrength,growthMagic,growthAgility,growthVitality,growthDefense,growthSpirit,growthMana}) range("growth",value,0,100);
+        range("mana regen growth",growthManaRegen,0,10); range("weapon default",defaultWeaponBonus,0.1,3);
+        range("critical chance",bonusCritChance,0,100); range("critical damage",bonusCritDamage,0,3);
+        range("movement speed",bonusMoveSpeed,-0.5,0.5); range("health regen",bonusHealthRegen,-10,10);
     }
+    private static void range(String name,double value,double min,double max) {
+        if(!Double.isFinite(value)||value<min||value>max) throw new IllegalArgumentException("Invalid race "+name+": "+value);
+    }
+    private static long levelsGained(int level) { return Math.max(0L,(long)level-1); }
+    private static int statBonus(int base,double growth,int level) { return (int)Math.min(Integer.MAX_VALUE,base+Math.floor(levelsGained(level)*growth)); }
 
     // ===== Getters =====
 
@@ -128,50 +150,50 @@ public class RaceData {
      */
     public double getWeaponBonus(String weaponType) {
         if (weaponType == null) return defaultWeaponBonus;
-        Double bonus = weaponBonuses.get(weaponType.toUpperCase());
+        Double bonus = weaponBonuses.get(weaponType.toUpperCase(Locale.ROOT));
         return bonus != null ? bonus : defaultWeaponBonus;
     }
 
     /**
      * 根據玩家等級計算種族帶來的總屬性加成
-     * finalStat = raceBase + (level * growthMultiplier)
+     * Level 1 receives base stats; each subsequent level adds growth.
      */
     public int calculateStrengthBonus(int level) {
-        return baseStrength + (int)(level * growthStrength);
+        return statBonus(baseStrength,growthStrength,level);
     }
 
     public int calculateMagicBonus(int level) {
-        return baseMagic + (int)(level * growthMagic);
+        return statBonus(baseMagic,growthMagic,level);
     }
 
     public int calculateAgilityBonus(int level) {
-        return baseAgility + (int)(level * growthAgility);
+        return statBonus(baseAgility,growthAgility,level);
     }
 
     public int calculateVitalityBonus(int level) {
-        return baseVitality + (int)(level * growthVitality);
+        return statBonus(baseVitality,growthVitality,level);
     }
 
     public int calculateDefenseBonus(int level) {
-        return baseDefense + (int)(level * growthDefense);
+        return statBonus(baseDefense,growthDefense,level);
     }
 
     public int calculateSpiritBonus(int level) {
-        return baseSpirit + (int)(level * growthSpirit);
+        return statBonus(baseSpirit,growthSpirit,level);
     }
 
     /**
      * 根據玩家等級計算種族的魔力加成
      */
     public double calculateManaBonus(int level) {
-        return baseMana + (level * growthMana);
+        return baseMana + (levelsGained(level) * growthMana);
     }
 
     /**
      * 根據玩家等級計算種族的魔力回復加成
      */
     public double calculateManaRegenBonus(int level) {
-        return baseManaRegen + (level * growthManaRegen);
+        return baseManaRegen + (levelsGained(level) * growthManaRegen);
     }
 
     /**

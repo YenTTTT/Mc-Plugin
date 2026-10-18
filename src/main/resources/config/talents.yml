@@ -1,3 +1,5 @@
+# 主動技能先攜帶至 1～4，再以對應快捷鍵施放；不需要機制物品。
+# 舊版 mechanism／trigger 欄位只保留讀取相容性，不作施法判斷。
 # ==================== 烈焰系 (Fire) ====================
 # 兩大分支：
 #   爆發流（火焰術士）— 右側  主屬性：Magic
@@ -33,11 +35,11 @@ fire:
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "烈焰粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 3
     manaCost: 10
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 51
       icon: "BLAZE_POWDER"
@@ -97,11 +99,11 @@ fire:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "烈焰粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 12
     manaCost: 70
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "blazing_mana"
       level: 1
@@ -141,11 +143,11 @@ fire:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "烈焰粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 15
     manaCost: 55
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "destruction_orb"
       level: 1
@@ -244,11 +246,11 @@ fire:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "烈焰粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 30
     manaCost: 120
     trigger:
-      type: "LEFT_CLICK_SNEAK"
+      type: "HOTKEY"
     prerequisite:
       skill: "overcharge"
       level: 2
@@ -289,11 +291,11 @@ fire:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "烈焰粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 5
     manaCost: 18
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "heat_rising"
       level: 1
@@ -389,11 +391,11 @@ fire:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "烈焰粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 6
     manaCost: 25
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "burn_spread"
       level: 1
@@ -430,11 +432,11 @@ fire:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "烈焰粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 10
     manaCost: 35
     trigger:
-      type: "LEFT_CLICK_SNEAK"
+      type: "HOTKEY"
     prerequisite:
       anyOf:
         - skill: "scorching_wave"
@@ -508,11 +510,11 @@ fire:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "烈焰粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 25
     manaCost: 90
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "burn_stack"
       level: 2
@@ -580,11 +582,11 @@ weapon:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "槍械武器"
+    mechanism: "快捷鍵 1～4"
     cooldown: 7
     manaCost: 12
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "weapon_firearms_mastery"
       level: 3
@@ -621,11 +623,11 @@ weapon:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "槍械武器"
+    mechanism: "快捷鍵 1～4"
     cooldown: 11
     manaCost: 20
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "suppressive_barrage"
       level: 1
@@ -732,15 +734,15 @@ weapon:
   # 裂地擊 (3,3) -> slot 30
   earth_shatter:
     name: "裂地擊"
-    description: "持武器右鍵打擊前方地面造成地板裂開地刺"
+    description: "打擊前方地面，造成地裂與地刺"
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "持武器右鍵"
+    mechanism: "快捷鍵 1～4"
     cooldown: 3
     manaCost: 1
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "weapon_melee_mastery"
       level: 3
@@ -759,11 +761,11 @@ weapon:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "近戰武器"
+    mechanism: "快捷鍵 1～4"
     cooldown: 6
     manaCost: 10
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "weapon_melee_mastery"
       level: 3
@@ -794,11 +796,11 @@ weapon:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "近戰武器"
+    mechanism: "快捷鍵 1～4"
     cooldown: 10
     manaCost: 18
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "cyclone_slash"
       level: 1
@@ -847,15 +849,15 @@ weapon:
   # 魔法漩渦 (3,6) -> slot = 3 * 9 + 6 = 33
   magic_vortex:
     name: "魔法漩渦"
-    description: "持武器右鍵施放魔法漩渦控住敵人並造成傷害"
+    description: "施放魔法漩渦控住敵人並造成傷害"
     type: "ACTIVE"
     max-level: 2
     points-per-level: 1
-    mechanism: "持武器右鍵"
+    mechanism: "快捷鍵 1～4"
     cooldown: 2
     manaCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "weapon_magic_mastery"
       level: 3
@@ -881,11 +883,11 @@ weapon:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "法杖"
+    mechanism: "快捷鍵 1～4"
     cooldown: 7
     manaCost: 20
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "weapon_magic_mastery"
       level: 3
@@ -919,11 +921,11 @@ weapon:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "法杖"
+    mechanism: "快捷鍵 1～4"
     cooldown: 12
     manaCost: 26
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "arcane_barrage"
       level: 1
@@ -960,11 +962,11 @@ weapon:
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "武器系終極"
+    mechanism: "快捷鍵 1～4"
     cooldown: 35
     manaCost: 90
     trigger:
-      type: "LEFT_CLICK_SNEAK"
+      type: "HOTKEY"
     prerequisite:
       anyOf:
         - skill: "ricochet_round"
@@ -996,11 +998,11 @@ nature:
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "金粒"
+    mechanism: "快捷鍵 1～4"
     cooldown: 1
     manaCost: 4
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 52
       icon: "GOLD_NUGGET"
@@ -1020,11 +1022,11 @@ nature:
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 2
     manaCost: 10
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 51
       icon: "BONE"
@@ -1044,11 +1046,11 @@ nature:
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "木棒"
+    mechanism: "快捷鍵 1～4"
     cooldown: 1
     manaCost: 5
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 47
       icon: "STICK"
@@ -1071,11 +1073,11 @@ nature:
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "木棒"
+    mechanism: "快捷鍵 1～4"
     cooldown: 2
     manaCost: 8
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 45
       icon: "DIRT"
@@ -1119,11 +1121,11 @@ nature:
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "海靈晶體"
+    mechanism: "快捷鍵 1～4"
     cooldown: 12
     manaCost: 45
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "nature_doctrine"
       level: 3
@@ -1183,11 +1185,11 @@ nature:
     type: "ACTIVE"
     max-level: 2
     points-per-level: 1
-    mechanism: "海靈晶體"
+    mechanism: "快捷鍵 1～4"
     cooldown: 23
     manaCost: 76
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       anyOf:
         - skill: "nature_doctrine"
@@ -1228,11 +1230,11 @@ nature:
     type: "ACTIVE"
     max-level: 1
     points-per-level: 1
-    mechanism: "金粒"
+    mechanism: "快捷鍵 1～4"
     cooldown: 2
     manaCost: 10
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "stargazing"
       level: 1
@@ -1260,11 +1262,11 @@ sukuna:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鑽石劍"
+    mechanism: "快捷鍵 1～4"
     cooldown: 0.5
     manaCost: 5
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 45
       icon: "DIAMOND_SWORD"
@@ -1295,11 +1297,11 @@ sukuna:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鑽石劍"
+    mechanism: "快捷鍵 1～4"
     cooldown: 2
     manaCost: 15
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "dismantle"
       level: 1
@@ -1330,11 +1332,11 @@ sukuna:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鑽石劍"
+    mechanism: "快捷鍵 1～4"
     cooldown: 3
     manaCost: 20
     trigger:
-      type: "LEFT_CLICK_SNEAK"
+      type: "HOTKEY"
     prerequisite:
       skill: "dismantle"
       level: 1
@@ -1368,11 +1370,11 @@ sukuna:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鑽石劍"
+    mechanism: "快捷鍵 1～4"
     cooldown: 4
     manaCost: 30
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "cleave"
       level: 2
@@ -1440,11 +1442,11 @@ sukuna:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "地獄之星"
+    mechanism: "快捷鍵 1～4"
     cooldown: 60
     manaCost: 100
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "cursed_energy_enhancement"
       level: 3
@@ -1486,11 +1488,11 @@ blood:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 2
     bloodCost: 10
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 45
       icon: "REDSTONE"
@@ -1521,11 +1523,11 @@ blood:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 4
     bloodCost: 15
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 47
       icon: "RED_DYE"
@@ -1562,11 +1564,11 @@ blood:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 5
     bloodCost: 20
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 49
       icon: "TNT"
@@ -1597,11 +1599,11 @@ blood:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 6
     bloodCost: 15
     trigger:
-      type: "LEFT_CLICK_SNEAK"
+      type: "HOTKEY"
     prerequisite:
       skill: "blood_wave"
       level: 1
@@ -1688,11 +1690,11 @@ blood:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 30
     bloodCost: 30
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "blood_enhancement"
       level: 2
@@ -1810,11 +1812,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "蜘蛛眼"
+    mechanism: "快捷鍵 1～4"
     cooldown: 12
     manaCost: 20
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "vital_strike"
       level: 1
@@ -1895,11 +1897,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鐮刀"
+    mechanism: "快捷鍵 1～4"
     cooldown: 6
     manaCost: 25
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "backstab_mastery"
       level: 1
@@ -1930,11 +1932,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鐮刀"
+    mechanism: "快捷鍵 1～4"
     cooldown: 25
     manaCost: 60
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "shadow_assault"
       level: 2
@@ -2006,11 +2008,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鐮刀"
+    mechanism: "快捷鍵 1～4"
     cooldown: 4
     manaCost: 15
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "trickster"
       level: 1
@@ -2069,11 +2071,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鐮刀"
+    mechanism: "快捷鍵 1～4"
     cooldown: 5
     manaCost: 22
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "combo_mastery"
       level: 1
@@ -2135,11 +2137,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鐮刀"
+    mechanism: "快捷鍵 1～4"
     cooldown: 20
     manaCost: 55
     trigger:
-      type: "LEFT_CLICK_SNEAK"
+      type: "HOTKEY"
     prerequisite:
       skill: "speed_limit"
       level: 2
@@ -2202,11 +2204,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鐮刀"
+    mechanism: "快捷鍵 1～4"
     cooldown: 3
     manaCost: 10
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "reaper_instinct"
       level: 1
@@ -2240,11 +2242,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鐮刀"
+    mechanism: "快捷鍵 1～4"
     cooldown: 8
     manaCost: 35
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "arc_slash"
       level: 1
@@ -2334,11 +2336,11 @@ assassin:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "鐮刀"
+    mechanism: "快捷鍵 1～4"
     cooldown: 30
     manaCost: 70
     trigger:
-      type: "LEFT_CLICK_SNEAK"
+      type: "HOTKEY"
     prerequisite:
       skill: "soul_reap"
       level: 2
@@ -2408,11 +2410,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 2
     manaCost: 8
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 51
       icon: "REDSTONE_TORCH"
@@ -2446,11 +2448,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 4
     manaCost: 12
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 47
       icon: "FIRE_CHARGE"
@@ -2488,11 +2490,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 15
     manaCost: 35
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "shock_gun"
       level: 1
@@ -2529,11 +2531,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 20
     manaCost: 30
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "shock_gun"
       level: 1
@@ -2595,11 +2597,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 18
     manaCost: 40
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "mini_turret"
       level: 2
@@ -2676,11 +2678,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 45
     manaCost: 100
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "overload_core"
       level: 2
@@ -2721,11 +2723,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 8
     manaCost: 15
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "grenade"
       level: 1
@@ -2765,11 +2767,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 10
     manaCost: 18
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "grenade"
       level: 1
@@ -2837,11 +2839,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 12
     manaCost: 45
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "demolition_expert"
       level: 1
@@ -2937,11 +2939,11 @@ tech:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "紅石粉"
+    mechanism: "快捷鍵 1～4"
     cooldown: 40
     manaCost: 90
     trigger:
-      type: "LEFT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "tactical_warhead"
       level: 2
@@ -3015,12 +3017,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 3
     manaCost: 10
     hpCost: 0.05
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "dark_affinity"
       level: 1
@@ -3077,12 +3079,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 6
     manaCost: 15
     hpCost: 0.08
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "dark_resilience"
       level: 1
@@ -3113,12 +3115,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 12
     manaCost: 20
     hpCost: 0.10
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "soul_drain"
       level: 1
@@ -3153,12 +3155,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 10
     manaCost: 20
     hpCost: 0.20
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "shadow_bolt"
       level: 1
@@ -3189,12 +3191,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 8
     manaCost: 25
     hpCost: 0.12
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "blood_sacrifice"
       level: 1
@@ -3254,12 +3256,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 15
     manaCost: 30
     hpCost: 0.10
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "curse_mark"
       level: 1
@@ -3297,12 +3299,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 18
     manaCost: 30
     hpCost: 0.10
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "dark_flame"
       level: 1
@@ -3333,12 +3335,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 20
     manaCost: 15
     hpCost: 0.15
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "blood_sacrifice"
       level: 1
@@ -3370,12 +3372,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 2
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 20
     manaCost: 40
     hpCost: 0.15
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "weakening_curse"
       level: 1
@@ -3406,12 +3408,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 2
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 25
     manaCost: 50
     hpCost: 0.30
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "soul_burn"
       level: 1
@@ -3446,12 +3448,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 3
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 60
     manaCost: 80
     hpCost: 0.25
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "death_mark"
       level: 1
@@ -3485,12 +3487,12 @@ dark:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 3
-    mechanism: "凋零玫瑰"
+    mechanism: "快捷鍵 1～4"
     cooldown: 90
     manaCost: 100
     hpCost: 0.35
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "void_eruption"
       level: 1
@@ -3540,12 +3542,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 20
     manaCost: 15
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     gui:
       slot: 49
       icon: "BONE"
@@ -3633,12 +3635,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 25
     manaCost: 20
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "beast_instinct"
       level: 1
@@ -3697,12 +3699,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 30
     manaCost: 30
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "pack_leader"
       level: 1
@@ -3733,12 +3735,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 25
     manaCost: 25
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "alpha_command"
       level: 1
@@ -3769,12 +3771,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 2
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 40
     manaCost: 40
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "savage_summon"
       level: 2
@@ -3839,12 +3841,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 2
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 60
     manaCost: 50
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "beast_army"
       level: 1
@@ -3878,12 +3880,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 3
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 90
     manaCost: 60
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "beast_army"
       level: 2
@@ -3918,12 +3920,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 30
     manaCost: 20
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "feral_senses"
       level: 1
@@ -3985,12 +3987,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 35
     manaCost: 25
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "wolf_form"
       level: 1
@@ -4024,12 +4026,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 10
     manaCost: 15
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "bear_strength"
       level: 1
@@ -4060,12 +4062,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 35
     manaCost: 25
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "bear_form"
       level: 1
@@ -4124,12 +4126,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 2
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 50
     manaCost: 45
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "fox_form"
       level: 2
@@ -4166,12 +4168,12 @@ beast:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 3
-    mechanism: "骨頭"
+    mechanism: "快捷鍵 1～4"
     cooldown: 90
     manaCost: 70
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "apex_predator"
       level: 2
@@ -4349,12 +4351,12 @@ bow:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 2
-    mechanism: "弓"
+    mechanism: "快捷鍵 1～4"
     cooldown: 25
     manaCost: 40
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "headshot_mastery"
       level: 2
@@ -4436,12 +4438,12 @@ bow:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "弓"
+    mechanism: "快捷鍵 1～4"
     cooldown: 12
     manaCost: 25
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "combo_shot"
       level: 1
@@ -4472,12 +4474,12 @@ bow:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "弓"
+    mechanism: "快捷鍵 1～4"
     cooldown: 15
     manaCost: 30
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "arrow_storm"
       level: 1
@@ -4533,12 +4535,12 @@ bow:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 3
-    mechanism: "弓"
+    mechanism: "快捷鍵 1～4"
     cooldown: 50
     manaCost: 60
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "rapid_fire"
       level: 2
@@ -4598,12 +4600,12 @@ bow:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "弓"
+    mechanism: "快捷鍵 1～4"
     cooldown: 18
     manaCost: 20
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "hunters_instinct"
       level: 1
@@ -4634,12 +4636,12 @@ bow:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "弓"
+    mechanism: "快捷鍵 1～4"
     cooldown: 12
     manaCost: 20
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "tracking_mark"
       level: 1
@@ -4670,12 +4672,12 @@ bow:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 1
-    mechanism: "弓"
+    mechanism: "快捷鍵 1～4"
     cooldown: 20
     manaCost: 25
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "slow_arrow"
       level: 1
@@ -4740,12 +4742,12 @@ bow:
     type: "ACTIVE"
     max-level: 3
     points-per-level: 3
-    mechanism: "弓"
+    mechanism: "快捷鍵 1～4"
     cooldown: 60
     manaCost: 70
     hpCost: 0
     trigger:
-      type: "RIGHT_CLICK"
+      type: "HOTKEY"
     prerequisite:
       skill: "phantom_step"
       level: 2

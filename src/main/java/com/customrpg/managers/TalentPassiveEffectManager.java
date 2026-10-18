@@ -161,14 +161,7 @@ public class TalentPassiveEffectManager implements Listener {
         }
 
         // 應用 MANA 加成（烈焰系 - 炎熱等）
-        double manaBonus = bonuses.getOrDefault("manaBonus", 0.0);
-        if (manaBonus > 0) {
-            ManaManager manaManager = plugin.getManaManager();
-            if (manaManager != null) {
-                double currentMax = statsManager.getStats(player).getMaxMana();
-                manaManager.setMaxMana(player, currentMax + manaBonus);
-            }
-        }
+        statsManager.recalculateMana(player);
     }
 
     /**

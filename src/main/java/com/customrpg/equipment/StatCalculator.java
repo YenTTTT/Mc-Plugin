@@ -36,11 +36,11 @@ public class StatCalculator {
 
         // 1. 獲取基礎屬性
         PlayerStats baseStats = plugin.getPlayerStatsManager().getStats(player);
-        finalStats.setBaseStrength(baseStats.getStrength());
-        finalStats.setBaseMagic(baseStats.getMagic());
-        finalStats.setBaseAgility(baseStats.getAgility());
-        finalStats.setBaseVitality(baseStats.getVitality());
-        finalStats.setBaseDefense(baseStats.getDefense());
+        finalStats.setBaseStrength(baseStats.getStrength()+baseStats.getRaceStrength());
+        finalStats.setBaseMagic(baseStats.getMagic()+baseStats.getRaceMagic());
+        finalStats.setBaseAgility(baseStats.getAgility()+baseStats.getRaceAgility());
+        finalStats.setBaseVitality(baseStats.getVitality()+baseStats.getRaceVitality());
+        finalStats.setBaseDefense(baseStats.getDefense()+baseStats.getRaceDefense());
 
         // 2. 添加裝備加成
         Map<EquipmentSlot, EquipmentData> equipment = equipmentManager.getPlayerEquipment(player.getUniqueId());
@@ -175,6 +175,8 @@ public class StatCalculator {
         double critChance = 5.0; // 基礎 5%
         critChance += stats.getTotalAgility() * 0.5; // 每點敏捷 +0.5%
         critChance += stats.getBonusCritChance(); // 裝備加成
+        var race=plugin.getRaceManager()==null?null:plugin.getRaceManager().getPlayerRaceData(player);
+        if(race!=null) critChance+=race.getBonusCritChance();
         return Math.min(critChance, 100.0); // 上限 100%
     }
 
@@ -187,6 +189,8 @@ public class StatCalculator {
         double critDamage = 150.0; // 基礎 150%
         critDamage += stats.getTotalStrength() * 1.0; // 每點力量 +1%
         critDamage += stats.getBonusCritDamage(); // 裝備加成
+        var race=plugin.getRaceManager()==null?null:plugin.getRaceManager().getPlayerRaceData(player);
+        if(race!=null) critDamage+=race.getBonusCritDamage()*100;
         return critDamage;
     }
 

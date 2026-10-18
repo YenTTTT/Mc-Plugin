@@ -28,7 +28,7 @@ commands:
     aliases: [weapons, customweapon, cweapon]
   custommob:
     description: Spawn and manage custom mobs
-    usage: /custommob <spawn|list|info> [mob_key]
+    usage: /custommob <spawn|list|info> [mob_key] [level]
     permission: customrpg.mob
     permission-message: You don't have permission to use this command!
     aliases: [cmob, custommobs, spawncmob]
@@ -119,7 +119,7 @@ commands:
     permission-message: You don't have permission to use this command!
     aliases: [quests, q]
   skillbar:
-    description: 切換快捷技能列 — 開啟後鍵盤 1~4 直接施放對應技能
+    description: 切換快捷技能列（預設開啟）— 1～4 天賦技能，5 種族技能，6～9 持物
     usage: /skillbar
     permission: customrpg.skillbar
     permission-message: You don't have permission to use this command!

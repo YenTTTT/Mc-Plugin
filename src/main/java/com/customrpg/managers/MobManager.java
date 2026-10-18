@@ -442,7 +442,7 @@ public class MobManager {
 
         // 檢查是否需要偽裝
         LivingEntity mob;
-        if (mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
+        if (profile(mobData) == null && mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
             mob = spawnDisguisedMob(mobData, spawnLocation, level);
         } else {
             mob = spawnNormalMob(mobData, spawnLocation, level);
@@ -456,6 +456,7 @@ public class MobManager {
         mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
         mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
 
+        trackSpawn(mob);
         plugin.getLogger().info("Spawned custom mob: " + mobData.getName() + " (Lv." + level + ") at " + spawnLocation);
         return mob;
     }
@@ -484,7 +485,7 @@ public class MobManager {
 
         // 檢查是否需要偽裝
         LivingEntity mob;
-        if (mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
+        if (profile(mobData) == null && mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
             mob = spawnDisguisedMob(mobData, spawnLocation, level);
         } else {
             mob = spawnNormalMob(mobData, spawnLocation, level);
@@ -497,7 +498,7 @@ public class MobManager {
         // 設置持久化數據
         mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
         mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
-
+        trackSpawn(mob);
         return mob;
     }
 
@@ -520,7 +521,7 @@ public class MobManager {
         level = Math.max(1, level);
 
         LivingEntity mob;
-        if (mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
+        if (profile(mobData) == null && mobData.getDisguise() != null && mobData.getDisguise().isEnabled()) {
             mob = spawnDisguisedMob(mobData, spawnLocation, level);
         } else {
             mob = spawnNormalMob(mobData, spawnLocation, level);
@@ -532,7 +533,7 @@ public class MobManager {
 
         mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
         mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
-
+        trackSpawn(mob);
         return mob;
     }
 
@@ -554,6 +555,12 @@ public class MobManager {
         return spawnEventMob(mobKey,location,level,beforeSpawn,true);
     }
 
+    /** Durable identity reservation for roaming encounters, using the caller's own PDC namespace. */
+    public LivingEntity spawnReservedMob(String mobKey, Location location, int level,
+                                        java.util.function.Consumer<LivingEntity> beforeSpawn) {
+        return spawnEventMob(mobKey, location, level, beforeSpawn, false);
+    }
+
     private LivingEntity spawnEventMob(String mobKey,Location location,int level,
                                        java.util.function.Consumer<LivingEntity> beforeSpawn,boolean testMode) {
         MobData data = mobTypes.get(mobKey);
@@ -563,11 +570,13 @@ public class MobManager {
         Location safe = testMode?findSafeSpawnLocationExactForTesting(location):findSafeSpawnLocationExact(location);
         if (safe == null) return null;
         int mobLevel = Math.max(1, level);
-        return spawnNormalMob(data, safe, mobLevel, entity -> {
+        LivingEntity spawned = spawnNormalMob(data, safe, mobLevel, entity -> {
             entity.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
             entity.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, mobLevel);
             beforeSpawn.accept(entity);
         });
+        if (spawned != null) trackSpawn(spawned);
+        return spawned;
     }
 
     /**
@@ -684,6 +693,8 @@ public class MobManager {
             return null;
         }
 
+        var appearance = profile(mobData);
+        if (appearance != null) return appearance.entityType();
         DisguiseConfig disguise = mobData.getDisguise();
         if (disguise != null && disguise.isEnabled()) {
             return disguise.getDisguiseType() == EntityType.ARMOR_STAND ? EntityType.ZOMBIE : disguise.getDisguiseType();
@@ -862,12 +873,26 @@ public class MobManager {
 
     private LivingEntity spawnNormalMob(MobData mobData, Location location, int level,
                                        java.util.function.Consumer<LivingEntity> beforeSpawn) {
-        Entity entity = beforeSpawn == null ? location.getWorld().spawnEntity(location, mobData.getEntityType())
-                : location.getWorld().spawnEntity(location, mobData.getEntityType(),
-                org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, raw -> {
-                    if (raw instanceof LivingEntity living) beforeSpawn.accept(living);
-                });
-        if (!(entity instanceof LivingEntity)) {
+        Entity entity;
+        try {
+            entity = location.getWorld().spawnEntity(location, getActualSpawnEntityType(mobData),
+                    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, raw -> {
+                        if (!(raw instanceof LivingEntity living)) return;
+                        living.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobData.getKey());
+                        living.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+                        var presentation = profile(mobData);
+                        if (presentation != null && plugin.getMobEncounterManager() != null) {
+                            plugin.getMobEncounterManager().applyAppearance(living, presentation);
+                            var box = living.getBoundingBox();
+                            for (int x = ((int)Math.floor(box.getMinX())) >> 4; x <= ((int)Math.floor(box.getMaxX())) >> 4; x++)
+                                for (int z = ((int)Math.floor(box.getMinZ())) >> 4; z <= ((int)Math.floor(box.getMaxZ())) >> 4; z++)
+                                    if (!location.getWorld().isChunkLoaded(x, z)) throw new SpawnSpaceRejected();
+                            if (box.getMaxY() >= location.getWorld().getMaxHeight() || living.collidesAt(location)) throw new SpawnSpaceRejected();
+                        }
+                        if (beforeSpawn != null) beforeSpawn.accept(living);
+                    });
+        } catch (SpawnSpaceRejected rejected) { return null; }
+        if (!(entity instanceof LivingEntity) || !entity.isValid() || entity.isDead()) {
             entity.remove();
             return null;
         }
@@ -946,7 +971,7 @@ public class MobManager {
         applySpawnPersistence(mob);
 
         // 只有當生物是被動類型且設置了傷害值時，才賦予攻擊行為
-        if (isPassiveMob(disguise.getDisguiseType()) && mobData.getBaseDamage() > 0) {
+        if (profile(mobData) == null && isPassiveMob(disguise.getDisguiseType()) && mobData.getBaseDamage() > 0) {
             applyAggressiveBehavior(mob);
         }
 
@@ -1373,6 +1398,14 @@ public class MobManager {
         }
     }
 
+    private static final class SpawnSpaceRejected extends RuntimeException {}
+    private com.customrpg.mobs.MobProfile profile(MobData data) {
+        return plugin.getMobProfileRegistry() == null ? null : plugin.getMobProfileRegistry().get(data.getKey());
+    }
+    private void trackSpawn(LivingEntity mob) {
+        if (plugin.getMobEncounterManager() != null) plugin.getMobEncounterManager().track(mob);
+    }
+
     /**
      * Check if an entity is a custom mob
      * @param entity The entity to check
@@ -1448,7 +1481,9 @@ public class MobManager {
     public List<String> getNormalMobKeys() {
         List<String> normalKeys = new ArrayList<>();
         for (Map.Entry<String, MobData> entry : mobTypes.entrySet()) {
-            if (!entry.getValue().isBoss() && !entry.getValue().getTags().contains("event-only")) {
+            if (!entry.getValue().isBoss() && !entry.getValue().getTags().contains("event-only")
+                    && !entry.getValue().getTags().contains("summon-only")
+                    && !Set.of("magma_core_medium", "magma_core_small").contains(entry.getKey())) {
                 normalKeys.add(entry.getKey());
             }
         }

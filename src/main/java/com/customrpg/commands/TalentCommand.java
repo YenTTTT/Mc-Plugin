@@ -14,8 +14,8 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * TalentCommand - 天賦系統指令處理器
@@ -55,14 +55,15 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String subCommand = args[0].toLowerCase();
+        String subCommand = args[0].toLowerCase(Locale.ROOT);
+        String branchName = switch (subCommand) { case "warrior" -> "weapon"; case "mage" -> "fire"; default -> subCommand; };
+        try {
+            TalentBranch.valueOf(branchName.toUpperCase(Locale.ROOT));
+            return handleBranchCommand(sender, branchName);
+        } catch (IllegalArgumentException ignored) { }
+
 
         switch (subCommand) {
-            case "warrior":
-            case "mage":
-            case "assassin":
-                return handleBranchCommand(sender, subCommand);
-
             case "give":
                 return handleGiveCommand(sender, args);
 
@@ -97,7 +98,7 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
         TalentBranch branch;
 
         try {
-            branch = TalentBranch.valueOf(branchName.toUpperCase());
+            branch = TalentBranch.valueOf(branchName.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             sender.sendMessage(ChatColor.RED + "無效的分支名稱！");
             return true;
@@ -241,15 +242,18 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // 重新載入插件 (簡化版本，實際上可能需要重新初始化 TalentManager)
-        sender.sendMessage(ChatColor.YELLOW + "正在重新載入天賦配置...");
-
-        try {
-            // 這裡可以添加重新載入邏輯
-            sender.sendMessage(ChatColor.GREEN + "天賦配置重新載入完成！");
-        } catch (Exception e) {
-            sender.sendMessage(ChatColor.RED + "重新載入失敗: " + e.getMessage());
+        if (!talentManager.reloadConfigurations()) {
+            sender.sendMessage("§c天賦配置載入失敗，已保留原設定；請查看 console。");
+            return true;
         }
+        if (plugin.getTalentSkillManager() != null) plugin.getTalentSkillManager().getExpansion().clear();
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            talentManager.applyTalentEffects(player);
+            if (plugin.getTalentPassiveEffectManager() != null) plugin.getTalentPassiveEffectManager().refreshPlayerEffects(player);
+            if (player.getOpenInventory().getTitle().startsWith("§6§l天賦樹 - ")
+                    || player.getOpenInventory().getTitle().equals("§6§l選擇天賦流派")) player.closeInventory();
+        }
+        sender.sendMessage("§a天賦配置已重新載入；玩家投點與綁定保留，持續領域已清除。");
 
         return true;
     }
@@ -262,7 +266,7 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§6§l天賦系統指令幫助");
         sender.sendMessage("");
         sender.sendMessage("§e/talent §7- 開啟天賦GUI");
-        sender.sendMessage("§e/talent <分支> §7- 開啟指定分支 (warrior/mage/assassin)");
+        sender.sendMessage("§e/talent <分支> §7- 開啟指定分支 (frost/storm/earth/light 等，Tab 查看全部)");
 
         if (sender.hasPermission("customrpg.talent.admin")) {
             sender.sendMessage("");
@@ -282,11 +286,10 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            List<String> subCommands = Arrays.asList("warrior", "mage", "assassin", "help");
-
-            if (sender.hasPermission("customrpg.talent.admin")) {
-                subCommands = Arrays.asList("warrior", "mage", "assassin", "give", "reset", "info", "reload", "help");
-            }
+            List<String> subCommands = new ArrayList<>();
+            for (TalentBranch branch : TalentBranch.values()) subCommands.add(branch.name().toLowerCase(Locale.ROOT));
+            subCommands.addAll(List.of("warrior", "mage", "help"));
+            if (sender.hasPermission("customrpg.talent.admin")) subCommands.addAll(List.of("give", "reset", "info", "reload"));
 
             for (String subCommand : subCommands) {
                 if (subCommand.toLowerCase().startsWith(args[0].toLowerCase())) {

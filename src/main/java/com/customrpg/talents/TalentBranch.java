@@ -20,7 +20,11 @@ public enum TalentBranch {
     BLOOD("赤血操術系", "操控血液的禁忌術式"),
     ASSASSIN("刺客系", "影襲 / 連擊 / 收割的暗殺技巧"),
     BEAST("野獸系", "馴服野獸召喚同伴 / 化身野獸變身戰鬥"),
-    BOW("風獵者之道", "距離狙擊 / 箭雨連射 / 陷阱控場的弓箭流派");
+    BOW("風獵者之道", "距離狙擊 / 箭雨連射 / 陷阱控場的弓箭流派"),
+    FROST("冰霜系", "冰霜射線 / 緩速控場 / 暴風雪領域"),
+    STORM("雷霆系", "連鎖雷電 / 疾風位移 / 近身風暴"),
+    EARTH("大地守衛系", "震地 / 岩甲 / 團隊守護陣地"),
+    LIGHT("聖光系", "治療 / 淨化 / 聖光穿刺 / 同隊支援");
 
     private final String displayName;
     private final String description;

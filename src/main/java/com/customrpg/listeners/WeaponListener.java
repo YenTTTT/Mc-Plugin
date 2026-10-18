@@ -238,12 +238,13 @@ public class WeaponListener implements Listener {
 
         // === 3) Crit ===
         double critChancePercent = 0.0;
-        double critDamageMultiplier = 1.0;
+        double critDamageMultiplier = 1.5;
 
         // 從自訂武器取得暴擊屬性
         if (weaponData != null) {
             critChancePercent = weaponData.getDoubleExtra("crit-chance", 0.0);
-            critDamageMultiplier = weaponData.getDoubleExtra("crit-damage-multiplier", 0.0);
+            double configuredCritical=weaponData.getDoubleExtra("crit-damage-multiplier",1.5);
+            critDamageMultiplier=Double.isFinite(configuredCritical)&&configuredCritical>1.0?configuredCritical:1.5;
         }
 
         // 套用「被動增益」的暴擊率加成
@@ -254,8 +255,10 @@ public class WeaponListener implements Listener {
 
         // === 3.5) 加入 Agility (敏捷) 暴擊率加成 ===
         // 無論是否使用自訂武器，都套用敏捷暴擊加成
-        double agilityBonus = playerStats.getAgility() * 0.2; // 每點 Agility +0.2% 暴擊率
+        double agilityBonus = playerStats.getTotalAgility() * 0.2; // Includes race and equipment agility.
         critChancePercent += agilityBonus;
+        critChancePercent += playerStats.getBonusCritChance();
+        critDamageMultiplier += playerStats.getBonusCritDamage()/100.0;
 
         // === 3.6) 種族被動暴擊率加成 ===
         if (raceManager != null && raceManager.hasRace(player)) {

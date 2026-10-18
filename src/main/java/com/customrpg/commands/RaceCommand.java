@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 
 /**
  * RaceCommand - 種族系統指令處理器
@@ -54,7 +55,7 @@ public class RaceCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String sub = args[0].toLowerCase();
+        String sub = args[0].toLowerCase(Locale.ROOT);
         return switch (sub) {
             case "info" -> handleInfoCommand(sender, args);
             case "set" -> handleSetCommand(sender, args);
@@ -89,6 +90,9 @@ public class RaceCommand implements CommandExecutor, TabCompleter {
         }
 
         String raceId = raceManager.getPlayerRaceId(target);
+        if(!raceManager.isPlayerDataAvailable(target)) {
+            sender.sendMessage("§c種族資料讀取失敗，選擇已鎖定；請管理員修復原始存檔後重新載入。"); return true;
+        }
         if (raceId == null) {
             sender.sendMessage(ChatColor.YELLOW + target.getName() + " §e尚未選擇種族。");
             return true;
@@ -125,12 +129,11 @@ public class RaceCommand implements CommandExecutor, TabCompleter {
                 + " §9防禦: §f+" + race.calculateDefenseBonus(stats.getLevel())
                 + " §5精神: §f+" + race.calculateSpiritBonus(stats.getLevel()));
 
-        if (!race.getSkills().isEmpty()) {
-            sender.sendMessage("");
-            sender.sendMessage("§d§l── 種族技能 ──");
-            for (String skill : race.getSkills()) {
-                sender.sendMessage("§b• " + skill);
-            }
+        var skill = com.customrpg.races.RacialSkill.forRace(race.getId());
+        if (skill != null) {
+            sender.sendMessage("§d§l── 種族技能 [數字鍵 5] ──");
+            sender.sendMessage("§b" + skill.displayName() + " §7— " + skill.description());
+            sender.sendMessage("§7冷卻 " + skill.cooldown() + " 秒；消耗 " + skill.manaCost() + " MANA");
         }
 
         sender.sendMessage("");
@@ -171,7 +174,7 @@ public class RaceCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String raceId = args[2].toLowerCase();
+        String raceId = args[2].toLowerCase(Locale.ROOT);
         RaceData raceData = raceManager.getRaceData(raceId);
         if (raceData == null) {
             sender.sendMessage(ChatColor.RED + "無效的種族 ID: " + raceId);
@@ -179,15 +182,14 @@ public class RaceCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // 先重置再設定（允許管理員覆蓋）
-        raceManager.resetPlayerRace(target);
+        // 原子替換種族，儲存成功後才清理舊技能並套用新屬性
         boolean success = raceManager.setPlayerRace(target, raceId);
 
         if (success) {
             sender.sendMessage(ChatColor.GREEN + "已將 " + target.getName() + " 的種族設定為: " + raceData.getDisplayName());
             target.sendMessage("§a§l[種族] §e管理員已將你的種族設定為: " + raceData.getDisplayName());
         } else {
-            sender.sendMessage(ChatColor.RED + "設定種族失敗！");
+            sender.sendMessage(ChatColor.RED + "設定種族失敗；原有種族保留。"+raceManager.getLastError());
         }
 
         return true;
@@ -213,7 +215,9 @@ public class RaceCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        raceManager.resetPlayerRace(target);
+        if(!raceManager.tryResetPlayerRace(target)) {
+            sender.sendMessage(ChatColor.RED+"重置失敗；原有種族保留。"+raceManager.getLastError()); return true;
+        }
         sender.sendMessage(ChatColor.GREEN + "已重置 " + target.getName() + " 的種族。");
         target.sendMessage("§c§l[種族] §e你的種族已被管理員重置。使用 §a/race §e重新選擇。");
         return true;
@@ -241,15 +245,12 @@ public class RaceCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        raceManager.reload();
+        if(!raceManager.reloadConfiguration()) {
+            sender.sendMessage(ChatColor.RED+"重載失敗，保留先前設定。"+raceManager.getLastError()); return true;
+        }
         sender.sendMessage(ChatColor.GREEN + "種族配置已重新載入！共 " + raceManager.getRaceCount() + " 個種族。");
 
         // 重新套用所有在線玩家的種族屬性
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (raceManager.hasRace(player)) {
-                raceManager.applyRaceStats(player);
-            }
-        }
         sender.sendMessage(ChatColor.GREEN + "已重新套用所有在線玩家的種族屬性。");
 
         return true;

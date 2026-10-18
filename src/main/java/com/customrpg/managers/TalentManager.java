@@ -72,7 +72,7 @@ public class TalentManager {
     /**
      * 從配置檔案載入天賦
      */
-    private void loadTalentConfigurations() {
+    private void loadTalentConfigurations() throws Exception {
         plugin.getLogger().info("開始載入天賦配置從: " + talentConfigFile.getAbsolutePath());
 
         if (!talentConfigFile.exists()) {
@@ -82,42 +82,83 @@ public class TalentManager {
 
         if (!talentConfigFile.exists()) {
             plugin.getLogger().severe("無法創建配置檔案！");
-            return;
+            throw new IOException("Cannot create talents.yml");
         }
 
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(talentConfigFile);
+        YamlConfiguration config = new YamlConfiguration();
+        config.load(talentConfigFile);
+        File additionalFile = new File(plugin.getDataFolder(), "config/talents_additional.yml");
+        if (!additionalFile.exists()) plugin.saveResource("config/talents_additional.yml", false);
+        YamlConfiguration additional = new YamlConfiguration();
+        additional.load(additionalFile);
         plugin.getLogger().info("配置檔案載入完成，根節點數量: " + config.getKeys(false).size());
 
         // 如果配置檔案是空的，先跳過載入天賦
         if (config.getKeys(false).isEmpty()) {
             plugin.getLogger().warning("天賦配置檔案為空，請手動配置 talents.yml");
             plugin.getLogger().warning("配置檔案路徑: " + talentConfigFile.getAbsolutePath());
-            return;
+            throw new IllegalArgumentException("talents.yml is empty");
         }
 
         plugin.getLogger().info("找到配置分支: " + config.getKeys(false));
 
+        Map<TalentBranch, TalentTree> next = new EnumMap<>(TalentBranch.class);
+        Set<String> ids = new HashSet<>();
         for (TalentBranch branch : TalentBranch.values()) {
-            loadBranchTalents(config, branch);
+            TalentTree tree = new TalentTree(branch, branch.getDisplayName(), branch.getDescription());
+            loadBranchTalents(config, branch, tree);
+            loadBranchTalents(additional, branch, tree);
+            Set<Integer> slots = new HashSet<>();
+            for (Talent talent : tree.getAllTalents().values()) {
+                if (!ids.add(talent.getId())) throw new IllegalArgumentException("Duplicate talent ID: " + talent.getId());
+                if (ExpandedTalentSkills.isExpansionBranch(branch)) {
+                    ExpandedTalentSkills.validate(talent);
+                    if (!slots.add(talent.getGuiSlot())) throw new IllegalArgumentException("Duplicate GUI slot in " + branch);
+                }
+            }
+            next.put(branch, tree);
+        }
+        for (TalentTree tree : next.values()) for (Talent talent : tree.getAllTalents().values())
+            for (Talent.Prerequisite pre : talent.getPrerequisites())
+                if (ExpandedTalentSkills.isExpansionBranch(talent.getBranch())
+                        && (tree.getTalent(pre.talentId) == null || pre.requiredLevel < 1
+                        || pre.requiredLevel > tree.getTalent(pre.talentId).getMaxLevel()))
+                    throw new IllegalArgumentException("Invalid prerequisite for " + talent.getId());
+        for (TalentTree tree : next.values()) if (ExpandedTalentSkills.isExpansionBranch(tree.getBranch()))
+            for (String id : tree.getAllTalents().keySet()) validatePath(tree, id, new HashSet<>());
+        talentTrees.clear();
+        talentTrees.putAll(next);
+    }
+
+    private void validatePath(TalentTree tree, String id, Set<String> path) {
+        if (!path.add(id)) throw new IllegalArgumentException("Cyclic prerequisite: " + id);
+        for (Talent.Prerequisite pre : tree.getTalent(id).getPrerequisites()) validatePath(tree, pre.talentId, path);
+        path.remove(id);
+    }
+
+    /** Validate both files before replacing live trees. Player investment and bindings are retained. */
+    public boolean reloadConfigurations() {
+        try { loadTalentConfigurations(); return true; }
+        catch (Exception error) {
+            plugin.getLogger().severe("Talent reload rejected; previous trees retained: " + error.getMessage());
+            return false;
         }
     }
 
     /**
      * 載入指定分支的天賦
      */
-    private void loadBranchTalents(YamlConfiguration config, TalentBranch branch) {
-        String branchKey = branch.name().toLowerCase();
+    private void loadBranchTalents(YamlConfiguration config, TalentBranch branch, TalentTree tree) {
+        String branchKey = branch.name().toLowerCase(Locale.ROOT);
         plugin.getLogger().info("正在載入分支: " + branchKey);
 
         ConfigurationSection branchSection = config.getConfigurationSection(branchKey);
 
         if (branchSection == null) {
-            plugin.getLogger().warning("未找到分支配置: " + branchKey);
-            plugin.getLogger().warning("可用的配置節點: " + config.getKeys(false));
+            if (config.contains(branchKey)) throw new IllegalArgumentException("Invalid branch: " + branchKey);
             return;
         }
 
-        TalentTree tree = talentTrees.get(branch);
         if (tree == null) {
             plugin.getLogger().severe("天賦樹 " + branch + " 未初始化！");
             return;
@@ -127,10 +168,10 @@ public class TalentManager {
         plugin.getLogger().info("分支 " + branchKey + " 中找到 " + talentKeys.size() + " 個天賦: " + talentKeys);
 
         for (String talentId : talentKeys) {
+            if (tree.getTalent(talentId) != null) continue; // Deployed primary definition takes priority.
             ConfigurationSection talentSection = branchSection.getConfigurationSection(talentId);
             if (talentSection == null) {
-                plugin.getLogger().warning("天賦 " + talentId + " 配置為空");
-                continue;
+                throw new IllegalArgumentException("Invalid talent section: " + talentId);
             }
 
             try {
@@ -139,7 +180,7 @@ public class TalentManager {
                 plugin.getLogger().info("成功載入天賦: " + talentId);
             } catch (Exception e) {
                 plugin.getLogger().warning("載入天賦失敗 " + talentId + ": " + e.getMessage());
-                e.printStackTrace();
+                throw new IllegalArgumentException("Invalid talent " + talentId, e);
             }
         }
 
@@ -150,6 +191,16 @@ public class TalentManager {
      * 從配置段載入單個天賦
      */
     private Talent loadTalentFromConfig(String talentId, ConfigurationSection section, TalentBranch branch) {
+        if (ExpandedTalentSkills.isExpansionBranch(branch)) {
+            for (String key : List.of("max-level", "points-per-level", "gui.slot", "cooldown", "manaCost", "hpCost"))
+                if (section.contains(key) && !(section.get(key) instanceof Number))
+                    throw new IllegalArgumentException("Expected a number at " + talentId + "." + key);
+            var levels = section.getConfigurationSection("levels");
+            if (levels == null) throw new IllegalArgumentException("Missing levels: " + talentId);
+            for (var entry : levels.getValues(true).entrySet())
+                if (!(entry.getValue() instanceof ConfigurationSection) && !(entry.getValue() instanceof Number))
+                    throw new IllegalArgumentException("Expected a numeric effect at " + talentId + "." + entry.getKey());
+        }
         String name = section.getString("name", talentId);
         String description = section.getString("description", "");
         TalentType type = TalentType.valueOf(section.getString("type", "PASSIVE").toUpperCase());
@@ -578,6 +629,7 @@ public class TalentManager {
 
         // 執行重置
         playerTalents.resetAllTalents();
+        if (plugin.getTalentSkillManager() != null) plugin.getTalentSkillManager().getExpansion().cancel(player);
 
         // 同步返還 PlayerStats 中的天賦點數
         PlayerStatsManager statsManager = plugin.getPlayerStatsManager();

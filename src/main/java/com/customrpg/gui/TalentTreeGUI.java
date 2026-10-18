@@ -126,7 +126,7 @@ public class TalentTreeGUI implements Listener {
                 lore.add("§7觸發方式: " + triggerDisplay);
             }
 
-            // 主動技能才顯示冷卻/消耗/機制
+            // 主動技能才顯示冷卻、消耗與快捷鍵
             if (talent.getType() == TalentType.ACTIVE) {
                 lore.add("§7冷卻: §f" + talent.getCooldown() + "秒");
                 if (talent.getManaCost() > 0) {
@@ -135,9 +135,7 @@ public class TalentTreeGUI implements Listener {
                 if (talent.getHpCost() > 0) {
                     lore.add("§7消耗: §c" + (int)(talent.getHpCost() * 100) + "% 生命值");
                 }
-                if (talent.getMechanism() != null && !talent.getMechanism().isEmpty()) {
-                    lore.add("§7機制物品: §f" + talent.getMechanism());
-                }
+                lore.add("§7攜帶後使用快捷鍵 1～4；不需要施法道具");
             }
 
             // 前置要求
@@ -212,14 +210,15 @@ public class TalentTreeGUI implements Listener {
             } else if (key.endsWith("Percent") || key.endsWith("percent") || key.equals("lifeStealPercent")
                     || key.equals("leechPercent") || key.equals("bonusDamagePercent")
                     || key.equals("shieldPercent") || key.equals("hpCostReduction")
+                    || key.equals("reduction") || key.equals("chilledBonus") || key.equals("undeadBonus")
                     || key.equals("executeThreshold")) {
                 lore.add(" §7- " + translated + ": §f" + (int)(val * 100) + "%");
             } else if (key.startsWith("statBonus_")) {
                 String stat = key.substring("statBonus_".length());
                 lore.add(" §7- " + translateStatName(stat) + ": §a+" + (int)val);
-            } else if (key.equals("duration") || key.equals("burnDuration") || key.equals("delay")) {
+            } else if (key.equals("duration") || key.equals("burnDuration") || key.equals("delay") || key.equals("slowDuration")) {
                 lore.add(" §7- " + translated + ": §f" + formatNum(val) + "秒");
-            } else if (key.equals("radius") || key.equals("range")) {
+            } else if (key.equals("radius") || key.equals("range") || key.equals("distance") || key.equals("chainRange")) {
                 lore.add(" §7- " + translated + ": §f" + formatNum(val) + "格");
             } else if (key.equals("cooldownReduction")) {
                 lore.add(" §7- " + translated + ": §f" + formatNum(val) + "秒");
@@ -258,6 +257,15 @@ public class TalentTreeGUI implements Listener {
             case "strengthScaling" -> "力量倍率";
             case "agilityScaling" -> "敏捷倍率";
             case "baseDamage" -> "基礎傷害";
+            case "baseHeal" -> "基礎治療";
+            case "spiritScaling" -> "精神倍率";
+            case "reduction" -> "減傷比例";
+            case "chilledBonus" -> "緩速目標加傷比例";
+            case "undeadBonus" -> "不死生物加傷比例";
+            case "distance" -> "位移距離";
+            case "chainCount" -> "連鎖目標上限";
+            case "chainRange" -> "連鎖跳躍距離";
+            case "slowAmplifier" -> "緩速等級（0 為 I）";
             case "damageMultiplier" -> "傷害倍率";
             case "damageType" -> "傷害類型";
             case "bonusDamagePercent" -> "額外傷害";
@@ -358,20 +366,7 @@ public class TalentTreeGUI implements Listener {
             return "§d被動效果（自動觸發）";
         }
 
-        String trigger = talent.getTriggerType();
-        if (trigger == null || trigger.isEmpty()) return null;
-
-        return switch (trigger.toUpperCase()) {
-            case "RIGHT_CLICK" -> "§f手持機制物品 + §a右鍵";
-            case "LEFT_CLICK" -> "§f手持機制物品 + §c左鍵";
-            case "LEFT_CLICK_SNEAK" -> "§f手持機制物品 + §c蹲下左鍵";
-            case "RIGHT_CLICK_SNEAK" -> "§f手持機制物品 + §a蹲下右鍵";
-            case "ON_HIT" -> "§f攻擊命中時自動觸發";
-            case "ON_KILL" -> "§f擊殺敵人時自動觸發";
-            case "ON_DAMAGE" -> "§f受到傷害時自動觸發";
-            case "PASSIVE" -> "§d被動效果（自動觸發）";
-            default -> trigger;
-        };
+        return "§e攜帶技能後按數字鍵 1～4";
     }
 
     private void addPlayerInfo(Inventory gui, Player player) {
@@ -386,7 +381,9 @@ public class TalentTreeGUI implements Listener {
             lore.add("");
             lore.add("§f剩餘點數: §e" + playerTalents.getAvailablePoints());
             lore.add("");
-            lore.add("§f已選取的技能天賦: ");
+            lore.add("§f已選取的技能天賦 [快捷鍵 1～4]: ");
+            lore.add("§7滑鼠指向已學主動技能，按 1～4 綁定");
+            lore.add("§d5：種族技能 §7（關閉介面後施放）");
             
             String[] selected = playerTalents.getSelectedSkills();
             for (int i = 0; i < 4; i++) {
@@ -455,6 +452,7 @@ public class TalentTreeGUI implements Listener {
                         // 必須已經學習過該天賦，且天賦類型是主動技能
                         if (playerTalents.getTalentLevel(talent.getId()) > 0 && talent.getType() == TalentType.ACTIVE) {
                             playerTalents.setSelectedSkill(hotbarSlot, talent.getId());
+                            talentManager.savePlayerTalents(player.getUniqueId(), playerTalents);
                             player.sendMessage("§a[天賦] 已將 §e" + talent.getName() + " §a設定到第 " + (hotbarSlot + 1) + " 格！");
                             refreshGUI(player, branch);
                         } else if (talent.getType() != TalentType.ACTIVE) {

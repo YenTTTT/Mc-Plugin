@@ -70,6 +70,7 @@ public class ConfigManager {
         ensureDefaultConfigExists("config/mobs/types/enhanced_example.yml");  // 新格式範例（推薦）
         ensureDefaultConfigExists("config/mobs/types/wild_mobs.yml");          // 野外自動生成怪物
         ensureDefaultConfigExists("config/mobs/types/meteor.yml");
+        ensureDefaultConfigExists("config/mobs/types/biome_expansion.yml");
         ensureDefaultConfigExists("config/mobs/types/tier1_beginner.yml");     // 初級怪物配置
         ensureDefaultConfigExists("config/mobs/types/tier2_intermediate.yml");     // 中級怪物配置
         ensureDefaultConfigExists("config/mobs/types/tier3_advanced.yml");     // 高級怪物配置
@@ -80,6 +81,7 @@ public class ConfigManager {
         ensureDefaultConfigExists("config/equipment/armors.yml");  // MMORPG 裝甲配置
         ensureDefaultConfigExists("config/mob_spawner.yml");       // 動態怪物生成系統配置
         ensureDefaultConfigExists("config/races.yml");             // 種族系統配置
+        ensureDefaultConfigExists("config/races_additional.yml");  // Additional races without overwriting existing definitions
 
         // Load main config
         loadConfig("config/config.yml");

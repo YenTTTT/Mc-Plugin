@@ -53,6 +53,7 @@ public class TalentSkillManager {
     private final AoEUtil aoeUtil;
     private final ParticleUtil particleUtil;
     private final SoundUtil soundUtil;
+    private final ExpandedTalentSkills expansion;
 
     public TalentSkillManager(CustomRPG plugin) {
         this.plugin = plugin;
@@ -69,45 +70,12 @@ public class TalentSkillManager {
         this.aoeUtil = new AoEUtil();
         this.particleUtil = new ParticleUtil();
         this.soundUtil = new SoundUtil();
+        this.expansion = new ExpandedTalentSkills(plugin);
     }
 
-    /**
-     * 嘗試執行天賦技能
-     */
-    public boolean executeTalentSkill(Player player, String triggerType, ItemStack item) {
-        // 檢查是否應該切換技能（蹲下右鍵）
-        if (triggerType.equals("RIGHT_CLICK_SNEAK")) {
-            SkillSwitchManager switchManager = plugin.getSkillSwitchManager();
-            if (switchManager.handleSkillSwitch(player, item)) {
-                return true; // 切換成功，不執行技能
-            }
-        }
+    public ExpandedTalentSkills getExpansion() { return expansion; }
 
-        PlayerTalents pt = talentManager.getPlayerTalents(player);
-
-        // 使用技能切換系統獲取當前選擇的技能
-        SkillSwitchManager switchManager = plugin.getSkillSwitchManager();
-        Talent selectedTalent = switchManager.getCurrentSelectedSkill(player, item);
-
-        if (selectedTalent != null) {
-            int level = pt.getTalentLevel(selectedTalent.getId());
-            if (level > 0 && selectedTalent.getTriggerType() != null &&
-                selectedTalent.getTriggerType().equalsIgnoreCase(triggerType)) {
-                return castSkill(player, selectedTalent, level, item);
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 透過快捷技能列直接施放指定技能 (繞過 mechanism 觸發條件)
-     *
-     * @param player   施放玩家
-     * @param talentId 天賦技能 ID
-     * @param item     當前手持物品 (用於計算武器傷害)
-     * @return 是否施放成功
-     */
+    /** Cast a learned, equipped ACTIVE talent. Held equipment only supplies optional damage scaling. */
     public boolean castSkillDirectly(Player player, String talentId, ItemStack item) {
         PlayerTalents pt = talentManager.getPlayerTalents(player);
         Talent talent = talentManager.findTalent(talentId);
@@ -120,7 +88,12 @@ public class TalentSkillManager {
             player.sendMessage("§c你尚未學習技能: §f" + talent.getName());
             return false;
         }
-        return castSkill(player, talent, level, item);
+        if (!player.isOnline() || player.isDead() || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) return false;
+        if (talent.getType() != TalentType.ACTIVE || !java.util.Arrays.asList(pt.getSelectedSkills()).contains(talentId)) {
+            player.sendMessage("§c請先將已學習的主動技能攜帶至快捷槽 1～4。");
+            return false;
+        }
+        return castSkill(player, talent, level, item == null ? new ItemStack(Material.AIR) : item.clone());
     }
 
     private boolean castSkill(Player player, Talent talent, int level, ItemStack item) {
@@ -436,6 +409,10 @@ public class TalentSkillManager {
                 success = executeWindTrap(player, talent, level, item);
                 break;
             default:
+                if (ExpandedTalentSkills.handles(talent.getId())) {
+                    success = expansion.cast(player, talent, level);
+                    break;
+                }
                 player.sendMessage("§c技能尚未接入執行器: §f" + talent.getName() + " §7(" + talent.getId() + ")");
                 plugin.getLogger().warning("[TalentSkillManager] Unhandled talent skill: " + talent.getId());
                 break;
@@ -538,11 +515,6 @@ public class TalentSkillManager {
      * 狙殺 - 延遲射擊
      */
     private boolean executeSniperShot(Player player, Talent talent, int level, ItemStack item) {
-        if (item.getType() != Material.PRISMARINE_SHARD) {
-            // 如果不是要求的物品，雖然 trigger 匹配但不執行（根據需求：手持Prismarine Shard按左鍵）
-            return false;
-        }
-
         player.sendMessage("§7[狙殺] §f正在瞄準...");
         player.getWorld().playSound(player.getLocation(), "entity.breeze.charge", 1.0f, 1.2f);
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 10, 1)); // 0.5s 緩速 II
@@ -582,11 +554,6 @@ public class TalentSkillManager {
      * 槍械武器：壓制彈幕
      */
     private boolean executeSuppressiveBarrage(Player player, Talent talent, int level, ItemStack item) {
-        if (!isFirearmWeapon(item)) {
-            player.sendMessage("§c需要手持槍械武器才能使用 §e" + talent.getName());
-            return false;
-        }
-
         Talent.TalentLevelData data = talent.getLevelData(level);
         int shots = data.effects.getOrDefault("shotCount", 6.0).intValue();
         double shotMultiplier = data.effects.getOrDefault("damageMultiplier", 0.7);
@@ -652,11 +619,6 @@ public class TalentSkillManager {
      * 槍械武器：彈射穿甲彈
      */
     private boolean executeRicochetRound(Player player, Talent talent, int level, ItemStack item) {
-        if (!isFirearmWeapon(item)) {
-            player.sendMessage("§c需要手持槍械武器才能使用 §e" + talent.getName());
-            return false;
-        }
-
         Talent.TalentLevelData data = talent.getLevelData(level);
         double damageMultiplier = data.effects.getOrDefault("damageMultiplier", 1.8);
         double agilityScaling = data.effects.getOrDefault("agilityScaling", 0.35);
@@ -710,11 +672,6 @@ public class TalentSkillManager {
      * 近戰武器：旋風斬
      */
     private boolean executeCycloneSlash(Player player, Talent talent, int level, ItemStack item) {
-        if (!isMeleeWeapon(item)) {
-            player.sendMessage("§c需要手持近戰武器才能使用 §e" + talent.getName());
-            return false;
-        }
-
         Talent.TalentLevelData data = talent.getLevelData(level);
         double radius = data.effects.getOrDefault("radius", 4.0);
         double damageMultiplier = data.effects.getOrDefault("damageMultiplier", 1.8);
@@ -744,11 +701,6 @@ public class TalentSkillManager {
      * 近戰武器：流星步
      */
     private boolean executeMeteorStep(Player player, Talent talent, int level, ItemStack item) {
-        if (!isMeleeWeapon(item)) {
-            player.sendMessage("§c需要手持近戰武器才能使用 §e" + talent.getName());
-            return false;
-        }
-
         Talent.TalentLevelData data = talent.getLevelData(level);
         double dashDistance = data.effects.getOrDefault("dashDistance", 7.0);
         double width = data.effects.getOrDefault("width", 2.2);
@@ -795,11 +747,6 @@ public class TalentSkillManager {
      * 法杖：秘法連星
      */
     private boolean executeArcaneBarrage(Player player, Talent talent, int level, ItemStack item) {
-        if (!isMagicWeapon(item)) {
-            player.sendMessage("§c需要手持法杖才能使用 §e" + talent.getName());
-            return false;
-        }
-
         Talent.TalentLevelData data = talent.getLevelData(level);
         int boltCount = data.effects.getOrDefault("boltCount", 5.0).intValue();
         double boltDamage = data.effects.getOrDefault("boltDamageMultiplier", 0.9) * calculateBaseWeaponDamage(player, item)
@@ -845,11 +792,6 @@ public class TalentSkillManager {
      * 法杖：重力牢籠
      */
     private boolean executeGravityPrison(Player player, Talent talent, int level, ItemStack item) {
-        if (!isMagicWeapon(item)) {
-            player.sendMessage("§c需要手持法杖才能使用 §e" + talent.getName());
-            return false;
-        }
-
         Talent.TalentLevelData data = talent.getLevelData(level);
         double radius = data.effects.getOrDefault("radius", 4.0);
         int durationTicks = data.effects.getOrDefault("durationTicks", 80.0).intValue();
@@ -900,11 +842,6 @@ public class TalentSkillManager {
      * 共通最終技：終極劍雨
      */
     private boolean executeUltimateSwordRain(Player player, Talent talent, int level, ItemStack item) {
-        if (!isFirearmWeapon(item) && !isMeleeWeapon(item) && !isMagicWeapon(item)) {
-            player.sendMessage("§c需要手持槍械 / 近戰武器 / 法杖 才能施放 §6終極劍雨");
-            return false;
-        }
-
         Location center = player.getLocation().clone();
         double radius = talent.getEffectDouble(level, "radius", 5.5);
         int swordCount = (int) Math.round(talent.getEffectDouble(level, "swordCount", 28.0));
@@ -1091,24 +1028,6 @@ public class TalentSkillManager {
         }
     }
 
-    private boolean isFirearmWeapon(ItemStack item) {
-        if (item == null) return false;
-        Material type = item.getType();
-        return type == Material.IRON_HORSE_ARMOR || type == Material.GOLDEN_HORSE_ARMOR || type == Material.DIAMOND_HORSE_ARMOR;
-    }
-
-    private boolean isMeleeWeapon(ItemStack item) {
-        if (item == null) return false;
-        String name = item.getType().name();
-        return name.contains("SWORD") || name.contains("AXE") || name.contains("HOE");
-    }
-
-    private boolean isMagicWeapon(ItemStack item) {
-        if (item == null) return false;
-        Material type = item.getType();
-        return type == Material.STICK || type == Material.BLAZE_ROD || type == Material.BREEZE_ROD || type == Material.ENCHANTED_BOOK;
-    }
-
     private LivingEntity rayTraceLivingTarget(Player player, double range, double hitbox) {
         org.bukkit.util.RayTraceResult result = player.getWorld().rayTraceEntities(
                 player.getEyeLocation(), player.getEyeLocation().getDirection(), range, hitbox,
@@ -1191,10 +1110,6 @@ public class TalentSkillManager {
      * 星碎 - 投射3發自動追蹤的星光碎片
      */
     private boolean executeStarShatter(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.GOLD_NUGGET) {
-            return false;
-        }
-
         player.sendMessage("§e[星碎] §f發射星光碎片！");
 
         Location eyeLoc = player.getEyeLocation();
@@ -1222,7 +1137,7 @@ public class TalentSkillManager {
             , i * 3L);
         }
 
-        player.getWorld().playSound(eyeLoc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0f, 1.5f);
+        player.getWorld().playSound(eyeLoc, "block.amethyst_block.chime", 1.0f, 1.5f);
         return true;
     }
 
@@ -1230,10 +1145,6 @@ public class TalentSkillManager {
      * 落雷 - 對指定敵人發出落雷
      */
     private boolean executeLightningStrike(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.BONE) {
-            return false;
-        }
-
         // 獲取玩家視線目標
         LivingEntity target = getTargetEntity(player, 30.0);
         if (target == null) {
@@ -1279,10 +1190,6 @@ public class TalentSkillManager {
      * 直線風壓 - 放出強風割傷敵人並加速
      */
     private boolean executeWindBlade(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.STICK) {
-            return false;
-        }
-
         player.sendMessage("§a[直線風壓] §f疾風斬！");
 
         Location eyeLoc = player.getEyeLocation();
@@ -1324,10 +1231,6 @@ public class TalentSkillManager {
      * 土崩 - 重組土壤結構，噴飛目標
      */
     private boolean executeEarthCollapse(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.STICK) {
-            return false;
-        }
-
         player.sendMessage("§6[土崩] §f大地之力！");
 
         Location playerLoc = player.getLocation();
@@ -1394,10 +1297,6 @@ public class TalentSkillManager {
      * 龍捲風LV2 - 增強版龍捲風，範圍更大
      */
     private boolean executeTornadoLv2(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.PRISMARINE_CRYSTALS) {
-            return false;
-        }
-
         player.sendMessage("§6[龍捲風LV2] §f召喚強化龍捲風！");
 
         Location spawnLoc = player.getLocation().add(player.getLocation().getDirection().multiply(1));
@@ -1423,10 +1322,6 @@ public class TalentSkillManager {
      * 煥發LV2 - 範圍治療與持續傷害
      */
     private boolean executeFlourishLv2(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.PRISMARINE_CRYSTALS) {
-            return false;
-        }
-
         Location targetLoc = player.getTargetBlock(null, 15).getLocation();
         if (targetLoc.getBlock().getType() == Material.AIR) {
             targetLoc = player.getLocation().add(player.getLocation().getDirection().multiply(8));
@@ -1498,10 +1393,6 @@ public class TalentSkillManager {
      * 連鎖閃電LV2 - 連鎖多個目標並暈眩
      */
     private boolean executeChainLightningLv2(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.GOLD_NUGGET) {
-            return false;
-        }
-
         // 獲取初始目標
         LivingEntity initialTarget = getTargetEntity(player, 25.0);
         if (initialTarget == null) {
@@ -2071,10 +1962,6 @@ public class TalentSkillManager {
      * 展開必中領域，領域內所有目標持續受到無差別斬擊攻擊
      */
     private boolean executeMalevolentShrine(Player player, Talent talent, int level, ItemStack item) {
-        if (item == null || item.getType() != Material.NETHER_STAR) {
-            return false;
-        }
-
         player.sendMessage("§4[領域展開] §c伏魔御廚子！");
 
         Talent.TalentLevelData data = talent.getLevelData(level);

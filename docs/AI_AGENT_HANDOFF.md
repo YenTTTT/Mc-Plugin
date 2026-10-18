@@ -1,5 +1,64 @@
 # CustomRPG 接手與審查交接
 
+## 四種新天賦流派 — 最新接手狀態（2026-10-18）
+
+- 使用者要求更多不同天賦；新增 FROST／STORM／EARTH／LIGHT，各四主動兩被動、每個三級／每級一點。原十流派 140 個定義保留，現十四流派／164 個天賦。新檔 config/talents_additional.yml 自動部署；主檔 talents.yml 同 ID 整個定義優先。
+- ExpandedTalentSkills 由 TalentSkillManager 的既有已學／已攜帶／魔力／冷卻管線路由，1～4 主動／5 種族入口保留。八個被動使用 statBonus_ 既有六屬性公式。新招式限定生存／冒險，空手可用，總屬性縮放，不要求施法物品。
+- 新招式包含霜線／緩速／碎冰加傷／固定暴風雪，雷電跳躍／扇形推擊／安全水平位移／隨行雷暴，岩甲／震波／地面束縛／同隊守護陣，瞄準隊友或自療／不死加傷／自身淨化／同隊治療領域。傷害走 SkillDamageGuard 與虛擬 HP 實扣判斷，尊重安全區／內建保護區／遮擋／隊伍與 PvP；治療可取消；Boss 緩速半時。
+- 共用五 ticks timer，領域全服 64、每人三個，攻擊最多 32 目標、治療最多 16 附近玩家，每秒脈衝不補發延遲。岩甲與守護陣取最高值；新狀態在死亡、離線、傳送、模式、重置、成功重載及停用清除，領域區塊卸載停止。Potion gateway 供離線測試注入，沒有偽造全域 RegistryAccess。
+- TalentManager 改嚴格讀兩檔至候選樹後交換；新分支驗證數值／效果接線／等級／GUI 欄位／前置與循環。失敗保留原樹與檔案，不清領域。/talent reload 修正為真重讀，成功重算線上玩家屬性／被動並關閉天賦 GUI、清新領域，保留投點與既有記憶體冷卻。沒有重寫舊技能的所有 timer 或跨檔交易。
+- 主選單 54 格支援十四個 enum，實際 Inventory 身分／drag／close 清理。分支命令與 Tab 全接，warrior→weapon、mage→fire；新增效果數值有中文顯示。選單布局有改動，操作仍是點入分支／學習／按 1～4 綁定。
+- 新增四類測試與既有施法測試兩案，共 54 項；完整 **mvn clean verify：285 tests，0 failures／errors／skipped**。150 production Java、43 test 類別、36 YAML；JAR target/CustomRPG-1.0.jar。未啟動 Paper，下一步驗收實際按鍵／GUI／粒子、多人隊伍／PvP、位移與卸載、保護插件及數值平衡。見 [TALENT_EXPANSION.md](TALENT_EXPANSION.md)。
+
+
+## 怪物外觀與地形 Boss — 最新接手狀態（2026-10-18）
+
+- 使用者要求優化每種自訂怪的外觀／機制並擴充地形怪與 Boss，已明確選定原版客戶端即可。沒有資源包／模組要求；未宣稱增加自訂骨架。123 舊 ID＋30 新模板＝153 profiles（含未自動部署的四個舊範例），147 個用新通用招式、六個保留專屬控制器。
+- 新 package `com.customrpg.mobs`：MobProfile／MobProfileRegistry（嚴格不可變 overlay、錯誤重載保留舊設定）、MobAbility（17 招）、MobEncounterManager（有界共用 timer、蓄力／路徑衝鋒／射線／取消傷害／保護／生命週期）、WildernessBossManager（共用生成嘗試、先存身分、冷卻／TTL／卸載占額、IO 失敗停止 Boss）。
+- MobManager 在 spawn consumer 先貼身分並套尺寸，完整包圍盒確認區塊已載入與碰撞後再做持久預約。新外觀優先於舊 disguise，不建立額外顯示實體；舊數值／掉落留存。既有普通池排除 event-only、summon-only 及熔核分裂體。
+- MobListener 以已追蹤的 legacyMobs 取代週期全世界掃描；profile 非 legacy 不再執行舊 special-behavior，避免重複招式。SkillDamageGuard 防止招式被覆寫成普通近戰。舊熔核火／岩漿改純粒子能量點，關聯傷害尊重保護／取消。
+- 新資源 `config/mobs/encounters.yml`、`config/mobs/types/biome_expansion.yml`、`config/wilderness_bosses.yml` 自動補建。10 地形各兩普通＋一 Boss；稀有 Boss 預設 1%／每世界二隻／1024 格區域 30 分鐘冷卻／20 分鐘 TTL，持久檔 `data/wilderness_bosses.yml`。過期／停用清除不掉落，故障僅停稀有 Boss。
+- 新安裝 disabled-worlds 為空以支援 End；舊部署設定不自動覆寫，需合併。自然生怪仍要 /finishrpg，預設 vanilla 不變。模型 entity 改動只影響新生成，重載不替換舊 UUID；現有裝備不強制換色／替換。模板數值／掉落變更要重啟。
+- `/custommob spawn <id> [level]` 支援指定等級，info 顯示模型／招式（legacy 顯示真實原機制）；/mobspawn reload 讀 profile 與荒野 Boss 規則。首領不具 tag 不會因此進稀有池，手動 spawn 不占這套持久區域配額。
+- 新增五類 38 案例；完整 **mvn clean verify：231 tests，0 failures／errors／skipped**。149 production Java、39 test 類別、35 YAML，JAR target/CustomRPG-1.0.jar。未啟動 Paper；下一步為 AI、碰撞、真實傷害／插件組合、熱重載／重啟、負載及初始平衡驗收。詳見 [MOB_ENCOUNTERS.md](MOB_ENCOUNTERS.md)。
+
+下方自然生怪排查的「沒有擴增模板」及舊測試數屬前一階段紀錄；最新內容與驗證以上段為準。仍未取得使用者實服 status，不將初始自然生怪問題冒稱為已確認原因。
+
+## 自然生怪排查 — 最新接手狀態（2026-10-18）
+
+- 使用者回報看不到自訂怪自然生成；已請提供 `/mobspawn status`，尚未取得實服輸出，不能宣稱已確認或修好實服原因。
+- 原設計每次重啟需 `/finishrpg`，預設 vanilla 僅替換 NATURAL 敵怪；沒有默改為補怪、自動啟動或修改世界規則。`config/mob_spawner.yml` 的 `enabled: true` 不等同啟動。
+- DistanceSpawnManager 來源值去空白／轉大寫並驗證，CUSTOM／COMMAND 永不接管。WorldSpawnListener 在 MONITOR 觀測取消數，但僅為未取消且可接管的事件排程到下一 tick；生成成功才移除原怪。
+- status 加入獨立自然替換最後結果、全服事件／取消／成功數、跳過原因、世界生怪規則／上限／玩家資格與腳下模板篩選。定時 debug 摘要即使來源事件為 0 或尚未啟動也會輸出。FinishRpgCommand 共用目前阻擋診斷，避免顯示世界已關閉生怪卻仍說環境通過。
+- Paper 1.21.11 使用 GameRules.SPAWN_MOBS（指令 minecraft:spawn_mobs，舊 doMobSpawning）；為離線測試注入規則讀取函數，沒有建立假 RegistryAccess。原版 spawn cap 飽和、Paper per-player/simulation settings 及其他插件仍需實服查。
+- 新增 2 個 test 類別／14 項案例，完整 `mvn verify` **193 tests／0 failures／0 errors／0 skipped**。JAR `target/CustomRPG-1.0.jar`；production Java 144、test 類別 34、YAML 32。詳見 [MOB_SPAWNING.md](MOB_SPAWNING.md)。
+
+下一步：依使用者實服 status 判讀未啟動、無原版來源、事件取消、環境／時段／等級池或生成被拒；現有模板部分組合確實有空缺，但本輪沒有跨區／跨時段回退或擴增模板。
+
+## 技能快捷鍵與種族主動技能 — 最新接手狀態（2026-10-18）
+
+- 本次需求：移除天賦機制物品，改快捷鍵施放，5 固定種族技能，十二族不同能力；龍裔需翅膀／飛行／火焰攻擊。已完成對應程式、GUI 與操作說明，見 [SKILL_SWITCH_SYSTEM.md](../SKILL_SWITCH_SYSTEM.md)。
+- SkillBar 預設開啟，1～4 天賦／5 種族／6～9 手持。偏好 PDC 保存；啟用／登入時若選在保留格，改選第 6 格。取消施法時的欄位切換，保留原手持物。原版無任意鍵盤讀取，滾輪選取也會觸發；文件已交代。
+- 移除 SkillSwitchManager／SkillSwitchHintListener，舊 SkillListener 不再註冊；SkillTriggerListener 僅處理武器內建技能。TalentSkillManager 直接入口強制 ACTIVE、已學、已攜帶；移除材料及武器種類閘門，保留傷害來源、魔力／生命／冷卻。舊 YAML mechanism／trigger 保留讀取相容但不判斷；不覆寫部署檔，不清空普通背包物品。
+- RacialSkill 定義十二族的單一主動能力；RacialSkillManager 一個 5 tick 共用 task 管持續狀態／40 點粒子雙翼／下降保護。移速只改 customrpg:racial_skill_speed transient modifier。種族單一 PDC 冷卻跨重登／正常重啟並防換族繞過；天賦沿用記憶體冷卻。
+- 飛行僅撤回自身授予的 allowFlight；保留既有飛行與創造／旁觀模式。PDC 授權殘留在登入／啟動回收；空中收翼限制下降、一次性摔落保護，最長 60 秒，剩餘時間可跨重登；停用以原版緩降銜接。持續 buff 在死亡、登出、傳送、模式切換、換族／重置、成功種族重載及停用清理。
+- 傷害 listener 註冊於 Weapon／Stats 之後、Mob 虛擬 HP 轉換之前；有 SkillDamageGuard 防重入。有效命中才點燃／消耗首擊，取消傷害不吸血／擊退；治療與點燃尊重可取消事件。射線／範圍技能檢查遮擋、安全區與敵我，範圍最多 32 目標；天使同隊以 scoreboard team 成員判定。
+- 驗證：新增 3 個 test 類別、41 個案例；完整 `mvn clean verify` **179 tests／0 failures／0 errors／0 skipped**。production Java 144、test 類別 32、YAML 32；JAR target/CustomRPG-1.0.jar。沒有啟動 Paper，鍵盤封包／雙翼外觀／反作弊／多人 PvP 尚待實服。原七族數值未自動改動，不能宣稱已完成戰鬥平衡。
+
+下方「尚未開放種族技能」與較舊測試數為歷史階段，現況以本段與技能快捷鍵文件為準。
+
+## 種族擴充 — 最新接手狀態（2026-10-18）
+
+- 使用者要求新增種族並評估／優化原有種族；本輪新增龍裔、獸裔、暗精靈、半身人、魔像族，共十二族。獨立 `config/races_additional.yml` 自動建立，原 `races.yml` 同 ID 逐欄位優先；不覆寫舊玩家選擇或原七族數值。
+- RaceManager 嚴格載入設定與玩家檔，設定驗證後才交換；選族／直接換族／重置先原子儲存，再套用效果。壞檔鎖定寫入與選擇；未知／停用種族 ID 保留而效果歸零。玩家資料可用性可查，管理員指令不再在儲存前刪除原選擇。
+- 成長統一從 level - 1 計算；魔力由 PlayerStatsManager.recalculateMana 統一整合等級／種族／裝備／天賦。EquipmentManager、TalentPassiveEffectManager 與 RaceManager 都使用此公式；ManaManager 不再每秒解析 lore 重複加回魔。
+- 種族移速採 `customrpg:race_speed` transient modifier，不覆蓋其他來源；一個共用每秒 task 做脫戰回復，預設基礎 0.5 HP/s、傷害後八秒，負種族回復會降低最終速率而不扣血。治療尊重可取消事件；登入／重生重算、登出／停用清理。
+- GUI 原本固定七格，已擴為每頁 28 個圖示、支援多頁；驗證實際 Inventory、取消點擊／拖曳、清理關閉狀態。十四個原種族技能 ID 仍只有規劃，UI 明確標示尚未開放。StatCalculator 納入種族屬性／暴擊；WeaponListener 近戰有預設暴擊倍率與種族／裝備敏捷；RaceListener 在原版弓發射時保存種族親和／暴擊，再於 HIGH 優先序命中處理，以先於虛擬 HP 消耗。
+- 驗證：新增四個 test 類別共 22 項，完整 `mvn verify` 為 **138 tests／0 failures／0 errors／0 skipped**。144 個 production Java、29 個 test 類別、32 份 YAML。JAR `target/CustomRPG-1.0.jar`；尚未啟動 Paper，實服事件順序／GUI 渲染／多人平衡仍待驗收。
+- 詳見 [RACES.md](RACES.md) 的十二族表、七族預算與平衡建議、遷移及限制。天使／不死／矮人存在較高預算，保留舊數值並提出優先測量方向；沒有宣稱已做數值平衡或實作主動種族技能。既有天賦的獨立暴擊與部分技能路徑尚待統一。
+
+下方為世界事件開發的歷史階段與當時測試數；以本段與 RACES.md 的最新驗證數為準。
+
 ## Dynamic World Events — Current Stage（2026-10-18）
 
 - Current Stage：Stage 1–9 程式與本機驗證完成；Paper 實服驗收為 NEEDS_VERIFICATION。

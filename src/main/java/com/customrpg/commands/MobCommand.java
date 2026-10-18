@@ -23,7 +23,7 @@ import java.util.List;
  * to spawn custom mobs for testing and gameplay purposes.
  *
  * Usage:
- * - /custommob spawn <mob_key> - Spawn a custom mob at your location
+ * - /custommob spawn <mob_key> [level] - Spawn a custom mob at your location
  * - /custommob list - List all available custom mobs
  */
 public class MobCommand implements CommandExecutor, TabCompleter {
@@ -70,10 +70,10 @@ public class MobCommand implements CommandExecutor, TabCompleter {
 
             case "spawn":
                 if (args.length < 2) {
-                    sender.sendMessage(ChatColor.RED + "用法: /custommob spawn <mob_key>");
+                    sender.sendMessage(ChatColor.RED + "用法: /custommob spawn <mob_key> [level]");
                     return true;
                 }
-                return spawnMob(sender, args[1]);
+                return spawnMob(sender, args[1], args.length >= 3 ? args[2] : null);
 
             case "info":
                 if (args.length < 2) {
@@ -92,7 +92,7 @@ public class MobCommand implements CommandExecutor, TabCompleter {
     /**
      * Spawn a custom mob at the sender's location
      */
-    private boolean spawnMob(CommandSender sender, String mobKey) {
+    private boolean spawnMob(CommandSender sender, String mobKey, String levelArgument) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "此指令只能由玩家執行！");
             return true;
@@ -105,6 +105,17 @@ public class MobCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.RED + "未知的生物類型: " + mobKey);
             sender.sendMessage(ChatColor.YELLOW + "使用 /custommob list 查看所有可用生物");
             return true;
+        }
+
+        Integer requestedLevel = null;
+        if (levelArgument != null) {
+            try {
+                requestedLevel = Integer.parseInt(levelArgument);
+                if (requestedLevel < mobData.getMinLevel() || requestedLevel > mobData.getMaxLevel()) throw new NumberFormatException();
+            } catch (NumberFormatException error) {
+                sender.sendMessage("§c等級需為 " + mobData.getMinLevel() + "～" + mobData.getMaxLevel() + " 的整數。");
+                return true;
+            }
         }
 
         if (player.getWorld().getDifficulty() == Difficulty.PEACEFUL && mobManager.willBeRemovedInPeaceful(mobKey)) {
@@ -122,7 +133,8 @@ public class MobCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        LivingEntity mob = mobManager.spawnCustomMob(mobKey, spawnLocation);
+        LivingEntity mob = requestedLevel == null ? mobManager.spawnCustomMob(mobKey, spawnLocation)
+                : mobManager.spawnCustomMobWithLevel(mobKey, spawnLocation, requestedLevel);
 
         if (mob == null) {
             sender.sendMessage(ChatColor.RED + "生成生物失敗！");
@@ -214,6 +226,16 @@ public class MobCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.YELLOW + "傷害: " + ChatColor.WHITE +
                 String.format("%.1f", mobData.getDamage()));
             sender.sendMessage(ChatColor.YELLOW + "經驗值: " + ChatColor.WHITE + mobData.getExp());
+        }
+
+        var profile = plugin.getMobProfileRegistry() == null ? null : plugin.getMobProfileRegistry().get(mobKey);
+        if (profile != null) {
+            sender.sendMessage("§e實際造型: §f" + profile.entityType() + " × " + profile.scale());
+            sender.sendMessage("§e戰鬥招式: §f" + (profile.legacyBehavior() ? "沿用既有專屬機制：" + mobData.getSpecialBehavior()
+                    : String.join("、", profile.abilities().stream().map(com.customrpg.mobs.MobAbility::displayName).toList())));
+            sender.sendMessage("§7" + profile.description());
+            if (!profile.legacyBehavior()) sender.sendMessage("§7蓄力 " + profile.windup() + " 秒；招式間隔 " + profile.cooldown() + " 秒。");
+            sender.sendMessage("§7新模型適用於新生成實體。");
         }
 
         if (!mobData.getEquipment().isEmpty()) {

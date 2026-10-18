@@ -1,63 +1,29 @@
 package com.customrpg.managers;
 
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-/**
- * SkillBarManager - 快捷技能列管理器
- *
- * 追蹤哪些玩家已啟用快捷鍵施放功能。
- * 啟用後，按鍵盤 1~4 對應施放技能槽 1~4 的已攜帶技能。
- */
+/** Default-on hotkeys, with an explicit per-player opt-out stored in the player's vanilla data. */
 public class SkillBarManager {
+    private static final NamespacedKey ENABLED = new NamespacedKey("customrpg", "skillbar_enabled");
 
-    // 已啟用快捷鍵施放功能的玩家 UUID 集合
-    private final Set<UUID> enabledPlayers = ConcurrentHashMap.newKeySet();
-
-    /**
-     * 檢查玩家是否已啟用快捷技能列
-     *
-     * @param player 玩家
-     * @return 是否啟用
-     */
     public boolean isEnabled(Player player) {
-        return enabledPlayers.contains(player.getUniqueId());
+        Byte value = player.getPersistentDataContainer().get(ENABLED, PersistentDataType.BYTE);
+        return value == null || value != 0;
     }
-
-    /**
-     * 切換玩家的快捷技能列開關
-     *
-     * @param player 玩家
-     * @return 切換後的狀態 (true = 開啟, false = 關閉)
-     */
     public boolean toggle(Player player) {
-        UUID id = player.getUniqueId();
-        if (enabledPlayers.contains(id)) {
-            enabledPlayers.remove(id);
-            return false;
-        } else {
-            enabledPlayers.add(id);
-            return true;
-        }
+        boolean enabled = !isEnabled(player);
+        player.getPersistentDataContainer().set(ENABLED, PersistentDataType.BYTE, (byte) (enabled ? 1 : 0));
+        if (enabled) prepareHeldSlot(player);
+        return enabled;
     }
-
-    /**
-     * 強制關閉玩家的快捷技能列
-     *
-     * @param player 玩家
-     */
+    /** A non-reserved anchor is required: selecting an already-held vanilla slot sends no packet. */
+    public void prepareHeldSlot(Player player) {
+        if (isEnabled(player) && player.getInventory().getHeldItemSlot() < 5) player.getInventory().setHeldItemSlot(5);
+    }
     public void disable(Player player) {
-        enabledPlayers.remove(player.getUniqueId());
+        player.getPersistentDataContainer().set(ENABLED, PersistentDataType.BYTE, (byte) 0);
     }
-
-    /**
-     * 清除所有記錄（插件關閉時呼叫）
-     */
-    public void cleanup() {
-        enabledPlayers.clear();
-    }
+    public void cleanup() { /* Preferences live in player PDC; nothing to discard on logout. */ }
 }
-

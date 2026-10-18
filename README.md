@@ -41,6 +41,12 @@ Run `mvn clean verify` to build and execute the regression suite. See [the recov
 
 Dynamic world events now include Meteor Impact with temporary terrain, one-time mobs, personal material wallets, and restart restoration. Read [the world event guide](docs/WORLD_EVENTS.md) for `/events`, `/mmorpg event`, conservative new-chunk eligibility, configuration and test-server acceptance requirements.
 
+The race roster now has 12 races. Read [the race guide and balance review](docs/RACES.md) for new race IDs, safe configuration upgrades, working passives, persistence fixes, and the existing seven-race assessment.
+
+The vanilla-client [mob encounter guide](docs/MOB_ENCOUNTERS.md) lists 153 appearance/ability profiles, 20 new biome mobs, 10 rare wilderness bosses, upgrade settings, and `/custommob spawn <id> [level]` testing commands.
+
+There are now 14 talent trees and 164 talents. The [talent expansion guide](docs/TALENT_EXPANSION.md) covers 24 new frost, storm, earth, and light talents, hotkeys, party support, and safe configuration upgrades.
+
 ## Installation
 
 1. Build the plugin using Maven

@@ -11,6 +11,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -32,8 +35,8 @@ public class RaceGUI implements Listener {
 
     // ===== 第一頁：種族列表 =====
     private static final String LIST_TITLE = "§6§l選擇你的種族";
-    private static final int LIST_SIZE = 27;
-    private static final int[] RACE_SLOTS = {10, 11, 12, 13, 14, 15, 16};
+    private static final int LIST_SIZE = 54;
+    private static final int[] RACE_SLOTS = {10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43};
 
     // ===== 第二頁：種族詳情 =====
     private static final String DETAIL_TITLE_PREFIX = "§6§l種族詳情 §8» ";
@@ -60,12 +63,19 @@ public class RaceGUI implements Listener {
         RACE_ICONS.put("demon", Material.BLAZE_POWDER);
         RACE_ICONS.put("angel", Material.FEATHER);
         RACE_ICONS.put("dragon", Material.DRAGON_HEAD);
+        RACE_ICONS.put("dragonkin",Material.DRAGON_HEAD);
+        RACE_ICONS.put("beastkin",Material.RABBIT_FOOT);
+        RACE_ICONS.put("dark_elf",Material.AMETHYST_SHARD);
+        RACE_ICONS.put("halfling",Material.WHEAT);
+        RACE_ICONS.put("golem",Material.IRON_BLOCK);
     }
 
     // 武器類型中文對照
     private static final Map<String, String> WEAPON_NAME_ZH = new LinkedHashMap<>();
     static {
         WEAPON_NAME_ZH.put("SWORD", "劍");
+        WEAPON_NAME_ZH.put("TWO_HAND_SWORD", "雙手劍");
+        WEAPON_NAME_ZH.put("TWO_HAND_STAFF", "雙手長棍");
         WEAPON_NAME_ZH.put("AXE", "斧");
         WEAPON_NAME_ZH.put("TWO_HAND_AXE", "雙手斧");
         WEAPON_NAME_ZH.put("BOW", "弓");
@@ -73,39 +83,17 @@ public class RaceGUI implements Listener {
         WEAPON_NAME_ZH.put("SCYTHE", "鐮刀");
         WEAPON_NAME_ZH.put("TWO_HAND_SCYTHE", "雙手鐮刀");
         WEAPON_NAME_ZH.put("SPEAR", "長槍");
-        WEAPON_NAME_ZH.put("DAGGER", "匕首");
         WEAPON_NAME_ZH.put("UNKNOWN", "未知");
     }
 
     // 種族技能中文對照
-    private static final Map<String, String> SKILL_NAME_ZH = new LinkedHashMap<>();
-    static {
-        // 人類
-        SKILL_NAME_ZH.put("focus", "§f專注 §7— 提升暴擊率");
-        SKILL_NAME_ZH.put("adaptability", "§f適應力 §7— 武器傷害小幅提升");
-        // 精靈
-        SKILL_NAME_ZH.put("wind_step", "§a風之步伐 §7— 移動速度提升");
-        SKILL_NAME_ZH.put("nature_blessing", "§a自然祝福 §7— 持續回復生命");
-        // 獸人
-        SKILL_NAME_ZH.put("berserk", "§c狂暴 §7— 血量越低傷害越高");
-        SKILL_NAME_ZH.put("blood_rage", "§c血之狂怒 §7— 攻擊回復生命");
-        // 矮人
-        SKILL_NAME_ZH.put("stone_skin", "§6石膚術 §7— 減少受到的傷害");
-        SKILL_NAME_ZH.put("forge_master", "§6鍛造大師 §7— 裝備效果提升");
-        // 不死族
-        SKILL_NAME_ZH.put("soul_drain", "§8靈魂汲取 §7— 攻擊吸取生命");
-        SKILL_NAME_ZH.put("death_touch", "§8死亡之觸 §7— 有機率造成額外傷害");
-        // 惡魔族
-        SKILL_NAME_ZH.put("hellfire", "§4地獄火 §7— 攻擊附帶火焰傷害");
-        SKILL_NAME_ZH.put("demon_form", "§4惡魔化 §7— 暫時大幅提升攻擊力");
-        // 天使族
-        SKILL_NAME_ZH.put("holy_light", "§b聖光 §7— 治療自身與附近隊友");
-        SKILL_NAME_ZH.put("divine_shield", "§b神聖護盾 §7— 暫時免疫傷害");
-    }
+
 
     // 執行時狀態
     private final Map<UUID, Map<Integer, String>> playerListSlotMap = new HashMap<>(); // 列表頁 slot→raceId
     private final Map<UUID, String> playerDetailRace = new HashMap<>();               // 詳情頁正在查看的 raceId
+    private final Map<UUID,Inventory> openViews=new HashMap<>();
+    private final Map<UUID,Integer> listPages=new HashMap<>();
 
     public RaceGUI(CustomRPG plugin, RaceManager raceManager) {
         this.plugin = plugin;
@@ -117,6 +105,9 @@ public class RaceGUI implements Listener {
     // ═══════════════════════════════════════
 
     public void open(Player player) {
+        open(player,0);
+    }
+    public void open(Player player,int requestedPage) {
         Inventory gui = Bukkit.createInventory(null, LIST_SIZE, LIST_TITLE);
 
         // 填充背景
@@ -128,10 +119,12 @@ public class RaceGUI implements Listener {
         // 放置種族圖標
         Map<Integer, String> slotMap = new HashMap<>();
         List<RaceData> races = new ArrayList<>(raceManager.getAllRaces());
+        int pages=Math.max(1,(races.size()+RACE_SLOTS.length-1)/RACE_SLOTS.length);
+        int page=Math.max(0,Math.min(requestedPage,pages-1));
         String currentRaceId = raceManager.getPlayerRaceId(player);
 
-        for (int i = 0; i < races.size() && i < RACE_SLOTS.length; i++) {
-            RaceData race = races.get(i);
+        for (int i = 0; page*RACE_SLOTS.length+i < races.size() && i < RACE_SLOTS.length; i++) {
+            RaceData race = races.get(page*RACE_SLOTS.length+i);
             int slot = RACE_SLOTS[i];
             Material icon = RACE_ICONS.getOrDefault(race.getId().toLowerCase(), Material.PLAYER_HEAD);
 
@@ -141,9 +134,15 @@ public class RaceGUI implements Listener {
         }
 
         playerListSlotMap.put(player.getUniqueId(), slotMap);
+        listPages.put(player.getUniqueId(),page);
+        if(page>0) gui.setItem(45,createItem(Material.ARROW,"§e上一頁",List.of()));
+        if(page+1<pages) gui.setItem(53,createItem(Material.ARROW,"§e下一頁",List.of()));
+        gui.setItem(49,createItem(Material.BOOK,"§e第 "+(page+1)+" / "+pages+" 頁",List.of("§7共 "+races.size()+" 個種族")));
 
         // 頂部：當前種族資訊
-        if (currentRaceId != null) {
+        if(!raceManager.isPlayerDataAvailable(player)) {
+            gui.setItem(4,createItem(Material.BARRIER,"§c種族資料暫時無法使用",List.of("§7選擇已鎖定，請聯繫管理員修復資料。")));
+        } else if (currentRaceId != null) {
             RaceData currentRace = raceManager.getRaceData(currentRaceId);
             if (currentRace != null) {
                 ItemStack info = createItem(Material.NETHER_STAR,
@@ -159,6 +158,7 @@ public class RaceGUI implements Listener {
                     List.of("§7點擊下方的種族圖標來查看詳情！")));
         }
 
+        openViews.put(player.getUniqueId(),gui);
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
     }
@@ -206,7 +206,7 @@ public class RaceGUI implements Listener {
     /**
      * 開啟種族詳情頁
      */
-    private void openDetailPage(Player player, String raceId) {
+    private void openDetailPage(Player player, String raceId,int page) {
         RaceData race = raceManager.getRaceData(raceId);
         if (race == null) return;
 
@@ -284,36 +284,36 @@ public class RaceGUI implements Listener {
 
         // ── Slot 22: 被動效果 ──
         {
-            boolean hasPassive = race.getBonusCritChance() > 0 || race.getBonusMoveSpeed() > 0
-                    || race.getBonusCritDamage() > 0 || race.getBonusHealthRegen() > 0;
+            boolean hasPassive = race.getBonusCritChance() != 0 || race.getBonusMoveSpeed() != 0
+                    || race.getBonusCritDamage() != 0 || race.getBonusHealthRegen() != 0;
             List<String> lore = new ArrayList<>();
             if (hasPassive) {
                 lore.add("§7種族自帶的被動加成效果");
                 lore.add("");
                 if (race.getBonusCritChance() > 0) lore.add("§e  暴擊率: §a+" + String.format("%.1f%%", race.getBonusCritChance()));
                 if (race.getBonusCritDamage() > 0) lore.add("§e  暴擊傷害: §a+" + String.format("%.0f%%", race.getBonusCritDamage() * 100));
-                if (race.getBonusMoveSpeed() > 0) lore.add("§e  移動速度: §a+" + String.format("%.0f%%", race.getBonusMoveSpeed() * 100));
-                if (race.getBonusHealthRegen() > 0) lore.add("§e  生命回復: §a+" + String.format("%.1f/s", race.getBonusHealthRegen()));
+                if (race.getBonusMoveSpeed() != 0) lore.add("§e  移動速度: "+(race.getBonusMoveSpeed()<0?"§c":"§a")+String.format("%+.0f%%", race.getBonusMoveSpeed()*100));
+                if (race.getBonusHealthRegen() != 0) lore.add("§e  生命回復修正: "+(race.getBonusHealthRegen()<0?"§c":"§a")+String.format("%+.1f HP/s",race.getBonusHealthRegen()));
             } else {
                 lore.add("§7此種族沒有額外被動效果");
             }
+            lore.add("§7脫戰後回復："+String.format("%.1f HP/s",raceManager.getRecoveryPerSecond(race)));
             gui.setItem(SLOT_PASSIVE, createItem(Material.BEACON, "§2§l✦ 被動效果", lore));
         }
 
         // ── Slot 23: 種族技能 ──
         {
             List<String> lore = new ArrayList<>();
-            if (!race.getSkills().isEmpty()) {
-                lore.add("§7選擇此種族後自動獲得的技能");
-                lore.add("");
-                for (String skill : race.getSkills()) {
-                    String skillZh = SKILL_NAME_ZH.getOrDefault(skill, "§f" + skill);
-                    lore.add("§b  • " + skillZh);
-                }
+            var skill = com.customrpg.races.RacialSkill.forRace(race.getId());
+            if (skill != null) {
+                lore.add("§e數字鍵 5：§f" + skill.displayName());
+                lore.add("§7" + skill.description());
+                lore.add("§7冷卻：§f" + skill.cooldown() + " 秒  §7消耗：§b" + skill.manaCost() + " MANA");
+                lore.add("§7快捷技能列預設開啟，/skillbar 切換");
             } else {
-                lore.add("§7此種族沒有專屬技能");
+                lore.add("§7此自訂種族尚未定義主動技能");
             }
-            gui.setItem(SLOT_SKILLS, createItem(Material.ENCHANTED_BOOK, "§d§l✦ 種族技能", lore));
+            gui.setItem(SLOT_SKILLS, createItem(Material.ENCHANTED_BOOK, "§d§l✦ 種族技能 [5]", lore));
         }
 
         // ── Slot 25: 武器親和 ──
@@ -357,6 +357,7 @@ public class RaceGUI implements Listener {
         }
 
         playerDetailRace.put(player.getUniqueId(), raceId);
+        openViews.put(player.getUniqueId(),gui); listPages.put(player.getUniqueId(),page);
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 1.0f, 1.0f);
     }
@@ -368,6 +369,7 @@ public class RaceGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
+        if(openViews.get(player.getUniqueId())!=event.getView().getTopInventory()) return;
         String title = event.getView().getTitle();
 
         if (title.equals(LIST_TITLE)) {
@@ -384,6 +386,11 @@ public class RaceGUI implements Listener {
         event.setCancelled(true);
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= LIST_SIZE) return;
+        int page=listPages.getOrDefault(player.getUniqueId(),0);
+        if(slot==45||slot==53) {
+            int next=page+(slot==45?-1:1); player.closeInventory();
+            plugin.getServer().getScheduler().runTaskLater(plugin,()->{ if(player.isOnline()) open(player,next); },1L); return;
+        }
 
         Map<Integer, String> slotMap = playerListSlotMap.get(player.getUniqueId());
         if (slotMap == null) return;
@@ -393,7 +400,7 @@ public class RaceGUI implements Listener {
 
         // 關閉列表頁，延遲 1 tick 開啟詳情頁
         player.closeInventory();
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> openDetailPage(player, raceId), 1L);
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> { if(player.isOnline()) openDetailPage(player,raceId,page); }, 1L);
     }
 
     /**
@@ -405,10 +412,11 @@ public class RaceGUI implements Listener {
         if (slot < 0 || slot >= DETAIL_SIZE) return;
 
         if (slot == SLOT_BACK) {
+            int page=listPages.getOrDefault(player.getUniqueId(),0);
             // 返回列表頁
             player.closeInventory();
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.7f, 1.0f);
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> open(player), 1L);
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> { if(player.isOnline()) open(player,page); }, 1L);
             return;
         }
 
@@ -424,7 +432,7 @@ public class RaceGUI implements Listener {
             }
 
             // 執行選擇
-            boolean success = raceManager.setPlayerRace(player, raceId);
+            boolean success = raceManager.choosePlayerRace(player, raceId);
             if (success) {
                 RaceData raceData = raceManager.getRaceData(raceId);
                 String raceName = raceData != null ? raceData.getDisplayName() : raceId;
@@ -449,7 +457,7 @@ public class RaceGUI implements Listener {
                 player.getWorld().spawnParticle(org.bukkit.Particle.TOTEM_OF_UNDYING,
                         player.getLocation().add(0, 1, 0), 50, 0.5, 1.0, 0.5, 0.1);
             } else {
-                player.sendMessage("§c§l[種族] §c種族選擇失敗！無效的種族 ID。");
+                player.sendMessage("§c§l[種族] §c種族選擇失敗，未變更選擇。"+raceManager.getLastError());
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             }
 
@@ -463,6 +471,19 @@ public class RaceGUI implements Listener {
     //  工具方法
     // ═══════════════════════════════════════
 
+    @EventHandler public void onDrag(InventoryDragEvent event) {
+        if(openViews.get(event.getWhoClicked().getUniqueId())==event.getView().getTopInventory()) event.setCancelled(true);
+    }
+    @EventHandler public void onClose(InventoryCloseEvent event) {
+        UUID id=event.getPlayer().getUniqueId();
+        if(openViews.get(id)==event.getInventory()) clear(id);
+    }
+    @EventHandler public void onQuit(PlayerQuitEvent event) { clear(event.getPlayer().getUniqueId()); }
+    private void clear(UUID id) { openViews.remove(id); listPages.remove(id); playerListSlotMap.remove(id); playerDetailRace.remove(id); }
+    public void cleanup() {
+        for(Player player:plugin.getServer().getOnlinePlayers()) if(openViews.containsKey(player.getUniqueId())) player.closeInventory();
+        openViews.clear(); listPages.clear(); playerListSlotMap.clear(); playerDetailRace.clear();
+    }
     private ItemStack createItem(Material material, String displayName, List<String> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();

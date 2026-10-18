@@ -84,8 +84,8 @@ conditions:
   require-air-space: true
 
 # ===== 排除的世界 =====
-disabled-worlds:
-  - "world_the_end"
+# 新安裝已包含終界模板；舊伺服器的排除清單不會被覆寫。
+disabled-worlds: []
 
 # 出生點安全區亦由 world_zones.yml 管理；舊地圖區域預設停用但不刪除。
 

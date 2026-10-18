@@ -6,7 +6,7 @@
 #   - description: 簡短描述
 #   - base-stats: 基礎屬性加成
 #   - growth: 每級成長倍率
-#   - skills: 種族技能 (最多2個)
+#   - skills: 舊版技能名稱資料；目前主動技能由 RacialSkill 按種族 ID 定義，數字鍵 5 施放
 #   - weapon: 武器類型傷害加成
 #       - default: 未列出的武器類型預設倍率
 #       - bonuses: 各武器類型的傷害倍率
@@ -17,6 +17,11 @@
 #   TWO_HAND_SCYTHE(雙手鐮刀), AXE(斧), TWO_HAND_AXE(雙手斧),
 #   BOW(弓), SPEAR(長槍), UNKNOWN(未知)
 # ===================================
+
+# Existing servers may omit settings; these defaults are used without overwriting their race values.
+settings:
+  passive-health-regen-base: 0.5
+  recovery-combat-delay-seconds: 8
 
 races:
 

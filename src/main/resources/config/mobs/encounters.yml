@@ -1,0 +1,3458 @@
+# Upgrade-safe appearance and mechanics overlay. Existing configured equipment takes priority.
+# legacy-behavior:true retains the original dedicated controller; its generic ability list is not executed.
+profiles:
+  boss_pumpkin_knight:
+    description: 保留既有專屬 Boss／分裂機制；加上對應造型、尺寸及辨識特效，不重複施放通用技能。
+    visual:
+      entity: ZOMBIE
+      scale: 1.22
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: CARVED_PUMPKIN
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: true
+  boss_crazy_scissor:
+    description: 保留既有專屬 Boss／分裂機制；加上對應造型、尺寸及辨識特效，不重複施放通用技能。
+    visual:
+      entity: VINDICATOR
+      scale: 1.14
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: SHEARS
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: true
+  boss_zombie_beast:
+    description: 保留既有專屬 Boss／分裂機制；加上對應造型、尺寸及辨識特效，不重複施放通用技能。
+    visual:
+      entity: ZOGLIN
+      scale: 1.22
+      color: '#BBA35E'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: true
+  boss_skull_general:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。防禦姿態持續 4 秒，期間減傷 40%，可等待空檔反擊。
+    visual:
+      entity: SKELETON
+      scale: 1.22
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - FORTIFY
+      - VOLLEY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_infernal_queen:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: WITCH
+      scale: 1.22
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_abyss_dragon_rider:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: PHANTOM
+      scale: 1.26
+      color: '#9369C4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - WIND_GUST
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_shadow_lord:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: WITHER_SKELETON
+      scale: 1.14
+      color: '#9369C4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - SHADOW_LANCE
+      - SOUL_DRAIN
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_doomsday_judge:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。防禦姿態持續 4 秒，期間減傷 40%，可等待空檔反擊。
+    visual:
+      entity: RAVAGER
+      scale: 1.14
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - THUNDER_STRIKE
+      - FORTIFY
+      - CHARGE
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_void_archmage:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: SKELETON
+      scale: 1.26
+      color: '#9369C4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BLAZE_ROD
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SHADOW_LANCE
+      - THUNDER_STRIKE
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_world_ender:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: IRON_GOLEM
+      scale: 1.26
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - ARCANE_BURST
+      - THUNDER_STRIKE
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  boss_magma_core:
+    description: 保留既有專屬 Boss／分裂機制；加上對應造型、尺寸及辨識特效，不重複施放通用技能。
+    visual:
+      entity: MAGMA_CUBE
+      scale: 1.18
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - FIRE_BREATH
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: true
+  magma_core_medium:
+    description: 保留既有專屬 Boss／分裂機制；加上對應造型、尺寸及辨識特效，不重複施放通用技能。
+    visual:
+      entity: MAGMA_CUBE
+      scale: 1.06
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - FIRE_BREATH
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: true
+  magma_core_small:
+    description: 保留既有專屬 Boss／分裂機制；加上對應造型、尺寸及辨識特效，不重複施放通用技能。
+    visual:
+      entity: MAGMA_CUBE
+      scale: 1.06
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - FIRE_BREATH
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: true
+  leveled_zombie:
+    description: 菁英殭屍：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  armored_skeleton:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。防禦姿態持續 4 秒，期間減傷 40%，可等待空檔反擊。
+    visual:
+      entity: SKELETON
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - FORTIFY
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  aggressive_pig:
+    description: 狂暴豬：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: PIG
+      scale: 1.06
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  snow_zombie:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: ZOMBIE
+      scale: 0.94
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - FROST_BOLT
+      - CLEAVE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  fire_skeleton:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: SKELETON
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - FIRE_BREATH
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  giant_slime:
+    description: 巨型史萊姆：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SLIME
+      scale: 0.94
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  shadow_creeper:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: CREEPER
+      scale: 1.06
+      color: '#9369C4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - EXPLOSIVE_PULSE
+      - SHADOW_LANCE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  meteor_parasite:
+    description: 隕石寄生體：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ENDERMITE
+      scale: 0.94
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  astral_crawler:
+    description: 星界爬行者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  fallen_guardian:
+    description: 殞落守衛：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: HUSK
+      scale: 0.94
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  meteor_elite:
+    description: 隕星精英：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: WITHER_SKELETON
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  meteor_core_guardian:
+    description: 隕石核心守護者：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: HUSK
+      scale: 1.22
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  grass_zombie:
+    description: 草原殭屍：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 0.98
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  forest_spider:
+    description: 林間蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 0.98
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  lost_skeleton:
+    description: 迷路骷髏：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 1.02
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - SHADOW_LANCE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  meadow_slime:
+    description: 草原史萊姆：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SLIME
+      scale: 1.02
+      color: '#BBA35E'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  feral_wolf:
+    description: 野生狼人：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。 戰吼會令附近同類戰吼族群的招式增傷 20%，持續 8 秒。
+    visual:
+      entity: WOLF
+      scale: 0.98
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - HOWL
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  mushroom_zombie:
+    description: 毒蘑菇殭屍：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 1.06
+      color: '#638B47'
+      particle: DUST
+      equipment:
+        helmet: MOSS_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  cave_bat:
+    description: 洞穴蝙蝠精：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: VEX
+      scale: 0.98
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  graverobber:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: ZOMBIE
+      scale: 0.98
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - SHADOW_LANCE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  spore_spider:
+    description: 孢子蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: CAVE_SPIDER
+      scale: 1.06
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  wandering_archer:
+    description: 流浪弓手：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 1.06
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - SHADOW_LANCE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  creeper_hatchling:
+    description: 苦力怕幼體：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: CREEPER
+      scale: 1.06
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - EXPLOSIVE_PULSE
+      - POISON_CLOUD
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  rotten_treant:
+    description: 腐木守衛：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: IRON_GOLEM
+      scale: 0.8
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  phantom_sentry:
+    description: 幽魂哨兵：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: STRAY
+      scale: 1.06
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  shadow_lurker:
+    description: 暗影潛行者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 1.02
+      color: '#9369C4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - SHADOW_LANCE
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  stone_golem:
+    description: 岩石傀儡：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: IRON_GOLEM
+      scale: 0.8
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  slime_bomber:
+    description: 黏液爆破者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SLIME
+      scale: 0.94
+      color: '#86A843'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - EXPLOSIVE_PULSE
+      - POISON_CLOUD
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  wild_chicken:
+    description: 遇到生存／冒險玩家會逃離，保留野生動物而非把整個世界都變成敵怪。
+    visual:
+      entity: CHICKEN
+      scale: 0.94
+      color: '#BBA35E'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FLEE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: timid
+      legacy-behavior: false
+  lesser_elemental:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: VEX
+      scale: 0.94
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - FROST_BOLT
+      - ARCANE_BURST
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  rage_boar:
+    description: 狂暴野豬：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: PIG
+      scale: 1.02
+      color: '#C96845'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0.35
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  shadow_spider:
+    description: 影襲蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 0.94
+      color: '#9369C4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  skeleton_mage:
+    description: 骷髏法師：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BLAZE_ROD
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  prairie_wolf:
+    description: 中立狼群，被玩家攻擊後才反擊；戰吼強化族群，飛撲前會預警。
+    visual:
+      entity: WOLF
+      scale: 1.06
+      color: '#BBA35E'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - HOWL
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: neutral
+      legacy-behavior: false
+  small_bug:
+    description: 小蟲子：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SILVERFISH
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  wasteland_raider:
+    description: 荒野掠奪者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 0.98
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  desert_mummy:
+    description: 沙漠木乃伊：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: HUSK
+      scale: 1.06
+      color: '#D7AA58'
+      particle: DUST
+      equipment:
+        helmet: CUT_SANDSTONE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  swamp_spider:
+    description: 毒沼蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: CAVE_SPIDER
+      scale: 1.02
+      color: '#86A843'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  shadow_assassin:
+    description: 暗影刺客：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 1.02
+      color: '#9369C4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - SHADOW_LANCE
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  elite_crossbowman:
+    description: 精英弩手：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: PILLAGER
+      scale: 0.94
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: CROSSBOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - SHADOW_LANCE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  berserker_zombie:
+    description: 狂戰殭屍：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 1.02
+      color: '#C96845'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0.35
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  explosive_skeleton:
+    description: 爆裂骷髏：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 1.06
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - SHADOW_LANCE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  stalker_spider:
+    description: 潛伏蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 0.94
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  frost_zombie:
+    description: 冰霜殭屍：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 1.06
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  charge_beast:
+    description: 衝鋒野獸：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: RAVAGER
+      scale: 0.94
+      color: '#BBA35E'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  plague_carrier:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: ZOMBIE
+      scale: 0.98
+      color: '#86A843'
+      particle: DUST
+      equipment:
+        helmet: BROWN_MUSHROOM
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - SOUL_DRAIN
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  iron_guard:
+    description: 鋼鐵守衛：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: ZOMBIE
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  lava_slime:
+    description: 熔岩史萊姆：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: MAGMA_CUBE
+      scale: 0.98
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - FIRE_BREATH
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  undead_knight:
+    description: 亡靈騎士：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: ZOMBIE
+      scale: 0.98
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  frost_archer:
+    description: 冰霜射手：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: STRAY
+      scale: 1.02
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - FROST_BOLT
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  forest_witch:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: WITCH
+      scale: 0.98
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - ARCANE_BURST
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  berserker_bear:
+    description: 棕色熊貓放大為熊獸輪廓；直線衝鋒與震地交替，低於 35% 生命縮短招式間隔。
+    visual:
+      entity: PANDA
+      scale: 1.3
+      color: '#C96845'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CHARGE
+      - STOMP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0.35
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  dark_ranger:
+    description: 黑暗遊俠：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 0.94
+      color: '#9369C4'
+      particle: DUST
+      equipment:
+        helmet: MOSS_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - SHADOW_LANCE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  corrupted_guard:
+    description: 腐化衛士：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: ZOMBIE
+      scale: 1.02
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  fire_lizard:
+    description: 噴火蜥蜴：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: BLAZE
+      scale: 1.06
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - WIND_GUST
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  creeper_mage:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: CREEPER
+      scale: 1.06
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - EXPLOSIVE_PULSE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  cave_troll:
+    description: 洞穴巨魔：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: RAVAGER
+      scale: 1.06
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  frost_wolf:
+    description: 霜狼：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。 戰吼會令附近同類戰吼族群的招式增傷 20%，持續 8 秒。
+    visual:
+      entity: WOLF
+      scale: 0.98
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - HOWL
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  ice_crystal_slime:
+    description: 冰晶史萊姆：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SLIME
+      scale: 1.06
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  snow_patrol:
+    description: 雪原巡邏兵：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 0.94
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - FROST_BOLT
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  frozen_undead:
+    description: 凍骨亡靈：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: STRAY
+      scale: 0.94
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  blizzard_bear:
+    description: 暴雪巨熊：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: POLAR_BEAR
+      scale: 1.06
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - CHARGE
+      - STOMP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0.35
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  frost_witch:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: WITCH
+      scale: 0.94
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - FROST_BOLT
+      - POISON_CLOUD
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  ice_spike_spider:
+    description: 冰刺蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 1.02
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  permafrost_golem:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。防禦姿態持續 4 秒，期間減傷 40%，可等待空檔反擊。
+    visual:
+      entity: SNOW_GOLEM
+      scale: 1.3
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - FROST_BOLT
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  frost_specter:
+    description: 寒霜幽靈：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: VEX
+      scale: 1.06
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - FROST_BOLT
+      - SOUL_DRAIN
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  arctic_creeper:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: CREEPER
+      scale: 1.06
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - FROST_BOLT
+      - EXPLOSIVE_PULSE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  snowridge_hunter:
+    description: 雪嶺獵手：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 1.06
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - FROST_BOLT
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  ice_fang_beast:
+    description: 冰牙狂獸：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。 戰吼會令附近同類戰吼族群的招式增傷 20%，持續 8 秒。
+    visual:
+      entity: WOLF
+      scale: 1.02
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - HOWL
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  arctic_raider:
+    description: 極地掠奪者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 0.94
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  ice_mage:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: SKELETON
+      scale: 1.02
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BLAZE_ROD
+    mechanics:
+      abilities:
+      - FROST_BOLT
+      - ARCANE_BURST
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  ice_scorpion:
+    description: 冰封蠍王：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: CAVE_SPIDER
+      scale: 0.98
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  crimson_berserker:
+    description: 深紅狂戰士：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 1.06
+      color: '#C96845'
+      particle: FLAME
+      equipment:
+        helmet: MAGMA_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0.35
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  void_wraith:
+    description: 虛空幽靈：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: VEX
+      scale: 0.94
+      color: '#9369C4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  infernal_witch:
+    description: 煉獄女巫：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: WITCH
+      scale: 0.98
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - SOUL_DRAIN
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  skull_knight:
+    description: 骸骨騎士：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: SKELETON
+      scale: 1.06
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  thunder_creeper:
+    description: 雷霆苦力怕：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: CREEPER
+      scale: 1.06
+      color: '#BBA35E'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - EXPLOSIVE_PULSE
+      - THUNDER_STRIKE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  demon_hound:
+    description: 魔犬：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。 戰吼會令附近同類戰吼族群的招式增傷 20%，持續 8 秒。
+    visual:
+      entity: WOLF
+      scale: 0.94
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - HOWL
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  nether_archer:
+    description: 地獄弓手：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: WITHER_SKELETON
+      scale: 1.02
+      color: '#E1743D'
+      particle: FLAME
+      equipment:
+        helmet: MAGMA_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - SHADOW_LANCE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  crystal_golem:
+    description: 水晶傀儡：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: IRON_GOLEM
+      scale: 1.05
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  plague_spider:
+    description: 瘟疫蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 0.94
+      color: '#86A843'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  shadow_mage:
+    description: 暗影法師：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 1.06
+      color: '#9369C4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BLAZE_ROD
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  warden_zombie:
+    description: 守衛者殭屍：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: IRON_GOLEM
+      scale: 1.05
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  storm_blaze:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: BLAZE
+      scale: 1.02
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - THUNDER_STRIKE
+      - WIND_GUST
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  abyssal_slime:
+    description: 深淵史萊姆：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SLIME
+      scale: 0.94
+      color: '#9369C4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  cursed_pillager:
+    description: 詛咒掠奪者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: PILLAGER
+      scale: 0.98
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  blood_wolf:
+    description: 血狼：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。 戰吼會令附近同類戰吼族群的招式增傷 20%，持續 8 秒。
+    visual:
+      entity: WOLF
+      scale: 1.06
+      color: '#C96845'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - HOWL
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0.35
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  doom_knight:
+    description: 末日騎士：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: ZOMBIE
+      scale: 1.06
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  celestial_archer:
+    description: 天界弓手：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 1.02
+      color: '#ABC7DB'
+      particle: DUST
+      equipment:
+        helmet: TUFF
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - SHADOW_LANCE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  elder_witch:
+    description: 上古女巫：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: WITCH
+      scale: 1.02
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  dragon_zombie:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: PHANTOM
+      scale: 0.94
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  void_spider:
+    description: 虛空蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 0.94
+      color: '#9369C4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  hell_blaze:
+    description: 煉獄烈焰：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: BLAZE
+      scale: 1.02
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - WIND_GUST
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  titan_golem:
+    description: 泰坦傀儡：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: IRON_GOLEM
+      scale: 1.05
+      color: '#ABC7DB'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  death_mage:
+    description: 死亡法師：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: WITHER_SKELETON
+      scale: 1.06
+      color: '#9369C4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BLAZE_ROD
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  ancient_creeper:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: CREEPER
+      scale: 1.06
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - EXPLOSIVE_PULSE
+      - THUNDER_STRIKE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  chaos_vex:
+    description: 混沌妖精：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: VEX
+      scale: 0.94
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  world_serpent:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。利用掩體阻斷視線。
+    visual:
+      entity: RAVAGER
+      scale: 0.94
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - CHARGE
+      - SOUL_DRAIN
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  ender_guardian:
+    description: 終界守護者：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: SKELETON
+      scale: 0.94
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  apocalypse_witch:
+    description: 天啟女巫：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: WITCH
+      scale: 1.06
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - SOUL_DRAIN
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  oblivion_slime:
+    description: 忘卻史萊姆王：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SLIME
+      scale: 1.06
+      color: '#86A843'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  final_warden:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。防禦姿態持續 4 秒，期間減傷 40%，可等待空檔反擊。
+    visual:
+      entity: IRON_GOLEM
+      scale: 1.05
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      - SHADOW_LANCE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  rotten_zombie:
+    description: 腐蝕殭屍：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 0.98
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  skeleton_warrior:
+    description: 招式有地面／直線蓄力提示，側移或離開預警區域可躲避。防禦姿態持續 4 秒，期間減傷 40%，可等待空檔反擊。
+    visual:
+      entity: SKELETON
+      scale: 1.02
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - CLEAVE
+      - FORTIFY
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  shadow_archer:
+    description: 暗影弓手：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SKELETON
+      scale: 1.02
+      color: '#9369C4'
+      particle: DUST
+      equipment:
+        helmet: MOSS_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - SHADOW_LANCE
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  venomous_spider:
+    description: 毒牙蜘蛛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SPIDER
+      scale: 1.02
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  unstable_creeper:
+    description: 不穩定苦力怕：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: CREEPER
+      scale: 1.06
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - EXPLOSIVE_PULSE
+      - POISON_CLOUD
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  dark_witch:
+    description: 暗夜女巫：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: WITCH
+      scale: 0.94
+      color: '#9369C4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  blaze_guard:
+    description: 烈焰衛兵：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: BLAZE
+      scale: 0.94
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  ironclad_undead:
+    description: 鐵甲亡靈：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ZOMBIE
+      scale: 0.94
+      color: '#9D8AD4'
+      particle: DUST
+      equipment:
+        helmet: AMETHYST_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: STONE_AXE
+    mechanics:
+      abilities:
+      - CLEAVE
+      - CHARGE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  prairie_hornbeast:
+    description: 草原角獸：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: RAVAGER
+      scale: 0.65
+      color: '#BBA35E'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CHARGE
+      - CLEAVE
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  sunfield_sentinel:
+    description: 烈日守望者：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: HUSK
+      scale: 1.05
+      color: '#BBA35E'
+      particle: DUST
+      equipment:
+        helmet: LEATHER_HELMET
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - THUNDER_STRIKE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_prairie_alpha:
+    description: 荒原角王：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。 戰吼會令附近同類戰吼族群的招式增傷 20%，持續 8 秒。
+    visual:
+      entity: RAVAGER
+      scale: 1.15
+      color: '#BBA35E'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - HOWL
+      - CHARGE
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  mossback_boar:
+    description: 苔背野豬：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: HOGLIN
+      scale: 0.75
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CHARGE
+      - CLEAVE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  thornbark_guardian:
+    description: 荊棘樹衛：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: IRON_GOLEM
+      scale: 0.85
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  boss_ancient_oak:
+    description: 古樹守望者：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: IRON_GOLEM
+      scale: 1.2
+      color: '#638B47'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - POISON_CLOUD
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  dune_scorpion:
+    description: 沙丘毒蠍：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: CAVE_SPIDER
+      scale: 1.1
+      color: '#D7AA58'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  glassstorm_caster:
+    description: 沙晶術士：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: HUSK
+      scale: 1.05
+      color: '#D7AA58'
+      particle: DUST
+      equipment:
+        helmet: CUT_SANDSTONE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BLAZE_ROD
+    mechanics:
+      abilities:
+      - WIND_GUST
+      - ARCANE_BURST
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_sandstorm_colossus:
+    description: 沙暴巨像：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: RAVAGER
+      scale: 1.2
+      color: '#D7AA58'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - WIND_GUST
+      - CHARGE
+      - THUNDER_STRIKE
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  bog_frog:
+    description: 毒沼巨蛙：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: FROG
+      scale: 1.5
+      color: '#86A843'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  rotspore_shambler:
+    description: 腐孢巡行者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: BOGGED
+      scale: 1.05
+      color: '#86A843'
+      particle: DUST
+      equipment:
+        helmet: BROWN_MUSHROOM
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BLAZE_ROD
+    mechanics:
+      abilities:
+      - SOUL_DRAIN
+      - POISON_CLOUD
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_marsh_matriarch:
+    description: 瘴沼巨獸：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: PANDA
+      scale: 1.3
+      color: '#86A843'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - POISON_CLOUD
+      - STOMP
+      - SOUL_DRAIN
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  crystal_mite:
+    description: 晶簇螨：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: SILVERFISH
+      scale: 1.4
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - LEAP
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  echo_golem:
+    description: 迴響傀儡：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: IRON_GOLEM
+      scale: 0.9
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - STOMP
+      - SHADOW_LANCE
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  boss_crystal_heart:
+    description: 晶心守護者：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: IRON_GOLEM
+      scale: 1.2
+      color: '#9D8AD4'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - FORTIFY
+      - ARCANE_BURST
+      - THUNDER_STRIKE
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  rime_lynx:
+    description: 霜牙山貓：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: OCELOT
+      scale: 1.25
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - LEAP
+      - FROST_BOLT
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  icebound_revenant:
+    description: 封霜亡魂：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: STRAY
+      scale: 1.1
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment:
+        helmet: PACKED_ICE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - VOLLEY
+      - FROST_BOLT
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_glacier_ursine:
+    description: 冰川熊王：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: POLAR_BEAR
+      scale: 1.3
+      color: '#8DE1EE'
+      particle: SNOWFLAKE
+      equipment: {}
+    mechanics:
+      abilities:
+      - CHARGE
+      - STOMP
+      - FROST_BOLT
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  storm_goat:
+    description: 風暴山羊：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: GOAT
+      scale: 1.15
+      color: '#ABC7DB'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CHARGE
+      - WIND_GUST
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  cliff_harrier:
+    description: 峭壁掠翼：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: PHANTOM
+      scale: 1.2
+      color: '#ABC7DB'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - WIND_GUST
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_thunderhorn:
+    description: 雷角霸主：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: RAVAGER
+      scale: 1.3
+      color: '#ABC7DB'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CHARGE
+      - THUNDER_STRIKE
+      - STOMP
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  ash_hound:
+    description: 燼牙獵犬：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: WOLF
+      scale: 1.05
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - LEAP
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  basalt_warden:
+    description: 玄武岩衛士：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: WITHER_SKELETON
+      scale: 1.1
+      color: '#E1743D'
+      particle: FLAME
+      equipment:
+        helmet: MAGMA_BLOCK
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: IRON_SWORD
+    mechanics:
+      abilities:
+      - FORTIFY
+      - FIRE_BREATH
+      cooldown-seconds: 10
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_ember_forge:
+    description: 熾爐領主：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: MAGMA_CUBE
+      scale: 1.4
+      color: '#E1743D'
+      particle: FLAME
+      equipment: {}
+    mechanics:
+      abilities:
+      - FIRE_BREATH
+      - STOMP
+      - FORTIFY
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  reef_crab:
+    description: 礁岸甲蟹：留意地面／直線蓄力提示，移出預警圈或側移躲開招式；防禦姿態期間減傷 40%。
+    visual:
+      entity: SPIDER
+      scale: 0.7
+      color: '#54C2D0'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - CLEAVE
+      - FORTIFY
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0.08
+      temperament: aggressive
+      legacy-behavior: false
+  tide_reaver:
+    description: 潮汐掠奪者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: DROWNED
+      scale: 1.05
+      color: '#54C2D0'
+      particle: DUST
+      equipment:
+        helmet: PRISMARINE
+        chestplate: LEATHER_CHESTPLATE
+        boots: LEATHER_BOOTS
+        main-hand: BOW
+    mechanics:
+      abilities:
+      - WIND_GUST
+      - VOLLEY
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_tidebreaker:
+    description: 裂潮巨像：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: IRON_GOLEM
+      scale: 1.2
+      color: '#54C2D0'
+      particle: DUST
+      equipment: {}
+    mechanics:
+      abilities:
+      - WIND_GUST
+      - STOMP
+      - SOUL_DRAIN
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: -0.08
+      temperament: aggressive
+      legacy-behavior: false
+  void_skitter:
+    description: 虛空爬行者：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ENDERMITE
+      scale: 1.4
+      color: '#BA8BEB'
+      particle: PORTAL
+      equipment: {}
+    mechanics:
+      abilities:
+      - SHADOW_LANCE
+      - LEAP
+      cooldown-seconds: 9
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  rift_sentinel:
+    description: 裂隙哨衛：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ENDERMAN
+      scale: 1.0
+      color: '#BA8BEB'
+      particle: PORTAL
+      equipment: {}
+    mechanics:
+      abilities:
+      - SHADOW_LANCE
+      - ARCANE_BURST
+      cooldown-seconds: 8
+      windup-seconds: 1.0
+      radius: 3
+      range: 12
+      damage-multiplier: 0.9
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false
+  boss_rift_sovereign:
+    description: 裂隙君王：招式有蓄力提示，側移離開直線或預警落點可躲避；善用掩體。
+    visual:
+      entity: ENDERMAN
+      scale: 1.5
+      color: '#BA8BEB'
+      particle: PORTAL
+      equipment: {}
+    mechanics:
+      abilities:
+      - ARCANE_BURST
+      - SOUL_DRAIN
+      - THUNDER_STRIKE
+      cooldown-seconds: 9
+      windup-seconds: 1.4
+      radius: 4
+      range: 16
+      damage-multiplier: 1.15
+      enrage-at: 0
+      speed-bonus: 0
+      temperament: aggressive
+      legacy-behavior: false

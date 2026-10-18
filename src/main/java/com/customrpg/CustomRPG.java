@@ -79,7 +79,7 @@ public class CustomRPG extends JavaPlugin {
     private com.customrpg.gui.TalentTreeGUI talentTreeGUI;
     private com.customrpg.gui.TalentMainMenuGUI talentMainMenuGUI;
     private com.customrpg.managers.TalentPassiveEffectManager talentPassiveEffectManager;
-    private com.customrpg.managers.SkillSwitchManager skillSwitchManager;
+    private com.customrpg.races.RacialSkillManager racialSkillManager;
     private com.customrpg.managers.TalentSkillManager activeTalentSkillManager;
 
     // Beast system
@@ -105,6 +105,8 @@ public class CustomRPG extends JavaPlugin {
     private com.customrpg.integration.npc.NpcManager npcManager;
     private com.customrpg.integration.npc.QuestBindGUI questBindGUI;
     private com.customrpg.worldevent.core.WorldEventManager worldEventManager;
+    private com.customrpg.mobs.MobProfileRegistry mobProfileRegistry;
+    private com.customrpg.mobs.MobEncounterManager mobEncounterManager;
 
 
     /**
@@ -149,6 +151,10 @@ public class CustomRPG extends JavaPlugin {
      */
     @Override
     public void onDisable() {
+        if (talentMainMenuGUI != null) talentMainMenuGUI.cleanup();
+        if (activeTalentSkillManager != null) activeTalentSkillManager.getExpansion().shutdown();
+        if (mobEncounterManager != null) mobEncounterManager.shutdown();
+        if (racialSkillManager != null) racialSkillManager.shutdown();
         if (worldEventManager != null) {
             worldEventManager.shutdown();
         }
@@ -187,7 +193,8 @@ public class CustomRPG extends JavaPlugin {
 
         // 儲存種族數據
         if (raceManager != null) {
-            raceManager.saveAll();
+            if(raceGUI!=null) raceGUI.cleanup();
+            raceManager.shutdown();
             getLogger().info("- All race data saved");
         }
 
@@ -292,6 +299,7 @@ public class CustomRPG extends JavaPlugin {
         weaponManager = new WeaponManager(this, configManager);
         getLogger().info("- WeaponManager initialized with " + weaponManager.getWeaponCount() + " weapons");
 
+        mobProfileRegistry = new com.customrpg.mobs.MobProfileRegistry(this);
         mobManager = new MobManager(this, configManager);
         getLogger().info("- MobManager initialized with " + mobManager.getMobTypeCount() + " custom mob types");
 
@@ -318,6 +326,7 @@ public class CustomRPG extends JavaPlugin {
 
         // Initialize Race System
         raceManager = new com.customrpg.races.RaceManager(this);
+        raceManager.start();
         getLogger().info("- RaceManager initialized with " + raceManager.getRaceCount() + " races");
 
         raceGUI = new com.customrpg.gui.RaceGUI(this, raceManager);
@@ -361,13 +370,15 @@ public class CustomRPG extends JavaPlugin {
         talentPassiveEffectManager = new com.customrpg.managers.TalentPassiveEffectManager(this, talentManager, statsManager);
         getLogger().info("- TalentPassiveEffectManager initialized");
 
-        skillSwitchManager = new com.customrpg.managers.SkillSwitchManager(this);
-        getLogger().info("- SkillSwitchManager initialized");
 
         activeTalentSkillManager = new com.customrpg.managers.TalentSkillManager(this);
+        activeTalentSkillManager.getExpansion().start();
         beastManager = new com.customrpg.managers.BeastManager(this);
         focusManager = new com.customrpg.managers.FocusManager(this);
         getLogger().info("- TalentSkillManager initialized");
+
+        racialSkillManager = new com.customrpg.races.RacialSkillManager(this);
+        racialSkillManager.start();
 
         // SkillBar (hotkey casting) manager
         skillBarManager = new com.customrpg.managers.SkillBarManager();
@@ -418,6 +429,9 @@ public class CustomRPG extends JavaPlugin {
         bossBarManager = new com.customrpg.managers.BossBarManager(this, mobManager);
         getLogger().info("- BossBarManager initialized");
 
+        mobEncounterManager = new com.customrpg.mobs.MobEncounterManager(this, mobProfileRegistry);
+        mobEncounterManager.start();
+
         // Initialize BeautyQuests integration hook（延遲 1 tick 確保 BQ 完成載入）
         if (getServer().getPluginManager().isPluginEnabled("BeautyQuests")) {
             beautyQuestsHook = new com.customrpg.integration.BeautyQuestsHook(this, mobManager);
@@ -446,9 +460,11 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new StatsListener(this, statsManager), this);
         getLogger().info("- StatsListener registered");
 
-        // SkillListener for talent skills (uses mana)
-        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SkillListener(this, talentSkillManager, manaManager), this);
-        getLogger().info("- SkillListener (talent skills) registered");
+        // After weapon/stats calculation, before MobListener's virtual-HP conversion.
+        getServer().getPluginManager().registerEvents(racialSkillManager, this);
+        getServer().getPluginManager().registerEvents(activeTalentSkillManager.getExpansion(), this);
+        getServer().getPluginManager().registerEvents(mobEncounterManager, this);
+        getServer().getPluginManager().registerEvents(distanceSpawnManager.getWildernessBosses(), this);
 
         getServer().getPluginManager().registerEvents(new MobListener(this, mobManager, statsManager, weaponManager), this);
         getLogger().info("- MobListener registered");
@@ -479,9 +495,6 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.TalentListener(talentManager), this);
         getLogger().info("- TalentListener registered");
 
-        // 註冊SkillSwitchHintListener來顯示技能切換提示
-        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SkillSwitchHintListener(this), this);
-        getLogger().info("- SkillSwitchHintListener registered");
 
         getServer().getPluginManager().registerEvents(new HealthDisplayListener(healthDisplayManager), this);
         getLogger().info("- HealthDisplayListener registered");
@@ -518,6 +531,7 @@ public class CustomRPG extends JavaPlugin {
         // SkillBar listener
         skillBarListenerInstance = new com.customrpg.listeners.SkillBarListener(this, skillBarManager);
         getServer().getPluginManager().registerEvents(skillBarListenerInstance, this);
+        for (org.bukkit.entity.Player player : getServer().getOnlinePlayers()) skillBarManager.prepareHeldSlot(player);
         getLogger().info("- SkillBarListener registered");
 
         getServer().getPluginManager().registerEvents(menuGUI, this);
@@ -813,8 +827,11 @@ public class CustomRPG extends JavaPlugin {
         return activeTalentSkillManager;
     }
 
-    public com.customrpg.managers.SkillSwitchManager getSkillSwitchManager() {
-        return skillSwitchManager;
+    public com.customrpg.mobs.MobProfileRegistry getMobProfileRegistry() { return mobProfileRegistry; }
+    public com.customrpg.mobs.MobEncounterManager getMobEncounterManager() { return mobEncounterManager; }
+
+    public com.customrpg.races.RacialSkillManager getRacialSkillManager() {
+        return racialSkillManager;
     }
 
     public com.customrpg.managers.BeastManager getBeastManager() {
@@ -862,6 +879,9 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.races.RaceManager getRaceManager() {
         return raceManager;
+    }
+    public com.customrpg.managers.TalentPassiveEffectManager getTalentPassiveEffectManager() {
+        return talentPassiveEffectManager;
     }
 
     public com.customrpg.gui.RaceGUI getRaceGUI() {

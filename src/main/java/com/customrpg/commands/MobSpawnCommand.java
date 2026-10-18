@@ -121,6 +121,10 @@ public class MobSpawnCommand implements CommandExecutor, TabCompleter {
 
     private boolean handleReload(CommandSender sender, DistanceSpawnManager manager) {
         manager.reload();
+        if (plugin.getMobEncounterManager() != null && !plugin.getMobEncounterManager().reloadProfiles()) {
+            sender.sendMessage("§c外觀／招式設定載入失敗，原有 profiles 保留；請檢查 config/mobs/encounters.yml。");
+            return true;
+        }
         sender.sendMessage(ChatColor.GREEN + "✓ DistanceSpawnManager 配置已重新載入");
         return true;
     }

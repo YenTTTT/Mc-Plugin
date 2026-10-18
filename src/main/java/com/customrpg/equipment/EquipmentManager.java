@@ -942,16 +942,8 @@ public class EquipmentManager {
         }
 
         // 更新最大血量（如果有生命力加成）
-        if (stats.getEquipmentVitality() > 0) {
-            plugin.getPlayerStatsManager().updateMaxHealth(player);
-        }
-
-        // 更新最大魔力（如果有魔力加成）
-        if (stats.getBonusMaxMana() > 0) {
-            double baseMax = stats.getMaxMana() - stats.getBonusMaxMana(); // 取基礎值
-            if (baseMax < 100) baseMax = 100; // 最低100
-            stats.setMaxMana(baseMax + stats.getBonusMaxMana());
-        }
+        plugin.getPlayerStatsManager().updateMaxHealth(player);
+        plugin.getPlayerStatsManager().recalculateMana(player);
 
         // 保存數據
         plugin.getPlayerStatsManager().saveStats(player);

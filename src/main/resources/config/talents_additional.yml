@@ -1,0 +1,787 @@
+# Additional talent trees; primary talents.yml definitions take priority by ID.
+# Original-client hotkeys 1-4; no mechanism items.
+frost:
+  frost_attunement:
+    name: 霜語親和
+    description: 冰霜法術的基礎；每級增加 3 魔力。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 40
+      icon: SNOWBALL
+    levels:
+      1:
+        effect:
+          statBonus:
+            magic: 3
+      2:
+        effect:
+          statBonus:
+            magic: 6
+      3:
+        effect:
+          statBonus:
+            magic: 9
+  frost_shard:
+    name: 冰晶射線
+    description: 發射可被方塊遮擋的冰霜射線，命中後緩速。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 28
+      icon: PRISMARINE_SHARD
+    prerequisite:
+      skill: frost_attunement
+      level: 1
+    cooldown: 5
+    manaCost: 12
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 5
+          magicScaling: 0.45
+          range: 14
+          slowDuration: 2
+          slowAmplifier: 0
+      2:
+        effect:
+          baseDamage: 7
+          magicScaling: 0.5
+          range: 16
+          slowDuration: 2.5
+          slowAmplifier: 0
+      3:
+        effect:
+          baseDamage: 9
+          magicScaling: 0.55
+          range: 18
+          slowDuration: 3
+          slowAmplifier: 1
+  frost_nova:
+    name: 霜環爆發
+    description: 以自身為中心造成冰霜傷害與緩速。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 30
+      icon: SNOW_BLOCK
+    prerequisite:
+      skill: frost_attunement
+      level: 1
+    cooldown: 10
+    manaCost: 20
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 4
+          magicScaling: 0.3
+          radius: 3
+          slowDuration: 2
+          slowAmplifier: 0
+      2:
+        effect:
+          baseDamage: 6
+          magicScaling: 0.35
+          radius: 3.5
+          slowDuration: 2.5
+          slowAmplifier: 0
+      3:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.4
+          radius: 4
+          slowDuration: 3
+          slowAmplifier: 1
+  frost_resolve:
+    name: 凍土韌性
+    description: 每級增加 2 防禦與 1 體質。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 22
+      icon: PACKED_ICE
+    prerequisite:
+      skill: frost_attunement
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            defense: 2
+            vitality: 1
+      2:
+        effect:
+          statBonus:
+            defense: 4
+            vitality: 2
+      3:
+        effect:
+          statBonus:
+            defense: 6
+            vitality: 3
+  frost_lance:
+    name: 碎霜長槍
+    description: 射線命中已緩速的敵人時額外造成 35% 傷害。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 10
+      icon: BLUE_ICE
+    prerequisite:
+      skill: frost_shard
+      level: 1
+    cooldown: 9
+    manaCost: 24
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.55
+          range: 16
+          chilledBonus: 0.35
+      2:
+        effect:
+          baseDamage: 11
+          magicScaling: 0.6
+          range: 18
+          chilledBonus: 0.35
+      3:
+        effect:
+          baseDamage: 14
+          magicScaling: 0.65
+          range: 20
+          chilledBonus: 0.35
+  frost_blizzard:
+    name: 凜冬風雪
+    description: 在自身腳下建立固定暴風雪區，每秒造成傷害與短暫緩速。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 14
+      icon: POWDER_SNOW_BUCKET
+    prerequisite:
+      skill: frost_nova
+      level: 1
+    cooldown: 24
+    manaCost: 40
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 2
+          magicScaling: 0.12
+          radius: 3.5
+          duration: 5
+          slowDuration: 1.5
+          slowAmplifier: 0
+      2:
+        effect:
+          baseDamage: 3
+          magicScaling: 0.15
+          radius: 4
+          duration: 6
+          slowDuration: 1.5
+          slowAmplifier: 0
+      3:
+        effect:
+          baseDamage: 4
+          magicScaling: 0.18
+          radius: 4.5
+          duration: 7
+          slowDuration: 1.5
+          slowAmplifier: 1
+storm:
+  storm_attunement:
+    name: 雷脈感應
+    description: 每級增加 2 魔力與 1 精神。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 40
+      icon: LIGHTNING_ROD
+    levels:
+      1:
+        effect:
+          statBonus:
+            magic: 2
+            spirit: 1
+      2:
+        effect:
+          statBonus:
+            magic: 4
+            spirit: 2
+      3:
+        effect:
+          statBonus:
+            magic: 6
+            spirit: 3
+  storm_arc:
+    name: 躍動電弧
+    description: 雷電由瞄準敵人跳向附近敵人；每跳傷害變為前一跳的 80%。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 28
+      icon: AMETHYST_SHARD
+    prerequisite:
+      skill: storm_attunement
+      level: 1
+    cooldown: 8
+    manaCost: 20
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 5
+          magicScaling: 0.4
+          range: 14
+          chainCount: 3
+          chainRange: 4
+      2:
+        effect:
+          baseDamage: 7
+          magicScaling: 0.45
+          range: 16
+          chainCount: 4
+          chainRange: 4.5
+      3:
+        effect:
+          baseDamage: 9
+          magicScaling: 0.5
+          range: 18
+          chainCount: 5
+          chainRange: 5
+  storm_gust:
+    name: 疾風震退
+    description: 前方扇形傷害，成功命中後將敵人推離。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 30
+      icon: FEATHER
+    prerequisite:
+      skill: storm_attunement
+      level: 1
+    cooldown: 10
+    manaCost: 18
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 4
+          magicScaling: 0.25
+          radius: 4
+          knockback: 0.6
+      2:
+        effect:
+          baseDamage: 6
+          magicScaling: 0.3
+          radius: 4.5
+          knockback: 0.75
+      3:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.35
+          radius: 5
+          knockback: 0.9
+  storm_footwork:
+    name: 逐風步法
+    description: 每級增加 3 敏捷，不改寫原版移速或飛行。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 22
+      icon: RABBIT_FOOT
+    prerequisite:
+      skill: storm_attunement
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            agility: 3
+      2:
+        effect:
+          statBonus:
+            agility: 6
+      3:
+        effect:
+          statBonus:
+            agility: 9
+  storm_dash:
+    name: 乘風閃步
+    description: 沿水平視線安全前移，遇到障礙、液體或未載入區塊時縮短距離。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 10
+      icon: WIND_CHARGE
+    prerequisite:
+      skill: storm_gust
+      level: 1
+    cooldown: 9
+    manaCost: 15
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          distance: 3
+      2:
+        effect:
+          distance: 4
+      3:
+        effect:
+          distance: 5
+  storm_tempest:
+    name: 隨行雷暴
+    description: 在身旁維持雷暴，每秒攻擊附近敵人；領域隨玩家移動。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 14
+      icon: HEART_OF_THE_SEA
+    prerequisite:
+      skill: storm_arc
+      level: 1
+    cooldown: 24
+    manaCost: 38
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 2
+          magicScaling: 0.12
+          radius: 3
+          duration: 4
+      2:
+        effect:
+          baseDamage: 3
+          magicScaling: 0.15
+          radius: 3.5
+          duration: 5
+      3:
+        effect:
+          baseDamage: 4
+          magicScaling: 0.18
+          radius: 4
+          duration: 6
+earth:
+  earth_endurance:
+    name: 磐石體魄
+    description: 每級增加 2 體質與 1 防禦。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 40
+      icon: STONE
+    levels:
+      1:
+        effect:
+          statBonus:
+            vitality: 2
+            defense: 1
+      2:
+        effect:
+          statBonus:
+            vitality: 4
+            defense: 2
+      3:
+        effect:
+          statBonus:
+            vitality: 6
+            defense: 3
+  earth_guard:
+    name: 岩甲守勢
+    description: 六秒內承受傷害降低 20%／25%／30%，不抵擋虛空或指令致死。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 28
+      icon: SHIELD
+    prerequisite:
+      skill: earth_endurance
+      level: 1
+    cooldown: 18
+    manaCost: 20
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          reduction: 0.2
+          duration: 6
+      2:
+        effect:
+          reduction: 0.25
+          duration: 6
+      3:
+        effect:
+          reduction: 0.3
+          duration: 6
+  earth_shockwave:
+    name: 裂岩震波
+    description: 震擊周圍敵人，命中後向外擊退，不破壞地形。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 30
+      icon: IRON_SHOVEL
+    prerequisite:
+      skill: earth_endurance
+      level: 1
+    cooldown: 10
+    manaCost: 18
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 5
+          strengthScaling: 0.35
+          radius: 3
+          knockback: 0.5
+      2:
+        effect:
+          baseDamage: 7
+          strengthScaling: 0.4
+          radius: 3.5
+          knockback: 0.6
+      3:
+        effect:
+          baseDamage: 9
+          strengthScaling: 0.45
+          radius: 4
+          knockback: 0.7
+  earth_training:
+    name: 重裝訓練
+    description: 每級增加 2 力量與 1 防禦。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 22
+      icon: IRON_CHESTPLATE
+    prerequisite:
+      skill: earth_endurance
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            strength: 2
+            defense: 1
+      2:
+        effect:
+          statBonus:
+            strength: 4
+            defense: 2
+      3:
+        effect:
+          statBonus:
+            strength: 6
+            defense: 3
+  earth_grasp:
+    name: 岩脈束縛
+    description: 在瞄準的地面引發震動，傷害並強力緩速附近敵人。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 10
+      icon: POINTED_DRIPSTONE
+    prerequisite:
+      skill: earth_shockwave
+      level: 1
+    cooldown: 14
+    manaCost: 24
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 4
+          strengthScaling: 0.25
+          range: 10
+          radius: 2.5
+          slowDuration: 2
+          slowAmplifier: 2
+      2:
+        effect:
+          baseDamage: 6
+          strengthScaling: 0.3
+          range: 12
+          radius: 3
+          slowDuration: 2.5
+          slowAmplifier: 2
+      3:
+        effect:
+          baseDamage: 8
+          strengthScaling: 0.35
+          range: 14
+          radius: 3.5
+          slowDuration: 3
+          slowAmplifier: 3
+  earth_bastion:
+    name: 不動堡壘
+    description: 腳下建立固定守護陣；自身與同隊玩家在陣內減傷，重疊取最高值。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 14
+      icon: LODESTONE
+    prerequisite:
+      skill: earth_guard
+      level: 1
+    cooldown: 26
+    manaCost: 38
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          radius: 4
+          duration: 6
+          reduction: 0.15
+      2:
+        effect:
+          radius: 4.5
+          duration: 7
+          reduction: 0.2
+      3:
+        effect:
+          radius: 5
+          duration: 8
+          reduction: 0.25
+light:
+  light_devotion:
+    name: 聖光信念
+    description: 每級增加 3 精神。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 40
+      icon: GLOWSTONE_DUST
+    levels:
+      1:
+        effect:
+          statBonus:
+            spirit: 3
+      2:
+        effect:
+          statBonus:
+            spirit: 6
+      3:
+        effect:
+          statBonus:
+            spirit: 9
+  light_mend:
+    name: 微光療癒
+    description: 治療瞄準的同隊玩家，未瞄準隊友時治療自己；治療量受精神加成。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 28
+      icon: HONEY_BOTTLE
+    prerequisite:
+      skill: light_devotion
+      level: 1
+    cooldown: 7
+    manaCost: 16
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseHeal: 3
+          spiritScaling: 0.2
+          range: 10
+      2:
+        effect:
+          baseHeal: 4
+          spiritScaling: 0.25
+          range: 12
+      3:
+        effect:
+          baseHeal: 5
+          spiritScaling: 0.3
+          range: 14
+  light_lance:
+    name: 裁決光矛
+    description: 射出聖光，對不死類生物額外造成 25% 傷害。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 30
+      icon: END_ROD
+    prerequisite:
+      skill: light_devotion
+      level: 1
+    cooldown: 6
+    manaCost: 14
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseDamage: 5
+          magicScaling: 0.4
+          range: 14
+          undeadBonus: 0.25
+      2:
+        effect:
+          baseDamage: 7
+          magicScaling: 0.45
+          range: 16
+          undeadBonus: 0.25
+      3:
+        effect:
+          baseDamage: 9
+          magicScaling: 0.5
+          range: 18
+          undeadBonus: 0.25
+  light_wisdom:
+    name: 晨曦冥想
+    description: 每級增加 2 精神與 1 魔力。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 22
+      icon: GLOW_BERRIES
+    prerequisite:
+      skill: light_devotion
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            spirit: 2
+            magic: 1
+      2:
+        effect:
+          statBonus:
+            spirit: 4
+            magic: 2
+      3:
+        effect:
+          statBonus:
+            spirit: 6
+            magic: 3
+  light_purge:
+    name: 淨化之光
+    description: 清除自己的中毒、凋零、緩速、虛弱、失明與黑暗，並恢復少量生命。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 10
+      icon: MILK_BUCKET
+    prerequisite:
+      skill: light_mend
+      level: 1
+    cooldown: 16
+    manaCost: 24
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseHeal: 2
+          spiritScaling: 0.1
+      2:
+        effect:
+          baseHeal: 3
+          spiritScaling: 0.15
+      3:
+        effect:
+          baseHeal: 4
+          spiritScaling: 0.2
+  light_sanctuary:
+    name: 黎明聖域
+    description: 腳下建立固定聖域，每秒治療自身與同隊玩家，檢查視線。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 快捷鍵 1～4
+    gui:
+      slot: 14
+      icon: BEACON
+    prerequisite:
+      skill: light_lance
+      level: 1
+    cooldown: 26
+    manaCost: 40
+    trigger:
+      type: HOTKEY
+    levels:
+      1:
+        effect:
+          baseHeal: 1
+          spiritScaling: 0.05
+          radius: 4
+          duration: 5
+      2:
+        effect:
+          baseHeal: 1.5
+          spiritScaling: 0.07
+          radius: 4.5
+          duration: 6
+      3:
+        effect:
+          baseHeal: 2
+          spiritScaling: 0.09
+          radius: 5
+          duration: 7

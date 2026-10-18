@@ -600,7 +600,7 @@ forest_witch:
 # 10. 暴怒熊人 — 血越低傷害越高
 berserker_bear:
   name: "&c暴怒熊人"
-  type: ZOMBIE
+  type: PANDA
   level-range:
     min: 28
     max: 40
