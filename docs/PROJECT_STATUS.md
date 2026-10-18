@@ -2,7 +2,17 @@
 
 最後更新：2026-10-18
 
-自然生怪排查與最新診斷見 [MOB_SPAWNING.md](MOB_SPAWNING.md)。每次重啟後仍需 `/finishrpg`；預設 vanilla 只替換原版自然敵怪。怪物外觀與地形 Boss 見 [MOB_ENCOUNTERS.md](MOB_ENCOUNTERS.md)。新天賦見 [TALENT_EXPANSION.md](TALENT_EXPANSION.md)。完整測試最新為 285 項，下方各階段數字保留為歷史紀錄。
+固定耗魔與種族加成調整已完成（COMPLETED）：天賦施放依 YAML `manaCost` 固定扣魔，不再按最大 MP 比例；種族六屬性合計從 Lv.1 的18點成長至 Lv.60 的36點，GUI顯示目前等級額外加成與成長預覽。最新 **mvn verify：441 tests 通過**；Paper實服仍 NEEDS_VERIFICATION，規則見 [RACES.md](RACES.md) 與 [BALANCE_RUNTIME.md](BALANCE_RUNTIME.md)。
+
+天賦機制物品施法已恢復（COMPLETED）：102 招主動天賦具備物品／按鍵設定，主手施放、蹲下右鍵循環、GUI 操作提示；快捷鍵與種族 5 保留，施法共用戰鬥 v2 的魔力／生命消耗／冷卻。舊 HOTKEY 設定只在記憶體轉換，不覆寫原檔。該階段 **mvn verify：433 tests 通過**，實服操作及保護插件相容 NEEDS_VERIFICATION；操作見 [SKILL_SWITCH_SYSTEM.md](../SKILL_SWITCH_SYSTEM.md)。
+
+戰鬥數值 v2 已接入：玩家／裝備／種族／天賦／怪物、HP與MP成長、一次性原檔備份遷移、遠程快照及一比一虛擬HP；部署與驗收見 [BALANCE_RUNTIME.md](BALANCE_RUNTIME.md)。**mvn clean verify：415 tests通過**；Paper與遊玩平衡仍 NEEDS_VERIFICATION。
+
+Lv.1～60 初始數值模型見 [INITIAL_BALANCE_MODEL.md](INITIAL_BALANCE_MODEL.md)：每級三點、HP／防禦／攻速正規化武器／怪物 TTK 公式，60 級與 480 武器列、12,162 個敏感度案例；參考模型已接入戰鬥與自動遷移，正式部署後載入舊檔時執行。
+
+怪物頭頂愛心血條已移除：不再生成／同步血條 ArmorStand，啟動及實體載入時只清理本插件標記的舊血條，並去除舊名稱血量後綴；怪物名稱／等級、玩家 HUD、BossBar 保留。實際 Paper 顯示與舊區塊載入清理仍待伺服器驗證。
+
+自然生怪排查與最新診斷見 [MOB_SPAWNING.md](MOB_SPAWNING.md)。每次重啟後仍需 `/finishrpg`；預設 vanilla 只替換原版自然敵怪。怪物外觀與地形 Boss 見 [MOB_ENCOUNTERS.md](MOB_ENCOUNTERS.md)。新天賦見 [TALENT_EXPANSION.md](TALENT_EXPANSION.md)。工坊／村莊商人見 [CRAFTING_AND_MERCHANTS.md](CRAFTING_AND_MERCHANTS.md)。完整測試最新為 441 項，下方各階段數字保留為歷史紀錄。
 
 前輪紀錄的設計依據：`PLUGIN_DESIGN_VANILLA_WORLD_ZERO_BUILDING.md`（使用者提供的 143 節設計稿）。該原稿未存於目前 Repository；本輪以實際程式、Git 與使用者要求的原版世界原則核對，不宣稱已重新審閱原稿。
 
@@ -17,12 +27,12 @@
 | 角色成長 | 等級、經驗、屬性點、天賦點；力量、魔力、敏捷、體質、防禦、精神；玩家 YAML 儲存 | [PlayerStats](../src/main/java/com/customrpg/players/PlayerStats.java)、[PlayerStatsManager](../src/main/java/com/customrpg/managers/PlayerStatsManager.java) |
 | 種族 | 原七族＋龍裔、獸裔、暗精靈、半身人、魔像族，共十二族；屬性成長、武器／箭矢親和、暴擊、移速、脫戰回復；十二族各有主動技能，快捷鍵 5 施放 | [RaceManager](../src/main/java/com/customrpg/races/RaceManager.java)、[種族評估](RACES.md)、[新增設定](../src/main/resources/config/races_additional.yml) |
 | 自訂武器 | YAML 武器模板、稀有度、需求、特殊攻擊效果與武器技能 | [WeaponManager](../src/main/java/com/customrpg/managers/WeaponManager.java)、[WeaponListener](../src/main/java/com/customrpg/listeners/WeaponListener.java) |
-| 裝備 | 護甲、飾品、欄位與需求檢查、屬性同步、套裝與符文資料載入；不等於完整鍛造／鑲嵌玩法已完成 | [EquipmentManager](../src/main/java/com/customrpg/equipment/EquipmentManager.java)、[ArmorManager](../src/main/java/com/customrpg/equipment/ArmorManager.java) |
+| 裝備 | 護甲、飾品、需求與屬性；新增 980 件工坊裝備、素材工作台配方與村莊綠寶石商人；不等於完整鍛造／鑲嵌玩法 | [EquipmentManager](../src/main/java/com/customrpg/equipment/EquipmentManager.java)、[ArmorManager](../src/main/java/com/customrpg/equipment/ArmorManager.java) |
 | 天賦 | 烈焰、暗黑、武器、科技、自然、宿儺、赤血、刺客、野獸、弓系，以及新增冰霜／雷霆／大地／聖光，共十四分支、164 天賦；主動快捷鍵 1～4 | [TalentBranch](../src/main/java/com/customrpg/talents/TalentBranch.java)、[TalentManager](../src/main/java/com/customrpg/managers/TalentManager.java)、[TalentSkillManager](../src/main/java/com/customrpg/managers/TalentSkillManager.java) |
 | 戰鬥資源 | 魔力與回復、血液資源、弓系專注、野獸相關技能、技能冷卻與增益管理 | [managers](../src/main/java/com/customrpg/managers/)、[武器技能框架](../src/main/java/com/customrpg/weaponSkills/) |
 | 技能操作與 GUI | 選單、屬性、種族、裝備、天賦介面；技能欄、快捷施法與切換提示 | [gui](../src/main/java/com/customrpg/gui/)、[SkillBarManager](../src/main/java/com/customrpg/managers/SkillBarManager.java) |
 | 自訂怪物 | 模板等級範圍、生命／傷害成長、裝備、技能／特殊行為、時段與環境標籤、掉落物、武器與裝備掉落、擊殺經驗 | [MobManager](../src/main/java/com/customrpg/managers/MobManager.java)、[MobListener](../src/main/java/com/customrpg/listeners/MobListener.java)、[怪物模板](../src/main/resources/config/mobs/types/) |
-| 偽裝與顯示 | LibsDisguises 整合、部分模型／顯示實體實作、怪物等級名稱、血量顯示、傷害數字、BossBar | [MobManager](../src/main/java/com/customrpg/managers/MobManager.java)、[HealthDisplayManager](../src/main/java/com/customrpg/managers/HealthDisplayManager.java)、[BossBarManager](../src/main/java/com/customrpg/managers/BossBarManager.java) |
+| 偽裝與顯示 | LibsDisguises 整合、部分模型／顯示實體實作、怪物等級名稱、玩家血量 HUD、傷害數字、BossBar（怪物頭頂愛心血條已移除） | [MobManager](../src/main/java/com/customrpg/managers/MobManager.java)、[HealthDisplayManager](../src/main/java/com/customrpg/managers/HealthDisplayManager.java)、[BossBarManager](../src/main/java/com/customrpg/managers/BossBarManager.java) |
 | 任務整合 | BeautyQuests 自訂怪物工廠、擊殺通知、冷卻管理；不是完整的原版世界動態任務服務 | [BeautyQuestsHook](../src/main/java/com/customrpg/integration/BeautyQuestsHook.java)、[QuestCooldownManager](../src/main/java/com/customrpg/integration/QuestCooldownManager.java) |
 | NPC | 自訂 NPC 建立／保存、區塊載入處理、互動、BeautyQuests 任務綁定介面 | [NPC 模組](../src/main/java/com/customrpg/integration/npc/) |
 | 舊式區域 | 矩形等級區域選取、保護區、安全區、固定 Boss 區域；Boss 專屬小怪、冷卻、排他生成與邊界限制 | [ZoneManager](../src/main/java/com/customrpg/managers/ZoneManager.java)、[ProtectionAreaManager](../src/main/java/com/customrpg/managers/ProtectionAreaManager.java)、[BossZoneManager](../src/main/java/com/customrpg/managers/BossZoneManager.java) |
@@ -132,10 +142,10 @@ Nether 與 End 使用各自的世界中心，預設沒有出生點安全圈，�
 | --- | --- | --- |
 | 0. 基礎盤點 | 完成 | 依程式與註冊點整理既有系統，區分舊實作與設計目標 |
 | 1. 原版世界生怪核心 | 程式完成，待實服驗收 | 水平距離分區、自然生成替換、環境／時段／等級篩選、上限、普通／精英、追擊限制、通知與設定遷移 |
-| 2. 村莊與 Bell | 未開始 | 真正村莊／鐘發現、持久 Village ID、動態村莊安全區、玩家發現紀錄、Waypoint 解鎖與傳送 |
+| 2. 村莊與 Bell | 部分程式完成，待實服驗收 | 已有生成村莊結構 ID 與裝備商人；Bell、動態安全區、玩家發現紀錄、Waypoint 尚未開始 |
 | 3. 原版結構 | 未開始 | Structure 偵測與區塊快取、結構保護／優先怪物池、Mineshaft／Trial Chamber 等開放式副本、進度與個人寶箱 |
 | 4. 事件與 Boss | 部分程式完成，待實服驗收 | 動態事件 Framework＋Meteor Impact 已實作與本機測試；村外防禦、Demon Rift、十種地形荒野 Boss 已加入，既有固定 Boss 區域保留 |
-| 5. 採集與製作 | 未開始 | 原版礦物／樹木／植物／釣魚職業、原版工作站互動、鍛造／強化／分解／鍊金與材料倉庫 |
+| 5. 採集與製作 | 部分程式完成，待實服驗收 | 已有打怪素材、980 件工作台裝備、核心拆解與配方圖鑑；採集職業、其他工作站／鍊金、完整鍛造及材料倉庫未開始 |
 | 6. 長期進度 | 未開始 | 聲望、經濟、Codex、原生動態任務模板、主線、World Tier、Nether／End 完整內容與資料庫服務 |
 
 後續優先補充：各生態域／維度／等級池覆蓋、可設定權重與結構優先選擇、稀有／Champion 階級及詞綴。每次功能完成後更新本表與驗收紀錄，勿將設計稿條目直接列為已完成。
@@ -240,3 +250,15 @@ ExpandedTalentSkills 使用共用有界領域 timer，接上射線／碎冰、�
 主選單擴到 54 格，顯示十四流派並加上實際 Inventory 身分、拖曳與關閉清理。分支指令／Tab 接上全部 enum，修正 warrior／mage 別名。/talent reload 從假成功訊息改成實際讀取兩檔、驗證後交換；錯誤保留原樹與持續狀態，成功重算線上玩家並清新領域。
 
 新增四類測試與既有施法測試兩案，共 54 項；完整 `mvn clean verify` **285 tests／0 failures／0 errors／0 skipped**。150 production Java、43 test 類別、36 YAML；JAR target/CustomRPG-1.0.jar。未啟動 Paper，實服外觀、多人支援與戰鬥平衡仍待驗收。名冊、等級效果與操作見 [TALENT_EXPANSION.md](TALENT_EXPANSION.md)。
+
+## 13. 工坊裝備、實體素材與村莊裝備商（2026-10-18）
+
+使用者要求大量裝備、打怪素材可在工作台合成，以及每個村莊按所在地等級販售裝備；已選綠寶石貨幣。新增十種地形主題×七階×十四類共 980 件（560 武器／280 護甲／140 飾品）、84 素材、980 裝備配方＋七個核心拆解配方。八種武器／四護甲／戒指／項鍊接上原裝備、屬性及需求；新弓／長槍補發射等級與傷害快照。
+
+自然敵怪與自製怪有玩家擊殺歸屬時掉素材，按怪物等級或地區等級選階級；事件專用／召喚物排除，隕石錢包獨立保留。工作台用原版 Shaped／Shapeless 配方與精確物品資料，PDC 防同名冒充，原版處理 Shift 批次扣料交付。/rpgcraft 有可翻頁配方／素材預覽、地形階級篩選與診斷；預覽不可取走。
+
+原版生成村莊區塊與實體資料載入後，有安全空位就補一位固定盔甲商，不建房、不覆蓋原村民。每店 28 商品、每項八次庫存、30 分鐘補貨；級別按商人站位的 WorldZoneManager 基礎等級，與開店玩家等級無關；綠寶石走原版交易。村莊 ID／商人 UUID／卸載區塊原子保存，先存身分再生成，未知實體載入狀態不補第二隻。商人壞檔／IO 失敗只停商人，其餘工坊仍可用。
+
+新設定 config/crafting_progression.yml 自動建立；資料 data/village_merchants.yml，玩家物品及庫存走原版存檔。保留舊裝備 YAML，重新載入舊裝備／武器會接回工坊模板。村莊／工坊不要求 /finishrpg；自然替換依舊需要。人工床鐘村、村莊安全圈、發現紀錄與 Waypoint 尚未加入。
+
+新增七類／73 案，完整 `mvn clean verify` **358 tests／0 failures／0 errors／0 skipped**；159 production Java、50 test 類別、37 YAML，JAR target/CustomRPG-1.0.jar。未啟動 Paper，真實合成／滿包／多人交易／結構載入、外觀／平衡及效能待驗收。操作與完整 CSV 見 [CRAFTING_AND_MERCHANTS.md](CRAFTING_AND_MERCHANTS.md)。

@@ -1,11 +1,13 @@
+# Balance v2: attribute numbers are relative weights, 18 base points plus 0..18 growth points across levels 1..60.
+# Weapon affinities are bounded to 98..102%; effective values appear in /race and the GUI.
 # ===================================
 # CustomRPG - 種族配置檔案
 # ===================================
 # 每個種族包含：
 #   - name: 顯示名稱 (支援顏色碼)
 #   - description: 簡短描述
-#   - base-stats: 基礎屬性加成
-#   - growth: 每級成長倍率
+#   - base-stats: 六屬性基礎分配權重；另含原始魔力／回魔設定
+#   - growth: 六屬性成長分配權重，並非每級直接增加的倍率
 #   - skills: 舊版技能名稱資料；目前主動技能由 RacialSkill 按種族 ID 定義，數字鍵 5 施放
 #   - weapon: 武器類型傷害加成
 #       - default: 未列出的武器類型預設倍率

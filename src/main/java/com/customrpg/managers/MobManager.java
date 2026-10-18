@@ -454,7 +454,7 @@ public class MobManager {
 
         // 設置持久化數據
         mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
-        mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+        mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, com.customrpg.balance.BalanceMigration.level(level));
 
         trackSpawn(mob);
         plugin.getLogger().info("Spawned custom mob: " + mobData.getName() + " (Lv." + level + ") at " + spawnLocation);
@@ -497,7 +497,7 @@ public class MobManager {
 
         // 設置持久化數據
         mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
-        mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+        mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, com.customrpg.balance.BalanceMigration.level(level));
         trackSpawn(mob);
         return mob;
     }
@@ -532,12 +532,13 @@ public class MobManager {
         }
 
         mob.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
-        mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+        mob.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, com.customrpg.balance.BalanceMigration.level(level));
         trackSpawn(mob);
         return mob;
     }
 
     private String buildMobDisplayName(MobData mobData, int level) {
+        level = com.customrpg.balance.BalanceMigration.level(level);
         if (mobData == null) {
             return "&8[&eLv." + level + "&8] 未知怪物";
         }
@@ -783,6 +784,9 @@ public class MobManager {
         }
         mob.setHealth(mob.getMaxHealth());
 
+        mob.getPersistentDataContainer().set(new NamespacedKey("customrpg", "mob_balance_version"), PersistentDataType.INTEGER, 2);
+        mob.getPersistentDataContainer().remove(NS_VIRTUAL_MAX_HP);
+        mob.getPersistentDataContainer().remove(NS_VIRTUAL_CURRENT_HP);
         // 若實際設計血量超過上限，記錄虛擬 HP 以供換算
         if (desiredHealth > MC_MAX_HEALTH_CAP) {
             mob.getPersistentDataContainer().set(NS_VIRTUAL_MAX_HP,
@@ -832,8 +836,7 @@ public class MobManager {
     public static boolean damageVirtualHP(org.bukkit.entity.LivingEntity mob, double mcDamage) {
         double vMax = getVirtualMaxHP(mob);
         double vCurrent = getVirtualCurrentHP(mob);
-        double ratio = vMax / MC_MAX_HEALTH_CAP;          // 每 1 MC 傷害 = ratio 虛擬傷害
-        double vDamage = mcDamage * ratio;
+        double vDamage = Math.max(0, mcDamage);
         double vNew = vCurrent - vDamage;
 
         if (vNew <= 0) {
@@ -850,8 +853,7 @@ public class MobManager {
     public static void healVirtualHP(org.bukkit.entity.LivingEntity mob, double mcHeal) {
         double vMax = getVirtualMaxHP(mob);
         double vCurrent = getVirtualCurrentHP(mob);
-        double ratio = vMax / MC_MAX_HEALTH_CAP;
-        double vHeal = mcHeal * ratio;
+        double vHeal = Math.max(0, mcHeal);
         double vNew = Math.min(vMax, vCurrent + vHeal);
 
         mob.getPersistentDataContainer().set(NS_VIRTUAL_CURRENT_HP, PersistentDataType.DOUBLE, vNew);
@@ -879,7 +881,7 @@ public class MobManager {
                     org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, raw -> {
                         if (!(raw instanceof LivingEntity living)) return;
                         living.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobData.getKey());
-                        living.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+                        living.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, com.customrpg.balance.BalanceMigration.level(level));
                         var presentation = profile(mobData);
                         if (presentation != null && plugin.getMobEncounterManager() != null) {
                             plugin.getMobEncounterManager().applyAppearance(living, presentation);
@@ -1037,7 +1039,7 @@ public class MobManager {
         // **重要：標記殭屍核心為自定義怪物**
         // 這樣 MobListener 才能識別並正確處理傷害、掉落物、經驗值
         core.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobData.getKey());
-        core.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
+        core.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, com.customrpg.balance.BalanceMigration.level(level));
         plugin.getLogger().info("✓ 殭屍核心已標記為自定義怪物: " + mobData.getKey() + " (Lv." + level + ")");
 
         // ===== 第二步：獲取方塊類型 =====
@@ -1582,8 +1584,8 @@ public class MobManager {
             this.key = key;
             this.name = name;
             this.entityType = entityType;
-            this.minLevel = minLevel;
-            this.maxLevel = maxLevel;
+            this.minLevel = com.customrpg.balance.BalanceMigration.level(minLevel);
+            this.maxLevel = com.customrpg.balance.BalanceMigration.level(maxLevel);
             this.baseHealth = baseHealth;
             this.baseDamage = baseDamage;
             this.healthPerLevel = healthPerLevel;
@@ -1635,13 +1637,20 @@ public class MobManager {
         public boolean isBoss() { return isBoss; }
         public String getSpawnTime() { return spawnTime; }
 
+        public com.customrpg.balance.InitialBalanceModel.Role balanceRole() {
+            if (tags.contains("group-boss")) return com.customrpg.balance.InitialBalanceModel.Role.GROUP_BOSS;
+            if (isBoss) return com.customrpg.balance.InitialBalanceModel.Role.WILDERNESS_BOSS;
+            if (tags.contains("elite") || key.contains("elite")) return com.customrpg.balance.InitialBalanceModel.Role.ELITE;
+            return com.customrpg.balance.InitialBalanceModel.Role.NORMAL;
+        }
+
         // 計算等級化屬性
         public double calculateHealth(int level) {
-            return baseHealth + (level - 1) * healthPerLevel;
+            return com.customrpg.balance.InitialBalanceModel.mobHealth(com.customrpg.balance.BalanceMigration.level(level), balanceRole(), 1);
         }
 
         public double calculateDamage(int level) {
-            return baseDamage + (level - 1) * damagePerLevel;
+            return baseDamage <= 0 ? 0 : com.customrpg.balance.InitialBalanceModel.mobRawDamage(com.customrpg.balance.BalanceMigration.level(level), balanceRole());
         }
 
         public int calculateExp(int level) {

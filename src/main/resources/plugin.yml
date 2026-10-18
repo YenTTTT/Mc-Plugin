@@ -13,6 +13,10 @@ softdepend:
   - BeautyQuests
 
 commands:
+  rpgcraft:
+    description: Browse custom crafting recipes, materials and village merchant status
+    usage: /rpgcraft [recipes [theme] [tier] [page]|recipe <id>|materials [page]|status|give <player> <material> [amount]]
+    permission: customrpg.crafting
   events:
     description: View world events, claim personal rewards and inspect material wallet
     usage: /events [info|list|wallet|claim <eventId>]
@@ -128,12 +132,20 @@ commands:
 
 
 permissions:
+  customrpg.crafting:
+    description: Browse the custom crafting guide
+    default: true
+  customrpg.crafting.admin:
+    description: Give custom crafting materials for administration
+    default: op
   customrpg.event.admin:
     description: Start, stop, inspect and recover dynamic world events
     default: op
   customrpg.*:
     description: Gives access to all CustomRPG features
     children:
+      customrpg.crafting: true
+      customrpg.crafting.admin: true
       customrpg.weapon: true
       customrpg.weapon.others: true
       customrpg.rpg: true

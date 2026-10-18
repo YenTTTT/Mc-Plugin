@@ -24,9 +24,10 @@ public class SkillTriggerListener implements Listener {
         this.skillManager = skillManager;
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST)
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) return;
+        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND
+                || event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return;
         Action action = event.getAction();
         Player player = event.getPlayer();
         SkillTriggerType trigger = null;

@@ -25,7 +25,7 @@ import java.util.*;
  * RaceGUI - 種族選擇介面 (分頁式)
  *
  * 第一頁: 種族選擇列表 — 點擊種族進入詳情頁
- * 第二頁: 種族詳情 — 基礎屬性 / 成長倍率 / 種族技能 / 武器親和 (tooltip 顯示)
+ * 第二頁: 種族詳情 — 基礎屬性 / 成長權重 / 種族技能 / 武器親和 (tooltip 顯示)
  *         + 選擇按鈕 + 返回按鈕
  */
 public class RaceGUI implements Listener {
@@ -45,7 +45,7 @@ public class RaceGUI implements Listener {
     // 詳情頁 slot 配置
     private static final int SLOT_RACE_ICON = 4;        // 種族圖標 (上方正中)
     private static final int SLOT_BASE_STATS = 19;      // 基礎屬性
-    private static final int SLOT_GROWTH = 21;           // 成長倍率
+    private static final int SLOT_GROWTH = 21;           // 成長權重
     private static final int SLOT_SKILLS = 23;           // 種族技能
     private static final int SLOT_WEAPON = 25;           // 武器親和
     private static final int SLOT_PASSIVE = 22;          // 被動效果 (中間)
@@ -129,7 +129,7 @@ public class RaceGUI implements Listener {
             Material icon = RACE_ICONS.getOrDefault(race.getId().toLowerCase(), Material.PLAYER_HEAD);
 
             boolean isCurrent = race.getId().equalsIgnoreCase(currentRaceId);
-            gui.setItem(slot, createListItem(race, icon, isCurrent));
+            gui.setItem(slot, createListItem(race, icon, isCurrent, playerLevel(player)));
             slotMap.put(slot, race.getId());
         }
 
@@ -166,7 +166,7 @@ public class RaceGUI implements Listener {
     /**
      * 列表頁的種族物品 — 簡短 tooltip + "點擊查看詳情"
      */
-    private ItemStack createListItem(RaceData race, Material icon, boolean isCurrent) {
+    private ItemStack createListItem(RaceData race, Material icon, boolean isCurrent, int level) {
         String title = race.getDisplayName();
         if (isCurrent) {
             title += " §a§l[目前種族]";
@@ -177,12 +177,10 @@ public class RaceGUI implements Listener {
             lore.add("§7" + race.getDescription());
         }
         lore.add("");
-        lore.add("§c⚔ 力量 §f" + race.getBaseStrength()
-                + "  §b✦ 魔法 §f" + race.getBaseMagic()
-                + "  §a➤ 敏捷 §f" + race.getBaseAgility());
-        lore.add("§d♥ 體力 §f" + race.getBaseVitality()
-                + "  §9⛨ 防禦 §f" + race.getBaseDefense()
-                + "  §5✧ 精神 §f" + race.getBaseSpirit());
+        int[] bonuses = race.effectiveStats(level);
+        lore.add("§7種族額外加成（Lv." + level + "）");
+        lore.add("§c⚔ 力量 §f+" + bonuses[0] + "  §b✦ 魔法 §f+" + bonuses[1] + "  §a➤ 敏捷 §f+" + bonuses[2]);
+        lore.add("§d♥ 體力 §f+" + bonuses[3] + "  §9⛨ 防禦 §f+" + bonuses[4] + "  §5✧ 精神 §f+" + bonuses[5]);
         lore.add("");
         if (isCurrent) {
             lore.add("§a▶ 點擊查看詳情");
@@ -202,6 +200,40 @@ public class RaceGUI implements Listener {
     // ═══════════════════════════════════════
     //  第二頁：種族詳情
     // ═══════════════════════════════════════
+
+    private int playerLevel(Player player) {
+        return Math.clamp(plugin.getPlayerStatsManager().getStats(player).getLevel(), 1, 60);
+    }
+
+    static List<String> attributeLore(RaceData race, int level) {
+        level = Math.clamp(level, 1, 60);
+        int[] bonuses = race.effectiveStats(level);
+        List<String> lore = new ArrayList<>();
+        lore.add("§7依你目前的等級 Lv." + level + " 計算");
+        lore.add("§7以下是種族額外加成，會加到角色屬性");
+        lore.add("");
+        String[] labels = {"§c⚔ 力量", "§b✦ 魔法", "§a➤ 敏捷", "§d♥ 體力", "§9⛨ 防禦", "§5✧ 精神"};
+        for (int i = 0; i < bonuses.length; i++) lore.add(labels[i] + ": §f+" + bonuses[i]);
+        if (race.calculateManaBonus(level) > 0)
+            lore.add("§3✦ 最大魔力: §f+" + String.format(Locale.ROOT, "%.2f", race.calculateManaBonus(level)));
+        if (race.calculateManaRegenBonus(level) > 0)
+            lore.add("§3↻ 每秒回魔: §f+" + String.format(Locale.ROOT, "%.2f", race.calculateManaRegenBonus(level)));
+        lore.add("§7六屬性合計: §f+" + Arrays.stream(bonuses).sum());
+        return lore;
+    }
+
+    static List<String> growthLore(RaceData race) {
+        List<String> lore = new ArrayList<>();
+        lore.add("§7依種族取向逐步增加，升級不會扣回屬性");
+        for (int level : new int[]{1, 30, 60}) {
+            int[] bonuses = race.effectiveStats(level);
+            lore.add("");
+            lore.add("§eLv." + level + " §7種族額外加成（合計 +" + Arrays.stream(bonuses).sum() + "）");
+            lore.add("§c力量 +" + bonuses[0] + " §b魔法 +" + bonuses[1] + " §a敏捷 +" + bonuses[2]);
+            lore.add("§d體力 +" + bonuses[3] + " §9防禦 +" + bonuses[4] + " §5精神 +" + bonuses[5]);
+        }
+        return lore;
+    }
 
     /**
      * 開啟種族詳情頁
@@ -247,39 +279,15 @@ public class RaceGUI implements Listener {
             gui.setItem(SLOT_RACE_ICON, createItem(raceIcon, title, lore));
         }
 
-        // ── Slot 19: 基礎屬性 ──
+        // ── Slot 19: 目前等級的種族額外加成 ──
         {
-            List<String> lore = new ArrayList<>();
-            lore.add("§7選擇此種族後立即獲得的屬性加成");
-            lore.add("");
-            lore.add("§c  ⚔ 力量: §f+" + race.getBaseStrength());
-            lore.add("§b  ✦ 魔法: §f+" + race.getBaseMagic());
-            lore.add("§a  ➤ 敏捷: §f+" + race.getBaseAgility());
-            lore.add("§d  ♥ 體力: §f+" + race.getBaseVitality());
-            lore.add("§9  ⛨ 防禦: §f+" + race.getBaseDefense());
-            lore.add("§5  ✧ 精神: §f+" + race.getBaseSpirit());
-            if (race.getBaseMana() > 0) {
-                lore.add("§3  ✦ 魔力: §f+" + race.getBaseMana());
-            }
-            if (race.getBaseManaRegen() > 0) {
-                lore.add("§3  ↻ 魔力回復: §f+" + String.format("%.1f/s", race.getBaseManaRegen()));
-            }
-            gui.setItem(SLOT_BASE_STATS, createItem(Material.DIAMOND, "§e§l✦ 基礎屬性", lore));
+            gui.setItem(SLOT_BASE_STATS, createItem(Material.DIAMOND, "§e§l✦ 種族額外加成",
+                    attributeLore(race, playerLevel(player))));
         }
 
-        // ── Slot 21: 成長倍率 ──
+        // ── Slot 21: 實際成長預覽 ──
         {
-            List<String> lore = new ArrayList<>();
-            lore.add("§7每升一級時，屬性成長的倍率");
-            lore.add("§7倍率越高，升級時獲得的屬性越多");
-            lore.add("");
-            Map<String, Double> growthMap = race.getGrowthMap();
-            for (Map.Entry<String, Double> entry : growthMap.entrySet()) {
-                double val = entry.getValue();
-                String arrow = val > 1.0 ? "§a▲" : (val < 1.0 ? "§c▼" : "§7●");
-                lore.add(arrow + " " + entry.getKey() + ": §f" + String.format("%.1fx", val));
-            }
-            gui.setItem(SLOT_GROWTH, createItem(Material.EXPERIENCE_BOTTLE, "§6§l✦ 成長倍率", lore));
+            gui.setItem(SLOT_GROWTH, createItem(Material.EXPERIENCE_BOTTLE, "§6§l✦ 成長預覽", growthLore(race)));
         }
 
         // ── Slot 22: 被動效果 ──
@@ -293,11 +301,11 @@ public class RaceGUI implements Listener {
                 if (race.getBonusCritChance() > 0) lore.add("§e  暴擊率: §a+" + String.format("%.1f%%", race.getBonusCritChance()));
                 if (race.getBonusCritDamage() > 0) lore.add("§e  暴擊傷害: §a+" + String.format("%.0f%%", race.getBonusCritDamage() * 100));
                 if (race.getBonusMoveSpeed() != 0) lore.add("§e  移動速度: "+(race.getBonusMoveSpeed()<0?"§c":"§a")+String.format("%+.0f%%", race.getBonusMoveSpeed()*100));
-                if (race.getBonusHealthRegen() != 0) lore.add("§e  生命回復修正: "+(race.getBonusHealthRegen()<0?"§c":"§a")+String.format("%+.1f HP/s",race.getBonusHealthRegen()));
+                if (race.getBonusHealthRegen() != 0) lore.add("§e  影響脫戰後的額外生命回復");
             } else {
                 lore.add("§7此種族沒有額外被動效果");
             }
-            lore.add("§7脫戰後回復："+String.format("%.1f HP/s",raceManager.getRecoveryPerSecond(race)));
+            lore.add("§7脫戰8秒後，每秒回復約5%最大HP");
             gui.setItem(SLOT_PASSIVE, createItem(Material.BEACON, "§2§l✦ 被動效果", lore));
         }
 

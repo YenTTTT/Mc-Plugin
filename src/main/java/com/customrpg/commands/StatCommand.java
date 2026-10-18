@@ -90,29 +90,21 @@ public class StatCommand implements CommandExecutor {
         calc.totalSpirit = stats.getTotalSpirit();
 
         // 副屬性計算
-        calc.maxHealth = player.getHealth();
+        calc.maxHealth = player.getMaxHealth();
         calc.currentHealth = player.getHealth();
         calc.maxMana = stats.getMaxMana();
         calc.currentMana = stats.getCurrentMana();
 
-        // 暴擊率：基礎 5% + 每點敏捷 0.5%
-        calc.critChance = 5.0 + (calc.totalAgility * 0.5) + stats.getBonusCritChance();
-
-        // 暴擊傷害：基礎 150% + 每點力量 1%
-        calc.critDamage = 150.0 + (calc.totalStrength * 1.0) + stats.getBonusCritDamage();
-
-        // 移動速度：基礎 0% + 每點敏捷 0.3%
-        calc.moveSpeed = calc.totalAgility * 0.3;
-
-        // 穿透：每 10 點力量 1 點穿透
-        calc.penetration = calc.totalStrength / 10;
-
-        // 迴避：基礎 3% + 每點敏捷 0.4%
-        calc.evasion = 3.0 + (calc.totalAgility * 0.4);
+        var attack = plugin.getCombatBalance().calculate(player,player.getInventory().getItemInMainHand(),1,1);
+        calc.critChance = attack.critChance()*100;
+        calc.critDamage = attack.critMultiplier()*100;
+        calc.moveSpeed = 0; // No passive AGI move speed or random evasion in v2.
+        calc.penetration = 0;
+        calc.evasion = 0;
 
         // 防禦值
         calc.physicalDefense = calc.totalDefense + stats.getBonusDefenseValue();
-        calc.magicDefense = (calc.totalMagic / 2.0) + stats.getBonusDefenseValue();
+        calc.magicDefense = calc.physicalDefense;
 
         return calc;
     }
@@ -244,21 +236,10 @@ public class StatCommand implements CommandExecutor {
             return;
         }
 
-        double meleeBonus = calculateCategoryBonus(player, tm, stats, "weapon_melee_mastery", null, 0);
-        double firearmBonus = calculateCategoryBonus(player, tm, stats, "weapon_firearms_mastery", "AGILITY", 0.5);
-        double magicBonus = calculateCategoryBonus(player, tm, stats, "weapon_magic_mastery", "MAGIC", 0.4);
-        double bowBonus = calculateCategoryBonus(player, tm, stats, "infinite_arrows", null, 0);
-
-        player.sendMessage(ChatColor.GOLD + "--- 武器天賦加成 ---");
-        boolean hasAny = false;
-        if (meleeBonus > 0) { player.sendMessage(ChatColor.GRAY + "近戰武器: " + ChatColor.GREEN + "+" + String.format("%.1f", meleeBonus)); hasAny = true; }
-        if (firearmBonus > 0) { player.sendMessage(ChatColor.GRAY + "火槍: " + ChatColor.GREEN + "+" + String.format("%.1f", firearmBonus)); hasAny = true; }
-        if (magicBonus > 0) { player.sendMessage(ChatColor.GRAY + "法杖: " + ChatColor.GREEN + "+" + String.format("%.1f", magicBonus)); hasAny = true; }
-        if (bowBonus > 0) { player.sendMessage(ChatColor.GRAY + "弓箭: " + ChatColor.GREEN + "+" + String.format("%.1f", bowBonus)); hasAny = true; }
-        
-        if (!hasAny) {
-            player.sendMessage(ChatColor.GRAY + "目前沒有任何武器加成");
-        }
+        var attack=plugin.getCombatBalance().calculate(player,player.getInventory().getItemInMainHand(),1,1);
+        double coreHit=attack.baselineDps()/(attack.weapon().attacksPerSecond*com.customrpg.balance.InitialBalanceModel.ACCURACY);
+        double permanentPercent=Math.max(0,attack.expectedHit()/Math.max(.001,coreHit)-1)*100;
+        player.sendMessage(ChatColor.GOLD+"目前武器常駐增傷："+ChatColor.WHITE+String.format("+%.1f%%",permanentPercent));
 
         // 種族武器加成
         com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();

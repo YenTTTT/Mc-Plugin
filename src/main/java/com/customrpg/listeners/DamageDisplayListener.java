@@ -44,6 +44,9 @@ public class DamageDisplayListener implements Listener {
 
         LivingEntity target = (LivingEntity) event.getEntity();
         double finalDamage = event.getFinalDamage();
+        if (com.customrpg.managers.MobManager.hasVirtualHP(target)) {
+            finalDamage *= com.customrpg.managers.MobManager.getVirtualMaxHP(target) / target.getMaxHealth();
+        }
 
         // 確保傷害值有效
         if (finalDamage <= 0) {

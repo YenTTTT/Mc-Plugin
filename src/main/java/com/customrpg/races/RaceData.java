@@ -108,7 +108,35 @@ public class RaceData {
         if(!Double.isFinite(value)||value<min||value>max) throw new IllegalArgumentException("Invalid race "+name+": "+value);
     }
     private static long levelsGained(int level) { return Math.max(0L,(long)level-1); }
-    private static int statBonus(int base,double growth,int level) { return (int)Math.min(Integer.MAX_VALUE,base+Math.floor(levelsGained(level)*growth)); }
+    public int[] effectiveStats(int level) {
+        int baseBudget = com.customrpg.balance.BalancePlayerRules.raceBudget(1);
+        int[] base = distribute(new double[]{baseStrength,baseMagic,baseAgility,baseVitality,baseDefense,baseSpirit},
+                baseBudget, true);
+        int[] growth = distribute(new double[]{growthStrength,growthMagic,growthAgility,growthVitality,growthDefense,growthSpirit},
+                com.customrpg.balance.BalancePlayerRules.raceBudget(level) - baseBudget, false);
+        for (int i = 0; i < base.length; i++) base[i] += growth[i];
+        return base;
+    }
+
+    /** Fixed weights and a growing sequence of points prevent an attribute dropping on level-up. */
+    private static int[] distribute(double[] weights, int budget, boolean minimumOne) {
+        int[] result = new int[weights.length];
+        int[] awarded = new int[weights.length];
+        if (minimumOne) for (int i = 0; i < weights.length && budget > 0; i++) {
+            if (weights[i] > 0) { result[i] = 1; budget--; }
+        }
+        for (int point = 0; point < budget; point++) {
+            int best = -1;
+            double highest = 0;
+            for (int i = 0; i < weights.length; i++) {
+                double score = weights[i] / (awarded[i] + 1);
+                if (score > highest) { highest = score; best = i; }
+            }
+            if (best < 0) break; // Explicitly zero custom profiles must remain zero.
+            result[best]++; awarded[best]++;
+        }
+        return result;
+    }
 
     // ===== Getters =====
 
@@ -135,12 +163,15 @@ public class RaceData {
     public double getGrowthManaRegen() { return growthManaRegen; }
 
     public List<String> getSkills() { return skills; }
-    public Map<String, Double> getWeaponBonuses() { return weaponBonuses; }
-    public double getDefaultWeaponBonus() { return defaultWeaponBonus; }
+    public Map<String, Double> getWeaponBonuses() {
+        Map<String,Double> result=new LinkedHashMap<>(); weaponBonuses.forEach((key,value)->result.put(key,Math.clamp(value,.98,1.02)));
+        return Collections.unmodifiableMap(result);
+    }
+    public double getDefaultWeaponBonus() { return Math.clamp(defaultWeaponBonus,.98,1.02); }
 
-    public double getBonusCritChance() { return bonusCritChance; }
-    public double getBonusCritDamage() { return bonusCritDamage; }
-    public double getBonusMoveSpeed() { return bonusMoveSpeed; }
+    public double getBonusCritChance() { return Math.min(1,bonusCritChance); }
+    public double getBonusCritDamage() { return Math.min(.05,bonusCritDamage); }
+    public double getBonusMoveSpeed() { return Math.clamp(bonusMoveSpeed,-.03,.03); }
     public double getBonusHealthRegen() { return bonusHealthRegen; }
 
     /**
@@ -149,51 +180,51 @@ public class RaceData {
      * @return 傷害倍率 (例: 1.3 = 130% 傷害)
      */
     public double getWeaponBonus(String weaponType) {
-        if (weaponType == null) return defaultWeaponBonus;
+        if (weaponType == null) return Math.clamp(defaultWeaponBonus,.98,1.02);
         Double bonus = weaponBonuses.get(weaponType.toUpperCase(Locale.ROOT));
-        return bonus != null ? bonus : defaultWeaponBonus;
+        return Math.clamp(bonus != null ? bonus : defaultWeaponBonus,.98,1.02);
     }
 
     /**
      * 根據玩家等級計算種族帶來的總屬性加成
-     * Level 1 receives base stats; each subsequent level adds growth.
+     * Base and growth settings are weights within separate bounded budgets.
      */
     public int calculateStrengthBonus(int level) {
-        return statBonus(baseStrength,growthStrength,level);
+        return effectiveStats(level)[0];
     }
 
     public int calculateMagicBonus(int level) {
-        return statBonus(baseMagic,growthMagic,level);
+        return effectiveStats(level)[1];
     }
 
     public int calculateAgilityBonus(int level) {
-        return statBonus(baseAgility,growthAgility,level);
+        return effectiveStats(level)[2];
     }
 
     public int calculateVitalityBonus(int level) {
-        return statBonus(baseVitality,growthVitality,level);
+        return effectiveStats(level)[3];
     }
 
     public int calculateDefenseBonus(int level) {
-        return statBonus(baseDefense,growthDefense,level);
+        return effectiveStats(level)[4];
     }
 
     public int calculateSpiritBonus(int level) {
-        return statBonus(baseSpirit,growthSpirit,level);
+        return effectiveStats(level)[5];
     }
 
     /**
      * 根據玩家等級計算種族的魔力加成
      */
     public double calculateManaBonus(int level) {
-        return baseMana + (levelsGained(level) * growthMana);
+        return Math.min(10,(baseMana + levelsGained(level)*growthMana)*.05);
     }
 
     /**
      * 根據玩家等級計算種族的魔力回復加成
      */
     public double calculateManaRegenBonus(int level) {
-        return baseManaRegen + (levelsGained(level) * growthManaRegen);
+        return Math.min(.25,(baseManaRegen + levelsGained(level)*growthManaRegen)*.05);
     }
 
     /**

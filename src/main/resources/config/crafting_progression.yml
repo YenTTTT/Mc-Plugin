@@ -1,0 +1,153 @@
+# Crafting progression: deterministic catalogs, no old equipment files are overwritten.
+# 10 themes x 7 tiers x 14 kinds = 980 products; 84 custom materials.
+enabled: true
+drops:
+  enabled: true
+  essence-chance: 1.0
+  binding-chance: 0.5
+  boss-core-chance: 1.0
+merchants:
+  enabled: true
+  restock-seconds: 1800
+  uses-per-offer: 8
+  chunks-per-tick: 2
+tiers:
+  '1':
+    required-level: 1
+    emerald-price: 8
+    name: 粗製
+  '2':
+    required-level: 8
+    emerald-price: 14
+    name: 精製
+  '3':
+    required-level: 18
+    emerald-price: 22
+    name: 強化
+  '4':
+    required-level: 28
+    emerald-price: 30
+    name: 卓越
+  '5':
+    required-level: 38
+    emerald-price: 40
+    name: 精鑄
+  '6':
+    required-level: 48
+    emerald-price: 52
+    name: 史詩
+  '7':
+    required-level: 58
+    emerald-price: 64
+    name: 巔峰
+themes:
+  plains:
+    name: 原野
+    material-name: 原野獸皮
+    material: RABBIT_HIDE
+    primary: STRENGTH
+    secondary: VITALITY
+    trim-pattern: sentry
+    trim-material: copper
+    damage-factor: 1.02
+    speed-factor: 1.0
+    crit-bonus: 1
+  forest:
+    name: 翠林
+    material-name: 翠林纖片
+    material: NETHER_BRICK
+    primary: AGILITY
+    secondary: SPIRIT
+    trim-pattern: wild
+    trim-material: emerald
+    damage-factor: 1
+    speed-factor: 1.04
+    crit-bonus: 2
+  desert:
+    name: 流沙
+    material-name: 流沙燧晶
+    material: FLINT
+    primary: AGILITY
+    secondary: STRENGTH
+    trim-pattern: dune
+    trim-material: gold
+    damage-factor: 1.01
+    speed-factor: 1.03
+    crit-bonus: 3
+  swamp:
+    name: 幽沼
+    material-name: 幽沼凝膠
+    material: SLIME_BALL
+    primary: VITALITY
+    secondary: SPIRIT
+    trim-pattern: wild
+    trim-material: redstone
+    damage-factor: 1.03
+    speed-factor: 0.98
+    crit-bonus: 1
+  cave:
+    name: 晶岩
+    material-name: 晶岩碎簇
+    material: AMETHYST_SHARD
+    primary: INTELLIGENCE
+    secondary: DEFENSE
+    trim-pattern: rib
+    trim-material: amethyst
+    damage-factor: 1.04
+    speed-factor: 0.97
+    crit-bonus: 0
+  ice:
+    name: 霜雪
+    material-name: 霜雪晶片
+    material: PRISMARINE_CRYSTALS
+    primary: INTELLIGENCE
+    secondary: SPIRIT
+    trim-pattern: eye
+    trim-material: quartz
+    damage-factor: 1.02
+    speed-factor: 1
+    crit-bonus: 2
+  mountain:
+    name: 雷峰
+    material-name: 雷峰回響石
+    material: ECHO_SHARD
+    primary: STRENGTH
+    secondary: DEFENSE
+    trim-pattern: spire
+    trim-material: iron
+    damage-factor: 1.05
+    speed-factor: 0.96
+    crit-bonus: 0
+  nether:
+    name: 燼火
+    material-name: 燼火陶片
+    material: NETHER_BRICK
+    primary: STRENGTH
+    secondary: INTELLIGENCE
+    trim-pattern: snout
+    trim-material: redstone
+    damage-factor: 1.06
+    speed-factor: 0.95
+    crit-bonus: 1
+  ocean:
+    name: 滄潮
+    material-name: 滄潮鱗片
+    material: PRISMARINE_SHARD
+    primary: SPIRIT
+    secondary: VITALITY
+    trim-pattern: coast
+    trim-material: lapis
+    damage-factor: 1
+    speed-factor: 1.02
+    crit-bonus: 2
+  end:
+    name: 虛界
+    material-name: 虛界碎片
+    material: POPPED_CHORUS_FRUIT
+    primary: INTELLIGENCE
+    secondary: AGILITY
+    trim-pattern: spire
+    trim-material: amethyst
+    damage-factor: 1.04
+    speed-factor: 1
+    crit-bonus: 3

@@ -51,6 +51,11 @@ public class CustomRPG extends JavaPlugin {
     private EquipmentManager equipmentManager;
     private EquipmentGUI equipmentGUI;
     private com.customrpg.equipment.ArmorManager armorManager;
+    private com.customrpg.balance.CombatBalance combatBalance;
+    private com.customrpg.balance.BalanceCombatListener balanceCombatListener;
+    private com.customrpg.balance.BalanceItemRefresh balanceItemRefresh;
+    public com.customrpg.balance.CombatBalance getCombatBalance() { return combatBalance; }
+
     private HealthDisplayManager healthDisplayManager;
     private DamageDisplayManager damageDisplayManager;
     private ManaManager manaManager;
@@ -107,6 +112,7 @@ public class CustomRPG extends JavaPlugin {
     private com.customrpg.worldevent.core.WorldEventManager worldEventManager;
     private com.customrpg.mobs.MobProfileRegistry mobProfileRegistry;
     private com.customrpg.mobs.MobEncounterManager mobEncounterManager;
+    private com.customrpg.crafting.CraftingModule craftingModule;
 
 
     /**
@@ -151,6 +157,9 @@ public class CustomRPG extends JavaPlugin {
      */
     @Override
     public void onDisable() {
+        if (balanceCombatListener != null) balanceCombatListener.shutdown();
+        if (balanceItemRefresh != null) for (var player:getServer().getOnlinePlayers()) balanceItemRefresh.removeSpeed(player);
+        if (craftingModule != null) craftingModule.shutdown();
         if (talentMainMenuGUI != null) talentMainMenuGUI.cleanup();
         if (activeTalentSkillManager != null) activeTalentSkillManager.getExpansion().shutdown();
         if (mobEncounterManager != null) mobEncounterManager.shutdown();
@@ -304,6 +313,7 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("- MobManager initialized with " + mobManager.getMobTypeCount() + " custom mob types");
 
         statsManager = new PlayerStatsManager(this);
+        combatBalance = new com.customrpg.balance.CombatBalance(this);
         getLogger().info("- PlayerStatsManager initialized");
 
         // Initialize ZoneManager (mob zone system)
@@ -391,6 +401,7 @@ public class CustomRPG extends JavaPlugin {
 
         // 注入 PlayerStatsManager 到 DamageManager
         damageManager.setStatsManager(statsManager);
+        damageManager.setCombatBalance(combatBalance);
 
         com.customrpg.weaponSkills.util.AoEUtil aoeUtil = new com.customrpg.weaponSkills.util.AoEUtil();
         com.customrpg.weaponSkills.util.ParticleUtil particleUtil = new com.customrpg.weaponSkills.util.ParticleUtil();
@@ -444,6 +455,13 @@ public class CustomRPG extends JavaPlugin {
         } else {
             getLogger().info("- BeautyQuests unavailable; quest and NPC integration disabled");
         }
+        try {
+            craftingModule = new com.customrpg.crafting.CraftingModule(this);
+            craftingModule.start();
+        } catch (Exception error) {
+            if (craftingModule != null) craftingModule.shutdown();
+            getLogger().severe("[Crafting] Progression module paused: " + error.getMessage());
+        }
     }
 
     /**
@@ -452,6 +470,12 @@ public class CustomRPG extends JavaPlugin {
     private void registerListeners() {
         getLogger().info("Registering event listeners...");
 
+        // Selection tools run before item talents; talents claim their click before weapon routes.
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ProtectAreaListener(this, protectionAreaManager), this);
+        getLogger().info("- ProtectAreaListener registered");
+        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.TalentItemListener(
+                talentManager, activeTalentSkillManager), this);
+        getLogger().info("- TalentItemListener registered (mechanism items and hotkeys share cooldowns)");
         getServer().getPluginManager().registerEvents(new WeaponListener(this, weaponManager, statsManager), this);
         getLogger().info("- WeaponListener registered");
 
@@ -466,8 +490,7 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(mobEncounterManager, this);
         getServer().getPluginManager().registerEvents(distanceSpawnManager.getWildernessBosses(), this);
 
-        getServer().getPluginManager().registerEvents(new MobListener(this, mobManager, statsManager, weaponManager), this);
-        getLogger().info("- MobListener registered");
+
 
         getServer().getPluginManager().registerEvents(new SkillTriggerListener(newSkillManager), this);
         getLogger().info("- SkillTriggerListener registered");
@@ -504,9 +527,6 @@ public class CustomRPG extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ManaListener(), this);
         getLogger().info("- ManaListener registered");
-
-        getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ProtectAreaListener(this, protectionAreaManager), this);
-        getLogger().info("- ProtectAreaListener registered");
 
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.SafeZoneSpawnListener(safeZoneManager), this);
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.WorldSpawnListener(this), this);
@@ -553,6 +573,17 @@ public class CustomRPG extends JavaPlugin {
                             beautyQuestsHook.getQuestCooldownManager()), this);
             getLogger().info("- QuestCooldownListener registered");
         }
+        // Final RPG damage resolution must follow every talent/race/weapon listener.
+        balanceCombatListener = new com.customrpg.balance.BalanceCombatListener(this, combatBalance);
+        getServer().getPluginManager().registerEvents(balanceCombatListener, this);
+        balanceCombatListener.start();
+        balanceItemRefresh = new com.customrpg.balance.BalanceItemRefresh(this);
+        getServer().getPluginManager().registerEvents(balanceItemRefresh, this);
+        for (var player:getServer().getOnlinePlayers()) balanceItemRefresh.updateSpeed(player);
+
+        getServer().getPluginManager().registerEvents(new MobListener(this, mobManager, statsManager, weaponManager), this);
+        getLogger().info("- MobListener registered");
+
     }
 
     /**
@@ -828,6 +859,7 @@ public class CustomRPG extends JavaPlugin {
     }
 
     public com.customrpg.mobs.MobProfileRegistry getMobProfileRegistry() { return mobProfileRegistry; }
+    public com.customrpg.crafting.CraftingModule getCraftingModule() { return craftingModule; }
     public com.customrpg.mobs.MobEncounterManager getMobEncounterManager() { return mobEncounterManager; }
 
     public com.customrpg.races.RacialSkillManager getRacialSkillManager() {

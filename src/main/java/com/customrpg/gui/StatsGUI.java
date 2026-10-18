@@ -52,23 +52,23 @@ public class StatsGUI implements Listener {
 
         // Row 1: 屬性顯示
         gui.setItem(0, createStatDisplay(Material.IRON_SWORD, "物理攻擊 (Strength)",
-                stats.getStrength(), stats.getEquipmentStrength(), stats.getRaceStrength(),
-                "每點增加 0.5 近戰傷害"));
+                stats.getStrength(), stats.getEquipmentStrength(), stats.getRaceStrength()+stats.getTalentStrength(),
+                "每點提高對應武器攻擊；依攻速換算"));
         gui.setItem(1, createStatDisplay(Material.EXPERIENCE_BOTTLE, "魔法攻擊 (Magic)",
-                stats.getMagic(), stats.getEquipmentMagic(), stats.getRaceMagic(),
-                "每點增加 0.3 技能傷害"));
+                stats.getMagic(), stats.getEquipmentMagic(), stats.getRaceMagic()+stats.getTalentMagic(),
+                "提高法杖攻擊與技能傷害"));
         gui.setItem(2, createStatDisplay(Material.BOW, "敏捷 (Agility)",
-                stats.getAgility(), stats.getEquipmentAgility(), stats.getRaceAgility(),
-                "每點增加 0.2% 暴擊率", "每點增加 0.1 弓箭傷害"));
+                stats.getAgility(), stats.getEquipmentAgility(), stats.getRaceAgility()+stats.getTalentAgility(),
+                "每點增加 0.1% 暴擊率，上限30%", "提高弓與鐮刀傷害，依攻速換算"));
         gui.setItem(3, createStatDisplay(Material.POPPY, "生命力 (Vitality)",
-                stats.getVitality(), stats.getEquipmentVitality(), stats.getRaceVitality(),
-                "每點增加 2.0 最大血量"));
+                stats.getVitality(), stats.getEquipmentVitality(), stats.getRaceVitality()+stats.getTalentVitality(),
+                "每點增加 3 最大血量；總HP上限1024"));
         gui.setItem(4, createStatDisplay(Material.DIAMOND_CHESTPLATE, "防禦 (Defense)",
-                stats.getDefense(), stats.getEquipmentDefense(), stats.getRaceDefense(),
-                "每點減免 0.5% 傷害"));
+                stats.getDefense(), stats.getEquipmentDefense(), stats.getRaceDefense()+stats.getTalentDefense(),
+                "提高防禦評分；減傷採遞減收益"));
         gui.setItem(5, createStatDisplay(Material.GHAST_TEAR, "精神 (Spirit)",
-                stats.getSpirit(), stats.getEquipmentSpirit(), stats.getRaceSpirit(),
-                "目前無特殊效果"));
+                stats.getSpirit(), stats.getEquipmentSpirit(), stats.getRaceSpirit()+stats.getTalentSpirit(),
+                "每點最大MP +2、每秒回魔 +0.06"));
 
         // Slot 7: 種族資訊顯示
         gui.setItem(7, createRaceDisplay(player));
@@ -130,9 +130,9 @@ public class StatsGUI implements Listener {
 
             // 顯示種族加成
             if (raceBonus > 0) {
-                lore.add(ChatColor.GRAY + "種族: " + ChatColor.LIGHT_PURPLE + "+" + raceBonus);
+                lore.add(ChatColor.GRAY + "種族／天賦: " + ChatColor.LIGHT_PURPLE + "+" + raceBonus);
             } else {
-                lore.add(ChatColor.GRAY + "種族: " + ChatColor.DARK_GRAY + "+0");
+                lore.add(ChatColor.GRAY + "種族／天賦: " + ChatColor.DARK_GRAY + "+0");
             }
 
             // 顯示總計
@@ -167,7 +167,7 @@ public class StatsGUI implements Listener {
                 item = new ItemStack(Material.DRAGON_EGG);
                 ItemMeta meta = item.getItemMeta();
                 if (meta != null) {
-                    meta.setDisplayName(ChatColor.LIGHT_PURPLE + "種族: " + raceData.getDisplayName());
+                    meta.setDisplayName(ChatColor.LIGHT_PURPLE + "種族／天賦: " + raceData.getDisplayName());
                     List<String> lore = new ArrayList<>();
                     // 武器類型傷害加成
                     java.util.Map<String, Double> weaponBonuses = raceData.getWeaponBonuses();

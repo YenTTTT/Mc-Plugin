@@ -64,7 +64,7 @@ public class TalentPassiveEffectManager implements Listener {
     /**
      * 處理攻擊事件的天賦效果
      */
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority=org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) return;
 
@@ -78,7 +78,7 @@ public class TalentPassiveEffectManager implements Listener {
     /**
      * 處理受到傷害事件的天賦效果
      */
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority=org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
 
@@ -140,16 +140,9 @@ public class TalentPassiveEffectManager implements Listener {
         // 這些效果會在傷害計算時使用，這裡只是記錄
         // 實際的傷害修正會在戰鬥事件中處理
 
-        // 應用最大血量加成
-        double healthBonus = bonuses.getOrDefault("max-health", 0.0);
-        if (healthBonus > 0) {
-            double newMaxHealth = Math.min(1024.0, player.getMaxHealth() + healthBonus);
-            org.bukkit.attribute.AttributeInstance attr =
-                    player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
-            if (attr != null) {
-                attr.setBaseValue(newMaxHealth);
-            }
-        }
+        var state=statsManager.getStats(player);
+        state.setTalentMaxHealth(Math.min((100+8*(state.getLevel()-1))*.05,Math.max(0,bonuses.getOrDefault("max-health",0.0))));
+        statsManager.updateMaxHealth(player);
 
         // 應用速度效果
         double speedBonus = bonuses.getOrDefault("speed", 0.0);
@@ -193,10 +186,7 @@ public class TalentPassiveEffectManager implements Listener {
         double finalDamage = originalDamage;
 
         // 傷害加成
-        double damageBonus = bonuses.getOrDefault("damage-bonus", 0.0);
-        if (damageBonus > 0) {
-            finalDamage *= (1.0 + damageBonus / 100.0);
-        }
+        // Permanent damage bonus is included once by CombatBalance.
 
         // ===== 刺客系：背刺加成 =====
         double backstabBonus = bonuses.getOrDefault("backstabBonus", 0.0);
@@ -225,17 +215,7 @@ public class TalentPassiveEffectManager implements Listener {
             }
         }
 
-        // 暴擊檢查
-        double critChance = bonuses.getOrDefault("crit-chance", 0.0);
-        // 刺客系：爆擊倍率加成
-        double critDamageBonus = bonuses.getOrDefault("critDamageBonus", 0.0);
-        boolean isCritical = Math.random() * 100 < critChance;
-
-        if (isCritical) {
-            double critDamage = bonuses.getOrDefault("crit-damage", 50.0) + (critDamageBonus * 100);
-            finalDamage *= (1.0 + critDamage / 100.0);
-            attacker.sendMessage("§c§l暴擊！");
-        }
+        // v2 resolves crit exactly once in CombatBalance.
 
         // 應用最終傷害
         event.setDamage(finalDamage);
@@ -251,7 +231,8 @@ public class TalentPassiveEffectManager implements Listener {
             }
             double healAmount = finalDamage * lifeStealPercent;
             double newHealth = Math.min(attacker.getMaxHealth(), attacker.getHealth() + healAmount);
-            attacker.setHealth(newHealth);
+            plugin.getCombatBalance().afterAccepted(event, () -> plugin.getCombatBalance().heal(attacker,
+                    com.customrpg.balance.CombatBalance.rpgFinalDamage(event)*lifeStealFraction(playerTalents.getTalentLevel("life_leech"))));
             if (healAmount > 1) {
                 attacker.getWorld().spawnParticle(org.bukkit.Particle.HEART, attacker.getLocation().add(0, 2, 0), 1, 0.2, 0.2, 0.2, 0);
             }
@@ -282,7 +263,7 @@ public class TalentPassiveEffectManager implements Listener {
         // 傷害減免
         double damageReduction = bonuses.getOrDefault("damage-reduction", 0.0);
         if (damageReduction > 0) {
-            double multiplier = 1.0 - (damageReduction / 100.0);
+            double multiplier = 1.0 - Math.min(.15, Math.max(0,damageReduction / 100.0));
             event.setDamage(event.getDamage() * multiplier);
         }
 
@@ -290,23 +271,14 @@ public class TalentPassiveEffectManager implements Listener {
         double blockChance = bonuses.getOrDefault("block-chance", 0.0);
         if (blockChance > 0 && Math.random() * 100 < blockChance) {
             double blockReduction = bonuses.getOrDefault("block-reduction", 50.0);
-            double multiplier = 1.0 - (blockReduction / 100.0);
+            double multiplier = 1.0 - Math.min(.35, Math.max(0,blockReduction / 100.0));
             event.setDamage(event.getDamage() * multiplier);
 
             player.sendMessage("§9§l格擋成功！");
         }
 
-        // 第二春效果
-        if (event.getFinalDamage() >= player.getHealth()) {
-            double healPercent = bonuses.getOrDefault("heal-percent", 0.0);
-            if (healPercent > 0) {
-                // 檢查冷卻時間等邏輯...
-                double healAmount = player.getMaxHealth() * (healPercent / 100.0);
-                player.setHealth(Math.min(player.getMaxHealth(), healAmount));
-                player.sendMessage("§a§l第二春發動！血量回復！");
-                event.setCancelled(true);
-            }
-        }
+        // Lethal-hit protection is evaluated after v2 mitigation with a 60-second cooldown.
+
     }
 
     /**
@@ -324,7 +296,7 @@ public class TalentPassiveEffectManager implements Listener {
         if (killHealPercent > 0) {
             double healAmount = killer.getMaxHealth() * killHealPercent;
             double newHealth = Math.min(killer.getMaxHealth(), killer.getHealth() + healAmount);
-            killer.setHealth(newHealth);
+            plugin.getCombatBalance().heal(killer, healAmount);
             killer.getWorld().spawnParticle(org.bukkit.Particle.HEART, killer.getLocation().add(0, 2, 0), 3, 0.3, 0.3, 0.3, 0);
         }
 
@@ -342,6 +314,8 @@ public class TalentPassiveEffectManager implements Listener {
     /**
      * 開始生命回復任務
      */
+    private double lifeStealFraction(int level) { return switch(level) { case 1 -> .05; case 2 -> .08; default -> .12; }; }
+
     private void startHealthRegenTask(Player player, double regenPerSecond) {
         BukkitTask task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
             if (!player.isOnline()) {
@@ -349,12 +323,13 @@ public class TalentPassiveEffectManager implements Listener {
                 return;
             }
 
+            if (plugin.getCombatBalance().inCombat(player)) return;
             double currentHealth = player.getHealth();
             double maxHealth = player.getMaxHealth();
 
             if (currentHealth < maxHealth) {
                 double newHealth = Math.min(maxHealth, currentHealth + regenPerSecond);
-                player.setHealth(newHealth);
+                plugin.getCombatBalance().heal(player, regenPerSecond);
             }
         }, 0L, 20L); // 每秒執行一次
         healthRegenTasks.put(player.getUniqueId(), task);

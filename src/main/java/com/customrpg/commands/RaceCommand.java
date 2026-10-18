@@ -112,22 +112,19 @@ public class RaceCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e等級: §f" + stats.getLevel());
         sender.sendMessage("");
 
-        sender.sendMessage("§e§l── 基礎屬性加成 ──");
-        sender.sendMessage("§c⚔ 力量: §f+" + race.getBaseStrength() + " §7(成長: " + String.format("%.1fx", race.getGrowthStrength()) + ")");
-        sender.sendMessage("§b✦ 魔法: §f+" + race.getBaseMagic() + " §7(成長: " + String.format("%.1fx", race.getGrowthMagic()) + ")");
-        sender.sendMessage("§a➤ 敏捷: §f+" + race.getBaseAgility() + " §7(成長: " + String.format("%.1fx", race.getGrowthAgility()) + ")");
-        sender.sendMessage("§d♥ 體力: §f+" + race.getBaseVitality() + " §7(成長: " + String.format("%.1fx", race.getGrowthVitality()) + ")");
-        sender.sendMessage("§9⛨ 防禦: §f+" + race.getBaseDefense() + " §7(成長: " + String.format("%.1fx", race.getGrowthDefense()) + ")");
-        sender.sendMessage("§5✧ 精神: §f+" + race.getBaseSpirit() + " §7(成長: " + String.format("%.1fx", race.getGrowthSpirit()) + ")");
+        sender.sendMessage("§e§l── 種族額外加成（Lv.1 起始）──");
+        int[] starting = race.effectiveStats(1);
+        sender.sendMessage("§c力量: §f+" + starting[0] + " §b魔法: §f+" + starting[1] + " §a敏捷: §f+" + starting[2]);
+        sender.sendMessage("§d體力: §f+" + starting[3] + " §9防禦: §f+" + starting[4] + " §5精神: §f+" + starting[5]);
 
         sender.sendMessage("");
-        sender.sendMessage("§e§l── 等級加成 (Lv" + stats.getLevel() + ") ──");
-        sender.sendMessage("§c力量: §f+" + race.calculateStrengthBonus(stats.getLevel())
-                + " §b魔法: §f+" + race.calculateMagicBonus(stats.getLevel())
-                + " §a敏捷: §f+" + race.calculateAgilityBonus(stats.getLevel()));
-        sender.sendMessage("§d體力: §f+" + race.calculateVitalityBonus(stats.getLevel())
-                + " §9防禦: §f+" + race.calculateDefenseBonus(stats.getLevel())
-                + " §5精神: §f+" + race.calculateSpiritBonus(stats.getLevel()));
+        sender.sendMessage("§e§l── 目前種族額外加成 (Lv" + stats.getLevel() + ") ──");
+        sender.sendMessage("§c力量: §f+" + stats.getRaceStrength()
+                + " §b魔法: §f+" + stats.getRaceMagic()
+                + " §a敏捷: §f+" + stats.getRaceAgility());
+        sender.sendMessage("§d體力: §f+" + stats.getRaceVitality()
+                + " §9防禦: §f+" + stats.getRaceDefense()
+                + " §5精神: §f+" + stats.getRaceSpirit());
 
         var skill = com.customrpg.races.RacialSkill.forRace(race.getId());
         if (skill != null) {

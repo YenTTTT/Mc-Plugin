@@ -29,7 +29,7 @@ class MeteorMobIntegrationTest {
         for(String key:templates.keySet()) {
             var mob=manager.getMobData(key); assertNotNull(mob);
             assertTrue(mob.getTags().contains("event-only")); assertEquals(1,mob.getMinLevel()); assertEquals(60,mob.getMaxLevel());
-            assertTrue(mob.calculateHealth(60)<1024); assertTrue(mob.calculateDamage(60)>0);
+            assertEquals(com.customrpg.balance.InitialBalanceModel.mobHealth(60,mob.balanceRole(),1),mob.calculateHealth(60),1e-6); assertTrue(mob.calculateDamage(60)>0);
         }
     }
 }

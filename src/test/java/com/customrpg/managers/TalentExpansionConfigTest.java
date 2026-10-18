@@ -45,6 +45,48 @@ class TalentExpansionConfigTest {
         base.set("frost.frost_shard.manaCost", 7); base.save(primary.toFile());
         assertTrue(manager.reloadConfigurations()); assertEquals(7, manager.findTalent("frost_shard").getManaCost()); assertEquals(164, manager.getTotalTalentCount());
     }
+    @Test void everyActiveTalentHasASupportedItemAndClickBinding() {
+        int active = 0;
+        for (var tree : manager.getAllTalentTrees().values()) for (var talent : tree.getAllTalents().values()) {
+            if (talent.getType() != TalentType.ACTIVE) continue;
+            active++;
+            assertTrue(Set.of("LEFT_CLICK", "RIGHT_CLICK", "LEFT_CLICK_SNEAK").contains(talent.getTriggerType()), talent.getId());
+            assertTrue(Arrays.stream(org.bukkit.Material.values()).anyMatch(material ->
+                    TalentItemBinding.matches(talent.getMechanism(), material)), talent.getId());
+        }
+        assertEquals(102, active);
+    }
+    @Test void hotkeyOnlyDeployedFilesGainItemBindingsWithoutChangingFilesOrBalance() throws Exception {
+        var base = YamlConfiguration.loadConfiguration(primary.toFile());
+        var extra = YamlConfiguration.loadConfiguration(additional.toFile());
+        base.set("nature.star_shatter.trigger.type", "HOTKEY");
+        base.set("nature.star_shatter.mechanism", "快捷鍵 1～4");
+        base.set("nature.star_shatter.manaCost", 7);
+        // Expansion definitions may have been copied into the primary file by administrators.
+        base.set("frost.frost_shard", extra.getConfigurationSection("frost.frost_shard"));
+        base.set("frost.frost_shard.trigger.type", "HOTKEY");
+        base.set("frost.frost_shard.mechanism", "快捷鍵 1～4");
+        extra.set("earth.earth_guard.trigger.type", "HOTKEY");
+        extra.set("earth.earth_guard.mechanism", "快捷鍵 1～4");
+        base.save(primary.toFile()); extra.save(additional.toFile());
+        String before = Files.readString(primary), extraBefore = Files.readString(additional);
+        assertTrue(manager.reloadConfigurations());
+        assertEquals("金粒", manager.findTalent("star_shatter").getMechanism());
+        assertEquals("LEFT_CLICK", manager.findTalent("star_shatter").getTriggerType());
+        assertEquals(7, manager.findTalent("star_shatter").getManaCost());
+        assertEquals("海磷碎片", manager.findTalent("frost_shard").getMechanism());
+        assertEquals("燧石", manager.findTalent("earth_guard").getMechanism());
+        assertEquals(before, Files.readString(primary)); assertEquals(extraBefore, Files.readString(additional));
+    }
+    @Test void administratorItemBindingsArePreservedOnReload() throws Exception {
+        var base = YamlConfiguration.loadConfiguration(primary.toFile());
+        base.set("nature.star_shatter.mechanism", "EMERALD");
+        base.set("nature.star_shatter.trigger.type", "RIGHT_CLICK"); base.save(primary.toFile());
+        assertTrue(manager.reloadConfigurations());
+        assertEquals("EMERALD", manager.findTalent("star_shatter").getMechanism());
+        assertEquals("RIGHT_CLICK", manager.findTalent("star_shatter").getTriggerType());
+        assertTrue(TalentItemBinding.matches("EMERALD", org.bukkit.Material.EMERALD));
+    }
     @ParameterizedTest @ValueSource(strings = {"syntax", "nan", "cycle", "slot", "unknown", "missing-level", "prerequisite", "string", "unknown-effect"})
     void invalidAdditionalFileRetainsPreviousTreesAndBadFileBytes(String problem) throws Exception {
         var previous = manager.findTalent("frost_shard");

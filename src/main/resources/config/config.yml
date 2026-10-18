@@ -16,3 +16,7 @@ settings:
   enable-custom-weapons: true
   enable-skills: true
   enable-custom-mobs: true
+
+# Combat balance v2 is active; enable logging only when checking damage in a test server.
+balance:
+  debug-damage: false

@@ -193,15 +193,15 @@ public class ConfigDrivenWeaponSkill extends BaseSkill {
 
                 // damage + heal
                 // Apply weapon stats to skill damage (multiplier + crit)
-                context.services().damage().dealSkillDamageWithWeaponStats(
+                double dealt=context.services().damage().dealSkillDamageWithWeaponStats(
                         context.caster(), target, Math.max(0.0, damage),
                         context.weaponData(), true, true);
 
-                if (healPlayer > 0) {
+                if (healPlayer > 0 && dealt > 0) {
                     @SuppressWarnings("deprecation")
                     double maxHp = getMaxHealthSafe(context.caster());
                     double newHp = Math.min(maxHp, context.caster().getHealth() + healPlayer);
-                    context.caster().setHealth(Math.max(0.0, newHp));
+                    context.services().damage().heal(context.caster(),healPlayer);
                 }
                 return true;
             }

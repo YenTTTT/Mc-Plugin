@@ -191,6 +191,12 @@ public class BowTalentListener implements Listener {
                 splitArrow.setVelocity(dir);
                 splitArrow.setShooter(player);
                 splitArrow.setDamage(splitDmg);
+                arrow.getPersistentDataContainer().copyTo(splitArrow.getPersistentDataContainer(),true);
+                Double parentDamage=arrow.getPersistentDataContainer().get(com.customrpg.balance.CombatBalance.SHOT_DAMAGE,org.bukkit.persistence.PersistentDataType.DOUBLE);
+                if (parentDamage!=null) {
+                    splitArrow.getPersistentDataContainer().set(com.customrpg.balance.CombatBalance.SHOT_DAMAGE,org.bukkit.persistence.PersistentDataType.DOUBLE,0.0);
+                    splitArrow.setMetadata("balanced_extra_arrow",new org.bukkit.metadata.FixedMetadataValue(plugin,Math.max(0,splitDmg)));
+                }
                 splitArrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
             }
             hitLoc.getWorld().spawnParticle(Particle.CRIT,

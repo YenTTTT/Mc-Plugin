@@ -39,7 +39,8 @@ class EquipmentManagerTest {
         when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
         PlayerStatsManager stats = mock(PlayerStatsManager.class);
         when(plugin.getPlayerStatsManager()).thenReturn(stats);
-        when(stats.getStats(any(Player.class))).thenReturn(new PlayerStats());
+        var equippedStats = new PlayerStats(); equippedStats.setLevel(60);
+        when(stats.getStats(any(Player.class))).thenReturn(equippedStats);
         manager = spy(new EquipmentManager(plugin));
         doNothing().when(manager).updatePlayerAttributes(any());
         player = mock(Player.class);

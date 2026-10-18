@@ -1,17 +1,17 @@
 package com.customrpg.listeners;
 
 import com.customrpg.managers.HealthDisplayManager;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 /**
- * HealthDisplayListener - 監聽血量變化事件並即時更新顯示
+ * HealthDisplayListener - 更新玩家 HUD 並清理載入的舊怪物血條
  */
 public class HealthDisplayListener implements Listener {
 
@@ -23,6 +23,11 @@ public class HealthDisplayListener implements Listener {
      */
     public HealthDisplayListener(HealthDisplayManager healthDisplayManager) {
         this.healthDisplayManager = healthDisplayManager;
+    }
+
+    @EventHandler
+    public void onEntitiesLoad(EntitiesLoadEvent event) {
+        event.getEntities().forEach(healthDisplayManager::removeLegacyMobHealthDisplay);
     }
 
     /**
@@ -47,14 +52,6 @@ public class HealthDisplayListener implements Listener {
                 () -> healthDisplayManager.updatePlayerHealthImmediately(player),
                 1L
             );
-        } else if (event.getEntity() instanceof LivingEntity) {
-            LivingEntity mob = (LivingEntity) event.getEntity();
-            // 延遲 1 tick 更新怪物血量
-            org.bukkit.Bukkit.getScheduler().runTaskLater(
-                org.bukkit.Bukkit.getPluginManager().getPlugin("CustomRPG"),
-                () -> healthDisplayManager.updateMobHealthImmediately(mob),
-                1L
-            );
         }
     }
 
@@ -69,14 +66,6 @@ public class HealthDisplayListener implements Listener {
             org.bukkit.Bukkit.getScheduler().runTaskLater(
                 org.bukkit.Bukkit.getPluginManager().getPlugin("CustomRPG"),
                 () -> healthDisplayManager.updatePlayerHealthImmediately(player),
-                1L
-            );
-        } else if (event.getEntity() instanceof LivingEntity) {
-            LivingEntity mob = (LivingEntity) event.getEntity();
-            // 延遲 1 tick 更新怪物血量
-            org.bukkit.Bukkit.getScheduler().runTaskLater(
-                org.bukkit.Bukkit.getPluginManager().getPlugin("CustomRPG"),
-                () -> healthDisplayManager.updateMobHealthImmediately(mob),
                 1L
             );
         }

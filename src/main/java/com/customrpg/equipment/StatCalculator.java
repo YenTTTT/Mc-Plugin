@@ -34,32 +34,12 @@ public class StatCalculator {
     public FinalStats calculateFinalStats(Player player) {
         FinalStats finalStats = new FinalStats();
 
-        // 1. 獲取基礎屬性
-        PlayerStats baseStats = plugin.getPlayerStatsManager().getStats(player);
-        finalStats.setBaseStrength(baseStats.getStrength()+baseStats.getRaceStrength());
-        finalStats.setBaseMagic(baseStats.getMagic()+baseStats.getRaceMagic());
-        finalStats.setBaseAgility(baseStats.getAgility()+baseStats.getRaceAgility());
-        finalStats.setBaseVitality(baseStats.getVitality()+baseStats.getRaceVitality());
-        finalStats.setBaseDefense(baseStats.getDefense()+baseStats.getRaceDefense());
-
-        // 2. 添加裝備加成
-        Map<EquipmentSlot, EquipmentData> equipment = equipmentManager.getPlayerEquipment(player.getUniqueId());
-        for (EquipmentData equip : equipment.values()) {
-            if (equip != null) {
-                addEquipmentBonus(finalStats, equip);
-            }
-        }
-
-        // 3. 添加職業加成（預留）
-        // PlayerClass playerClass = getPlayerClass(player);
-        // addClassBonus(finalStats, playerClass);
-
-        // 4. 添加天賦加成（預留）
-        // addTalentBonus(finalStats, player);
-
-        // 5. 添加BUFF加成（預留）
-        // addBuffBonus(finalStats, player);
-
+        PlayerStats baseStats=plugin.getPlayerStatsManager().getStats(player);
+        finalStats.setBaseStrength(baseStats.getTotalStrength());
+        finalStats.setBaseMagic(baseStats.getTotalMagic());
+        finalStats.setBaseAgility(baseStats.getTotalAgility());
+        finalStats.setBaseVitality(baseStats.getTotalVitality());
+        finalStats.setBaseDefense(baseStats.getTotalDefense());
         return finalStats;
     }
 
@@ -112,49 +92,18 @@ public class StatCalculator {
 
     /**
      * 計算物理傷害
-     * 公式：物理傷害 = (力量 × 0.1) + 武器基礎值
+     * 使用 v2 武器快照的單擊期望值
      */
     public double calculatePhysicalDamage(Player player) {
-        FinalStats stats = calculateFinalStats(player);
-
-        // 基礎物理傷害
-        double damage = stats.getTotalStrength() * 0.1;
-
-        // 添加武器基礎值
-        EquipmentData mainHand = equipmentManager.getPlayerEquipment(player.getUniqueId()).get(EquipmentSlot.MAIN_HAND);
-        if (mainHand != null) {
-            damage += mainHand.getAttribute(EquipmentAttribute.ATTACK_DAMAGE);
-        }
-
-        // 添加額外攻擊傷害加成
-        damage += stats.getBonusAttackDamage();
-
-        // 檢查雙手武器加成 (+20%)
-        // 預留：需要判斷武器是否為雙手武器
-
-        return damage;
+        return plugin.getCombatBalance().calculate(player, player.getInventory().getItemInMainHand(),1,1).expectedHit();
     }
 
     /**
      * 計算魔法傷害
-     * 公式：魔法傷害 = 60 + (智慧 × 0.1) + 武器魔法加成
+     * 法杖亦使用 v2 武器攻擊模型
      */
     public double calculateMagicDamage(Player player) {
-        FinalStats stats = calculateFinalStats(player);
-
-        // 基礎魔法傷害
-        double damage = 60 + (stats.getTotalMagic() * 0.1);
-
-        // 添加武器魔法傷害
-        EquipmentData mainHand = equipmentManager.getPlayerEquipment(player.getUniqueId()).get(EquipmentSlot.MAIN_HAND);
-        if (mainHand != null) {
-            damage += mainHand.getAttribute(EquipmentAttribute.MAGIC_DAMAGE);
-        }
-
-        // 添加額外魔法傷害加成
-        damage += stats.getBonusMagicDamage();
-
-        return damage;
+        return plugin.getCombatBalance().calculate(player, player.getInventory().getItemInMainHand(),1,1).expectedHit();
     }
 
     /**
@@ -168,30 +117,18 @@ public class StatCalculator {
 
     /**
      * 計算暴擊率
-     * 公式：暴擊率 = 5% (基礎) + (總敏捷 × 0.5%) + 裝備暴擊率加成
+     * 讀取實際戰鬥快照，單位為百分比
      */
     public double calculateCritChance(Player player) {
-        FinalStats stats = calculateFinalStats(player);
-        double critChance = 5.0; // 基礎 5%
-        critChance += stats.getTotalAgility() * 0.5; // 每點敏捷 +0.5%
-        critChance += stats.getBonusCritChance(); // 裝備加成
-        var race=plugin.getRaceManager()==null?null:plugin.getRaceManager().getPlayerRaceData(player);
-        if(race!=null) critChance+=race.getBonusCritChance();
-        return Math.min(critChance, 100.0); // 上限 100%
+        return plugin.getCombatBalance().calculate(player, player.getInventory().getItemInMainHand(),1,1).critChance()*100;
     }
 
     /**
      * 計算暴擊傷害
-     * 公式：暴擊傷害 = 150% (基礎) + (總力量 × 1%) + 裝備暴擊傷害加成
+     * 讀取實際戰鬥快照，單位為百分比
      */
     public double calculateCritDamage(Player player) {
-        FinalStats stats = calculateFinalStats(player);
-        double critDamage = 150.0; // 基礎 150%
-        critDamage += stats.getTotalStrength() * 1.0; // 每點力量 +1%
-        critDamage += stats.getBonusCritDamage(); // 裝備加成
-        var race=plugin.getRaceManager()==null?null:plugin.getRaceManager().getPlayerRaceData(player);
-        if(race!=null) critDamage+=race.getBonusCritDamage()*100;
-        return critDamage;
+        return plugin.getCombatBalance().calculate(player, player.getInventory().getItemInMainHand(),1,1).critMultiplier()*100;
     }
 
     /**
@@ -204,19 +141,17 @@ public class StatCalculator {
 
     /**
      * 計算魔法防禦
-     * 公式：魔法防禦 = (總智慧 / 2) + 裝備防禦加成
+     * RPG 傷害共用防禦評分
      */
     public double calculateMagicDefense(Player player) {
-        FinalStats stats = calculateFinalStats(player);
-        return (stats.getTotalMagic() / 2.0);
+        return plugin.getPlayerStatsManager().getStats(player).getTotalDefense();
     }
 
     /**
      * 計算最大血量
      */
     public double calculateMaxHealth(Player player) {
-        FinalStats stats = calculateFinalStats(player);
-        return 20.0 + (stats.getTotalVitality() * 2.0) + stats.getBonusMaxHealth();
+        return player.getMaxHealth();
     }
 
     /**

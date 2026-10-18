@@ -2,6 +2,8 @@ package com.customrpg.managers;
 
 import com.customrpg.CustomRPG;
 import com.customrpg.players.PlayerStats;
+import com.customrpg.balance.InitialBalanceModel;
+import com.customrpg.balance.BalanceMigration;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -31,11 +33,6 @@ public class PlayerStatsManager {
     private final Map<UUID, PlayerStats> statsCache;
     private final java.util.Set<UUID> loadFailed = ConcurrentHashMap.newKeySet();
 
-    // 配置：每點 Vitality 增加多少血量 (預設 2.0)
-    private static final double HP_PER_VITALITY = 2.0;
-
-    // 基礎最大血量 (預設 20.0)
-    private static final double BASE_MAX_HEALTH = 20.0;
 
     public PlayerStatsManager(CustomRPG plugin) {
         this.plugin = plugin;
@@ -51,6 +48,8 @@ public class PlayerStatsManager {
     /**
      * 取得玩家數據 (從快取或載入)
      */
+    public boolean isDataAvailable(Player player) { getStats(player); return !loadFailed.contains(player.getUniqueId()); }
+
     public PlayerStats getStats(Player player) {
         return getStats(player.getUniqueId());
     }
@@ -77,6 +76,10 @@ public class PlayerStatsManager {
         YamlConfiguration config = new YamlConfiguration();
         try {
             config.load(file);
+            if (BalanceMigration.migratePlayer(config, file.toPath(),
+                    plugin.getDataFolder().toPath().resolve("data/balance-backups/v2/players"))) {
+                plugin.getLogger().info("[Balance] Backed up and migrated player " + uuid);
+            }
             loadFailed.remove(uuid);
         } catch (IOException | org.bukkit.configuration.InvalidConfigurationException e) {
             // 讀取失敗時不可回傳預設值後再覆寫原檔：標記為載入失敗並停止寫入，保留原檔供管理員修復
@@ -95,6 +98,7 @@ public class PlayerStatsManager {
         data.put("defense", config.getInt("stats.defense", 0));
         data.put("spirit", config.getInt("stats.spirit", 0));
 
+        data.put("balance-version", config.getInt("stats.balance-version", BalanceMigration.VERSION));
         data.put("level", config.getInt("stats.level", 1));
         data.put("exp", config.getLong("stats.exp", 0L));
         data.put("statPoints", config.getInt("stats.statPoints", 0));
@@ -131,6 +135,12 @@ public class PlayerStatsManager {
         YamlConfiguration config = new YamlConfiguration();
 
         Map<String, Object> data = stats.serialize();
+        if (file.exists()) {
+            try { config.load(file); } catch (Exception error) {
+                plugin.getLogger().severe("Refusing to replace unreadable player file " + uuid); return;
+            }
+        }
+        config.set("stats.balance-version", stats.getBalanceVersion());
         config.set("stats.strength", data.get("strength"));
         config.set("stats.magic", data.get("magic"));
         config.set("stats.agility", data.get("agility"));
@@ -187,9 +197,14 @@ public class PlayerStatsManager {
         var talents=plugin.getTalentPassiveEffectManager();
         double talentMana=talents==null?0:talents.getPlayerBonus(player,"manaBonus");
         double talentRegen=talents==null?0:talents.getPlayerBonus(player,"mana-regen");
-        int gains=Math.max(0,stats.getLevel()-1);
-        stats.setMaxMana(100.0+gains*5.0+(race==null?0:race.calculateManaBonus(stats.getLevel()))+stats.getBonusMaxMana()+talentMana);
-        stats.setManaRegen(1.0+gains*0.1+(race==null?0:race.calculateManaRegenBonus(stats.getLevel()))+stats.getBonusManaRegen()+talentRegen);
+        int level=BalanceMigration.level(stats.getLevel());
+        double raceMana=race==null?0:race.calculateManaBonus(level);
+        double raceRegen=race==null?0:race.calculateManaRegenBonus(level);
+        stats.setMaxMana(InitialBalanceModel.maxMana(level, stats.getTotalSpirit(), Math.clamp(stats.getBonusMaxMana(),0,10))
+                +raceMana+Math.min(10,Math.max(0,talentMana)));
+        stats.setManaRegen(InitialBalanceModel.manaRegen(level, stats.getTotalSpirit())
+                +raceRegen+Math.min(.5,Math.max(0,talentRegen))+Math.clamp(stats.getBonusManaRegen(),0,.5));
+
     }
 
     /**
@@ -201,8 +216,7 @@ public class PlayerStatsManager {
 
         // 計算最大生命值：基礎血量 + (總 Vitality × 每點血量)
         // 總 Vitality 包含基礎體力 + 裝備體力（包含從 MAX_HEALTH 轉換的體力）
-        double vitalityBonus = stats.getTotalVitality() * HP_PER_VITALITY;
-        double newMaxHealth = BASE_MAX_HEALTH + vitalityBonus;
+        double newMaxHealth = com.customrpg.balance.BalancePlayerRules.maxHealth(stats);
 
         // 使用 Attribute API 設定最大血量
         AttributeInstance maxHealthAttr = player.getAttribute(Attribute.MAX_HEALTH);
@@ -294,7 +308,7 @@ public class PlayerStatsManager {
         long exp = stats.getExp();
         long requiredExp = getRequiredExp(level);
 
-        if (exp >= requiredExp) {
+        if (level < InitialBalanceModel.MAX_LEVEL && exp >= requiredExp) {
             levelUp(player);
         }
     }
@@ -305,40 +319,23 @@ public class PlayerStatsManager {
     public void levelUp(Player player) {
         PlayerStats stats = getStats(player);
         int currentLevel = stats.getLevel();
-        long currentExp = stats.getExp();
-        long requiredExp = getRequiredExp(currentLevel);
-
-        // 扣除經驗並升級
-        stats.setExp(currentExp - requiredExp);
-        stats.setLevel(currentLevel + 1);
-
-        // 增加屬性點數 (10 點)
-        stats.setStatPoints(stats.getStatPoints() + 10);
-
-        // 增加天賦點數 (每級1點)
-        stats.addTalentPoints(1);
-
-        // 自動提升整體屬性 (每升一等全屬性 +1)
-        stats.setStrength(stats.getStrength() + 1);
-        stats.setMagic(stats.getMagic() + 1);
-        stats.setAgility(stats.getAgility() + 1);
-        stats.setVitality(stats.getVitality() + 1);
-        stats.setDefense(stats.getDefense() + 1);
-        stats.setSpirit(stats.getSpirit() + 1);
+        if (currentLevel >= InitialBalanceModel.MAX_LEVEL) return;
+        if (!com.customrpg.balance.BalancePlayerRules.advanceLevel(stats)) return;
 
         com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
         if (raceManager != null) {
             raceManager.applyRaceStats(player);
         } else recalculateMana(player);
+        if (plugin.getTalentManager()!=null) plugin.getTalentManager().applyTalentEffects(player);
+        if (plugin.getEquipmentManager()!=null) plugin.getEquipmentManager().updatePlayerAttributes(player);
         // Apply new race vitality before awarding the level-up heal.
         updateMaxHealth(player, true);
 
         // 特效與訊息
         player.sendMessage(ChatColor.GOLD + "========================================");
         player.sendMessage(ChatColor.YELLOW + "  🎉 恭喜升級！你現在是等級 " + ChatColor.AQUA + (currentLevel + 1));
-        player.sendMessage(ChatColor.GREEN + "  獲得 10 點屬性點數！");
+        player.sendMessage(ChatColor.GREEN + "  獲得 3 點屬性點數！");
         player.sendMessage(ChatColor.LIGHT_PURPLE + "  獲得 1 點天賦點數！");
-        player.sendMessage(ChatColor.GREEN + "  全屬性自動 +1！");
         player.sendMessage(ChatColor.AQUA + "  最大魔力: " + String.format("%.0f", stats.getMaxMana()) +
                 " §7| §b魔力回復: " + String.format("%.1f", stats.getManaRegen()) + "/秒");
         player.sendMessage(ChatColor.GOLD + "========================================");

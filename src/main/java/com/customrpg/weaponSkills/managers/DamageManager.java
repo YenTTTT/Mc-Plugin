@@ -14,6 +14,9 @@ import java.util.Random;
 public class DamageManager {
 
     private final Random random = new Random();
+    private com.customrpg.balance.CombatBalance combatBalance;
+    public void setCombatBalance(com.customrpg.balance.CombatBalance value) { combatBalance=value; }
+    public void heal(Player target, double amount) { if (combatBalance!=null) combatBalance.heal(target,amount); }
     private com.customrpg.managers.PlayerStatsManager statsManager;
 
     /**
@@ -26,14 +29,16 @@ public class DamageManager {
     /**
      * Deal skill damage without weapon stat bonuses (legacy behavior)
      */
-    public void dealSkillDamage(Player caster, LivingEntity target, double amount) {
+    public double dealSkillDamage(Player caster, LivingEntity target, double amount) {
         if (caster == null || target == null) {
-            return;
+            return 0;
         }
         if (amount <= 0) {
-            return;
+            return 0;
         }
+        double before=com.customrpg.managers.MobManager.getVirtualCurrentHP(target)+target.getAbsorptionAmount();
         com.customrpg.utils.SkillDamageGuard.damage(target, amount, caster);
+        return Math.max(0,before-com.customrpg.managers.MobManager.getVirtualCurrentHP(target)-target.getAbsorptionAmount());
     }
 
     /**
@@ -46,14 +51,14 @@ public class DamageManager {
      * @param applyWeaponMultiplier Whether to apply weapon damage-multiplier
      * @param canCrit Whether this skill can crit
      */
-    public void dealSkillDamageWithWeaponStats(Player caster, LivingEntity target, double baseDamage,
+    public double dealSkillDamageWithWeaponStats(Player caster, LivingEntity target, double baseDamage,
                                                WeaponManager.WeaponData weaponData,
                                                boolean applyWeaponMultiplier, boolean canCrit) {
         if (caster == null || target == null) {
-            return;
+            return 0;
         }
         if (baseDamage <= 0) {
-            return;
+            return 0;
         }
 
         double finalDamage = baseDamage;
@@ -61,7 +66,7 @@ public class DamageManager {
         // Apply Magic stat bonus
         if (statsManager != null) {
             com.customrpg.players.PlayerStats playerStats = statsManager.getStats(caster);
-            double magicBonus = playerStats.getMagic() * 0.3; // 每點 Magic +0.3 技能傷害
+            double magicBonus = playerStats.getTotalMagic() * 0.3; // 每點 Magic +0.3 技能傷害
             finalDamage += magicBonus;
         }
 
@@ -87,6 +92,6 @@ public class DamageManager {
             }
         }
 
-        com.customrpg.utils.SkillDamageGuard.damage(target, finalDamage, caster);
+        return dealSkillDamage(caster,target,finalDamage);
     }
 }

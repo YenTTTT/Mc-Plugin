@@ -64,14 +64,14 @@ class RaceManagerTest {
         assertTrue(races.choosePlayerRace(player,"ELF")); assertFalse(races.choosePlayerRace(player,"orc"));
         assertEquals("elf",YamlConfiguration.loadConfiguration(raceFile().toFile()).getString("race"));
         var restarted=new RaceManager(plugin,clock::get); assertEquals("elf",restarted.getPlayerRaceId(player));
-        assertEquals(8,stats.getStats(player).getRaceAgility());
+        assertEquals(5,stats.getStats(player).getRaceAgility());
     }
     @Test void failedWriteAndResetPreservePreviousSelectionAndBonuses() throws Exception {
         assertTrue(races.setPlayerRace(player,"elf")); String original=Files.readString(raceFile());
         Files.createDirectory(Path.of(raceFile()+".tmp"));
         assertFalse(races.setPlayerRace(player,"orc")); assertFalse(races.tryResetPlayerRace(player));
         assertEquals("elf",races.getPlayerRaceId(player)); assertEquals(original,Files.readString(raceFile()));
-        assertEquals(8,stats.getStats(player).getRaceAgility());
+        assertEquals(5,stats.getStats(player).getRaceAgility());
     }
     @Test void corruptPlayerFileIsReservedAndNeverOverwritten() throws Exception {
         String broken="race: [unterminated"; Files.writeString(raceFile(),broken);
@@ -80,6 +80,30 @@ class RaceManagerTest {
         assertFalse(races.setPlayerRace(player,"elf")); assertFalse(races.tryResetPlayerRace(player));
         races.saveAll(); races.unloadPlayer(player.getUniqueId());
         assertEquals(broken,Files.readString(raceFile()));
+    }
+    @Test void allTwelveRacesHaveNonzeroStatsAndMonotonicGrowthAtEveryLevel() {
+        for (var race : races.getAllRaces()) {
+            int[] previous = new int[6];
+            for (int level = 1; level <= 60; level++) {
+                int[] current = race.effectiveStats(level);
+                assertEquals(com.customrpg.balance.BalancePlayerRules.raceBudget(level), Arrays.stream(current).sum(), race.getId());
+                for (int i = 0; i < 6; i++) {
+                    assertTrue(current[i] >= 1, race.getId());
+                    assertTrue(current[i] >= previous[i], race.getId() + " at level " + level);
+                }
+                previous = current;
+            }
+        }
+    }
+    @Test void recalculatingTheLargerRaceBonusesDoesNotStackOrRefillMana() {
+        var state = stats.getStats(player); state.setLevel(60);
+        assertTrue(races.setPlayerRace(player, "demon"));
+        assertEquals(8, state.getRaceStrength()); assertEquals(8, state.getRaceMagic());
+        assertEquals(4, state.getRaceSpirit());
+        state.setCurrentMana(7);
+        races.applyRaceStats(player); races.applyRaceStats(player);
+        assertEquals(8, state.getRaceStrength()); assertEquals(8, state.getRaceMagic());
+        assertEquals(7, state.getCurrentMana());
     }
     @Test void missingDefinitionDoesNotSilentlyGrantAnotherFreeSelection() throws Exception {
         Files.writeString(raceFile(),"race: retired_race\n");
@@ -91,10 +115,10 @@ class RaceManagerTest {
         var talents=mock(TalentPassiveEffectManager.class); when(plugin.getTalentPassiveEffectManager()).thenReturn(talents);
         when(talents.getPlayerBonus(player,"manaBonus")).thenReturn(15.0);
         assertTrue(races.setPlayerRace(player,"elf"));
-        assertEquals(100+45+20+27+30+15,state.getMaxMana(),1e-9);
+        assertEquals(126.35,state.getMaxMana(),1e-9);
         state.setCurrentMana(10); races.applyRaceStats(player); assertEquals(10,state.getCurrentMana(),1e-9);
         assertTrue(races.tryResetPlayerRace(player));
-        assertEquals(190,state.getMaxMana(),1e-9); assertEquals(3.9,state.getManaRegen(),1e-9);
+        assertEquals(118,state.getMaxMana(),1e-9); assertEquals(2.225,state.getManaRegen(),1e-9);
         assertEquals(0,state.getRaceAgility()); assertTrue(speed.isEmpty());
         assertFalse(races.hasRace(player));
     }
@@ -102,7 +126,7 @@ class RaceManagerTest {
         var foreign=new AttributeModifier(new NamespacedKey("other","speed"),0.2,AttributeModifier.Operation.ADD_SCALAR);
         speed.put(foreign.getKey(),foreign); assertTrue(races.setPlayerRace(player,"golem"));
         races.applyRaceStats(player); races.applyRaceStats(player);
-        assertEquals(2,speed.size()); assertEquals(-0.12,speed.get(new NamespacedKey("customrpg","race_speed")).getAmount());
+        assertEquals(2,speed.size()); assertEquals(-0.03,speed.get(new NamespacedKey("customrpg","race_speed")).getAmount());
         races.detach(player); assertEquals(Map.of(foreign.getKey(),foreign),speed);
     }
     @Test void badReloadPreservesRegistryAndExistingAssignments() throws Exception {
@@ -113,7 +137,7 @@ class RaceManagerTest {
     @Test void invalidNumericSettingsRejectReloadAndDoNotProduceNanStats() throws Exception {
         var file=directory.resolve("config/races_additional.yml"); var yaml=YamlConfiguration.loadConfiguration(file.toFile());
         yaml.set("races.golem.passives.move-speed",Double.NaN); yaml.save(file.toFile());
-        assertFalse(races.reloadConfiguration()); assertEquals(-0.12,races.getRaceData("golem").getBonusMoveSpeed());
+        assertFalse(races.reloadConfiguration()); assertEquals(-0.03,races.getRaceData("golem").getBonusMoveSpeed());
     }
     @Test void existingConfigCanOverrideOrDisableAdditionalRacesWithoutBeingRewritten() throws Exception {
         var file=directory.resolve("config/races.yml"); var yaml=YamlConfiguration.loadConfiguration(file.toFile());
@@ -121,7 +145,7 @@ class RaceManagerTest {
         String original=Files.readString(file); assertTrue(races.reloadConfiguration());
         assertEquals("自訂龍裔",races.getRaceData("dragonkin").getDisplayName()); assertNull(races.getRaceData("golem"));
         assertEquals(7,races.getRaceData("dragonkin").getBaseStrength());
-        assertEquals(1.25,races.getRaceData("dragonkin").getWeaponBonus("SPEAR"));
+        assertEquals(1.02,races.getRaceData("dragonkin").getWeaponBonus("SPEAR"));
         assertEquals(original,Files.readString(file));
     }
     private Runnable recovery() {
@@ -132,7 +156,7 @@ class RaceManagerTest {
     @Test void sharedRecoveryPausesDuringCombatRespectsCancellationAndStopsOnShutdown() {
         races.setPlayerRace(player,"angel"); Runnable tick=recovery(); double before=hp;
         tick.run(); assertEquals(before,hp); // Startup/rejoin delay also prevents immediate recovery.
-        clock.set(9001); tick.run(); assertEquals(before+2.5,hp,1e-9);
+        clock.set(9001); tick.run(); assertEquals(before+1.05,hp,1e-9);
         races.markCombat(player); before=hp; tick.run(); assertEquals(before,hp);
         clock.set(18002);
         var plugins=server.getPluginManager();

@@ -4,6 +4,8 @@ A professional Minecraft Paper plugin featuring custom weapons, skills with cool
 
 ## Current Project Status
 
+The [Lv.1–60 PvE balance model](docs/INITIAL_BALANCE_MODEL.md) is integrated into combat v2, with backed-up player migration. See [deployment and verification](docs/BALANCE_RUNTIME.md); Paper gameplay testing is still pending.
+
 See [the feature inventory and implementation progress](docs/PROJECT_STATUS.md) for the current MMORPG systems, vanilla-world spawning rules, configuration migration, and verification checklist. The original feature overview below is not a complete inventory.
 
 ## Features
@@ -46,6 +48,8 @@ The race roster now has 12 races. Read [the race guide and balance review](docs/
 The vanilla-client [mob encounter guide](docs/MOB_ENCOUNTERS.md) lists 153 appearance/ability profiles, 20 new biome mobs, 10 rare wilderness bosses, upgrade settings, and `/custommob spawn <id> [level]` testing commands.
 
 There are now 14 talent trees and 164 talents. The [talent expansion guide](docs/TALENT_EXPANSION.md) covers 24 new frost, storm, earth, and light talents, hotkeys, party support, and safe configuration upgrades.
+
+The [crafting and village merchant guide](docs/CRAFTING_AND_MERCHANTS.md) adds 980 equipment items, 84 mob materials, native crafting-table recipes, and persistent village equipment traders selling gear for emeralds at local region levels. Use `/rpgcraft` for the in-game guide.
 
 ## Installation
 

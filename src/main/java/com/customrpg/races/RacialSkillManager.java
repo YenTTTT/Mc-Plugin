@@ -94,10 +94,10 @@ public final class RacialSkillManager implements Listener {
             case UNDEAD -> heal(player, hit(player, target, 12));
             case DEMON -> burst(player, 5, 10, 4, false);
             case ANGEL -> {
-                heal(player, 12);
+                heal(player, player.getMaxHealth()*.12);
                 for (Player ally : player.getWorld().getPlayers())
                     if (!ally.equals(player) && !ally.isDead() && sameTeam(player, ally)
-                            && ally.getLocation().distanceSquared(player.getLocation()) <= 36 && player.hasLineOfSight(ally)) heal(ally, 12);
+                            && ally.getLocation().distanceSquared(player.getLocation()) <= 36 && player.hasLineOfSight(ally)) heal(ally, ally.getMaxHealth()*.12);
             }
             case DRAGONKIN -> {
                 if (!player.getAllowFlight()) {
@@ -215,7 +215,8 @@ public final class RacialSkillManager implements Listener {
         if (!(event instanceof EntityDamageByEntityEvent attack) || !(event.getEntity() instanceof LivingEntity target)) return;
         Player source = attack.getDamager() instanceof Player p ? p
                 : attack.getDamager() instanceof Projectile shot && shot.getShooter() instanceof Player p ? p : null;
-        if (source == null || SkillDamageGuard.isSkillDamage(source)) return;
+        if (source == null || (SkillDamageGuard.isSkillDamage(source)
+                && (plugin.getCombatBalance()==null||plugin.getCombatBalance().directBasic(source)==null))) return;
         var session = active(source);
         if (session == null || !isEnemy(source, target)) return;
         boolean melee = attack.getDamager() instanceof Player;

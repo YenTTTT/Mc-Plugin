@@ -40,14 +40,44 @@ public class PlayerStats {
     private int raceDefense;
     private int raceSpirit;
 
+    // Transient talent sources; never mixed into persisted free allocations.
+    private int talentStrength;
+    public int getTalentStrength() { return talentStrength; }
+    public void setTalentStrength(int value) { talentStrength = Math.max(0, value); }
+    private int talentMagic;
+    public int getTalentMagic() { return talentMagic; }
+    public void setTalentMagic(int value) { talentMagic = Math.max(0, value); }
+    private int talentAgility;
+    public int getTalentAgility() { return talentAgility; }
+    public void setTalentAgility(int value) { talentAgility = Math.max(0, value); }
+    private int talentVitality;
+    public int getTalentVitality() { return talentVitality; }
+    public void setTalentVitality(int value) { talentVitality = Math.max(0, value); }
+    private int talentDefense;
+    public int getTalentDefense() { return talentDefense; }
+    public void setTalentDefense(int value) { talentDefense = Math.max(0, value); }
+    private int talentSpirit;
+    public int getTalentSpirit() { return talentSpirit; }
+    public void setTalentSpirit(int value) { talentSpirit = Math.max(0, value); }
+
     // 其他屬性加成（未來可擴展：天賦、BUFF等）
     private double bonusAttackDamage;
     private double bonusDefenseValue;
     private double bonusMaxHealth;
+    private double formMaxHealth;
+    public double getFormMaxHealth() { return formMaxHealth; }
+    public void setFormMaxHealth(double value) { formMaxHealth=Math.max(0,value); }
+    private double talentMaxHealth;
+    public double getTalentMaxHealth() { return talentMaxHealth; }
+    public void setTalentMaxHealth(double value) { talentMaxHealth=Math.max(0,value); }
     private double bonusCritChance;
     private double bonusCritDamage;
     private double bonusMaxMana;
     private double bonusManaRegen;
+
+    private int balanceVersion = com.customrpg.balance.BalanceMigration.VERSION;
+    public int getBalanceVersion() { return balanceVersion; }
+    public void setBalanceVersion(int version) { balanceVersion = version; }
 
     private int level;
     private long exp;
@@ -97,9 +127,9 @@ public class PlayerStats {
         this.statPoints = 0;
         this.talentPoints = 0;      // 初始天賦點數為0
 
-        this.maxMana = 100.0;
-        this.currentMana = 100.0;
-        this.manaRegen = 1.0; // 預設每秒回復 1 點
+        this.maxMana = 80.0;
+        this.currentMana = 80.0;
+        this.manaRegen = 1.5; // 預設每秒回復 1 點
     }
 
     /**
@@ -118,9 +148,9 @@ public class PlayerStats {
         this.statPoints = statPoints;
         this.talentPoints = talentPoints;
 
-        this.maxMana = 100.0;
-        this.currentMana = 100.0;
-        this.manaRegen = 1.0;
+        this.maxMana = 80.0;
+        this.currentMana = 80.0;
+        this.manaRegen = 1.5;
     }
 
     /**
@@ -272,42 +302,42 @@ public class PlayerStats {
      * 獲取總力量（基礎 + 裝備 + 種族）
      */
     public int getTotalStrength() {
-        return strength + equipmentStrength + raceStrength;
+        return strength + equipmentStrength + raceStrength + talentStrength;
     }
 
     /**
      * 獲取總魔法（基礎 + 裝備 + 種族）
      */
     public int getTotalMagic() {
-        return magic + equipmentMagic + raceMagic;
+        return magic + equipmentMagic + raceMagic + talentMagic;
     }
 
     /**
      * 獲取總敏捷（基礎 + 裝備 + 種族）
      */
     public int getTotalAgility() {
-        return agility + equipmentAgility + raceAgility;
+        return agility + equipmentAgility + raceAgility + talentAgility;
     }
 
     /**
      * 獲取總生命力（基礎 + 裝備 + 種族）
      */
     public int getTotalVitality() {
-        return vitality + equipmentVitality + raceVitality;
+        return vitality + equipmentVitality + raceVitality + talentVitality;
     }
 
     /**
      * 獲取總防禦（基礎 + 裝備 + 種族）
      */
     public int getTotalDefense() {
-        return defense + equipmentDefense + raceDefense;
+        return defense + equipmentDefense + raceDefense + talentDefense;
     }
 
     /**
      * 獲取總精神（基礎 + 裝備 + 種族）
      */
     public int getTotalSpirit() {
-        return spirit + equipmentSpirit + raceSpirit;
+        return spirit + equipmentSpirit + raceSpirit + talentSpirit;
     }
 
     // ===== 其他加成 Getters & Setters =====
@@ -375,7 +405,7 @@ public class PlayerStats {
     }
 
     public void setLevel(int level) {
-        this.level = Math.max(1, level);
+        this.level = com.customrpg.balance.BalanceMigration.level(level);
     }
 
     public long getExp() {
@@ -472,6 +502,7 @@ public class PlayerStats {
      */
     public Map<String, Object> serialize() {
         Map<String, Object> data = new HashMap<>();
+        data.put("balance-version", balanceVersion);
         data.put("strength", strength);
         data.put("magic", magic);
         data.put("agility", agility);
@@ -511,7 +542,10 @@ public class PlayerStats {
         double currentMana = data.containsKey("currentMana") ? getDouble(data, "currentMana") : maxMana;
         double manaRegen = data.containsKey("manaRegen") ? getDouble(data, "manaRegen") : 1.0;
 
-        return new PlayerStats(str, mag, agi, vit, def, spirit, lvl, xp, pts, talentPts, maxMana, currentMana, manaRegen);
+        PlayerStats result = new PlayerStats(str, mag, agi, vit, def, spirit, lvl, xp, pts, talentPts, maxMana, currentMana, manaRegen);
+        result.setLevel(lvl);
+        result.setBalanceVersion(data.containsKey("balance-version") ? getInt(data, "balance-version") : 0);
+        return result;
     }
 
     private static int getInt(Map<String, Object> map, String key) {

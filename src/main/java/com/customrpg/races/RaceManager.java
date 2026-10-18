@@ -129,20 +129,23 @@ public class RaceManager {
     }
     public void applyRaceStats(Player player) {
         RaceData race=getPlayerRaceData(player); PlayerStats stats=plugin.getPlayerStatsManager().getStats(player); int level=stats.getLevel();
-        stats.setRaceStrength(race==null?0:race.calculateStrengthBonus(level)); stats.setRaceMagic(race==null?0:race.calculateMagicBonus(level));
-        stats.setRaceAgility(race==null?0:race.calculateAgilityBonus(level)); stats.setRaceVitality(race==null?0:race.calculateVitalityBonus(level));
-        stats.setRaceDefense(race==null?0:race.calculateDefenseBonus(level)); stats.setRaceSpirit(race==null?0:race.calculateSpiritBonus(level));
+        int[] bonus = race==null?new int[6]:com.customrpg.balance.BalancePlayerRules.bounded(new long[]{
+                race.calculateStrengthBonus(level),race.calculateMagicBonus(level),race.calculateAgilityBonus(level),
+                race.calculateVitalityBonus(level),race.calculateDefenseBonus(level),race.calculateSpiritBonus(level)},
+                com.customrpg.balance.BalancePlayerRules.raceBudget(level));
+        stats.setRaceStrength(bonus[0]); stats.setRaceMagic(bonus[1]); stats.setRaceAgility(bonus[2]);
+        stats.setRaceVitality(bonus[3]); stats.setRaceDefense(bonus[4]); stats.setRaceSpirit(bonus[5]);
         plugin.getPlayerStatsManager().recalculateMana(player); plugin.getPlayerStatsManager().updateMaxHealth(player);
         removeSpeed(player); var attribute=movementAttribute.apply(player);
         if(race!=null&&attribute!=null&&race.getBonusMoveSpeed()!=0)
-            attribute.addTransientModifier(new AttributeModifier(speedKey,race.getBonusMoveSpeed(),AttributeModifier.Operation.ADD_SCALAR));
+            attribute.addTransientModifier(new AttributeModifier(speedKey,Math.clamp(race.getBonusMoveSpeed(),-.03,.03),AttributeModifier.Operation.ADD_SCALAR));
     }
     private void removeSpeed(Player player) {
         var attribute=movementAttribute.apply(player);
         if(attribute!=null) for(var modifier:new ArrayList<>(attribute.getModifiers())) if(speedKey.equals(modifier.getKey())) attribute.removeModifier(modifier);
     }
     public double getWeaponDamageBonus(Player player,String weaponType) {
-        RaceData race=getPlayerRaceData(player); return race==null?1:race.getWeaponBonus(weaponType);
+        RaceData race=getPlayerRaceData(player); return race==null?1:Math.clamp(race.getWeaponBonus(weaponType),.98,1.02);
     }
     public void loadPlayerRace(UUID id) {
         if(loaded.contains(id)) return;
@@ -192,7 +195,8 @@ public class RaceManager {
         for(Player player:plugin.getServer().getOnlinePlayers()) {
             if(!player.isOnline()||player.isDead()||(player.getGameMode()!=GameMode.SURVIVAL&&player.getGameMode()!=GameMode.ADVENTURE)
                     ||combatUntil.getOrDefault(player.getUniqueId(),0L)>now) continue;
-            double amount=getRecoveryPerSecond(getPlayerRaceData(player)); var health=healthAttribute.apply(player);
+            var health=healthAttribute.apply(player);
+            double amount=health==null?0:health.getValue()*(.05+Math.clamp(getRecoveryPerSecond(getPlayerRaceData(player))*.001,0,.005));
             if(amount<=0||health==null||player.getHealth()>=health.getValue()) continue;
             var event=new EntityRegainHealthEvent(player,amount,EntityRegainHealthEvent.RegainReason.CUSTOM);
             plugin.getServer().getPluginManager().callEvent(event);

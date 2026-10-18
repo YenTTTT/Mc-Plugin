@@ -249,7 +249,7 @@ public class MobListener implements Listener {
 
             // 黏液爆破者：延遲爆炸
             if (behaviorFor(mobData).equalsIgnoreCase("delayed_explosion")) {
-                delayedExplosion(event.getEntity().getLocation(), mobLevel);
+                delayedExplosion(event.getEntity().getLocation(), mobLevel, event.getEntity());
             }
 
             // 熔核巨獸：Boss 死亡 → 清理狀態 + 公告
@@ -785,7 +785,7 @@ public class MobListener implements Listener {
     /**
      * 黏液爆破者：死亡2秒後小範圍爆炸
      */
-    private void delayedExplosion(Location deathLocation, int mobLevel) {
+    private void delayedExplosion(Location deathLocation, int mobLevel, LivingEntity mob) {
         // 生成粒子警告
         new BukkitRunnable() {
             int ticks = 0;
@@ -802,7 +802,7 @@ public class MobListener implements Listener {
                     for (Entity entity : deathLocation.getWorld().getNearbyEntities(deathLocation, 3, 3, 3)) {
                         if (entity instanceof Player player) {
                             if (player.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
-                            player.damage(damage);
+                            com.customrpg.utils.SkillDamageGuard.damage(player, damage, mob);
                             player.sendMessage(ChatColor.RED + "💥 你被黏液爆炸波及了！");
                         }
                     }
@@ -976,7 +976,7 @@ public class MobListener implements Listener {
                 for (Entity nearby : hitLoc.getWorld().getNearbyEntities(hitLoc, 2.5, 2.5, 2.5)) {
                     if (nearby instanceof Player player) {
                         if (player.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
-                        player.damage(damage);
+                        com.customrpg.utils.SkillDamageGuard.damage(player, damage, arrow.getShooter() instanceof Entity source ? source : null);
                     }
                 }
                 arrow.remove();
@@ -1011,7 +1011,7 @@ public class MobListener implements Listener {
                 }
             }
 
-            player.damage(damage);
+            com.customrpg.utils.SkillDamageGuard.damage(player, damage, snowball.getShooter() instanceof Entity source ? source : null);
             player.getWorld().spawnParticle(Particle.WITCH, player.getLocation().add(0, 1, 0),
                     10, 0.3, 0.5, 0.3, 0.05);
             player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.8f, 1.2f);
@@ -1231,111 +1231,19 @@ public class MobListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onVirtualHPDamage(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity mob)) return;
-        if (!MobManager.hasVirtualHP(mob)) return;
-
-        double finalDamage = event.getFinalDamage();
-        if (finalDamage <= 0) return;
-
-        double virtualMaxHp = MobManager.getVirtualMaxHP(mob);
-        double currentVirtualHp = MobManager.getVirtualCurrentHP(mob);
-
-        // 比例：1 MC 傷害 = ratio 虛擬傷害
-        double ratio = virtualMaxHp / MobManager.getMcMaxHealthCap();
-        double virtualDamage = finalDamage * ratio;
-        double newVirtualHp = currentVirtualHp - virtualDamage;
-
-        if (newVirtualHp <= 0) {
-            // 怪物應死亡 — 儲存虛擬 HP = 0，讓事件通過以觸發死亡
-            mob.getPersistentDataContainer().set(
-                    new org.bukkit.NamespacedKey(plugin, MobManager.VIRTUAL_CURRENT_HP_KEY),
-                    org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0);
-            return; // 不取消 → 讓 Minecraft 自然觸發死亡事件
-        }
-
-        // 取消事件，手動扣虛擬 HP 並同步 MC HP
-        event.setCancelled(true);
-
-        // 儲存新虛擬 HP
-        mob.getPersistentDataContainer().set(
-                new org.bukkit.NamespacedKey(plugin, MobManager.VIRTUAL_CURRENT_HP_KEY),
-                org.bukkit.persistence.PersistentDataType.DOUBLE, newVirtualHp);
-
-        // 計算目標 MC HP
-        double targetMcHp = (newVirtualHp / virtualMaxHp) * mob.getMaxHealth();
-        targetMcHp = Math.max(0.1, Math.min(targetMcHp, mob.getMaxHealth()));
-        final double finalMcHp = targetMcHp;
-
-        // 下一 tick 設定 MC HP（不能在事件中直接 setHealth）
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (mob.isValid() && !mob.isDead()) {
-                    mob.setHealth(finalMcHp);
-                }
-            }
-        }.runTask(plugin);
-
-        // === 手動觸發受傷效果（因事件被取消，這些不會自動觸發） ===
-        // 受傷音效
-        Sound hurtSound = switch (mob.getType()) {
-            case ZOMBIE, ZOMBIE_VILLAGER, HUSK, DROWNED, ZOMBIFIED_PIGLIN -> Sound.ENTITY_ZOMBIE_HURT;
-            case SKELETON, STRAY, WITHER_SKELETON -> Sound.ENTITY_SKELETON_HURT;
-            case SPIDER, CAVE_SPIDER -> Sound.ENTITY_SPIDER_HURT;
-            case CREEPER -> Sound.ENTITY_CREEPER_HURT;
-            case ENDERMAN -> Sound.ENTITY_ENDERMAN_HURT;
-            case BLAZE -> Sound.ENTITY_BLAZE_HURT;
-            case MAGMA_CUBE, SLIME -> Sound.ENTITY_SLIME_HURT;
-            case GHAST -> Sound.ENTITY_GHAST_HURT;
-            case IRON_GOLEM -> Sound.ENTITY_IRON_GOLEM_HURT;
-            default -> Sound.ENTITY_GENERIC_HURT;
-        };
-        mob.getWorld().playSound(mob.getLocation(), hurtSound, 1.0f, 1.0f);
-
-        // 受傷粒子
-        Location hurtLoc = mob.getLocation().add(0, mob.getHeight() * 0.6, 0);
-        mob.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, hurtLoc, 1, 0.2, 0.2, 0.2, 0.05);
-
-        // 設定無敵幀（防止連續傷害）
-        mob.setNoDamageTicks(10);
+        virtualProjection.projectDamage(event);
     }
 
-    /**
-     * 攔截對「虛擬 HP 怪物」的回血事件（如天然再生、藥水效果）
-     */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onVirtualHPHeal(EntityRegainHealthEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity mob)) return;
-        if (!MobManager.hasVirtualHP(mob)) return;
+    private final com.customrpg.balance.VirtualHealthProjection virtualProjection = new com.customrpg.balance.VirtualHealthProjection();
 
-        double healAmount = event.getAmount();
-        if (healAmount <= 0) return;
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void commitVirtualHPDamage(EntityDamageEvent event) { virtualProjection.commitDamage(event); }
 
-        double virtualMaxHp = MobManager.getVirtualMaxHP(mob);
-        double currentVirtualHp = MobManager.getVirtualCurrentHP(mob);
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onVirtualHPHeal(EntityRegainHealthEvent event) { virtualProjection.projectHeal(event); }
 
-        double ratio = virtualMaxHp / MobManager.getMcMaxHealthCap();
-        double virtualHeal = healAmount * ratio;
-        double newVirtualHp = Math.min(virtualMaxHp, currentVirtualHp + virtualHeal);
-
-        event.setCancelled(true);
-
-        mob.getPersistentDataContainer().set(
-                new org.bukkit.NamespacedKey(plugin, MobManager.VIRTUAL_CURRENT_HP_KEY),
-                org.bukkit.persistence.PersistentDataType.DOUBLE, newVirtualHp);
-
-        double newMcHp = (newVirtualHp / virtualMaxHp) * mob.getMaxHealth();
-        final double finalMcHp = Math.min(newMcHp, mob.getMaxHealth());
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (mob.isValid() && !mob.isDead()) {
-                    mob.setHealth(finalMcHp);
-                }
-            }
-        }.runTask(plugin);
-    }
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void commitVirtualHPHeal(EntityRegainHealthEvent event) { virtualProjection.commitHeal(event); }
 
     /**
      * 防止自訂怪物被陽光燃燒
@@ -1343,6 +1251,8 @@ public class MobListener implements Listener {
      */
     @EventHandler
     public void onCustomMobCombust(EntityCombustEvent event) {
+        if (event instanceof org.bukkit.event.entity.EntityCombustByEntityEvent
+                || event instanceof org.bukkit.event.entity.EntityCombustByBlockEvent) return;
         if (!(event.getEntity() instanceof LivingEntity)) return;
 
         String mobKey = mobManager.getCustomMobKey(event.getEntity());

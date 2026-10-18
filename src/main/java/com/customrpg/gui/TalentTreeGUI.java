@@ -130,12 +130,13 @@ public class TalentTreeGUI implements Listener {
             if (talent.getType() == TalentType.ACTIVE) {
                 lore.add("§7冷卻: §f" + talent.getCooldown() + "秒");
                 if (talent.getManaCost() > 0) {
-                    lore.add("§7消耗: §b" + (int)talent.getManaCost() + " MANA");
+                    lore.add("§7消耗: §b" + talent.getManaCost() + " MANA");
                 }
                 if (talent.getHpCost() > 0) {
                     lore.add("§7消耗: §c" + (int)(talent.getHpCost() * 100) + "% 生命值");
                 }
-                lore.add("§7攜帶後使用快捷鍵 1～4；不需要施法道具");
+                lore.add("§7機制物品: §f" + talent.getMechanism());
+                lore.add("§7蹲下右鍵切換同物品技能；快捷鍵 1～4 亦可施放");
             }
 
             // 前置要求
@@ -366,7 +367,7 @@ public class TalentTreeGUI implements Listener {
             return "§d被動效果（自動觸發）";
         }
 
-        return "§e攜帶技能後按數字鍵 1～4";
+        return "§e" + com.customrpg.talents.TalentItemBinding.triggerName(talent.getTriggerType());
     }
 
     private void addPlayerInfo(Inventory gui, Player player) {

@@ -91,6 +91,8 @@ public class TalentManager {
         if (!additionalFile.exists()) plugin.saveResource("config/talents_additional.yml", false);
         YamlConfiguration additional = new YamlConfiguration();
         additional.load(additionalFile);
+        restoreItemBindings(config);
+        restoreItemBindings(additional);
         plugin.getLogger().info("配置檔案載入完成，根節點數量: " + config.getKeys(false).size());
 
         // 如果配置檔案是空的，先跳過載入天賦
@@ -134,6 +136,32 @@ public class TalentManager {
         if (!path.add(id)) throw new IllegalArgumentException("Cyclic prerequisite: " + id);
         for (Talent.Prerequisite pre : tree.getTalent(id).getPrerequisites()) validatePath(tree, pre.talentId, path);
         path.remove(id);
+    }
+
+    /** Upgrade hotkey-only bindings in memory, without replacing deployed balance or player files. */
+    private void restoreItemBindings(YamlConfiguration config) throws IOException {
+        for (String resource : List.of("config/talents.yml", "config/talents_additional.yml")) {
+            try (var stream = TalentManager.class.getClassLoader().getResourceAsStream(resource)) {
+                if (stream == null) throw new IOException("Missing bundled talent bindings: " + resource);
+                var defaults = YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(
+                        stream, java.nio.charset.StandardCharsets.UTF_8));
+                for (String branch : config.getKeys(false)) {
+                    var section = config.getConfigurationSection(branch);
+                    if (section == null) continue;
+                    for (String id : section.getKeys(false)) {
+                        String path = branch + "." + id;
+                        if (!"ACTIVE".equalsIgnoreCase(config.getString(path + ".type"))) continue;
+                        if (!"HOTKEY".equalsIgnoreCase(config.getString(path + ".trigger.type"))) continue;
+                        // Unknown administrator-defined hotkey talents keep their original binding.
+                        if (!defaults.contains(path + ".trigger.type")) continue;
+                        config.set(path + ".trigger.type", defaults.getString(path + ".trigger.type"));
+                        String mechanism = config.getString(path + ".mechanism", "");
+                        if (mechanism.contains("快捷鍵") || mechanism.equalsIgnoreCase("HOTKEY") || mechanism.isBlank())
+                            config.set(path + ".mechanism", defaults.getString(path + ".mechanism"));
+                    }
+                }
+            }
+        }
     }
 
     /** Validate both files before replacing live trees. Player investment and bindings are retained. */
@@ -508,7 +536,12 @@ public class TalentManager {
 
         try {
             YamlConfiguration config = new YamlConfiguration();
-
+            if (playerFile.exists()) {
+                var previous=new YamlConfiguration(); previous.load(playerFile);
+                if (previous.getInt("balance-version",0)<2) com.customrpg.balance.BalanceMigration.backup(playerFile.toPath(),
+                        plugin.getDataFolder().toPath().resolve("data/balance-backups/v2/talents"));
+            }
+            config.set("balance-version",2);
             config.set("available-points", talents.getAvailablePoints());
             config.set("total-points-spent", talents.getTotalPointsSpent());
 
@@ -534,7 +567,7 @@ public class TalentManager {
 
             PlayerStatsManager.saveAtomically(config, playerFile);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             plugin.getLogger().warning("儲存玩家天賦數據失敗 " + uuid + ": " + e.getMessage());
         }
     }
@@ -727,39 +760,25 @@ public class TalentManager {
 
             // 計算所有天賦提供的屬性加成
             Map<String, Integer> totals = computeTalentStatBonuses(playerTalents);
-            int totalStrengthBonus = totals.get("strength");
-            int totalMagicBonus = totals.get("magic");
-            int totalAgilityBonus = totals.get("agility");
-            int totalVitalityBonus = totals.get("vitality");
-            int totalDefenseBonus = totals.get("defense");
-            int totalSpiritBonus = totals.get("spirit");
-
-            // 暫時獲取基礎屬性（沒有天賦加成的）
-            int baseStrength = playerStats.getStrength() - getTalentAttributeBonus(player, "strength");
-            int baseMagic = playerStats.getMagic() - getTalentAttributeBonus(player, "magic");
-            int baseAgility = playerStats.getAgility() - getTalentAttributeBonus(player, "agility");
-            int baseVitality = playerStats.getVitality() - getTalentAttributeBonus(player, "vitality");
-            int baseDefense = playerStats.getDefense() - getTalentAttributeBonus(player, "defense");
-            int baseSpirit = playerStats.getSpirit() - getTalentAttributeBonus(player, "spirit");
-
-            // 確保基礎值不會小於0
-            baseStrength = Math.max(0, baseStrength);
-            baseMagic = Math.max(0, baseMagic);
-            baseAgility = Math.max(0, baseAgility);
-            baseVitality = Math.max(0, baseVitality);
-            baseDefense = Math.max(0, baseDefense);
-            baseSpirit = Math.max(0, baseSpirit);
-
-            // 應用新的總屬性值（基礎 + 天賦加成）
-            playerStats.setStrength(baseStrength + totalStrengthBonus);
-            playerStats.setMagic(baseMagic + totalMagicBonus);
-            playerStats.setAgility(baseAgility + totalAgilityBonus);
-            playerStats.setVitality(baseVitality + totalVitalityBonus);
-            playerStats.setDefense(baseDefense + totalDefenseBonus);
-            playerStats.setSpirit(baseSpirit + totalSpiritBonus);
+            int[] normalized = com.customrpg.balance.BalancePlayerRules.bounded(
+                    java.util.Arrays.stream(STAT_ATTRIBUTES).mapToLong(key -> Math.max(0,totals.getOrDefault(key,0))).toArray(),
+                    com.customrpg.balance.BalancePlayerRules.talentBudget(playerStats.getLevel()));
+            int totalStrengthBonus = normalized[0];
+            playerStats.setTalentStrength(totalStrengthBonus);
+            int totalMagicBonus = normalized[1];
+            playerStats.setTalentMagic(totalMagicBonus);
+            int totalAgilityBonus = normalized[2];
+            playerStats.setTalentAgility(totalAgilityBonus);
+            int totalVitalityBonus = normalized[3];
+            playerStats.setTalentVitality(totalVitalityBonus);
+            int totalDefenseBonus = normalized[4];
+            playerStats.setTalentDefense(totalDefenseBonus);
+            int totalSpiritBonus = normalized[5];
+            playerStats.setTalentSpirit(totalSpiritBonus);
 
             // 更新最大血量（基於新的vitality值）
             statsManager.updateMaxHealth(player);
+            statsManager.recalculateMana(player);
 
             // 儲存更新後的屬性
             statsManager.saveStats(player);

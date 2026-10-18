@@ -61,6 +61,7 @@ class RacialSkillManagerTest {
         when(player.isFlying()).thenAnswer(i -> flying);
         doAnswer(i -> { allowFlight = i.getArgument(0); return null; }).when(player).setAllowFlight(anyBoolean());
         doAnswer(i -> { flying = i.getArgument(0); return null; }).when(player).setFlying(anyBoolean());
+        when(player.getMaxHealth()).thenReturn(20.0);
         when(player.getHealth()).thenAnswer(i -> hp);
         doAnswer(i -> { hp = i.getArgument(0); return null; }).when(player).setHealth(anyDouble());
         var health = mock(AttributeInstance.class); when(health.getValue()).thenReturn(20.0);
@@ -196,9 +197,9 @@ class RacialSkillManagerTest {
         when(player.getScoreboard()).thenReturn(board); when(board.getEntryTeam("caster")).thenReturn(team); when(team.hasEntry("ally")).thenReturn(true);
         Player ally = mock(Player.class), stranger = mock(Player.class);
         when(ally.getName()).thenReturn("ally"); when(stranger.getName()).thenReturn("stranger");
-        when(ally.getLocation()).thenReturn(new Location(world, 0, 64, 2)); when(ally.getHealth()).thenReturn(5.0);
+        when(ally.getLocation()).thenReturn(new Location(world, 0, 64, 2)); when(ally.getHealth()).thenReturn(5.0); when(ally.getMaxHealth()).thenReturn(20.0);
         when(player.hasLineOfSight(ally)).thenReturn(true); when(world.getPlayers()).thenReturn(List.of(player, ally, stranger));
-        assertTrue(skills.cast(player)); assertEquals(17, hp); verify(ally).setHealth(17); verify(stranger, never()).setHealth(anyDouble());
+        assertTrue(skills.cast(player)); assertEquals(7.4, hp,1e-9); verify(ally).setHealth(7.4); verify(stranger, never()).setHealth(anyDouble());
     }
     @Test void blockedDrainCostsNothingAndCancelledDamageDoesNotHeal() {
         race("undead"); assertFalse(skills.cast(player)); verifyNoInteractions(mana);

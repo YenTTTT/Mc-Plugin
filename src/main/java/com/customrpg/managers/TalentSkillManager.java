@@ -106,9 +106,10 @@ public class TalentSkillManager {
             return false;
         }
 
+        double manaCost = talent.getManaCost();
         // 2. 檢查 Mana
-        if (!manaManager.hasMana(player, talent.getManaCost())) {
-            player.sendMessage("§c魔力不足！需要 " + (int)talent.getManaCost() + " MANA");
+        if (!manaManager.hasMana(player, manaCost)) {
+            player.sendMessage("§c魔力不足！需要 " + manaCost + " MANA");
             return false;
         }
 
@@ -420,7 +421,7 @@ public class TalentSkillManager {
 
         // 4. 消耗資源與套用冷卻
         if (success) {
-            manaManager.consumeMana(player, talent.getManaCost());
+            manaManager.consumeMana(player, manaCost);
             // 暗黑系 HP 消耗
             if (hpCostPercent > 0) {
                 double hpToDeduct = player.getMaxHealth() * hpCostPercent;
@@ -1368,7 +1369,7 @@ public class TalentSkillManager {
                     if (maxHealthAttr != null) {
                         double maxHealth = maxHealthAttr.getValue();
                         if (currentHealth < maxHealth) {
-                            p.setHealth(Math.min(maxHealth, currentHealth + healPerTick));
+                            plugin.getCombatBalance().heal(p, healPerTick);
                         }
                     }
                 }
@@ -1947,7 +1948,7 @@ public class TalentSkillManager {
                 damageManager.dealSkillDamage(player, target, finalDamage);
 
                 // 點燃效果
-                target.setFireTicks(burnDuration * 20);
+                plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
 
                 // 額外視覺效果
                 target.getWorld().spawnParticle(Particle.FLAME, target.getLocation().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0.05);
@@ -2598,7 +2599,7 @@ public class TalentSkillManager {
                     for (org.bukkit.entity.Entity entity : current.getWorld().getNearbyEntities(current, 0.8, 0.8, 0.8)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                         damageManager.dealSkillDamage(player, target, damage);
-                        target.setFireTicks(40); // 2秒燃燒
+                        plugin.getCombatBalance().ignite(player, target, 40); // 2秒燃燒
                         current.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0);
                         current.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.6f, 1.0f);
                         player.sendMessage("§6[火花] §f命中! 造成 §c" + String.format("%.0f", damage) + " §f傷害");
@@ -2674,7 +2675,7 @@ public class TalentSkillManager {
                     if (hitCooldown.contains(target.getUniqueId())) continue;
                     hitCooldown.add(target.getUniqueId());
                     com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
-                    target.setFireTicks(60);
+                    plugin.getCombatBalance().ignite(player, target, 60);
                     current.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0);
                 }
 
@@ -2735,7 +2736,7 @@ public class TalentSkillManager {
                     for (org.bukkit.entity.Entity entity : target.getWorld().getNearbyEntities(target, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity t) || t.isDead()) continue;
                         com.customrpg.utils.SkillDamageGuard.damage(t, damagePerTick, player);
-                        t.setFireTicks(40);
+                        plugin.getCombatBalance().ignite(player, t, 40);
                     }
                     target.getWorld().playSound(target, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.8f);
                 }
@@ -2822,7 +2823,7 @@ public class TalentSkillManager {
                             double dist = target.getLocation().distance(impactLoc);
                             double falloff = Math.max(0.3, 1.0 - (dist / radius) * 0.5);
                             damageManager.dealSkillDamage(player, target, damage * falloff);
-                            target.setFireTicks(burnDuration * 20);
+                            plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                         }
 
                         cancel();
@@ -2881,7 +2882,7 @@ public class TalentSkillManager {
                         for (org.bukkit.entity.Entity entity : checkLoc.getWorld().getNearbyEntities(checkLoc, 1, 1, 1)) {
                             if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                             com.customrpg.utils.SkillDamageGuard.damage(target, damagePerHit, player);
-                            target.setFireTicks(burnDuration * 20);
+                            plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                         }
                     }
                 }
@@ -2942,7 +2943,7 @@ public class TalentSkillManager {
                     if (alreadyHit.contains(target.getUniqueId())) continue;
                     alreadyHit.add(target.getUniqueId());
                     com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
-                    target.setFireTicks(burnDuration * 20);
+                    plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                     center.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 8, 0.2, 0.2, 0.2, 0);
                 }
             }
@@ -3000,7 +3001,7 @@ public class TalentSkillManager {
                     for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                         com.customrpg.utils.SkillDamageGuard.damage(target, damagePerSecond, player);
-                        target.setFireTicks(burnDuration * 20);
+                        plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                     }
                     center.getWorld().playSound(center, Sound.BLOCK_FIRE_AMBIENT, 0.6f, 0.8f);
                 }
@@ -3073,7 +3074,7 @@ public class TalentSkillManager {
                     for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                         com.customrpg.utils.SkillDamageGuard.damage(target, damagePerTick / 2, player); // 每0.5秒造成一半傷害
-                        target.setFireTicks(burnDuration * 20);
+                        plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                         // 緩速效果
                         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 1, false, false));
                     }
@@ -3612,8 +3613,8 @@ public class TalentSkillManager {
                     double totalDamageDealt = 0;
                     for (org.bukkit.entity.Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        damageManager.dealSkillDamage(player, target, damagePerTick);
-                        double heal = damagePerTick * lifestealPercent;
+                        double dealt=damageManager.dealSkillDamage(player, target, damagePerTick);
+                        double heal = dealt * lifestealPercent;
                         totalDamageDealt += heal;
                         // 汲取視覺效果
                         target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 10, 0.3, 0.5, 0.3, 0,
@@ -3621,7 +3622,7 @@ public class TalentSkillManager {
                     }
                     if (totalDamageDealt > 0) {
                         double newHealth = Math.min(player.getMaxHealth(), player.getHealth() + totalDamageDealt);
-                        player.setHealth(newHealth);
+                        plugin.getCombatBalance().heal(player, Math.max(0,newHealth-player.getHealth()));
                         player.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0, 2, 0), 3, 0.3, 0.3, 0.3, 0);
                     }
                 }
@@ -3693,9 +3694,9 @@ public class TalentSkillManager {
         LivingEntity target = getTargetEntity(player, range);
         if (target == null) { player.sendMessage("§c未找到目標！"); return false; }
 
-        damageManager.dealSkillDamage(player, target, damage);
-        double heal = damage * leechPercent;
-        player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + heal));
+        double dealt=damageManager.dealSkillDamage(player, target, damage);
+        double heal = dealt * leechPercent;
+        plugin.getCombatBalance().heal(player, heal);
 
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.7f, 1.2f);
         target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0,
@@ -3793,7 +3794,7 @@ public class TalentSkillManager {
                     for (org.bukkit.entity.Entity entity : targetLoc.getWorld().getNearbyEntities(targetLoc, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                         damageManager.dealSkillDamage(player, target, damage * 0.25);
-                        target.setFireTicks((int)(burnDuration * 20));
+                        plugin.getCombatBalance().ignite(player, target, (int)(burnDuration * 20));
                     }
                 }
                 ticks++;
@@ -4106,8 +4107,8 @@ public class TalentSkillManager {
                     double totalHealed = 0;
                     for (org.bukkit.entity.Entity entity : origin.getWorld().getNearbyEntities(origin, radius, 4, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        damageManager.dealSkillDamage(player, target, damagePerSecond);
-                        double heal = damagePerSecond * leechPercent;
+                        double dealt=damageManager.dealSkillDamage(player, target, damagePerSecond);
+                        double heal = dealt * leechPercent;
                         totalHealed += heal;
                         // 汲取視覺效果
                         target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 10, 0.3, 0.5, 0.3, 0,
@@ -4115,7 +4116,7 @@ public class TalentSkillManager {
                     }
                     if (totalHealed > 0) {
                         double newHealth = Math.min(player.getMaxHealth(), player.getHealth() + totalHealed);
-                        player.setHealth(newHealth);
+                        plugin.getCombatBalance().heal(player, Math.max(0,newHealth-player.getHealth()));
                         player.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0, 2, 0), 3, 0.3, 0.3, 0.3, 0);
                     }
                 }
@@ -4359,7 +4360,9 @@ public class TalentSkillManager {
 
     private boolean executeEnergyShield(Player player, Talent talent, int level, ItemStack item) {
         double duration = talent.getEffectDouble(level, "duration", 8);
-        int absorptionLevel = (int) talent.getEffectDouble(level, "absorptionLevel", 2);
+        int configuredLevel = (int) talent.getEffectDouble(level, "absorptionLevel", 2);
+        double shield=player.getMaxHealth()*Math.clamp((configuredLevel+1)*.05,.05,.25);
+        int absorptionLevel=Math.max(0,(int)Math.ceil(shield/4)-1);
         player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, (int)(duration * 20), absorptionLevel, false, false, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, (int)(duration * 20), 0, false, false, true));
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
@@ -4727,7 +4730,7 @@ public class TalentSkillManager {
                 String owner = e.getMetadata("beast_owner").get(0).asString();
                 if (owner.equals(pid.toString())) {
                     double maxHp = le.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getBaseValue();
-                    le.setHealth(Math.min(maxHp, le.getHealth() + maxHp * healPercent));
+                    plugin.getCombatBalance().heal(le, maxHp * healPercent);
                     le.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, buffDuration * 20, 1, true, false));
                     le.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, buffDuration * 20, 1, true, false));
                     le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, le.getLocation().add(0, 1, 0), 8, 0.3, 0.3, 0.3, 0);
@@ -5043,7 +5046,7 @@ public class TalentSkillManager {
                     org.bukkit.attribute.AttributeInstance maxHpAttr =
                             player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
                     double maxHp = maxHpAttr != null ? maxHpAttr.getValue() : 20.0;
-                    player.setHealth(Math.min(maxHp, player.getHealth() + finalHeal));
+                    plugin.getCombatBalance().heal(player, finalHeal);
 
                     // 玩家身上的效果：愛心 + 治癒綠光
                     Location pLoc = player.getLocation().clone().add(0, 1.0, 0);
@@ -5084,6 +5087,7 @@ public class TalentSkillManager {
      */
     private void initBee(Bee bee, Player owner, double health, double damage,
                          String displayName, boolean isCompanion) {
+        bee.setMetadata("beast_owner", new org.bukkit.metadata.FixedMetadataValue(plugin, owner.getUniqueId().toString()));
         // 設定血量
         if (bee.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null) {
             bee.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(health);

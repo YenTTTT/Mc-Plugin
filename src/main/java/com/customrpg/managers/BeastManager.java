@@ -254,9 +254,8 @@ public class BeastManager implements Listener {
 
         // 增加最大生命值
         if (healthBonus > 0) {
-            double newMax = data.originalMaxHealth + healthBonus;
-            player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(newMax);
-            player.setHealth(Math.min(player.getHealth() + healthBonus, newMax));
+            plugin.getPlayerStatsManager().getStats(player).setFormMaxHealth(Math.min(data.originalMaxHealth*.15,healthBonus*data.originalMaxHealth/100));
+            plugin.getPlayerStatsManager().updateMaxHealth(player);
         }
 
         // 增加力量
@@ -318,10 +317,8 @@ public class BeastManager implements Listener {
         if (data == null) return;
 
         // 恢復最大生命值
-        player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(data.originalMaxHealth);
-        if (player.getHealth() > data.originalMaxHealth) {
-            player.setHealth(data.originalMaxHealth);
-        }
+        plugin.getPlayerStatsManager().getStats(player).setFormMaxHealth(0);
+        plugin.getPlayerStatsManager().updateMaxHealth(player);
 
         player.removeMetadata("beast_form_strength", plugin);
 
@@ -551,7 +548,7 @@ public class BeastManager implements Listener {
         Entity damager = event.getDamager();
         if (!damager.hasMetadata("beast_owner")) return;
         if (!(event.getEntity() instanceof LivingEntity target)) return;
-        double damage = event.getFinalDamage();
+        double damage = com.customrpg.balance.CombatBalance.rpgFinalDamage(event);
         // 顯示浮空字
         target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, target.getLocation().add(0, 1.2, 0), 8, 0.2, 0.2, 0.2, 0.1);
         target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1.5, 0), 1, 0, 0, 0, 0,

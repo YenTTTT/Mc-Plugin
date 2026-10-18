@@ -1,5 +1,7 @@
+# Balance v2: attribute numbers are relative weights, 18 base points plus 0..18 growth points across levels 1..60.
+# Weapon affinities are bounded to 98..102%; effective values appear in /race and the GUI.
 # Automatically copied on upgrade; races.yml overrides matching IDs in this file.
-# New races have 30 base attribute points and 6.0 total attribute growth per level.
+# Six-stat values are allocation weights; actual bonuses appear in the race GUI.
 # Active abilities are defined by race ID in RacialSkill; cast with hotkey 5. skills is legacy metadata.
 races:
   dragonkin:

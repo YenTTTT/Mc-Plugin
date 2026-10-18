@@ -30,7 +30,7 @@ class TalentHotkeyCastingTest {
         selection.setTalentLevel("star_shatter", 1); selection.setSelectedSkill(0, "star_shatter");
         assertTrue(skills.castSkillDirectly(player, "star_shatter", air));
         assertFalse(skills.castSkillDirectly(player, "star_shatter", air));
-        verify(mana, times(1)).consumeMana(player, 20);
+        verify(mana, times(1)).consumeMana(player, 20.0);
     }
     @Test void learnedButUnequippedAndPassiveTalentsCannotBeInvoked() {
         selection.setTalentLevel("star_shatter", 1);
@@ -49,12 +49,55 @@ class TalentHotkeyCastingTest {
         when(plugin.getTalentManager().findTalent("earth_guard")).thenReturn(talent);
         selection.setTalentLevel("earth_guard", 1); selection.setSelectedSkill(0, "earth_guard");
         assertTrue(skills.castSkillDirectly(player, "earth_guard", air));
-        assertFalse(skills.castSkillDirectly(player, "earth_guard", air)); verify(mana, times(1)).consumeMana(player, 20);
+        assertFalse(skills.castSkillDirectly(player, "earth_guard", air)); verify(mana, times(1)).consumeMana(player, 20.0);
     }
     @Test void insufficientManaCannotStartANewTalentEffect() {
         when(talent.getId()).thenReturn("earth_guard"); when(plugin.getTalentManager().findTalent("earth_guard")).thenReturn(talent);
         selection.setTalentLevel("earth_guard", 1); selection.setSelectedSkill(0, "earth_guard");
-        when(mana.hasMana(player, 20)).thenReturn(false);
+        when(mana.hasMana(player, 20.0)).thenReturn(false);
         assertFalse(skills.castSkillDirectly(player, "earth_guard", air)); verify(mana, never()).consumeMana(any(), anyDouble());
+    }
+    private void castFromItem() {
+        when(talent.getMechanism()).thenReturn("金粒"); when(talent.getTriggerType()).thenReturn("LEFT_CLICK");
+        var nugget = mock(ItemStack.class); when(nugget.getType()).thenReturn(Material.GOLD_NUGGET); when(nugget.clone()).thenReturn(nugget);
+        var event = new org.bukkit.event.player.PlayerInteractEvent(player, org.bukkit.event.block.Action.LEFT_CLICK_AIR,
+                nugget, null, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
+        new com.customrpg.listeners.TalentItemListener(plugin.getTalentManager(), skills).onInteract(event);
+        assertEquals(org.bukkit.event.Event.Result.DENY, event.useItemInHand());
+    }
+    @Test void itemThenHotkeyShareCooldownAndPayManaOnlyOnce() {
+        selection.setTalentLevel("star_shatter", 1); selection.setSelectedSkill(0, "star_shatter");
+        castFromItem(); assertFalse(skills.castSkillDirectly(player, "star_shatter", air));
+        verify(mana, times(1)).consumeMana(player, 20.0);
+    }
+    @Test void hotkeyThenItemCannotBypassCooldown() {
+        selection.setTalentLevel("star_shatter", 1); selection.setSelectedSkill(0, "star_shatter");
+        assertTrue(skills.castSkillDirectly(player, "star_shatter", air)); castFromItem();
+        verify(mana, times(1)).consumeMana(player, 20.0);
+    }
+    @Test void insufficientManaItemAttemptDoesNotConsumeManaOrStartCooldown() {
+        selection.setTalentLevel("star_shatter", 1); selection.setSelectedSkill(0, "star_shatter");
+        when(mana.hasMana(player, 20.0)).thenReturn(false); castFromItem();
+        verify(mana, never()).consumeMana(any(), anyDouble());
+        when(mana.hasMana(player, 20.0)).thenReturn(true);
+        assertTrue(skills.castSkillDirectly(player, "star_shatter", air));
+    }
+    @Test void increasingMaximumManaDoesNotIncreaseTheFixedCost() {
+        selection.setTalentLevel("star_shatter", 1); selection.setSelectedSkill(0, "star_shatter");
+        when(talent.getCooldown()).thenReturn(0.0);
+        var stats = plugin.getPlayerStatsManager().getStats(player);
+        stats.setMaxMana(80);
+        assertTrue(skills.castSkillDirectly(player, "star_shatter", air));
+        stats.setMaxMana(800);
+        castFromItem();
+        verify(mana, times(2)).hasMana(player, 20.0);
+        verify(mana, times(2)).consumeMana(player, 20.0);
+    }
+    @Test void zeroCostSkillsStayFreeEvenWithLargeMaximumMana() {
+        selection.setTalentLevel("star_shatter", 1); selection.setSelectedSkill(0, "star_shatter");
+        when(talent.getManaCost()).thenReturn(0.0);
+        plugin.getPlayerStatsManager().getStats(player).setMaxMana(800);
+        assertTrue(skills.castSkillDirectly(player, "star_shatter", air));
+        verify(mana).hasMana(player, 0.0); verify(mana).consumeMana(player, 0.0);
     }
 }

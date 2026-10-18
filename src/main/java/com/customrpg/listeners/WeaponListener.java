@@ -57,10 +57,11 @@ public class WeaponListener implements Listener {
     private final Map<UUID, Map<String, Long>> passiveCooldownNotify = new ConcurrentHashMap<>();
     // 法杖普通攻擊冷卻追蹤 (UUID -> 上次攻擊時間)
     private final Map<UUID, Long> staffAttackCooldown = new ConcurrentHashMap<>();
-    private static final long STAFF_ATTACK_COOLDOWN_MS = 1000L; // 1 秒冷卻
+    private static final long STAFF_ATTACK_COOLDOWN_MS = 715L; // 1 秒冷卻
 
     // ── 火焰疊層灼燒 DOT 系統 ──
     private final Map<UUID, Integer> burnStacks = new ConcurrentHashMap<>();
+    private final Map<UUID, UUID> burnOwners = new ConcurrentHashMap<>();
     private final Map<UUID, Long> burnLastHit = new ConcurrentHashMap<>();
     private static final int BURN_MAX_STACKS_DEFAULT = 10;
     private static final double BURN_DAMAGE_PER_STACK = 1.5; // 每層每秒傷害
@@ -115,13 +116,14 @@ public class WeaponListener implements Listener {
                     }
                     if (entity == null || !(entity instanceof LivingEntity le) || le.isDead()) {
                         iter.remove();
-                        burnLastHit.remove(entityId);
+                        burnLastHit.remove(entityId); burnOwners.remove(entityId);
                         continue;
                     }
 
                     // 扣血
                     double dotDmg = stacks * BURN_DAMAGE_PER_STACK;
-                    le.damage(dotDmg);
+                    Player owner = burnOwners.containsKey(entityId) ? plugin.getServer().getPlayer(burnOwners.get(entityId)) : null;
+                    if (owner != null) com.customrpg.utils.SkillDamageGuard.damage(le, dotDmg, owner);
                     le.getWorld().spawnParticle(Particle.FLAME,
                             le.getLocation().add(0, 0.5, 0), Math.min(stacks * 3, 30), 0.3, 0.6, 0.3, 0.03);
 
@@ -131,7 +133,7 @@ public class WeaponListener implements Listener {
                         int newStacks = stacks - 1;
                         if (newStacks <= 0) {
                             iter.remove();
-                            burnLastHit.remove(entityId);
+                            burnLastHit.remove(entityId); burnOwners.remove(entityId);
                         } else {
                             entry.setValue(newStacks);
                         }
@@ -182,112 +184,10 @@ public class WeaponListener implements Listener {
             return;
         }
 
-        // === 1) Base damage ===
-        double baseDamage = event.getDamage();
-
-        // 如果有自訂武器且設定了基礎傷害，則覆蓋
-        if (weaponData != null) {
-            double baseDamageOverride = weaponData.getDoubleExtra("base-damage", 0.0);
-            if (baseDamageOverride > 0.0) {
-                baseDamage = baseDamageOverride;
-            }
-        }
-
-        // === 1.5) 屬性加成 (基於武器類別的屬性縮放) ===
-        double statBonus;
-        if (weaponData != null) {
-            // 自訂武器：使用武器類別的屬性加成
-            statBonus = weaponData.getCategory().calculateStatBonus(playerStats);
-            // 稀有度加成
-            statBonus *= weaponData.getRarity().statMultiplier;
-        } else {
-            // 非自訂武器：使用基礎力量加成
-            statBonus = playerStats.getTotalStrength() * 0.2;
-        }
-        baseDamage += statBonus;
-
-        // === 1.6) 加入天賦武器加成 (Talent Weapon Mastery) ===
-        baseDamage += calculateTalentWeaponBonus(player, weapon, playerStats);
-
-        // === 1.7) 處理天賦被動觸發 (例如: 疾行者) ===
-        baseDamage = handleAttackPassiveTalents(player, baseDamage, event);
-
-        // === 1.8) 種族武器類型傷害加成 ===
-        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
-        if (raceManager != null && raceManager.hasRace(player)) {
-            // 取得武器類別名稱
-            String weaponTypeName;
-            if (weaponData != null) {
-                weaponTypeName = weaponData.getCategory().name();
-            } else {
-                // 非自訂武器：根據 Material 偵測
-                weaponTypeName = WeaponManager.WeaponCategory.detectFromMaterial(weapon.getType(), false).name();
-            }
-
-            // 種族對此武器類型的傷害加成
-            double raceWeaponBonus = raceManager.getWeaponDamageBonus(player, weaponTypeName);
-            baseDamage *= raceWeaponBonus;
-        }
-
-        // === 2) Damage multiplier (含稀有度加成) ===
-        double damageMultiplier = 1.0;
-        if (weaponData != null) {
-            damageMultiplier = weaponData.getDamageMultiplier();
-        }
-        double damageAfterMultiplier = baseDamage * damageMultiplier;
-
-        // === 3) Crit ===
-        double critChancePercent = 0.0;
-        double critDamageMultiplier = 1.5;
-
-        // 從自訂武器取得暴擊屬性
-        if (weaponData != null) {
-            critChancePercent = weaponData.getDoubleExtra("crit-chance", 0.0);
-            double configuredCritical=weaponData.getDoubleExtra("crit-damage-multiplier",1.5);
-            critDamageMultiplier=Double.isFinite(configuredCritical)&&configuredCritical>1.0?configuredCritical:1.5;
-        }
-
-        // 套用「被動增益」的暴擊率加成
-        double bonusCrit = passiveEffectManager.getBonusCritChancePercent(player);
-        if (bonusCrit > 0.0) {
-            critChancePercent += bonusCrit;
-        }
-
-        // === 3.5) 加入 Agility (敏捷) 暴擊率加成 ===
-        // 無論是否使用自訂武器，都套用敏捷暴擊加成
-        double agilityBonus = playerStats.getTotalAgility() * 0.2; // Includes race and equipment agility.
-        critChancePercent += agilityBonus;
-        critChancePercent += playerStats.getBonusCritChance();
-        critDamageMultiplier += playerStats.getBonusCritDamage()/100.0;
-
-        // === 3.6) 種族被動暴擊率加成 ===
-        if (raceManager != null && raceManager.hasRace(player)) {
-            com.customrpg.races.RaceData raceData = raceManager.getPlayerRaceData(player);
-            if (raceData != null) {
-                critChancePercent += raceData.getBonusCritChance();
-                if (raceData.getBonusCritDamage() > 0 && critDamageMultiplier > 1.0) {
-                    critDamageMultiplier += raceData.getBonusCritDamage();
-                }
-            }
-        }
-
-        // 防呆：暴擊率上限 100%
-        critChancePercent = Math.max(0.0, Math.min(100.0, critChancePercent));
-
-        boolean isCrit = false;
-        if (critChancePercent > 0.0 && critDamageMultiplier > 1.0) {
-            double roll = random.nextDouble() * 100.0;
-            if (roll < critChancePercent) {
-                damageAfterMultiplier *= critDamageMultiplier;
-                isCrit = true;
-            }
-        }
-
-        event.setDamage(damageAfterMultiplier);
-
-        if (isCrit) {
-            player.sendMessage(ChatColor.YELLOW + "✨ 暴擊！x" + critDamageMultiplier);
-        }
+        var balancedAttack = plugin.getCombatBalance().calculate(player, weapon, player.getAttackCooldown(), 1);
+        if (playerStats.getLevel() < balancedAttack.requiredLevel()) { event.setCancelled(true); return; }
+        event.setDamage(handleAttackPassiveTalents(player, balancedAttack.damage(), event));
+        plugin.getCombatBalance().record(event, player, balancedAttack);
 
         // === 4) 額外擊退推力（僅限自訂武器） ===
         if (weaponData != null) {
@@ -301,7 +201,8 @@ public class WeaponListener implements Listener {
             }
 
             // === 5) 特殊效果（僅限自訂武器） ===
-            applySpecialEffect(player, event.getEntity(), weaponData, event);
+            final var appliedWeapon = weaponData;
+            plugin.getCombatBalance().afterAccepted(event, () -> applySpecialEffect(player, event.getEntity(), appliedWeapon, event));
         }
     }
 
@@ -440,19 +341,17 @@ public class WeaponListener implements Listener {
 
         // Armor Pierce
         double pierce = weaponData.getDoubleExtra("armor-pierce", 0.0);
-        if (pierce > 0.0 && event != null) {
-            applyArmorPierce(attacker, victim, pierce, event);
-        }
+        // Native armor is replaced by the RPG mitigation layer; no post-event modifier edits.
 
         // Life Steal
         double lifeSteal = weaponData.getDoubleExtra("life-steal", 0.0);
         if (lifeSteal > 0.0) {
-            applyLifeSteal(attacker, lifeSteal, event.getFinalDamage());
+            applyLifeSteal(attacker, lifeSteal, com.customrpg.balance.CombatBalance.rpgFinalDamage(event));
         }
 
         // 新：近戰 AoE（單手劍 / 雙手長棍）
         if (weaponData.getBooleanExtra("melee-aoe-enabled", false)) {
-            applyMeleeAoE(attacker, victim, weaponData, event.getFinalDamage());
+            applyMeleeAoE(attacker, victim, weaponData, com.customrpg.balance.CombatBalance.rpgFinalDamage(event));
         }
 
         // 新：流血效果（斧類）
@@ -501,7 +400,7 @@ public class WeaponListener implements Listener {
             return;
         double heal = damageDealt * (percent / 100.0);
         double maxHealth = attacker.getMaxHealth();
-        attacker.setHealth(Math.min(maxHealth, attacker.getHealth() + heal));
+        plugin.getCombatBalance().heal(attacker, heal);
     }
 
     private void applyElementEffect(Player attacker, org.bukkit.entity.Entity victim, String elementType,
@@ -570,7 +469,7 @@ public class WeaponListener implements Listener {
         if (shouldTrigger) {
             double multiplier = weaponData.getDoubleExtra("backstab-multiplier", 1.0);
             double bonusDamage = 4.0 * Math.max(0.0, multiplier);
-            livingVictim.damage(bonusDamage);
+            com.customrpg.utils.SkillDamageGuard.damage(livingVictim, bonusDamage, attacker);
 
             // 視覺
             String particleName = String.valueOf(weaponData.getExtra().getOrDefault("backstab-particle", ""));
@@ -626,7 +525,7 @@ public class WeaponListener implements Listener {
                 LivingEntity target = (LivingEntity) nearby;
                 if (target.isDead()) continue;
                 // damage() 會觸發 EntityDamageByEntityEvent，但 aoeGuard 會讓 handler 直接放行
-                target.damage(aoeDamage, attacker);
+                com.customrpg.utils.SkillDamageGuard.damage(target, aoeDamage, attacker);
                 hitAny = true;
             }
 
@@ -673,7 +572,7 @@ public class WeaponListener implements Listener {
         }
 
         int durationTicks = weaponData.getIntExtra("burn-duration-ticks", 100);
-        victim.setFireTicks(Math.max(0, durationTicks));
+        plugin.getCombatBalance().ignite(attacker, (LivingEntity)victim, durationTicks);
 
         attacker.sendMessage(ChatColor.GOLD + "🔥 目標燃燒中! (" + durationTicks + " ticks)\n");
         attacker.getWorld().playSound(attacker.getLocation(), "entity.blaze.shoot", 1.0f, 1.0f);
@@ -691,7 +590,8 @@ public class WeaponListener implements Listener {
         double chance = weaponData.getDoubleExtra("lightning-chance", 0.3);
         if (random.nextDouble() < chance) {
             Location strikeLocation = victim.getLocation();
-            victim.getWorld().strikeLightning(strikeLocation);
+            victim.getWorld().strikeLightningEffect(strikeLocation);
+            if (victim instanceof LivingEntity living) com.customrpg.utils.SkillDamageGuard.damage(living,8,attacker);
             attacker.sendMessage(ChatColor.AQUA + "⚡ 召喚閃電! (" + (int) (chance * 100) + "%)");
         }
     }
@@ -918,8 +818,10 @@ public class WeaponListener implements Listener {
     //  法杖右鍵普通攻擊 — 射出魔法彈
     // ═══════════════════════════════════════════════════════════════
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onStaffRightClick(PlayerInteractEvent event) {
+        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND
+                || event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return;
         Action action = event.getAction();
         if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) {
             return;
@@ -967,29 +869,8 @@ public class WeaponListener implements Listener {
         // 取消右鍵原本的行為（例如放置方塊）
         event.setCancelled(true);
 
-        // 計算傷害
-        double baseDamage = 5.0; // 預設法杖基礎傷害
-        if (weaponData != null) {
-            double weaponBase = weaponData.getDoubleExtra("base-damage", 0.0);
-            if (weaponBase > 0) baseDamage = weaponBase;
-        }
-
-        // 屬性加成（法杖主要縮放 Magic）
-        double magicBonus = playerStats.getTotalMagic() * 0.4;
-        double spiritBonus = playerStats.getTotalSpirit() * 0.1;
-        baseDamage += magicBonus + spiritBonus;
-
-        // 武器倍率
-        if (weaponData != null) {
-            baseDamage *= weaponData.getDamageMultiplier();
-        }
-
-        // 種族武器加成
-        com.customrpg.races.RaceManager raceManager = plugin.getRaceManager();
-        if (raceManager != null && raceManager.hasRace(player)) {
-            double raceBonus = raceManager.getWeaponDamageBonus(player, "STAFF");
-            baseDamage *= raceBonus;
-        }
+        var balancedBolt = plugin.getCombatBalance().calculate(player, item, 1, 1);
+        double baseDamage = balancedBolt.damage();
 
         // 決定元素類型和粒子
         String element = "none";
@@ -998,7 +879,7 @@ public class WeaponListener implements Listener {
         }
 
         // 發射魔法彈
-        launchMagicBolt(player, baseDamage, element, weaponData);
+        launchMagicBolt(player, baseDamage, element, weaponData, balancedBolt);
 
         // 音效
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 0.6f, 1.5f);
@@ -1007,7 +888,7 @@ public class WeaponListener implements Listener {
     /**
      * 發射魔法彈投射物（純粒子效果）
      */
-    private void launchMagicBolt(Player player, double damage, String element, WeaponManager.WeaponData weaponData) {
+    private void launchMagicBolt(Player player, double damage, String element, WeaponManager.WeaponData weaponData, com.customrpg.balance.CombatBalance.Attack balancedBolt) {
         Location startLoc = player.getEyeLocation().clone();
         Vector direction = startLoc.getDirection().normalize();
         World world = player.getWorld();
@@ -1131,7 +1012,7 @@ public class WeaponListener implements Listener {
                     if (target.isDead()) continue;
 
                     // 命中！
-                    com.customrpg.utils.SkillDamageGuard.damage(target, finalDamage, player);
+                    plugin.getCombatBalance().basicDamage(target, player, balancedBolt);
 
                     // 元素附加效果
                     applyStaffElementEffect(target, element, weaponData, player, finalDamage);
@@ -1169,6 +1050,7 @@ public class WeaponListener implements Listener {
                 int current = burnStacks.getOrDefault(tid, 0);
                 int newStacks = Math.min(current + 1, maxStacks);
                 burnStacks.put(tid, newStacks);
+                burnOwners.put(tid, caster.getUniqueId());
                 burnLastHit.put(tid, System.currentTimeMillis());
                 target.setFireTicks(0); // 防止原生火焰造成雙重傷害
                 target.getWorld().spawnParticle(Particle.FLAME,
@@ -1292,7 +1174,7 @@ public class WeaponListener implements Listener {
                     org.bukkit.attribute.AttributeInstance maxHpAttr =
                             caster.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
                     double maxHp = maxHpAttr != null ? maxHpAttr.getValue() : 20.0;
-                    caster.setHealth(Math.min(maxHp, caster.getHealth() + heal));
+                    plugin.getCombatBalance().heal(caster, heal);
                     caster.getWorld().spawnParticle(Particle.HEART,
                             caster.getLocation().add(0, 2, 0), 3, 0.2, 0.3, 0.2, 0.01);
                 }
@@ -1309,7 +1191,7 @@ public class WeaponListener implements Listener {
                     org.bukkit.attribute.AttributeInstance maxHpAttr =
                             caster.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
                     double maxHp = maxHpAttr != null ? maxHpAttr.getValue() : 20.0;
-                    caster.setHealth(Math.min(maxHp, caster.getHealth() + heal));
+                    plugin.getCombatBalance().heal(caster, heal);
                     caster.getWorld().spawnParticle(Particle.HEART,
                             caster.getLocation().add(0, 2, 0), 5, 0.3, 0.3, 0.3, 0.01);
                     caster.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING,

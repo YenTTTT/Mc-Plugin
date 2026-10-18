@@ -76,6 +76,7 @@ public class RaceListener implements Listener {
     }
     @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true)
     public void onArrowDamage(EntityDamageByEntityEvent event) {
+        if(plugin.getCombatBalance()!=null) return; // v2 projectile snapshot already includes racial crit/affinity.
         if(!(event.getDamager() instanceof AbstractArrow arrow)) return;
         var data=arrow.getPersistentDataContainer();
         Double multiplier=data.get(BOW_BONUS,PersistentDataType.DOUBLE);

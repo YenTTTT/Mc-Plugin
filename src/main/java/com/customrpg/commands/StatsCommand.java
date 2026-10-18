@@ -238,13 +238,21 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (level < 1) {
-            sender.sendMessage(ChatColor.RED + "等級必須大於 0！");
+        if (level < 1 || level > 60) {
+            sender.sendMessage(ChatColor.RED + "等級必須在 1～60！");
             return true;
         }
 
         PlayerStats stats = statsManager.getStats(target);
+        int[] normalized=com.customrpg.balance.BalanceMigration.redistribute(new long[]{stats.getStrength(),stats.getMagic(),stats.getAgility(),
+                stats.getVitality(),stats.getDefense(),stats.getSpirit(),stats.getStatPoints()},com.customrpg.balance.InitialBalanceModel.earnedPoints(level));
+        stats.setStrength(normalized[0]); stats.setMagic(normalized[1]); stats.setAgility(normalized[2]);
+        stats.setVitality(normalized[3]); stats.setDefense(normalized[4]); stats.setSpirit(normalized[5]); stats.setStatPoints(normalized[6]);
         stats.setLevel(level);
+        if (plugin.getRaceManager()!=null) plugin.getRaceManager().applyRaceStats(target);
+        if (plugin.getTalentManager()!=null) plugin.getTalentManager().applyTalentEffects(target);
+        if (plugin.getEquipmentManager()!=null) plugin.getEquipmentManager().updatePlayerAttributes(target);
+        statsManager.recalculateMana(target);
         stats.setExp(0); // Reset exp when manually setting level
 
         // Update max health

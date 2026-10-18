@@ -1,5 +1,5 @@
 # Additional talent trees; primary talents.yml definitions take priority by ID.
-# Original-client hotkeys 1-4; no mechanism items.
+# Mechanism items and hotkeys 1-4 share the same mana and cooldown gates.
 frost:
   frost_attunement:
     name: 霜語親和
@@ -30,7 +30,7 @@ frost:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 海磷碎片
     gui:
       slot: 28
       icon: PRISMARINE_SHARD
@@ -40,7 +40,7 @@ frost:
     cooldown: 5
     manaCost: 12
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -69,7 +69,7 @@ frost:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 海磷碎片
     gui:
       slot: 30
       icon: SNOW_BLOCK
@@ -79,7 +79,7 @@ frost:
     cooldown: 10
     manaCost: 20
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -137,7 +137,7 @@ frost:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 海磷碎片
     gui:
       slot: 10
       icon: BLUE_ICE
@@ -147,7 +147,7 @@ frost:
     cooldown: 9
     manaCost: 24
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -173,7 +173,7 @@ frost:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 海磷碎片
     gui:
       slot: 14
       icon: POWDER_SNOW_BUCKET
@@ -183,7 +183,7 @@ frost:
     cooldown: 24
     manaCost: 40
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -242,7 +242,7 @@ storm:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 海靈晶體
     gui:
       slot: 28
       icon: AMETHYST_SHARD
@@ -252,7 +252,7 @@ storm:
     cooldown: 8
     manaCost: 20
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -281,7 +281,7 @@ storm:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 海靈晶體
     gui:
       slot: 30
       icon: FEATHER
@@ -291,7 +291,7 @@ storm:
     cooldown: 10
     manaCost: 18
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -343,7 +343,7 @@ storm:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 海靈晶體
     gui:
       slot: 10
       icon: WIND_CHARGE
@@ -353,7 +353,7 @@ storm:
     cooldown: 9
     manaCost: 15
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -370,7 +370,7 @@ storm:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 海靈晶體
     gui:
       slot: 14
       icon: HEART_OF_THE_SEA
@@ -380,7 +380,7 @@ storm:
     cooldown: 24
     manaCost: 38
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -433,7 +433,7 @@ earth:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 燧石
     gui:
       slot: 28
       icon: SHIELD
@@ -443,7 +443,7 @@ earth:
     cooldown: 18
     manaCost: 20
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -463,7 +463,7 @@ earth:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 燧石
     gui:
       slot: 30
       icon: IRON_SHOVEL
@@ -473,7 +473,7 @@ earth:
     cooldown: 10
     manaCost: 18
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -528,7 +528,7 @@ earth:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 燧石
     gui:
       slot: 10
       icon: POINTED_DRIPSTONE
@@ -538,7 +538,7 @@ earth:
     cooldown: 14
     manaCost: 24
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -570,7 +570,7 @@ earth:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 燧石
     gui:
       slot: 14
       icon: LODESTONE
@@ -580,7 +580,7 @@ earth:
     cooldown: 26
     manaCost: 38
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -627,7 +627,7 @@ light:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 螢石粉
     gui:
       slot: 28
       icon: HONEY_BOTTLE
@@ -637,7 +637,7 @@ light:
     cooldown: 7
     manaCost: 16
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -660,7 +660,7 @@ light:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 螢石粉
     gui:
       slot: 30
       icon: END_ROD
@@ -670,7 +670,7 @@ light:
     cooldown: 6
     manaCost: 14
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -725,7 +725,7 @@ light:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 螢石粉
     gui:
       slot: 10
       icon: MILK_BUCKET
@@ -735,7 +735,7 @@ light:
     cooldown: 16
     manaCost: 24
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:
@@ -755,7 +755,7 @@ light:
     type: ACTIVE
     max-level: 3
     points-per-level: 1
-    mechanism: 快捷鍵 1～4
+    mechanism: 螢石粉
     gui:
       slot: 14
       icon: BEACON
@@ -765,7 +765,7 @@ light:
     cooldown: 26
     manaCost: 40
     trigger:
-      type: HOTKEY
+      type: RIGHT_CLICK
     levels:
       1:
         effect:

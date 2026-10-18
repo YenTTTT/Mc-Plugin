@@ -1,5 +1,69 @@
 # CustomRPG 接手與審查交接
 
+## 固定耗魔與種族加成／GUI修正 — 最新狀態（2026-10-18）
+
+- 使用者要求天賦改回原本固定 MANA，並確認「提高種族加成並修正 GUI」。COMPLETED：程式、八個新增回歸案例、文件及JAR；NEEDS_VERIFICATION：Paper實服平衡／客戶端。沒有改動實際伺服器或玩家原檔。
+- `TalentSkillManager` 直接用 `Talent.getManaCost()` 檢查／扣除，移除最大MP比例成本方法；GUI顯示固定MANA，不足提示同值。原YAML消耗值完整沿用，物品／快捷鍵仍共用冷卻與扣魔入口。兩種入口的固定20MANA與最大MP80／800、免費技能、魔力不足／雙向冷卻均驗證。
+- `raceBudget(L) = 18 + 18×(clamp(L,1,60)−1)/59`（整數除法），Lv.1合計18點、Lv.60合計36點。RaceData拆為固定基礎18點與額外0～18成長點：正base權重先配1點，餘點及growth用固定權重最高商逐點分配，避免等級提高反而掉某屬性。內建十二族720個等級組合皆非零、守預算且單調；明確全零自訂權重仍零，不憑空補點。
+- 惡魔六項依力量／魔法／敏捷／體力／防禦／精神：Lv.1＝4/4/3/3/2/2，Lv.30＝6/6/4/4/3/3，Lv.60＝8/8/6/6/4/4。提高實際來源加成，並非僅改顯示；既有常駐輸出+10%共同上限、親和／暴率／移速／額外MP上限保留。
+- RaceGUI列表／詳情採玩家目前等級，標示「種族額外加成」，並以Lv.1／30／60實際預覽取代誤導的成長倍率。`/race info` 區分起始及目前加成。登入／重算採既有覆寫式來源，不疊加、不補滿MP；較高精神會正常提高最大MP／回魔。
+- 完整 `mvn verify` **441 tests，0 failures／errors／skipped**，紀錄 `target/fixed-mana-race-verify.log`；產物 `target/CustomRPG-1.0.jar`。更新JAR並重啟即可，不刪設定或重置種族。現行規則見 [RACES.md](RACES.md)、[BALANCE_RUNTIME.md](BALANCE_RUNTIME.md)。下方「比例耗魔／種族1～12點」皆為先前階段。
+
+
+## 天賦機制物品施法恢復 — 最新狀態（2026-10-18）
+
+- 使用者要求把機制物品施放功能改回來。COMPLETED：恢復 86 招原有主動天賦的材料／按鍵，16 招擴充新增冰霜海磷碎片、雷霆海靈晶體、大地燧石、聖光螢石粉（右鍵）。四個攜帶槽、快捷鍵 1～4、種族 5 保留；不是回退戰鬥 v2。
+- `TalentItemListener` 只處理主手，依四槽順序選擇匹配物品的已學 ACTIVE；蹲下右鍵按物品循環選擇，只切換不施放。一般左／右／蹲下左鍵進既有 `castSkillDirectly`，共享學習／攜帶／冷卻／比例 MP／HP 與傷害管線。退出清除循環狀態，重置／卸下後不會施放舊選擇。材料不消耗。
+- `TalentItemBinding` 支援既有中文材料與武器類別，也可精確使用 Material 名稱。GUI 顯示機制物品及按鍵。`TalentManager` 載入兩份設定時，對已知內建 ID 的 HOTKEY 設定在記憶體補回綁定，保留檔案原位元、自訂材料／明確點擊按鍵及平衡值；支援擴充技能被搬進 primary。未知自訂 HOTKEY 保持快捷鍵。
+- 選區工具先註冊，接著物品天賦，最後武器點擊入口；皆在 HIGHEST 路由。物品被 DENY／方塊互動被取消時不施放，允許原版空氣互動僅 block-use DENY。匹配天賦即攔截原版物品、武器自帶技能與法杖右鍵普攻，失敗也不串放；法杖也補主手閘門。
+- 新增 18 案：12 物品事件、3 載入相容／102 招綁定、3 實際共享魔力／雙向冷卻。完整 `mvn verify` **433 tests，0 failures／errors／skipped**，產物 `target/CustomRPG-1.0.jar`，紀錄 `target/talent-item-verify.log`。NEEDS_VERIFICATION：Paper 客戶端施法、領地／反作弊插件及實際武器互動；未啟動伺服器。部署後重啟，不需刪除設定；完整操作見 [SKILL_SWITCH_SYSTEM.md](../SKILL_SWITCH_SYSTEM.md)。
+- 下方「移除機制物品」段落是先前需求的歷史階段，現況以上述恢復版為準。
+
+
+## 戰鬥數值 v2 正式接線（2026-10-18）
+
+- 使用者本輪明確要求把前輪模型套入現有戰鬥、玩家資料、種族等；不再是「只完成模型」。COMPLETED：程式／版本遷移／離線測試與 JAR；NEEDS_VERIFICATION：Paper 實機、其他插件與遊玩平衡。本機沒有運行伺服器或直接修改實際玩家檔。
+- 新增八個 production adapters：BalanceMigration、BalancePlayerRules、BalanceItemRules、CombatBalance、BalanceCombatListener、BalanceItemRefresh、ExtraDamageBudget、VirtualHealthProjection。InitialBalanceModel 為公式來源。玩家升級每級三點與一點天賦、停止六項自動+1，封頂60，HP／MP／DEF接模型；天賦來源改暫態欄，不再寫回自由配點。變身HP也分離，結束不還原過期最大HP。
+- 首次讀舊玩家檔：先 SHA-256 原始位元備份到 data/balance-backups/v2/players，再以六已配屬性＋未花點數七權重按最大餘數法換成 3×(L−1)。超60夾60與溢出XP歸零，原資料在備份。MP按比例換算；舊未花天賦最多59，已學／技能選擇保留。版本2不重複遷移，失敗保留原檔並阻止該角色戰鬥／登入。天賦首次v2保存也先備份到 talents 子目錄；不清種族選擇。
+- 八武器與980工坊／舊裝備依有效等級、整套來源預算重算，舊武器ID與物品本體保留；每格防禦至少1，整套仍精確對上模型。額外格／符文／強化總核心屬性最多當級整套110%；需求未達不給RPG屬性。舊物品只更新數值lore／版本，持久資料、名稱、附魔、耐久、數量留存；商人商品更新結果但保留庫存次數、價格配料、補貨期限。
+- 所有玩家普攻共用快照，弓／三叉戟發射保存傷害、DPS、破甲；法杖純粒子彈保存同一類基本攻擊快照。近戰蓄力、暴擊、攻速正規化與常駐總預算10%；種族／武器專精／稀有度／附魔合併。種族六屬性按權重上限1～12，親和98～102%、移速±3%，介面改顯示有效值。
+- 舊技能傷害按等級平方根比例轉單位，再走來源／目標共用追加池，爆發2秒DPS、每秒補0.15秒DPS；種族增傷、條件觸發、召喚物、流血、燃燒、破甲、分裂箭一起計。技能基準取角色主攻，不受命中瞬間切手影響。取消退額度、重連不重領，有限容量與閒置清理。AoE仍為每目標預算，沒有新增全場上限；控場／技能不是逐一重設計，需實測。
+- 治療共用事件，戰鬥單次25%HP、初始池35%、每秒補4%；汲取看實際扣血，吸血／武器效果在接受傷害後執行。天賦非零耗魔改最大MP10～30%依冷卻；種族及既有武器技能資源入口留存。原飽食回血關閉，脫戰8秒後共享約5%HP/s，登入等待；第二春60秒CD，自製護盾按HP比例。
+- MobData血量／攻擊接角色等級固定參考線；精英tag/ID、boss旗標、group-boss tag對應定位。原版Enemy也按首次觀測地區級別套模型，保留原本替換／finishrpg流程。舊怪載入按血量比例遷移，普通成功攻擊間隔至少1.8秒、怪物招式另有短期／持續預算。隊伍Boss首次攻擊固定48格合資格人數1～8，後續不重設HP。
+- 直接戰鬥清原版ARMOR/MAGIC/RESISTANCE減傷並套RPG防禦，盾牌／吸收留存；護甲與盾耐久換回原版等價單位。玩家環境傷害按HP/20，怪物環境傷害按普通怪參考HP，玩家燃燒有歸屬／追加池。虛擬HP以最終RPG傷害一比一扣，HIGHEST只投影原生事件，MONITOR確認未取消才寫PDC；不取消原生致死、不合成另一擊，治療同理。傷害數字轉回RPG單位。
+- 新增七類48案；完整 **mvn clean verify：415 tests，0 failures／errors／skipped**，168 production Java；紀錄 target/balance-runtime-clean-verify.log，JAR target/CustomRPG-1.0.jar。已檢查原版減傷不雙算、415案與遷移失敗／重試／MP比例、六件預算、角色重連、裝備防禦／耐久／吸收、60級實際監聽器七刀、Boss扣血／致死／取消／同tick多擊。
+- 最新操作／相容邊界／回滾見 [BALANCE_RUNTIME.md](BALANCE_RUNTIME.md)。debug開關位於 config/config.yml 的 balance.debug-damage，預設false，舊檔不覆寫；開啟並重啟可看[Balance:v2]。下一步應在測試服測新手到60、三怪群、Boss／多人、盾牌／吸收、變身換裝、商人舊庫存、存檔重啟及保護插件。玩家／天賦自動備份不是世界備份，只換舊JAR不會還原已持久化的生物HP。
+
+
+## Lv.1～60 初始數值模型（2026-10-18）
+
+- 使用者明確選擇「先完成模型與驗算」，本輪沒有切換既有戰鬥數值、改玩家存檔或覆寫裝備／怪物設定。COMPLETED：模型／驗算；NOT_STARTED：正式套用與資料遷移；NEEDS_VERIFICATION：Paper 實機與遊玩平衡。
+- 新增無 Bukkit 依賴、未接插件生命週期的 `balance/InitialBalanceModel`，等級 1～60；每級 3 自由點、每次加 1、取消六項自動 +1 的建議；HP=100+8n+3VIT、DEF/(DEF+60+2L) 上限 60%、攻速正規化八武器與技能預算、怪物固定參考裝備／配點反推五秒 TTK 與六下承傷。當級基準裝備是整套預算，並另外驗算現有七階門檻。
+- CSV 由同一 Java 匯出：60 級、480 武器列、12,162 不重複案例；`tools/balance/plot_balance_model.py` 僅讀 CSV 用 matplotlib 輸出 SVG，沒有再抄公式。主文件 [INITIAL_BALANCE_MODEL.md](INITIAL_BALANCE_MODEL.md)。
+- Lv.60 參考：HP737、劍白字34.55／非暴擊66.8、普通怪HP438.208／原始傷害167.872；全攻劍TTK3.95s／4.38下等價、坦克6.51s／7.61下等價；七階裝備換裝前最慢6.52s。這些是離線預估，沒有完整技能、怪群、AI、盔甲或隨機暴擊分布模擬。
+- 特別記錄待修：目前虛擬 HP 以 virtualMax/1024 放大傷害／治療，與此模型要求的一點傷害扣一點虛擬 HP 不相容；需連同致死、歸屬、掉落、取消與多次命中一起修，不能只砍比例。Stats GUI／近戰／技能／裝備來源也有公式不一致與多重倍率，細節見模型文件，不要只先改怪物 HP。
+- 驗證：新模型九項測試；完整 `mvn verify` **367 tests，0 failures／errors／skipped**，紀錄 `target/balance-verify.log`。沒有 Paper 實機測試。Java CLI 可從 `target/classes` 單獨匯出，重建 JAR 不會自動套用此模型。
+
+
+## 怪物頭頂愛心血條移除（2026-10-18）
+
+- HealthDisplayManager 移除血條實體生成、每 10 ticks 全世界掃描與每 2 ticks 同步；HealthDisplayListener 不再對怪物受傷／回血排程更新。玩家 HUD、怪物名稱／等級與 BossBar 保留。
+- 啟動只掃已載入實體，後續 EntitiesLoadEvent 清掉 `mob_health_tag_owner` 的 ArmorStand；`disguise_nametag` 名稱實體保留，只去除本插件怪物／偽裝名稱及儲存基礎名稱的舊血量後綴。未強制載入區塊。
+- 驗證：`mvn verify` 通過，358 tests、0 failures／errors／skipped，產出 `target/CustomRPG-1.0.jar`；紀錄 `target/health-display-verify.log`。Paper 實機仍需驗證新怪無愛心、已載入／後載入區塊舊血條清理與偽裝名稱保留。
+
+## 工坊與村莊裝備商 — 最新接手狀態（2026-10-18）
+
+- 使用者要求大量新裝備、打怪掉素材→crafting table 做裝備、每個村莊按地區等級賣裝備；已選綠寶石交易。新增 CraftingModule，十地形×七階（Lv.1/8/18/28/38/48/58）×十四類＝980 件，560 武器／280 護甲／140 飾品；84 素材，987 配方含七階核心→8 纖維拆解。
+- CraftingCatalog 嚴格讀 config/crafting_progression.yml、生成純資料；CraftingItems 保存 canonical PDC／版本與原版材質身分，輸出接 WeaponManager／EquipmentManager，原 YAML 不覆寫。registerSupplemental 及既有 reload hook 接回新模板。新增護甲有原版 trim，所有新產品 max stack 1，沒有新資源包或隨機詞綴承諾。
+- CraftingRecipes 註冊原版 ExactChoice Shaped／Shapeless，Prepare／Craft 檢查 PDC／階級／鏡像／窄圖平移及 3×3；原版負責批次與扣料交付，不自訂複製交易。拒絕把自訂素材用於普通合成／鍛造素材／放線／餵蛙或悅靈；新產品鍛造換材質失去 ID 的結果被攔截。RecipeChoice adapter 供離線測試，未虛構 RegistryAccess。
+- CraftingLootListener 在 HIGHEST 接於既有 HIGH 掉落之後，只加掉落不清原物；自製怪看怪物等級／tags，原版 Enemy 看 WorldZone 基礎等級／環境；預設 essence100%／binding50%／Boss core100%，玩家歸屬／獸寵主人支援，排除 pet、event-only、summon-only 與熔核分裂體，隕石錢包不改。
+- CraftingRangedListener 僅為新 BOW／SPEAR 發射檢查等級，按武器／屬性／稀有度／武器暴擊／拉弓力度保存 PDC 傷害快照，NORMAL 命中先套基礎，再交現有 HIGH／HIGHEST 管線；舊弓及技能彈體不改。
+- VillageMerchantRegistry 原子保存原版 village 結構 world UUID＋範圍 ID／NPC UUID／最後卸載 chunk，壞檔或寫入失敗停商人而保留其他工坊。VillageMerchantManager 只排程已載入主世界 chunks，先確認 entitiesLoaded；沒有 locate 或加 ticket。Paper 結構 API 自身可能讀相鄰起點資料，不宣稱零 I/O。
+- 發現村莊有安全空位就建立靜態不可戰鬥傷害／轉化／搬移的盔甲商，保留其他村民。UUID 在 spawn consumer 對外曝光前保存；卸載佔住身分，載回拒重複。每店當地主題＋特色主題共 28 商品，階級 floor(localBaseLevel)，每項八次、30 分鐘補貨；PDC 補貨時間與原版 offers 保存，開店／重啟管理器不重置庫存。購買時驗身分／級別／價格／售罄，用原版村民消耗實體綠寶石，忽略折扣，無 Vault。村莊消失／人工床鐘村／Waypoint 等未實作。
+- /rpgcraft 支援 recipes [theme] [tier] [page]、recipe <id>、materials [page]、status、give <player> <material> [1..64]；give 需 customrpg.crafting.admin，預設 OP；圖鑑以實際 Inventory 身分保護點擊／拖曳／close。工坊／商人不需要 finishrpg；該門檻僅原自然替換保留。
+- 新增七類／73 案；完整 **mvn clean verify：358 tests，0 failures／errors／skipped**。159 production Java、50 test 類別、37 YAML；JAR target/CustomRPG-1.0.jar。未啟動 Paper，下一步：實際 ExactChoice／滿包／Shift、多人交易／重啟與卸載、結構 API、trim／遠程攻擊與插件／平衡／效能。新設定改動需重啟，沒有新熱重載。見 [CRAFTING_AND_MERCHANTS.md](CRAFTING_AND_MERCHANTS.md) 與 docs/data/CRAFTING_CATALOG.csv。
+
+
 ## 四種新天賦流派 — 最新接手狀態（2026-10-18）
 
 - 使用者要求更多不同天賦；新增 FROST／STORM／EARTH／LIGHT，各四主動兩被動、每個三級／每級一點。原十流派 140 個定義保留，現十四流派／164 個天賦。新檔 config/talents_additional.yml 自動部署；主檔 talents.yml 同 ID 整個定義優先。

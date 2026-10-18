@@ -129,6 +129,7 @@ public class EquipmentManager {
         loadEquipmentTemplates();
         loadSetData();
         loadRuneTemplates();
+        if (plugin.getCraftingModule() != null) plugin.getCraftingModule().registerTemplates();
         plugin.getLogger().info("裝備系統數據載入完成 - 裝備: " + equipmentTemplates.size() +
                                 ", 套裝: " + setData.size() + ", 符文: " + runeTemplates.size());
     }
@@ -228,6 +229,7 @@ public class EquipmentManager {
             // 載入特殊效果
             List<String> effects = section.getStringList("special_effects");
             equipment.setSpecialEffects(effects);
+            com.customrpg.balance.BalanceItemRules.normalize(equipment);
 
             return equipment;
 
@@ -435,9 +437,14 @@ public class EquipmentManager {
         }
         Integer enhance = item.hasItemMeta() ? item.getItemMeta().getPersistentDataContainer()
                 .get(EquipmentData.PDC_ENHANCE_LEVEL, PersistentDataType.INTEGER) : null;
-        for (int i = 0; enhance != null && i < enhance; i++) {
+        for (int i = 0; enhance != null && i < Math.min(20, enhance); i++) {
             if (!equipment.enhance()) break;
         }
+        double protection=0;
+        for (var enchantment:item.getEnchantments().entrySet()) {
+            if (enchantment.getKey().getKey().getKey().equals("protection")) protection+=enchantment.getValue()*.25;
+        }
+        if (protection>0) equipment.getBaseAttributes().merge(EquipmentAttribute.PHYSICAL_RESISTANCE,Math.min(2,protection),Double::sum);
         return equipment;
     }
 
@@ -459,7 +466,10 @@ public class EquipmentManager {
         } else {
             attributes.put(EquipmentAttribute.ATTACK_DAMAGE, 3.0);
         }
+        equipment.setLevel(com.customrpg.balance.BalanceItemRules.vanillaLevel(material.name()));
+        equipment.setRequiredLevel(equipment.getLevel());
         equipment.setBaseAttributes(attributes);
+        com.customrpg.balance.BalanceItemRules.normalize(equipment);
         return equipment;
     }
 
@@ -819,7 +829,7 @@ public class EquipmentManager {
 
         // 計算基礎裝備屬性
         for (EquipmentData equip : equipment.values()) {
-            if (equip != null) {
+            if (equip != null && equip.getRequiredLevel() <= plugin.getPlayerStatsManager().getStats(player).getLevel()) {
                 for (Map.Entry<EquipmentAttribute, Double> entry : equip.getAllAttributes().entrySet()) {
                     totalAttributes.merge(entry.getKey(), entry.getValue(), Double::sum);
                 }
@@ -899,7 +909,7 @@ public class EquipmentManager {
                     stats.setEquipmentMagic((int) value);
                     break;
                 case MAGIC_DAMAGE:  // 魔法攻擊也映射到魔法
-                    stats.setEquipmentMagic(stats.getEquipmentMagic() + (int) value);
+                    stats.setBonusAttackDamage(Math.min(3, stats.getBonusAttackDamage() + value));
                     break;
                 case AGILITY:
                     stats.setEquipmentAgility((int) value);
@@ -919,8 +929,7 @@ public class EquipmentManager {
                 case MAX_HEALTH:
                     // 將 MAX_HEALTH 轉換為 VITALITY (除以 HP_PER_VITALITY = 2.0)
                     // 例如：+100 MAX_HEALTH = +50 VITALITY
-                    int vitalityEquivalent = (int) Math.ceil(value / 2.0);
-                    stats.setEquipmentVitality(stats.getEquipmentVitality() + vitalityEquivalent);
+                    stats.setBonusMaxHealth(stats.getBonusMaxHealth() + value);
                     break;
                 case CRITICAL_CHANCE:  // 正確的枚舉名稱
                     stats.setBonusCritChance(value);
@@ -940,6 +949,8 @@ public class EquipmentManager {
                 // 其他屬性可以根據需要添加
             }
         }
+
+        com.customrpg.balance.BalancePlayerRules.limitEquipment(stats);
 
         // 更新最大血量（如果有生命力加成）
         plugin.getPlayerStatsManager().updateMaxHealth(player);
@@ -1038,6 +1049,7 @@ public class EquipmentManager {
 
     // Getters
     public Map<String, EquipmentData> getEquipmentTemplates() { return equipmentTemplates; }
+    public void registerSupplemental(EquipmentData data) { equipmentTemplates.putIfAbsent(data.getId(), data); }
     public Map<String, SetData> getSetData() { return setData; }
     public Map<String, RuneData> getRuneTemplates() { return runeTemplates; }
     public SetData getSetData(String setId) { return setData.get(setId); }

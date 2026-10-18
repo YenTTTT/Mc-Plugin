@@ -159,7 +159,7 @@ public class SkillListener implements Listener {
         double healAmount = 10.0;
 
         double newHealth = Math.min(currentHealth + healAmount, maxHealth);
-        player.setHealth(newHealth);
+        plugin.getCombatBalance().heal(player, healAmount);
         player.sendMessage(ChatColor.GREEN + "❤ Healed " + (int)healAmount + " HP!");
     }
 

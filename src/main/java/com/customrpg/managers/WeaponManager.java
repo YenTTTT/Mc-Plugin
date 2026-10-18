@@ -274,7 +274,7 @@ public class WeaponManager {
                         category
                 );
 
-                weapons.put(weaponKey, weaponData);
+                weapons.put(weaponKey, com.customrpg.balance.BalanceItemRules.normalize(weaponData));
                 plugin.getLogger().info("Loaded weapon: " + rarity.color + "[" + rarity.displayName + "] "
                         + ChatColor.RESET + weaponData.getDisplayName()
                         + " (" + weaponData.getCategory().displayName + ")");
@@ -613,7 +613,10 @@ public class WeaponManager {
     public void reloadWeapons() {
         weapons.clear();
         loadWeapons();
+        if (plugin.getCraftingModule() != null) plugin.getCraftingModule().registerTemplates();
     }
+
+    public void registerSupplemental(WeaponData data) { weapons.putIfAbsent(data.getKey(), com.customrpg.balance.BalanceItemRules.normalize(data)); }
 
     /**
      * Inner class to store weapon data

@@ -10,9 +10,9 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 class RaceListenerTest {
-    RaceManager races; RaceListener listener; Player player; AbstractArrow arrow; Map<NamespacedKey,Object> tags;
+    CustomRPG plugin; RaceManager races; RaceListener listener; Player player; AbstractArrow arrow; Map<NamespacedKey,Object> tags;
     @BeforeEach void setup() {
-        races=mock(RaceManager.class); listener=new RaceListener(mock(CustomRPG.class),races); player=mock(Player.class); arrow=mock(AbstractArrow.class);
+        races=mock(RaceManager.class); plugin=mock(CustomRPG.class); listener=new RaceListener(plugin,races); player=mock(Player.class); arrow=mock(AbstractArrow.class);
         tags=new HashMap<>(); var data=mock(PersistentDataContainer.class); when(arrow.getPersistentDataContainer()).thenReturn(data);
         doAnswer(i->{tags.put(i.getArgument(0),i.getArgument(2)); return null;}).when(data).set(any(),any(),any());
         when(data.get(any(NamespacedKey.class),eq(PersistentDataType.DOUBLE))).thenAnswer(i->tags.get(i.getArgument(0)));
@@ -25,12 +25,15 @@ class RaceListenerTest {
     @Test void arrowRetainsLaunchRaceAffinityAfterRaceOrWeaponChanges() {
         shoot(0); when(races.getPlayerRaceData(player)).thenReturn(new RaceData.Builder("other").build());
         var hit=mock(EntityDamageByEntityEvent.class); when(hit.getDamager()).thenReturn(arrow); when(hit.getDamage()).thenReturn(10.0);
-        listener.onArrowDamage(hit); verify(hit).setDamage(12.5);
+        listener.onArrowDamage(hit); verify(hit).setDamage(10.2);
         verify(races,times(1)).getPlayerRaceData(player);
     }
-    @Test void racialCriticalIsAppliedToArrowDamage() {
-        shoot(100); var hit=mock(EntityDamageByEntityEvent.class); when(hit.getDamager()).thenReturn(arrow); when(hit.getDamage()).thenReturn(10.0);
-        listener.onArrowDamage(hit); var damage=org.mockito.ArgumentCaptor.forClass(Double.class); verify(hit).setDamage(damage.capture()); assertEquals(21.25,damage.getValue(),1e-9);
+    @Test void canonicalRuntimeDoesNotApplyRacialCriticalTwice() {
+        shoot(100);
+        assertEquals(1.0,tags.get(new NamespacedKey("customrpg","race_bow_crit_chance")));
+        when(plugin.getCombatBalance()).thenReturn(mock(com.customrpg.balance.CombatBalance.class));
+        var hit=mock(EntityDamageByEntityEvent.class); when(hit.getDamager()).thenReturn(arrow); when(hit.getDamage()).thenReturn(10.0);
+        listener.onArrowDamage(hit); verify(hit,never()).setDamage(anyDouble());
     }
     @Test void untaggedAndInvalidArrowMultipliersDoNotModifyDamage() {
         var hit=mock(EntityDamageByEntityEvent.class); when(hit.getDamager()).thenReturn(arrow);
