@@ -403,13 +403,17 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("- BossBarManager initialized");
 
         // Initialize BeautyQuests integration hook（延遲 1 tick 確保 BQ 完成載入）
-        beautyQuestsHook = new com.customrpg.integration.BeautyQuestsHook(this, mobManager);
+        if (getServer().getPluginManager().isPluginEnabled("BeautyQuests")) {
+            beautyQuestsHook = new com.customrpg.integration.BeautyQuestsHook(this, mobManager);
 
-        // NPC system — 先建立 NpcManager，再傳入 hook，BQ 就緒後呼叫 spawnAllNpcs
-        npcManager = new com.customrpg.integration.npc.NpcManager(this);
-        questBindGUI = new com.customrpg.integration.npc.QuestBindGUI(this, npcManager);
-        beautyQuestsHook.setNpcManager(npcManager);
-        org.bukkit.Bukkit.getScheduler().runTask(this, () -> beautyQuestsHook.tryEnable());
+            // NPC system — 先建立 NpcManager，再傳入 hook，BQ 就緒後呼叫 spawnAllNpcs
+            npcManager = new com.customrpg.integration.npc.NpcManager(this);
+            questBindGUI = new com.customrpg.integration.npc.QuestBindGUI(this, npcManager);
+            beautyQuestsHook.setNpcManager(npcManager);
+            org.bukkit.Bukkit.getScheduler().runTask(this, () -> beautyQuestsHook.tryEnable());
+        } else {
+            getLogger().info("- BeautyQuests unavailable; quest and NPC integration disabled");
+        }
     }
 
     /**
@@ -505,13 +509,15 @@ public class CustomRPG extends JavaPlugin {
         getLogger().info("- MenuGUI & MenuListener registered");
 
         // NPC interaction listener + quest bind GUI (need to be registered for Shift+右鍵 to work)
-        getServer().getPluginManager().registerEvents(
-                new com.customrpg.integration.npc.NpcListener(npcManager, questBindGUI, this), this);
-        getServer().getPluginManager().registerEvents(questBindGUI, this);
-        getLogger().info("- NpcListener & QuestBindGUI registered");
+        if (npcManager != null && questBindGUI != null) {
+            getServer().getPluginManager().registerEvents(
+                    new com.customrpg.integration.npc.NpcListener(npcManager, questBindGUI, this), this);
+            getServer().getPluginManager().registerEvents(questBindGUI, this);
+            getLogger().info("- NpcListener & QuestBindGUI registered");
+        }
 
         // Quest cooldown listener (repeatable quest 30-min cooldown)
-        if (getServer().getPluginManager().getPlugin("BeautyQuests") != null) {
+        if (beautyQuestsHook != null) {
             getServer().getPluginManager().registerEvents(
                     new com.customrpg.integration.QuestCooldownListener(
                             beautyQuestsHook.getQuestCooldownManager()), this);
@@ -696,11 +702,16 @@ public class CustomRPG extends JavaPlugin {
 
         // NPC management command
         org.bukkit.command.PluginCommand rpgNpcCmd = getCommand("rpgnpc");
-        if (rpgNpcCmd != null) {
+        if (rpgNpcCmd != null && npcManager != null && questBindGUI != null) {
             com.customrpg.commands.NpcCommand npcCommand = new com.customrpg.commands.NpcCommand(npcManager, questBindGUI);
             rpgNpcCmd.setExecutor(npcCommand);
             rpgNpcCmd.setTabCompleter(npcCommand);
             getLogger().info("- /rpgnpc command registered");
+        } else if (rpgNpcCmd != null) {
+            rpgNpcCmd.setExecutor((sender, command, label, args) -> {
+                sender.sendMessage("§cNPC 功能需要已啟用的 BeautyQuests。");
+                return true;
+            });
         } else {
             getLogger().warning("- Failed to register /rpgnpc command: command not defined in plugin.yml");
         }

@@ -158,7 +158,7 @@ public class PlayerStatsManager {
     /**
      * 先寫入暫存檔再取代原檔，避免寫到一半當機時留下截斷的存檔。
      */
-    static void saveAtomically(YamlConfiguration config, File file) throws IOException {
+    public static void saveAtomically(YamlConfiguration config, File file) throws IOException {
         File temp = new File(file.getParentFile(), file.getName() + ".tmp");
         config.save(temp);
         try {

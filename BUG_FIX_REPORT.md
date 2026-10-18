@@ -1,5 +1,7 @@
 # 装备系统Bug修复报告
 
+> 2026-10-18 接手補充：以下為歷史修復報告。最新中斷恢復、存檔／物品修復、39 項本機測試及尚待實服驗收的問題，統一見 [docs/AI_AGENT_HANDOFF.md](docs/AI_AGENT_HANDOFF.md)。本輪確認 `1520e53` 中的裝備交換／保管 API 尚未接到 GUI／登入流程，且 helper 存取修飾造成編譯失敗；現已修復。沒有執行 Paper Server 整合測試。
+
 ## 问题描述
 `/equipment give` 命令无法抓取到 `armors.yml` 里的装备
 

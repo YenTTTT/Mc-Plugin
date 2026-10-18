@@ -12,6 +12,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -36,6 +38,7 @@ public class TalentPassiveEffectManager implements Listener {
 
     // 快取玩家的天賦加成效果
     private final Map<UUID, Map<String, Double>> playerBonusCache;
+    private final Map<UUID, BukkitTask> healthRegenTasks = new HashMap<>();
 
     public TalentPassiveEffectManager(CustomRPG plugin, TalentManager talentManager, PlayerStatsManager statsManager) {
         this.plugin = plugin;
@@ -52,14 +55,16 @@ public class TalentPassiveEffectManager implements Listener {
         Player player = event.getPlayer();
         // 延遲應用效果，確保玩家完全載入
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            applyTalentEffects(player);
+            if (player.isOnline()) {
+                applyTalentEffects(player);
+            }
         }, 20L); // 1秒後執行
     }
 
     /**
      * 處理攻擊事件的天賦效果
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) return;
 
@@ -73,7 +78,7 @@ public class TalentPassiveEffectManager implements Listener {
     /**
      * 處理受到傷害事件的天賦效果
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
 
@@ -170,6 +175,7 @@ public class TalentPassiveEffectManager implements Listener {
      * 應用持續效果
      */
     private void applyContinuousEffects(Player player, Map<String, Double> bonuses) {
+        cancelHealthRegenTask(player.getUniqueId());
         // 生命回復效果
         double healthRegen = bonuses.getOrDefault("health-regen", 0.0);
         if (healthRegen > 0) {
@@ -344,8 +350,11 @@ public class TalentPassiveEffectManager implements Listener {
      * 開始生命回復任務
      */
     private void startHealthRegenTask(Player player, double regenPerSecond) {
-        plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
-            if (!player.isOnline()) return;
+        BukkitTask task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (!player.isOnline()) {
+                clearPlayerCache(player.getUniqueId());
+                return;
+            }
 
             double currentHealth = player.getHealth();
             double maxHealth = player.getMaxHealth();
@@ -355,6 +364,7 @@ public class TalentPassiveEffectManager implements Listener {
                 player.setHealth(newHealth);
             }
         }, 0L, 20L); // 每秒執行一次
+        healthRegenTasks.put(player.getUniqueId(), task);
     }
 
     /**
@@ -377,12 +387,27 @@ public class TalentPassiveEffectManager implements Listener {
      */
     public void clearPlayerCache(UUID uuid) {
         playerBonusCache.remove(uuid);
+        cancelHealthRegenTask(uuid);
+    }
+
+    private void cancelHealthRegenTask(UUID uuid) {
+        BukkitTask task = healthRegenTasks.remove(uuid);
+        if (task != null) task.cancel();
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        clearPlayerCache(event.getPlayer().getUniqueId());
     }
 
     /**
      * 關閉管理器
      */
     public void shutdown() {
+        for (BukkitTask task : healthRegenTasks.values()) {
+            task.cancel();
+        }
+        healthRegenTasks.clear();
         playerBonusCache.clear();
     }
 }

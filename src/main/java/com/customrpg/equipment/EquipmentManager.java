@@ -493,6 +493,10 @@ public class EquipmentManager {
         if (slot.isWeapon() || source == null || source.getType() == Material.AIR) {
             return EquipResult.failed();
         }
+        if (isStoredSlot(slot) && equipmentLoadFailed.contains(player.getUniqueId())) {
+            player.sendMessage("§c裝備存檔讀取失敗，暫時無法變更保管欄位，請聯絡管理員。");
+            return EquipResult.failed();
+        }
         EquipmentData equipment = toEquipmentData(source, slot);
         if (equipment == null || !canEquip(player, equipment)) {
             return EquipResult.failed();
@@ -602,8 +606,14 @@ public class EquipmentManager {
      */
     public void loadPlayerEquipment(Player player) {
         UUID uuid = player.getUniqueId();
+        // A failed save on logout leaves the authoritative items in memory for a later retry.
+        if (storedItems.containsKey(uuid)) {
+            updatePlayerAttributes(player);
+            return;
+        }
         File file = getEquipmentFile(uuid);
         if (!file.exists()) {
+            equipmentLoadFailed.remove(uuid);
             return;
         }
         YamlConfiguration config = new YamlConfiguration();
@@ -614,36 +624,51 @@ public class EquipmentManager {
             plugin.getLogger().severe("無法讀取玩家裝備存檔 " + file.getName() + "，本次不會覆寫: " + e.getMessage());
             return;
         }
-        equipmentLoadFailed.remove(uuid);
-        Map<EquipmentSlot, ItemStack> stored = getStoredItems(uuid);
-        Map<EquipmentSlot, EquipmentData> equipment = getPlayerEquipment(uuid);
-        ConfigurationSection section = config.getConfigurationSection("stored");
-        if (section != null) {
-            for (String key : section.getKeys(false)) {
-                EquipmentSlot slot = EquipmentSlot.fromConfigKey(key);
-                ItemStack item = section.getItemStack(key);
-                if (slot == null || !isStoredSlot(slot) || item == null || item.getType() == Material.AIR) {
-                    continue;
-                }
-                stored.put(slot, item);
-                EquipmentData data = toEquipmentData(item, slot);
-                if (data != null) {
-                    equipment.put(slot, data);
+        Map<EquipmentSlot, ItemStack> loadedItems = new EnumMap<>(EquipmentSlot.class);
+        Map<EquipmentSlot, EquipmentData> loadedEquipment = new EnumMap<>(EquipmentSlot.class);
+        try {
+            ConfigurationSection section = config.getConfigurationSection("stored");
+            if (config.contains("stored") && section == null) {
+                throw new IllegalArgumentException("stored must be a section");
+            }
+            if (section != null) {
+                for (String key : section.getKeys(false)) {
+                    EquipmentSlot slot = EquipmentSlot.fromConfigKey(key);
+                    ItemStack item = section.getItemStack(key);
+                    if (slot == null || !isStoredSlot(slot) || item == null || item.getType() == Material.AIR) {
+                        throw new IllegalArgumentException("Invalid stored item: " + key);
+                    }
+                    loadedItems.put(slot, item);
+                    EquipmentData data = toEquipmentData(item, slot);
+                    if (data != null) {
+                        loadedEquipment.put(slot, data);
+                    }
                 }
             }
+        } catch (RuntimeException e) {
+            equipmentLoadFailed.add(uuid);
+            plugin.getLogger().severe("無法還原玩家裝備 " + uuid + "，保留原始存檔且禁止存入: " + e.getMessage());
+            return;
         }
+        equipmentLoadFailed.remove(uuid);
+        storedItems.put(uuid, loadedItems);
+        getPlayerEquipment(uuid).putAll(loadedEquipment);
         updatePlayerAttributes(player);
     }
 
     public void savePlayerEquipment(UUID uuid) {
+        trySavePlayerEquipment(uuid);
+    }
+
+    private boolean trySavePlayerEquipment(UUID uuid) {
         if (equipmentLoadFailed.contains(uuid)) {
             plugin.getLogger().warning("略過儲存玩家裝備 " + uuid + "：原始存檔讀取失敗，避免覆寫");
-            return;
+            return false;
         }
         Map<EquipmentSlot, ItemStack> stored = storedItems.get(uuid);
         File file = getEquipmentFile(uuid);
         if ((stored == null || stored.isEmpty()) && !file.exists()) {
-            return;
+            return true;
         }
         YamlConfiguration config = new YamlConfiguration();
         if (stored != null) {
@@ -653,8 +678,10 @@ public class EquipmentManager {
         }
         try {
             com.customrpg.managers.PlayerStatsManager.saveAtomically(config, file);
+            return true;
         } catch (IOException e) {
             plugin.getLogger().severe("無法儲存玩家裝備 " + uuid + ": " + e.getMessage());
+            return false;
         }
     }
 
@@ -662,7 +689,13 @@ public class EquipmentManager {
      * 玩家離線：儲存並釋放記憶體。
      */
     public void unloadPlayerEquipment(UUID uuid) {
-        savePlayerEquipment(uuid);
+        if (!trySavePlayerEquipment(uuid)) {
+            Map<EquipmentSlot, EquipmentData> equipment = playerEquipment.get(uuid);
+            if (equipment != null) {
+                equipment.keySet().removeIf(slot -> !isStoredSlot(slot));
+            }
+            return;
+        }
         storedItems.remove(uuid);
         playerEquipment.remove(uuid);
         equipmentLoadFailed.remove(uuid);

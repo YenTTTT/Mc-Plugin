@@ -58,11 +58,9 @@ public class EquipmentGUI implements Listener {
 
         // 第2行: [空][主手][放置][胸甲][放置][副手][放置][空][空]
         SLOT_POSITIONS.put(EquipmentSlot.MAIN_HAND, 19);
-        PLACE_POSITIONS.put(EquipmentSlot.MAIN_HAND, 20);
         SLOT_POSITIONS.put(EquipmentSlot.CHESTPLATE, 21);
         PLACE_POSITIONS.put(EquipmentSlot.CHESTPLATE, 22);
         SLOT_POSITIONS.put(EquipmentSlot.OFF_HAND, 23);
-        PLACE_POSITIONS.put(EquipmentSlot.OFF_HAND, 24);
 
         // 第3行: [空][戒指1][放置][腿甲][放置][戒指2][放置][空][空]
         SLOT_POSITIONS.put(EquipmentSlot.RING_1, 28);
@@ -159,8 +157,6 @@ public class EquipmentGUI implements Listener {
      * 開啟指定類型的GUI
      */
     private void openGUI(Player player, EquipmentGUIType guiType) {
-        currentGUIType.put(player.getUniqueId(), guiType);
-
         Inventory gui;
         switch (guiType) {
             case EQUIPMENT:
@@ -176,8 +172,15 @@ public class EquipmentGUI implements Listener {
                 return;
         }
 
-        openInventories.put(player.getUniqueId(), gui);
-        player.openInventory(gui);
+        UUID uuid = player.getUniqueId();
+        switchingPlayers.add(uuid);
+        try {
+            player.openInventory(gui);
+            openInventories.put(uuid, gui);
+            currentGUIType.put(uuid, guiType);
+        } finally {
+            switchingPlayers.remove(uuid);
+        }
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
     }
 
@@ -274,7 +277,7 @@ public class EquipmentGUI implements Listener {
         for (Map.Entry<EquipmentSlot, Integer> entry : SLOT_POSITIONS.entrySet()) {
             EquipmentSlot slot = entry.getKey();
             int displayPosition = entry.getValue();
-            int placePosition = PLACE_POSITIONS.get(slot);
+            Integer placePosition = PLACE_POSITIONS.get(slot);
 
             EquipmentData equip = equipment.get(slot);
 
@@ -290,9 +293,13 @@ public class EquipmentGUI implements Listener {
                     if (lore == null) lore = new ArrayList<>();
 
                     lore.add("");
-                    lore.add("§e左鍵: 卸除裝備");
-                    lore.add("§a右鍵: 強化裝備");
-                    lore.add("§9Shift+右鍵: 符文鑲嵌");
+                    if (slot.isWeapon()) {
+                        lore.add("§e請直接使用原版主手／副手欄位管理");
+                    } else {
+                        lore.add("§e左鍵: 卸除裝備");
+                        lore.add("§a右鍵: 強化裝備");
+                        lore.add("§9Shift+右鍵: 符文鑲嵌");
+                    }
 
                     meta.setLore(lore);
                     displayItem.setItemMeta(meta);
@@ -301,12 +308,10 @@ public class EquipmentGUI implements Listener {
                 displayItem = createEmptyDisplaySlotItem(slot);
             }
 
-            // 放置槽位 - 始終顯示為放置區域
-            ItemStack placeItem = createPlaceSlotItem(slot);
-
-            // 確保槽位被正確設置
             gui.setItem(displayPosition, displayItem);
-            gui.setItem(placePosition, placeItem);
+            if (placePosition != null) {
+                gui.setItem(placePosition, createPlaceSlotItem(slot));
+            }
         }
     }
 
@@ -324,7 +329,7 @@ public class EquipmentGUI implements Listener {
             List<String> lore = new ArrayList<>();
             lore.add("§7此槽位目前沒有裝備");
             lore.add("");
-            lore.add("§e將裝備拖拽到右邊的槽位來裝備");
+            lore.add(slot.isWeapon() ? "§e請直接使用原版主手／副手欄位管理" : "§e持物點擊右側槽位來裝備");
 
             meta.setLore(lore);
             item.setItemMeta(meta);
@@ -344,7 +349,7 @@ public class EquipmentGUI implements Listener {
             meta.setDisplayName("§7" + slot.getDisplayName() + " §e放置區");
 
             List<String> lore = new ArrayList<>();
-            lore.add("§8將對應裝備拖拽到這裡");
+            lore.add("§8持對應裝備點擊這裡");
             lore.add("§8來裝備該物品");
 
             meta.setLore(lore);
@@ -430,13 +435,14 @@ public class EquipmentGUI implements Listener {
             List<String> helpLore = new ArrayList<>();
             helpLore.add("§7如何使用裝備系統:");
             helpLore.add("");
-            helpLore.add("§e1. §7將裝備拖拽到右側灰色槽位");
+            helpLore.add("§e1. §7持裝備點擊右側灰色槽位，或 Shift 點擊背包裝備");
             helpLore.add("§e2. §7左鍵點擊已裝備物品可卸除");
             helpLore.add("§e3. §7右鍵點擊已裝備物品進行強化");
             helpLore.add("§e4. §7Shift+右鍵進行符文鑲嵌");
             helpLore.add("");
             helpLore.add("§a提示: §7左側顯示當前裝備");
             helpLore.add("§a提示: §7右側為放置新裝備的區域");
+            helpLore.add("§a提示: §7主手／副手僅供檢視，請用原版欄位操作");
 
             helpMeta.setLore(helpLore);
             helpButton.setItemMeta(helpMeta);
@@ -653,12 +659,12 @@ public class EquipmentGUI implements Listener {
     /**
      * 處理GUI點擊事件
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
 
-        if (!openInventories.containsKey(player.getUniqueId())) return;
+        if (openInventories.get(player.getUniqueId()) != event.getView().getTopInventory()) return;
 
         EquipmentGUIType guiType = currentGUIType.get(player.getUniqueId());
         if (guiType == null) return;
@@ -685,414 +691,131 @@ public class EquipmentGUI implements Listener {
      * 處理裝備界面點擊
      */
     private void handleEquipmentClick(Player player, int slot, ClickType clickType, InventoryClickEvent event) {
-        // 所有 GUI 範圍內的點擊默認取消，除非特定情況允許
-        if (slot >= 0 && slot < 54) {
-            event.setCancelled(true);
+        int topSize = event.getView().getTopInventory().getSize();
+        if (slot >= topSize) {
+            // Shift transfers and collect-to-cursor can move display icons from a click in the player inventory.
+            if (clickType.isShiftClick()) {
+                event.setCancelled(true);
+                ItemStack item = event.getCurrentItem();
+                EquipmentSlot target = findSuitableSlot(item);
+                if (target != null) {
+                    EquipmentManager.EquipResult result = tryEquipItem(player, target, item);
+                    if (result.success()) {
+                        item.setAmount(item.getAmount() - 1);
+                        returnItem(player, result.previousItem());
+                        equipmentManager.savePlayerEquipment(player.getUniqueId());
+                        refreshCurrentGUI(player);
+                    }
+                }
+            } else if (event.getAction() == org.bukkit.event.inventory.InventoryAction.COLLECT_TO_CURSOR) {
+                event.setCancelled(true);
+            }
+            return;
         }
-
-        // 功能按鈕區域
-        if (slot == 53) { // 關閉按鈕
+        if (slot < 0) return;
+        event.setCancelled(true);
+        if (slot == 53) {
             player.closeInventory();
             return;
         }
-
-        if (slot == 49) { // 統計按鈕
-            return;
-        }
-
-        if (slot == 45) { // 說明按鈕
-            return;
-        }
-
-        // 檢查是否點擊了顯示槽位
         EquipmentSlot equipSlot = getSlotFromDisplayPosition(slot);
         if (equipSlot != null) {
-            // 獲取當前裝備
-            Map<EquipmentSlot, EquipmentData> currentEquipment = equipmentManager.getPlayerEquipment(player.getUniqueId());
-            EquipmentData equip = currentEquipment.get(equipSlot);
-
+            // Hand slots only display the real inventory; extracting a generated icon duplicates the weapon.
+            if (equipSlot.isWeapon()) {
+                player.sendMessage("§e請直接使用原版主手／副手欄位管理武器。");
+                return;
+            }
+            EquipmentData equip = equipmentManager.getPlayerEquipment(player.getUniqueId()).get(equipSlot);
             if (clickType == ClickType.LEFT) {
-                // 卸除裝備
-                if (equip != null) {
-                    EquipmentData removed = equipmentManager.unequipItem(player, equipSlot);
-                    if (removed != null) {
-                        // 檢查背包是否有空間
-                        if (player.getInventory().firstEmpty() != -1) {
-                            player.getInventory().addItem(removed.toItemStack(getPlayerLevel(player)));
-                            player.sendMessage("§a已卸除 " + removed.getName());
-                            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 0.8f);
-                        } else {
-                            // 背包滿了，將裝備掉落到地上
-                            player.getWorld().dropItemNaturally(player.getLocation(), removed.toItemStack(getPlayerLevel(player)));
-                            player.sendMessage("§e背包已滿！" + removed.getName() + " 已掉落到地上");
-                            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 0.8f);
-                        }
-
-                        // 延遲刷新GUI，確保inventory操作完成
-                        refreshCurrentGUI(player);
-                    } else {
-                        player.sendMessage("§c卸除裝備失敗！");
-                    }
+                ItemStack removed = equipmentManager.unequipToItem(player, equipSlot);
+                if (removed != null) {
+                    returnItem(player, removed);
+                    equipmentManager.savePlayerEquipment(player.getUniqueId());
+                    player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 0.8f);
+                    refreshCurrentGUI(player);
                 } else {
                     player.sendMessage("§c該槽位沒有裝備！");
                 }
-            } else if (clickType == ClickType.RIGHT) {
-                // 打開強化界面
-                if (equip != null) {
-                    openEnhanceGUI(player, equipSlot);
-                } else {
-                    player.sendMessage("§c該槽位沒有裝備可以強化！");
-                }
-            } else if (clickType == ClickType.SHIFT_RIGHT) {
-                // 打開符文界面
-                if (equip != null) {
-                    openRuneGUI(player, equipSlot);
-                } else {
-                    player.sendMessage("§c該槽位沒有裝備可以鑲嵌符文！");
-                }
+            } else if (equip != null && clickType == ClickType.RIGHT) {
+                openEnhanceGUI(player, equipSlot);
+            } else if (equip != null && clickType == ClickType.SHIFT_RIGHT) {
+                openRuneGUI(player, equipSlot);
             }
             return;
         }
-
-        // 檢查是否點擊了放置槽位
         EquipmentSlot placeSlot = getSlotFromPlacePosition(slot);
-        if (placeSlot != null) {
-            // 允許放置物品到放置槽位
+        if (placeSlot != null && (clickType == ClickType.LEFT || clickType == ClickType.RIGHT)) {
             handleEquipmentPlacement(player, placeSlot, event);
-            return;
-        }
-
-        // 處理玩家背包區域的 Shift+點擊
-        if (slot >= 54 && clickType.isShiftClick()) {
-            // 延遲一點點時間，讓物品移動完成後再檢查同步
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                // 如果玩家還開著 GUI，刷新它
-                if (isUsingEquipmentGUI(player)) {
-                    refreshCurrentGUI(player);
-                }
-            }, 1L);
-            return;
-        }
-
-        // 檢查是否在背景區域
-        if (isBackgroundSlot(slot)) {
-            event.setCancelled(true);
-            return;
-        }
-
-        // 處理玩家背包區域的點擊
-        if (slot >= 54) { // 玩家背包區域
-            // 如果是 Shift+Click，嘗試自動裝備
-            if (clickType == ClickType.SHIFT_LEFT || clickType == ClickType.SHIFT_RIGHT) {
-                ItemStack clickedItem = event.getCurrentItem();
-                if (clickedItem != null && clickedItem.getType() != Material.AIR) {
-                    // 嘗試找到合適的槽位
-                    EquipmentSlot suitableSlot = findSuitableSlot(clickedItem);
-                    if (suitableSlot != null) {
-                        event.setCancelled(true);
-
-                        Map<EquipmentSlot, EquipmentData> currentEquipment = equipmentManager.getPlayerEquipment(player.getUniqueId());
-                        EquipmentData existingEquip = currentEquipment.get(suitableSlot);
-
-                        if (tryEquipItem(player, suitableSlot, clickedItem)) {
-                            // 處理舊裝備
-                            if (existingEquip != null) {
-                                if (player.getInventory().firstEmpty() != -1) {
-                                    player.getInventory().addItem(existingEquip.toItemStack(getPlayerLevel(player)));
-                                } else {
-                                    player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack(getPlayerLevel(player)));
-                                    player.sendMessage("§e背包已滿！舊裝備已掉落到地上");
-                                }
-                            }
-
-                            // 從背包移除物品
-                            clickedItem.setAmount(0);
-
-                            // 延遲刷新GUI
-                            refreshCurrentGUI(player);
-                        }
-                        return;
-                    }
-                }
-            }
-            // 其他背包操作允許正常進行
-            return;
         }
     }
 
-    /**
-     * 處理裝備放置
-     */
     private void handleEquipmentPlacement(Player player, EquipmentSlot targetSlot, InventoryClickEvent event) {
-        // 始終取消事件，防止物品真的被放入GUI
         event.setCancelled(true);
-
         ItemStack cursor = event.getCursor();
-        ItemStack current = event.getCurrentItem();
-
-        // 如果游標有物品，嘗試裝備
-        if (cursor != null && cursor.getType() != Material.AIR) {
-            // 檢查是否已經有裝備在該槽位
-            Map<EquipmentSlot, EquipmentData> currentEquipment = equipmentManager.getPlayerEquipment(player.getUniqueId());
-            EquipmentData existingEquip = currentEquipment.get(targetSlot);
-
-            if (tryEquipItem(player, targetSlot, cursor)) {
-                // 成功裝備，處理舊裝備
-                if (existingEquip != null) {
-                    // 如果有舊裝備，將其放入背包或掉落
-                    if (player.getInventory().firstEmpty() != -1) {
-                        player.getInventory().addItem(existingEquip.toItemStack(getPlayerLevel(player)));
-                    } else {
-                        player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack(getPlayerLevel(player)));
-                        player.sendMessage("§e背包已滿！舊裝備已掉落到地上");
-                    }
-                }
-
-                // 清空游標
-                event.setCursor(null);
-
-                // 立即清空放置槽位，恢復為提示物品
-                Inventory inv = event.getInventory();
-                int placePosition = PLACE_POSITIONS.get(targetSlot);
-                inv.setItem(placePosition, createPlaceSlotItem(targetSlot));
-
-                // 刷新GUI
-                refreshCurrentGUI(player);
-            } else {
-                // 裝備失敗，確保放置區恢復正常
-                Inventory inv = event.getInventory();
-                int placePosition = PLACE_POSITIONS.get(targetSlot);
-                inv.setItem(placePosition, createPlaceSlotItem(targetSlot));
-            }
-            return;
+        EquipmentManager.EquipResult result = tryEquipItem(player, targetSlot, cursor);
+        if (result.success()) {
+            ItemStack remainder = cursor.clone();
+            remainder.setAmount(cursor.getAmount() - 1);
+            event.setCursor(remainder.getAmount() == 0 ? null : remainder);
+            returnItem(player, result.previousItem());
+            equipmentManager.savePlayerEquipment(player.getUniqueId());
+            refreshCurrentGUI(player);
         }
-
-        // 如果是拖拽操作
-        if (event.getAction() == org.bukkit.event.inventory.InventoryAction.PLACE_ALL ||
-            event.getAction() == org.bukkit.event.inventory.InventoryAction.PLACE_ONE ||
-            event.getAction() == org.bukkit.event.inventory.InventoryAction.PLACE_SOME) {
-
-            if (cursor != null && cursor.getType() != Material.AIR) {
-                Map<EquipmentSlot, EquipmentData> currentEquipment = equipmentManager.getPlayerEquipment(player.getUniqueId());
-                EquipmentData existingEquip = currentEquipment.get(targetSlot);
-
-                if (tryEquipItem(player, targetSlot, cursor)) {
-                    if (existingEquip != null) {
-                        if (player.getInventory().firstEmpty() != -1) {
-                            player.getInventory().addItem(existingEquip.toItemStack(getPlayerLevel(player)));
-                        } else {
-                            player.getWorld().dropItemNaturally(player.getLocation(), existingEquip.toItemStack(getPlayerLevel(player)));
-                            player.sendMessage("§e背包已滿！舊裝備已掉落到地上");
-                        }
-                    }
-
-                    event.setCursor(null);
-
-                    // 立即清空放置槽位
-                    Inventory inv = event.getInventory();
-                    int placePosition = PLACE_POSITIONS.get(targetSlot);
-                    inv.setItem(placePosition, createPlaceSlotItem(targetSlot));
-
-                    // 刷新GUI
-                    refreshCurrentGUI(player);
-                } else {
-                    // 裝備失敗，確保放置區恢復正常
-                    Inventory inv = event.getInventory();
-                    int placePosition = PLACE_POSITIONS.get(targetSlot);
-                    inv.setItem(placePosition, createPlaceSlotItem(targetSlot));
-                }
-            }
-            event.setCancelled(true);
-            return;
-        }
-
-        // 取消其他操作
-        event.setCancelled(true);
     }
 
-    /**
-     * 處理拖拽事件
-     */
+    private void returnItem(Player player, ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return;
+        for (ItemStack leftover : player.getInventory().addItem(item).values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+        }
+    }
+
+    /** Display inventories never own player items; block every drag touching their top slots. */
     @EventHandler
-    public void onInventoryDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
-        if (!(event.getWhoClicked() instanceof Player)) return;
-        Player player = (Player) event.getWhoClicked();
-
-        if (!openInventories.containsKey(player.getUniqueId())) return;
-
-        EquipmentGUIType guiType = currentGUIType.get(player.getUniqueId());
-        if (guiType != EquipmentGUIType.EQUIPMENT) return;
-
-        // 檢查拖拽的槽位
-        Set<Integer> slots = event.getRawSlots();
-        for (int slot : slots) {
-            if (slot >= 0 && slot < 54) { // 在GUI範圍內
-                // 只允許拖拽到放置槽位
-                if (getSlotFromPlacePosition(slot) == null) {
-                    event.setCancelled(true);
-                    return;
-                }
-            }
+    public void onInventoryDrag(InventoryDragEvent event) {
+        UUID uuid = event.getWhoClicked().getUniqueId();
+        if (openInventories.get(uuid) != event.getView().getTopInventory()) return;
+        int topSize = event.getView().getTopInventory().getSize();
+        if (event.getRawSlots().stream().anyMatch(slot -> slot >= 0 && slot < topSize)) {
+            event.setCancelled(true);
         }
     }
 
-    /**
-     * 找到適合物品的裝備槽位
-     */
     private EquipmentSlot findSuitableSlot(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return null;
-
-        Material material = item.getType();
-        String materialName = material.name();
-
-        // 檢查各種裝備類型
-        if (materialName.endsWith("_HELMET")) {
-            return EquipmentSlot.HELMET;
-        } else if (materialName.endsWith("_CHESTPLATE")) {
-            return EquipmentSlot.CHESTPLATE;
-        } else if (materialName.endsWith("_LEGGINGS")) {
-            return EquipmentSlot.LEGGINGS;
-        } else if (materialName.endsWith("_BOOTS")) {
-            return EquipmentSlot.BOOTS;
-        } else if (materialName.endsWith("_SWORD") || materialName.endsWith("_AXE") ||
-                   materialName.endsWith("_PICKAXE") || material == Material.STICK) {
-            return EquipmentSlot.MAIN_HAND;
-        } else if (material == Material.SHIELD) {
-            return EquipmentSlot.OFF_HAND;
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (!slot.isWeapon() && equipmentManager.findTemplate(item, slot) != null) return slot;
         }
-
-        return null; // 無法識別的物品類型
+        String material = item.getType().name();
+        if (material.endsWith("_HELMET")) return EquipmentSlot.HELMET;
+        if (material.endsWith("_CHESTPLATE")) return EquipmentSlot.CHESTPLATE;
+        if (material.endsWith("_LEGGINGS")) return EquipmentSlot.LEGGINGS;
+        if (material.endsWith("_BOOTS")) return EquipmentSlot.BOOTS;
+        return null;
     }
 
-    /**
-     * 嘗試裝備物品
-     */
-    private boolean tryEquipItem(Player player, EquipmentSlot slot, ItemStack item) {
+    private EquipmentManager.EquipResult tryEquipItem(Player player, EquipmentSlot slot, ItemStack item) {
         if (!isValidEquipmentForSlot(item, slot)) {
             player.sendMessage("§c此物品不適合放在 " + slot.getDisplayName() + " 槽位！");
-            return false;
+            return new EquipmentManager.EquipResult(false, null, null);
         }
-
-        // 將物品轉換為EquipmentData
-        EquipmentData equipment = convertItemToEquipment(item, slot);
-        if (equipment == null) {
-            player.sendMessage("§c無法識別此裝備！");
-            return false;
-        }
-
-        // 檢查是否有舊裝備需要卸除
-        Map<EquipmentSlot, EquipmentData> currentEquipment = equipmentManager.getPlayerEquipment(player.getUniqueId());
-        EquipmentData oldEquipment = currentEquipment.get(slot);
-
-        // 嘗試裝備
-        boolean success = equipmentManager.equipItem(player, slot, equipment);
-        if (success) {
-            player.sendMessage("§a已裝備 " + equipment.getName() + " 到 " + slot.getDisplayName());
+        EquipmentManager.EquipResult result = equipmentManager.equipFromItem(player, slot, item);
+        if (result.success()) {
+            player.sendMessage("§a已裝備 " + result.equipment().getName() + " 到 " + slot.getDisplayName());
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.2f);
-
-            // 如果有舊裝備，返回給玩家（但不在這裡處理，由調用方處理）
-
-            return true;
-        } else {
-            player.sendMessage("§c無法裝備此物品！");
-            return false;
         }
+        return result;
     }
 
-    /**
-     * 檢查物品是否適合特定槽位
-     */
     private boolean isValidEquipmentForSlot(ItemStack item, EquipmentSlot slot) {
-        if (item == null || item.getType() == Material.AIR) return false;
-
-        Material material = item.getType();
-
-        switch (slot) {
-            case HELMET:
-                return material.name().endsWith("_HELMET");
-            case CHESTPLATE:
-                return material.name().endsWith("_CHESTPLATE");
-            case LEGGINGS:
-                return material.name().endsWith("_LEGGINGS");
-            case BOOTS:
-                return material.name().endsWith("_BOOTS");
-            case MAIN_HAND:
-                return material.name().endsWith("_SWORD") ||
-                       material.name().endsWith("_AXE") ||
-                       material.name().endsWith("_PICKAXE") ||
-                       material == Material.STICK; // 法杖
-            case OFF_HAND:
-                return material == Material.SHIELD ||
-                       material.name().endsWith("_SWORD");
-            default:
-                return true; // 飾品和特殊槽位暫時允許所有物品
-        }
-    }
-
-    /**
-     * 將物品轉換為EquipmentData
-     */
-    private EquipmentData convertItemToEquipment(ItemStack item, EquipmentSlot slot) {
-        // 檢查是否是自定義裝備（有特殊NBT或displayName）
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null && meta.hasDisplayName()) {
-            String displayName = meta.getDisplayName();
-
-            // 嘗試從已有模板中找到匹配的裝備
-            for (EquipmentData template : equipmentManager.getEquipmentTemplates().values()) {
-                if (template.getMaterial() == item.getType() &&
-                    template.getSlot() == slot) {
-
-                    // 檢查名稱是否匹配（移除顏色代碼後比較）
-                    String templateName = org.bukkit.ChatColor.stripColor(template.getName());
-                    String itemName = org.bukkit.ChatColor.stripColor(displayName);
-
-                    if (itemName.contains(templateName) || templateName.contains(itemName)) {
-                        return equipmentManager.createEquipment(template.getId());
-                    }
-                }
-            }
-        }
-
-        // 如果不是自定義裝備，創建一個基本的裝備數據
-        String itemId = "basic_" + item.getType().name().toLowerCase();
-        String itemName = "§f" + item.getType().name().replace("_", " ");
-
-        EquipmentData equipment = new EquipmentData(
-            itemId, itemName, slot,
-            com.customrpg.equipment.EquipmentRarity.COMMON,
-            item.getType()
-        );
-
-        // 根據物品類型添加基本屬性
-        addBasicAttributes(equipment, item.getType());
-
-        return equipment;
-    }
-
-    /**
-     * 為基本物品添加基本屬性
-     */
-    private void addBasicAttributes(EquipmentData equipment, Material material) {
-        Map<com.customrpg.equipment.EquipmentAttribute, Double> attributes = new HashMap<>();
-
-        // 根據材質添加基本屬性
-        String materialName = material.name();
-
-        if (materialName.contains("DIAMOND")) {
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.ATTACK_DAMAGE, 8.0);
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.DEFENSE, 3.0);
-        } else if (materialName.contains("IRON")) {
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.ATTACK_DAMAGE, 6.0);
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.DEFENSE, 2.0);
-        } else if (materialName.contains("GOLD")) {
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.ATTACK_DAMAGE, 4.0);
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.LUCK, 2.0);
-        } else {
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.ATTACK_DAMAGE, 3.0);
-        }
-
-        equipment.setBaseAttributes(attributes);
+        if (item == null || item.getType() == Material.AIR || slot.isWeapon()) return false;
+        return switch (slot) {
+            case HELMET -> item.getType().name().endsWith("_HELMET");
+            case CHESTPLATE -> item.getType().name().endsWith("_CHESTPLATE");
+            case LEGGINGS -> item.getType().name().endsWith("_LEGGINGS");
+            case BOOTS -> item.getType().name().endsWith("_BOOTS");
+            default -> true;
+        };
     }
 
     /**
@@ -1182,6 +905,12 @@ public class EquipmentGUI implements Listener {
      * 嘗試強化裝備
      */
     private boolean tryEnhanceEquipment(Player player, EquipmentData equipment) {
+        EquipmentSlot target = selectedSlot.get(player.getUniqueId());
+        if (target == null || target.isWeapon()
+                || equipmentManager.getPlayerEquipment(player.getUniqueId()).get(target) != equipment) {
+            player.sendMessage("§c裝備已變更，請重新開啟強化介面。");
+            return false;
+        }
         int currentLevel = equipment.getEnhanceLevel();
         int maxLevel = equipment.getRarity().getMaxEnhanceLevel();
 
@@ -1202,8 +931,10 @@ public class EquipmentGUI implements Listener {
         ItemStack emerald = new ItemStack(Material.EMERALD, cost);
         player.getInventory().removeItem(emerald);
 
-        // 強化裝備
+        // 寫回原物品，避免重新同步與重登後丟失強化等級。
         equipment.enhance();
+        equipmentManager.persistEnhancement(player, selectedSlot.get(player.getUniqueId()), equipment);
+        equipmentManager.savePlayerEquipment(player.getUniqueId());
 
         return true;
     }
@@ -1212,22 +943,23 @@ public class EquipmentGUI implements Listener {
      * 刷新當前GUI
      */
     public void refreshCurrentGUI(Player player) {
-        EquipmentGUIType guiType = currentGUIType.get(player.getUniqueId());
-        if (guiType != null) {
-            // 標記為正在刷新，防止關閉事件清除數據
-            UUID uuid = player.getUniqueId();
-            refreshingPlayers.add(uuid);
-
-            // 延遲打開新GUI，確保舊GUI已經正確關閉
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        UUID uuid = player.getUniqueId();
+        EquipmentGUIType guiType = currentGUIType.get(uuid);
+        Inventory expected = openInventories.get(uuid);
+        if (guiType == null || expected == null || refreshingPlayers.contains(uuid)) return;
+        refreshingPlayers.add(uuid);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            refreshingPlayers.remove(uuid);
+            if (player.isOnline() && openInventories.get(uuid) == expected
+                    && player.getOpenInventory().getTopInventory() == expected) {
                 openGUI(player, guiType);
-                refreshingPlayers.remove(uuid);
-            }, 1L);
-        }
+            }
+        }, 1L);
     }
 
-    // 用於追蹤正在刷新GUI的玩家，避免 close 事件清除數據
+    // 區分待執行刷新與同步切換介面，避免玩家關閉後又被延遲任務重新開啟。
     private final Set<UUID> refreshingPlayers = new HashSet<>();
+    private final Set<UUID> switchingPlayers = new HashSet<>();
 
     /**
      * 檢查玩家是否正在使用任何裝備相關GUI
@@ -1245,12 +977,8 @@ public class EquipmentGUI implements Listener {
             Player player = (Player) event.getPlayer();
             UUID uuid = player.getUniqueId();
 
-            // 如果玩家正在刷新GUI，不清除數據
-            if (refreshingPlayers.contains(uuid)) {
-                return;
-            }
-
-            if (openInventories.containsKey(uuid)) {
+            if (switchingPlayers.contains(uuid)) return;
+            if (openInventories.get(uuid) == event.getInventory()) {
                 openInventories.remove(uuid);
                 currentGUIType.remove(uuid);
                 selectedSlot.remove(uuid);
@@ -1271,11 +999,18 @@ public class EquipmentGUI implements Listener {
      * 清理資源
      */
     public void cleanup() {
+        for (Map.Entry<UUID, Inventory> entry : new HashMap<>(openInventories).entrySet()) {
+            Player player = plugin.getServer().getPlayer(entry.getKey());
+            if (player != null && player.getOpenInventory().getTopInventory() == entry.getValue()) {
+                player.closeInventory();
+            }
+        }
         openInventories.clear();
         currentGUIType.clear();
         selectedSlot.clear();
         selectedEquipment.clear();
         refreshingPlayers.clear();
+        switchingPlayers.clear();
     }
 }
 

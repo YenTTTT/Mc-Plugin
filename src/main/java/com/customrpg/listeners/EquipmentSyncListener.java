@@ -14,6 +14,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
@@ -162,12 +163,29 @@ public class EquipmentSyncListener implements Listener {
         }
     }
 
-    /**
-     * 監聽玩家離開事件，清理數據
-     */
     @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        equipmentManager.loadPlayerEquipment(event.getPlayer());
+        checkAndSyncAllEquipmentSlots(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        cleanupPlayer(event.getPlayer().getUniqueId());
+        UUID uuid = event.getPlayer().getUniqueId();
+        equipmentManager.unloadPlayerEquipment(uuid);
+        cleanupPlayer(uuid);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRespawn(org.bukkit.event.player.PlayerRespawnEvent event) {
+        plugin.getServer().getScheduler().runTaskLater(plugin,
+                () -> checkAndSyncAllEquipmentSlots(event.getPlayer()), 1L);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onItemBreak(org.bukkit.event.player.PlayerItemBreakEvent event) {
+        plugin.getServer().getScheduler().runTaskLater(plugin,
+                () -> checkAndSyncAllEquipmentSlots(event.getPlayer()), 1L);
     }
 
     /**
@@ -202,6 +220,7 @@ public class EquipmentSyncListener implements Listener {
      * 檢查並同步特定裝備槽位
      */
     private void checkAndSyncEquipmentSlot(Player player, EquipmentSlot slot) {
+        if (!player.isOnline()) return;
         UUID playerId = player.getUniqueId();
         ItemStack currentItem = getItemFromMinecraftSlot(player, slot);
 
@@ -270,61 +289,7 @@ public class EquipmentSyncListener implements Listener {
      * 將物品轉換為裝備數據
      */
     private EquipmentData convertItemToEquipmentData(ItemStack item, EquipmentSlot slot) {
-        if (item == null || item.getType() == Material.AIR) return null;
-
-        // 檢查是否是自定義裝備
-        if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-            String displayName = item.getItemMeta().getDisplayName();
-
-            // 嘗試從模板中找到匹配的裝備
-            for (EquipmentData template : equipmentManager.getEquipmentTemplates().values()) {
-                if (template.getMaterial() == item.getType() && template.getSlot() == slot) {
-                    String templateName = org.bukkit.ChatColor.stripColor(template.getName());
-                    String itemName = org.bukkit.ChatColor.stripColor(displayName);
-
-                    if (itemName.contains(templateName) || templateName.contains(itemName)) {
-                        return equipmentManager.createEquipment(template.getId());
-                    }
-                }
-            }
-        }
-
-        // 創建基本裝備數據
-        return createBasicEquipmentData(item, slot);
-    }
-
-    /**
-     * 創建基本裝備數據
-     */
-    private EquipmentData createBasicEquipmentData(ItemStack item, EquipmentSlot slot) {
-        String itemId = "minecraft_" + item.getType().name().toLowerCase();
-        String itemName = "§f" + item.getType().name().replace("_", " ");
-
-        EquipmentData equipment = new EquipmentData(
-            itemId, itemName, slot,
-            com.customrpg.equipment.EquipmentRarity.COMMON,
-            item.getType()
-        );
-
-        // 添加基本屬性
-        Map<com.customrpg.equipment.EquipmentAttribute, Double> attributes = new HashMap<>();
-        String materialName = item.getType().name();
-
-        if (materialName.contains("DIAMOND")) {
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.ATTACK_DAMAGE, 8.0);
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.DEFENSE, 3.0);
-        } else if (materialName.contains("IRON")) {
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.ATTACK_DAMAGE, 6.0);
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.DEFENSE, 2.0);
-        } else if (materialName.contains("GOLD")) {
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.ATTACK_DAMAGE, 4.0);
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.LUCK, 2.0);
-        } else {
-            attributes.put(com.customrpg.equipment.EquipmentAttribute.ATTACK_DAMAGE, 3.0);
-        }
-
-        equipment.setBaseAttributes(attributes);
-        return equipment;
+        return equipmentManager.toEquipmentData(item, slot);
     }
 
     /**

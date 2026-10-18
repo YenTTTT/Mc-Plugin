@@ -26,7 +26,7 @@ See [the feature inventory and implementation progress](docs/PROJECT_STATUS.md) 
 ## Requirements
 
 - Java 21
-- Paper Server 1.21.1 or higher
+- Built against Paper API 1.21.11; use a compatible Paper 1.21.11 test server. Other 1.21.x versions have not been verified.
 - Maven (for building)
 
 ## Building
@@ -36,6 +36,8 @@ mvn clean package
 ```
 
 The compiled plugin JAR will be in `target/CustomRPG-1.0.jar`
+
+Run `mvn clean verify` to build and execute the regression suite. See [the recovery and audit handoff](docs/AI_AGENT_HANDOFF.md) for verified fixes, remaining risks, and the Paper server acceptance checklist.
 
 ## Installation
 

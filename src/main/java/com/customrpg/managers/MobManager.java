@@ -600,7 +600,10 @@ public class MobManager {
         int blockZ = location.getBlockZ();
         int minY = world.getMinHeight() + 1;
         int maxY = world.getMaxHeight() - 2;
-        int blockY = Math.min(maxY, Math.max(minY, location.getBlockY()));
+        int blockY = location.getBlockY();
+        if (blockY < minY || blockY > maxY) {
+            return null;
+        }
 
         Location candidate = new Location(world, blockX + 0.5, blockY, blockZ + 0.5, location.getYaw(), location.getPitch());
         return isSafeSpawnLocation(candidate) ? candidate : null;

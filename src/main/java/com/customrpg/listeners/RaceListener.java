@@ -37,7 +37,9 @@ public class RaceListener implements Listener {
         if (raceManager.hasRace(player)) {
             // 延遲 1 tick 確保 PlayerStats 已載入
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                raceManager.applyRaceStats(player);
+                if (player.isOnline()) {
+                    raceManager.applyRaceStats(player);
+                }
             }, 5L);
         }
     }
