@@ -69,6 +69,7 @@ public class ConfigManager {
         // ensureDefaultConfigExists("config/mobs/types/example.yml");  // 舊格式範例（已棄用）
         ensureDefaultConfigExists("config/mobs/types/enhanced_example.yml");  // 新格式範例（推薦）
         ensureDefaultConfigExists("config/mobs/types/wild_mobs.yml");          // 野外自動生成怪物
+        ensureDefaultConfigExists("config/mobs/types/meteor.yml");
         ensureDefaultConfigExists("config/mobs/types/tier1_beginner.yml");     // 初級怪物配置
         ensureDefaultConfigExists("config/mobs/types/tier2_intermediate.yml");     // 中級怪物配置
         ensureDefaultConfigExists("config/mobs/types/tier3_advanced.yml");     // 高級怪物配置

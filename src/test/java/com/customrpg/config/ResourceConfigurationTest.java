@@ -23,7 +23,7 @@ class ResourceConfigurationTest {
     @Test void pluginDescriptorDeclaresOptionalDependenciesRecognizedByBukkit() throws Exception {
         try (var input = Files.newInputStream(Path.of("src/main/resources/plugin.yml"))) {
             PluginDescriptionFile descriptor = new PluginDescriptionFile(input);
-            assertEquals(java.util.List.of("LibsDisguises", "BeautyQuests"), descriptor.getSoftDepend());
+            assertEquals(java.util.List.of("WorldGuard", "WorldEdit", "FastAsyncWorldEdit", "LibsDisguises", "BeautyQuests"), descriptor.getSoftDepend());
         }
     }
 

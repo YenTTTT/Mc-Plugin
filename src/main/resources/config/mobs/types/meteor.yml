@@ -1,0 +1,52 @@
+# Event-only templates are excluded from natural and supplemental wild pools.
+meteor_parasite:
+  name: "&d隕石寄生體"
+  type: ENDERMITE
+  level-range: {min: 1, max: 60}
+  base-stats: {health: 24.0, damage: 3.0}
+  stat-scaling: {health-per-level: 1.5, damage-per-level: 0.3}
+  exp: {base: 0, per-level: 0}
+  tags: [event-only, meteor]
+  spawn-time: all
+  special-behavior: aggressive
+astral_crawler:
+  name: "&5星界爬行者"
+  type: SPIDER
+  level-range: {min: 1, max: 60}
+  base-stats: {health: 36.0, damage: 4.0}
+  stat-scaling: {health-per-level: 2.0, damage-per-level: 0.4}
+  exp: {base: 0, per-level: 0}
+  tags: [event-only, meteor]
+  spawn-time: all
+  special-behavior: aggressive
+fallen_guardian:
+  name: "&8殞落守衛"
+  type: HUSK
+  level-range: {min: 1, max: 60}
+  base-stats: {health: 90.0, damage: 5.0}
+  stat-scaling: {health-per-level: 3.0, damage-per-level: 0.4}
+  exp: {base: 0, per-level: 0}
+  tags: [event-only, meteor]
+  spawn-time: all
+  special-behavior: aggressive
+meteor_elite:
+  name: "&6隕星精英"
+  type: WITHER_SKELETON
+  level-range: {min: 1, max: 60}
+  base-stats: {health: 140.0, damage: 7.0}
+  stat-scaling: {health-per-level: 3.5, damage-per-level: 0.5}
+  exp: {base: 0, per-level: 0}
+  tags: [event-only, meteor]
+  spawn-time: all
+  special-behavior: aggressive
+meteor_core_guardian:
+  name: "&c隕石核心守護者"
+  type: HUSK
+  boss: true
+  level-range: {min: 1, max: 60}
+  base-stats: {health: 300.0, damage: 9.0}
+  stat-scaling: {health-per-level: 4.0, damage-per-level: 0.6}
+  exp: {base: 0, per-level: 0}
+  tags: [event-only, meteor]
+  spawn-time: all
+  special-behavior: aggressive

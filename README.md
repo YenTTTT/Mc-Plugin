@@ -39,6 +39,8 @@ The compiled plugin JAR will be in `target/CustomRPG-1.0.jar`
 
 Run `mvn clean verify` to build and execute the regression suite. See [the recovery and audit handoff](docs/AI_AGENT_HANDOFF.md) for verified fixes, remaining risks, and the Paper server acceptance checklist.
 
+Dynamic world events now include Meteor Impact with temporary terrain, one-time mobs, personal material wallets, and restart restoration. Read [the world event guide](docs/WORLD_EVENTS.md) for `/events`, `/mmorpg event`, conservative new-chunk eligibility, configuration and test-server acceptance requirements.
+
 ## Installation
 
 1. Build the plugin using Maven

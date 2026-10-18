@@ -1,0 +1,49 @@
+world-events:
+  enabled: true
+  scheduler:
+    min-interval-minutes: 45
+    max-interval-minutes: 120
+    retry-seconds: 300
+  max-active-events: 1
+  minimum-online-players: 1
+  location:
+    attempts-per-search: 32
+    min-player-distance: 64
+    max-player-distance: 256
+    # Only loaded, newly populated chunks observed by this installation are eligible.
+    # Unknown older chunks are never implicitly trusted, including start ... here.
+    # Admin-only /mmorpg event test meteor here explicitly permits old terrain for that event;
+    # it does not add those chunks to the natural terrain registry or relax automatic events.
+    protection-padding: 4
+  terrain:
+    blocks-per-tick: 128
+  meteor:
+    enabled: true
+    duration-minutes: 20
+    cleanup-delay-seconds: 120
+    crater:
+      radius: 12
+      max-depth: 4
+      max-height-difference: 5
+    core:
+      radius: 3
+    animation:
+      enabled: true
+      falling-duration-ticks: 100
+      starting-height: 80
+      particles: true
+      sounds: true
+    mobs:
+      - {template: meteor_parasite, count: 8, rank: NORMAL}
+      - {template: astral_crawler, count: 4, rank: NORMAL}
+      - {template: fallen_guardian, count: 4, rank: TANK}
+      - {template: meteor_elite, count: 2, rank: ELITE}
+      - {template: meteor_core_guardian, count: 1, rank: BOSS}
+    contribution:
+      minimum-damage: 1.0
+      minimum-share: 0.01
+    # Stored in the durable personal material wallet, atomically with the claim receipt.
+    rewards:
+      meteor_fragment: 12
+      astral_crystal: 3
+      meteor_core_fragment: 1

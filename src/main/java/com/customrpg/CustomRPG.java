@@ -104,6 +104,7 @@ public class CustomRPG extends JavaPlugin {
     // NPC system
     private com.customrpg.integration.npc.NpcManager npcManager;
     private com.customrpg.integration.npc.QuestBindGUI questBindGUI;
+    private com.customrpg.worldevent.core.WorldEventManager worldEventManager;
 
 
     /**
@@ -125,6 +126,18 @@ public class CustomRPG extends JavaPlugin {
         // Register commands
         registerCommands();
 
+        worldEventManager = new com.customrpg.worldevent.core.WorldEventManager(this);
+        worldEventManager.start();
+        com.customrpg.worldevent.core.WorldEventCommand worldEventCommand =
+                new com.customrpg.worldevent.core.WorldEventCommand(worldEventManager);
+        for (String name : java.util.List.of("events", "mmorpg")) {
+            org.bukkit.command.PluginCommand command = getCommand(name);
+            if (command != null) {
+                command.setExecutor(worldEventCommand);
+                command.setTabCompleter(worldEventCommand);
+            }
+        }
+
         getLogger().info("CustomRPG has been enabled successfully!");
         getLogger().info("Version: " + getDescription().getVersion());
         getLogger().info("=================================");
@@ -136,6 +149,9 @@ public class CustomRPG extends JavaPlugin {
      */
     @Override
     public void onDisable() {
+        if (worldEventManager != null) {
+            worldEventManager.shutdown();
+        }
         getLogger().info("=================================");
         getLogger().info("   CustomRPG Plugin Stopping");
         getLogger().info("=================================");
@@ -862,6 +878,10 @@ public class CustomRPG extends JavaPlugin {
 
     public com.customrpg.integration.BeautyQuestsHook getBeautyQuestsHook() {
         return beautyQuestsHook;
+    }
+
+    public com.customrpg.worldevent.core.WorldEventManager getWorldEventManager() {
+        return worldEventManager;
     }
 
     public StatsGUI getStatsGUI() {

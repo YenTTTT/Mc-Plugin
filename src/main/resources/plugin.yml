@@ -6,10 +6,20 @@ description: A professional RPG plugin with custom weapons, skills, and mobs
 author: CustomRPG Team
 website: https://github.com/customrpg
 softdepend:
+  - WorldGuard
+  - WorldEdit
+  - FastAsyncWorldEdit
   - LibsDisguises
   - BeautyQuests
 
 commands:
+  events:
+    description: View world events, claim personal rewards and inspect material wallet
+    usage: /events [info|list|wallet|claim <eventId>]
+  mmorpg:
+    description: Administer dynamic world events
+    usage: /mmorpg event <list|start meteor [here]|test meteor here|info|stop|cleanup|debug>
+    permission: customrpg.event.admin
   weapon:
     description: Give custom weapons to players
     usage: /weapon <weapon_name> [player] OR /weapon list OR /weapon reload
@@ -118,6 +128,9 @@ commands:
 
 
 permissions:
+  customrpg.event.admin:
+    description: Start, stop, inspect and recover dynamic world events
+    default: op
   customrpg.*:
     description: Gives access to all CustomRPG features
     children:

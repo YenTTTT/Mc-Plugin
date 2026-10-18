@@ -543,6 +543,33 @@ public class MobManager {
         return "&8[&eLv." + level + "&8] " + mobData.getName();
     }
 
+    /** Event tagging and durable identity reservation run before the entity is exposed to spawn listeners. */
+    public LivingEntity spawnEventMob(String mobKey, Location location, int level,
+                                      java.util.function.Consumer<LivingEntity> beforeSpawn) {
+        return spawnEventMob(mobKey,location,level,beforeSpawn,false);
+    }
+
+    public LivingEntity spawnTestEventMob(String mobKey,Location location,int level,
+                                          java.util.function.Consumer<LivingEntity> beforeSpawn) {
+        return spawnEventMob(mobKey,location,level,beforeSpawn,true);
+    }
+
+    private LivingEntity spawnEventMob(String mobKey,Location location,int level,
+                                       java.util.function.Consumer<LivingEntity> beforeSpawn,boolean testMode) {
+        MobData data = mobTypes.get(mobKey);
+        if (data == null || (data.getDisguise() != null && data.getDisguise().isEnabled())) {
+            throw new IllegalArgumentException("Event mobs require a normal living template: " + mobKey);
+        }
+        Location safe = testMode?findSafeSpawnLocationExactForTesting(location):findSafeSpawnLocationExact(location);
+        if (safe == null) return null;
+        int mobLevel = Math.max(1, level);
+        return spawnNormalMob(data, safe, mobLevel, entity -> {
+            entity.getPersistentDataContainer().set(customMobKey, PersistentDataType.STRING, mobKey);
+            entity.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, mobLevel);
+            beforeSpawn.accept(entity);
+        });
+    }
+
     /**
      * Resolve a safe spawn position near the requested location.
      * 優先保留玩家原本想生成的高度；若空間不足，再回退到該欄位最高方塊上方。
@@ -587,6 +614,15 @@ public class MobManager {
      * This keeps boss/admin forced spawns anchored to the configured center.
      */
     public Location findSafeSpawnLocationExact(Location location) {
+        return findSafeSpawnLocationExact(location,false);
+    }
+
+    /** Explicit event test only: ignores the built-in spawn safe zone, retaining collision and custom-region checks. */
+    public Location findSafeSpawnLocationExactForTesting(Location location) {
+        return findSafeSpawnLocationExact(location,true);
+    }
+
+    private Location findSafeSpawnLocationExact(Location location,boolean testMode) {
         if (location == null) {
             return null;
         }
@@ -606,15 +642,19 @@ public class MobManager {
         }
 
         Location candidate = new Location(world, blockX + 0.5, blockY, blockZ + 0.5, location.getYaw(), location.getPitch());
-        return isSafeSpawnLocation(candidate) ? candidate : null;
+        return isSafeSpawnLocation(candidate,testMode) ? candidate : null;
     }
 
     private boolean isSafeSpawnLocation(Location location) {
+        return isSafeSpawnLocation(location,false);
+    }
+
+    private boolean isSafeSpawnLocation(Location location,boolean testMode) {
         if (location == null || location.getWorld() == null) {
             return false;
         }
         if (!location.getWorld().getWorldBorder().isInside(location)
-                || (plugin.getSafeZoneManager() != null && plugin.getSafeZoneManager().isInSafeZone(location))
+                || (!testMode && plugin.getSafeZoneManager() != null && plugin.getSafeZoneManager().isInSafeZone(location))
                 || (plugin.getProtectionAreaManager() != null
                 && plugin.getProtectionAreaManager().isInProtectedArea2D(location))) {
             return false;
@@ -817,7 +857,16 @@ public class MobManager {
      * Spawn a normal (non-disguised) mob
      */
     private LivingEntity spawnNormalMob(MobData mobData, Location location, int level) {
-        Entity entity = location.getWorld().spawnEntity(location, mobData.getEntityType());
+        return spawnNormalMob(mobData, location, level, null);
+    }
+
+    private LivingEntity spawnNormalMob(MobData mobData, Location location, int level,
+                                       java.util.function.Consumer<LivingEntity> beforeSpawn) {
+        Entity entity = beforeSpawn == null ? location.getWorld().spawnEntity(location, mobData.getEntityType())
+                : location.getWorld().spawnEntity(location, mobData.getEntityType(),
+                org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, raw -> {
+                    if (raw instanceof LivingEntity living) beforeSpawn.accept(living);
+                });
         if (!(entity instanceof LivingEntity)) {
             entity.remove();
             return null;
@@ -1385,7 +1434,7 @@ public class MobManager {
     public List<String> getBossMobKeys() {
         List<String> bossKeys = new ArrayList<>();
         for (Map.Entry<String, MobData> entry : mobTypes.entrySet()) {
-            if (entry.getValue().isBoss()) {
+            if (entry.getValue().isBoss() && !entry.getValue().getTags().contains("event-only")) {
                 bossKeys.add(entry.getKey());
             }
         }
@@ -1399,7 +1448,7 @@ public class MobManager {
     public List<String> getNormalMobKeys() {
         List<String> normalKeys = new ArrayList<>();
         for (Map.Entry<String, MobData> entry : mobTypes.entrySet()) {
-            if (!entry.getValue().isBoss()) {
+            if (!entry.getValue().isBoss() && !entry.getValue().getTags().contains("event-only")) {
                 normalKeys.add(entry.getKey());
             }
         }
