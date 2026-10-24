@@ -19,7 +19,8 @@ public record TerrainSnapshot(UUID eventId, UUID world, int centerX, int centerY
     public TerrainSnapshot {
         Objects.requireNonNull(eventId); Objects.requireNonNull(world);
         blocks = List.copyOf(blocks);
-        if (radius < 1 || radius > 48 || blocks.isEmpty() || blocks.size() > 30_000) {
+        // An all-unsafe footprint still hosts the event without modifying terrain.
+        if (radius < 1 || radius > 48 || blocks.size() > 30_000) {
             throw new IllegalArgumentException("Invalid snapshot size");
         }
         Set<Position> seen = new HashSet<>();

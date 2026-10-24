@@ -75,6 +75,8 @@ public final class WorldEventListener implements Listener {
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void fade(BlockFadeEvent event) { if(protectedBlock(event.getBlock())) event.setCancelled(true); }
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
+    public void leavesDecay(LeavesDecayEvent event) { if(protectedBlock(event.getBlock())) event.setCancelled(true); }
+    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void fertilize(BlockFertilizeEvent event) {
         if(event.getBlocks().stream().anyMatch(state->protectedBlock(state.getBlock()))) event.setCancelled(true);
     }
@@ -123,15 +125,29 @@ public final class WorldEventListener implements Listener {
     }
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void move(PlayerMoveEvent event) { guardMove(event); }
+    @EventHandler(priority=EventPriority.MONITOR)
+    public void join(PlayerJoinEvent event) { manager.recoverArenaPlayer(event.getPlayer(),false); }
+    @EventHandler(priority=EventPriority.MONITOR)
+    public void respawn(PlayerRespawnEvent event) {
+        plugin.getServer().getScheduler().runTask(plugin,()->{
+            if(event.getPlayer().isOnline()) manager.recoverArenaPlayer(event.getPlayer(),true);
+        });
+    }
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void teleport(PlayerTeleportEvent event) { guardMove(event); }
     private void guardMove(PlayerMoveEvent event) {
-        WorldEventInstance e=manager.at(event.getTo());
+        Location to=event.getTo(),from=event.getFrom();
+        if(to==null||from.getWorld()==to.getWorld()&&from.getX()==to.getX()
+                &&from.getY()==to.getY()&&from.getZ()==to.getZ()) return; // Never lock camera rotation.
+        WorldEventInstance e=manager.at(to);
         if(e!=null&&(e.state==WorldEventState.IMPACTING||e.state==WorldEventState.CLEANING)
-                &&e.contains(event.getTo().getWorld().getUID(),event.getTo().getBlockX(),event.getTo().getBlockZ(),1)) {
-            if(e.contains(event.getFrom().getWorld().getUID(),event.getFrom().getBlockX(),event.getFrom().getBlockZ(),1)) {
-                Location edge=manager.safeEdge(e,event.getTo().getWorld()); if(edge!=null) event.setTo(edge); else event.setCancelled(true);
-            } else event.setCancelled(true);
+                &&WorldEventManager.occupies(e,to,1)&&!WorldEventManager.occupies(e,from,1)) {
+            // Players already inside may move out; the batch waits for evacuation each tick.
+            if(event instanceof PlayerTeleportEvent) event.setCancelled(true);
+            else {
+                Location hold=from.clone(); hold.setYaw(to.getYaw()); hold.setPitch(to.getPitch());
+                event.setTo(hold);
+            }
         }
     }
 
@@ -166,18 +182,17 @@ public final class WorldEventListener implements Listener {
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void target(EntityTargetLivingEntityEvent event) {
         WorldEventInstance e=manager.find(EventMobSpawner.eventId(event.getEntity()));
-        if(e!=null&&event.getTarget()!=null&&(e.state!=WorldEventState.ACTIVE||!e.contains(event.getTarget().getWorld().getUID(),
-                event.getTarget().getLocation().getBlockX(),event.getTarget().getLocation().getBlockZ(),0))) event.setCancelled(true);
+        if(e!=null&&event.getTarget()!=null&&(e.state!=WorldEventState.ACTIVE||!WorldEventManager.occupies(e,event.getTarget().getLocation(),0))) event.setCancelled(true);
     }
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void mobTeleport(EntityTeleportEvent event) {
         WorldEventInstance e=manager.find(EventMobSpawner.eventId(event.getEntity()));
-        if(e!=null&&event.getTo()!=null&&!e.contains(event.getTo().getWorld().getUID(),event.getTo().getBlockX(),event.getTo().getBlockZ(),2)) event.setCancelled(true);
+        if(e!=null&&event.getTo()!=null&&!WorldEventManager.occupies(e,event.getTo(),2)) event.setCancelled(true);
     }
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void mobMove(io.papermc.paper.event.entity.EntityMoveEvent event) {
         WorldEventInstance e=manager.find(EventMobSpawner.eventId(event.getEntity()));
-        if(e!=null&&!e.contains(event.getTo().getWorld().getUID(),event.getTo().getBlockX(),event.getTo().getBlockZ(),2)) event.setCancelled(true);
+        if(e!=null&&!WorldEventManager.occupies(e,event.getTo(),2)) event.setCancelled(true);
     }
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void arenaSpawn(CreatureSpawnEvent event) {

@@ -43,6 +43,16 @@ public final class WorldEventInstance {
     public long cleanupAt;
     public boolean successful;
     public boolean testMode;
+    public boolean generatedArena;
+    public int arenaDepth = 3;
+    public record ReturnPoint(UUID world,double x,double y,double z,float yaw,float pitch) {
+        public ReturnPoint {
+            Objects.requireNonNull(world);
+            if(!Double.isFinite(x)||!Double.isFinite(y)||!Double.isFinite(z)||!Float.isFinite(yaw)||!Float.isFinite(pitch))
+                throw new IllegalArgumentException("Invalid arena return point");
+        }
+    }
+    public final Map<UUID,ReturnPoint> arenaReturns = new LinkedHashMap<>();
     public String diagnostic = "";
     public final Map<UUID, EventMob> mobs = new LinkedHashMap<>();
     public final Map<UUID, Double> contribution = new LinkedHashMap<>();
@@ -79,5 +89,8 @@ public final class WorldEventInstance {
     public boolean contains(UUID world, int x, int z, int padding) {
         return this.world.equals(world) && Math.abs((long) x - this.x) <= radius + padding
                 && Math.abs((long) z - this.z) <= radius + padding;
+    }
+    public boolean occupies(UUID world,int x,double y,int z,int padding) {
+        return contains(world,x,z,padding)&&(!generatedArena||y>=this.y-arenaDepth-1&&y<=this.y+32);
     }
 }

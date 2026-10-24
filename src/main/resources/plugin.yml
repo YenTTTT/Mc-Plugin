@@ -24,7 +24,7 @@ commands:
     permission: customrpg.crafting
   events:
     description: View world events, claim personal rewards and inspect material wallet
-    usage: /events [info|list|wallet|claim <eventId>]
+    usage: /events [info|list|join [eventId]|leave|wallet|claim <eventId>]
   mmorpg:
     description: Administer dynamic world events
     usage: /mmorpg event <list|start meteor [here]|test meteor here|info|stop|cleanup|debug>

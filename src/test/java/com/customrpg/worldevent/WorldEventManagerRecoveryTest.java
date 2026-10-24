@@ -43,6 +43,8 @@ class WorldEventManagerRecoveryTest {
         task=mock(BukkitTask.class); when(scheduler.runTaskTimer(eq(plugin),any(Runnable.class),eq(1L),eq(1L))).thenReturn(task);
         event=WorldEventLifecycleTest.event(); world=mock(World.class);
         when(world.getUID()).thenReturn(event.world); when(world.getName()).thenReturn("world");
+        WorldBorder border=mock(WorldBorder.class); when(border.isInside(any())).thenReturn(true);
+        when(world.getWorldBorder()).thenReturn(border);
         when(server.getWorld(event.world)).thenReturn(world); when(server.getWorlds()).thenReturn(List.of(world));
         when(world.isChunkLoaded(anyInt(),anyInt())).thenReturn(true);
         Chunk chunk=mock(Chunk.class); when(chunk.getEntities()).thenReturn(new org.bukkit.entity.Entity[0]);
@@ -57,9 +59,14 @@ class WorldEventManagerRecoveryTest {
             TerrainSnapshot.Position position=new TerrainSnapshot.Position(invocation.getArgument(0),invocation.getArgument(1),invocation.getArgument(2));
             Block block=mock(Block.class);
             when(block.getBlockData()).thenAnswer(i->blockData(blocks.getOrDefault(position,"minecraft:air")));
+            when(block.getType()).thenAnswer(i->Material.matchMaterial(blocks.getOrDefault(position,"minecraft:air").split("\\[")[0]));
+            when(block.isPassable()).thenAnswer(i->block.getType()==Material.AIR);
+            when(block.isEmpty()).thenAnswer(i->block.getType()==Material.AIR);
+            when(block.isSolid()).thenAnswer(i->block.getType()!=Material.AIR);
             doAnswer(i->{ blocks.put(position,((BlockData)i.getArgument(0)).getAsString()); writes++; return null; }).when(block).setBlockData(any(),eq(false));
             return block;
         });
+        when(world.getBlockAt(any(Location.class))).thenAnswer(i->{ Location p=i.getArgument(0); return world.getBlockAt(p.getBlockX(),p.getBlockY(),p.getBlockZ()); });
     }
     private BlockData blockData(String text) { BlockData data=mock(BlockData.class); when(data.getAsString()).thenReturn(text); return data; }
     private WorldEventRepository seed(WorldEventState state) throws Exception {
@@ -71,6 +78,11 @@ class WorldEventManagerRecoveryTest {
     private Runnable start(WorldEventManager manager) {
         manager.start(); ArgumentCaptor<Runnable> captor=ArgumentCaptor.forClass(Runnable.class);
         verify(scheduler).runTaskTimer(eq(plugin),captor.capture(),eq(1L),eq(1L)); return captor.getValue();
+    }
+    private void rejectLocations(WorldEventManager manager,String reason) throws Exception {
+        EventLocationService locations=mock(EventLocationService.class);
+        locations.lastRejection=reason;
+        var field=WorldEventManager.class.getDeclaredField("locations"); field.setAccessible(true); field.set(manager,locations);
     }
 
     @Test void restartAbortsLiveEventAndRestoresInBatchesBeforeClosingAndReleasingTasks() throws Exception {
@@ -132,6 +144,7 @@ class WorldEventManagerRecoveryTest {
         EventLocationService locations=mock(EventLocationService.class);
         Location center=new Location(world,event.x,event.y,event.z);
         when(locations.validate(any(),any(),anyCollection())).thenReturn(new EventLocationService.Site(center,Map.of()));
+        when(locations.validateArena(any(),any(),anyCollection(),anyBoolean(),anyInt())).thenReturn(new EventLocationService.Site(center,Map.of()));
         when(locations.snapshot(any(),any(),any(),anyLong())).thenAnswer(i->new TerrainSnapshot(i.getArgument(0),event.world,event.x,event.y,event.z,12,WorldEventPersistenceTest.snapshot(event).blocks()));
         var locationField=WorldEventManager.class.getDeclaredField("locations"); locationField.setAccessible(true); locationField.set(manager,locations);
         var repoField=WorldEventManager.class.getDeclaredField("repository"); repoField.setAccessible(true);
@@ -142,19 +155,20 @@ class WorldEventManagerRecoveryTest {
         verify(plugin.getMobManager(),never()).spawnEventMob(anyString(),any(),anyInt(),any()); manager.shutdown();
     }
 
-    @Test void exactStartReportsUnknownTerrainToRequesterWithoutCreatingAnEvent() throws Exception {
+    @Test void exactStartReportsUnsafeBuildHeightToRequesterWithoutCreatingAnEvent() throws Exception {
         when(world.getEnvironment()).thenReturn(World.Environment.NORMAL);
         when(world.getDifficulty()).thenReturn(Difficulty.NORMAL);
         var manager=new WorldEventManager(plugin);
+        rejectLocations(manager,"Build height unsuitable");
         List<String> feedback=new ArrayList<>();
         manager.requestStart("meteor",new Location(world,100,64,100),feedback::add);
         assertTrue(feedback.isEmpty());
         Runnable tick=start(manager); tick.run();
         assertEquals(1,feedback.size());
         assertTrue(feedback.getFirst().contains("已嘗試 1 個位置"));
-        assertTrue(feedback.getFirst().contains("舊荒地也不接受"));
+        assertTrue(feedback.getFirst().contains("超出可施工高度"));
         assertTrue(feedback.getFirst().contains("×1"));
-        assertTrue(manager.diagnostic().contains("Unknown or modified chunk"));
+        assertTrue(manager.diagnostic().contains("Build height unsuitable"));
         assertTrue(manager.events().isEmpty()); assertEquals(0,writes);
         try(var snapshots=Files.walk(data)) {
             assertFalse(snapshots.anyMatch(path->path.getParent().getFileName().toString().equals("snapshots")&&Files.isRegularFile(path)));
@@ -176,8 +190,8 @@ class WorldEventManagerRecoveryTest {
         var manager=new WorldEventManager(plugin);
         EventLocationService locations=mock(EventLocationService.class);
         int[] attempts={0};
-        when(locations.validate(any(),any(),anyCollection())).thenAnswer(invocation->{
-            locations.lastRejection=++attempts[0]%2==0?"Candidate touches unloaded chunk":"Unknown or modified chunk; new observed natural terrain required";
+        when(locations.validateArena(any(),any(),anyCollection(),anyBoolean(),anyInt())).thenAnswer(invocation->{
+            locations.lastRejection=++attempts[0]%2==0?"Candidate touches unloaded chunk":"Build height unsuitable";
             return null;
         });
         var field=WorldEventManager.class.getDeclaredField("locations"); field.setAccessible(true); field.set(manager,locations);
@@ -188,10 +202,10 @@ class WorldEventManagerRecoveryTest {
         assertEquals(32,attempts[0]); assertEquals(1,feedback.size());
         assertTrue(feedback.getFirst().contains("已嘗試 32 個位置"));
         assertTrue(feedback.getFirst().contains("未載入區塊"));
-        assertTrue(feedback.getFirst().contains("舊荒地也不接受"));
+        assertTrue(feedback.getFirst().contains("超出可施工高度"));
         assertEquals(2,feedback.getFirst().split("×16",-1).length-1);
         assertTrue(manager.diagnostic().contains("Candidate touches unloaded chunk x16"));
-        assertTrue(manager.diagnostic().contains("new observed natural terrain required x16"));
+        assertTrue(manager.diagnostic().contains("Build height unsuitable x16"));
         var repository=new WorldEventRepository(data); repository.load();
         assertTrue(repository.nextTriggerAt>System.currentTimeMillis()+290_000);
         assertTrue(repository.events.isEmpty()); assertEquals(0,writes);
@@ -205,25 +219,27 @@ class WorldEventManagerRecoveryTest {
         when(player.getWorld()).thenReturn(world); when(player.getGameMode()).thenReturn(GameMode.SURVIVAL);
         when(player.getLocation()).thenReturn(new Location(world,100,64,100));
         doReturn(List.of(player),List.of(player),List.of()).when(server).getOnlinePlayers();
-        var manager=new WorldEventManager(plugin); List<String> feedback=new ArrayList<>();
+        var manager=new WorldEventManager(plugin); rejectLocations(manager,"Build height unsuitable"); List<String> feedback=new ArrayList<>();
         manager.requestStart("meteor",null,feedback::add); Runnable tick=start(manager);
         tick.run(); assertTrue(feedback.isEmpty()); tick.run();
         assertEquals(1,feedback.size()); assertTrue(feedback.getFirst().contains("玩家人數不足"));
         assertTrue(feedback.getFirst().contains("已嘗試 1 個位置"));
-        assertTrue(feedback.getFirst().contains("舊荒地也不接受"));
+        assertTrue(feedback.getFirst().contains("超出可施工高度"));
         assertTrue(manager.events().isEmpty()); assertEquals(0,writes); manager.shutdown();
     }
 
-    @ParameterizedTest @ValueSource(booleans={false,true})
-    void fullLifecycleUsesSharedCombatRewardsRestorationAndCleansAnimation(boolean testMode) throws Exception {
+    @ParameterizedTest @org.junit.jupiter.params.provider.CsvSource({"false,false","true,false","false,true","true,true"})
+    void fullLifecycleUsesSharedCombatRewardsRestorationAndCleansAnimation(boolean testMode,boolean arena) throws Exception {
         var manager=new WorldEventManager(plugin);
         EventLocationService locations=mock(EventLocationService.class);
         Location center=new Location(world,event.x,event.y,event.z);
         when(locations.validate(any(),any(),anyCollection())).thenReturn(new EventLocationService.Site(center,Map.of()));
         when(locations.validateForTesting(any(),any(),anyCollection())).thenReturn(new EventLocationService.Site(center,Map.of()));
+        when(locations.validateArena(any(),any(),anyCollection(),anyBoolean(),anyInt())).thenReturn(new EventLocationService.Site(center,Map.of()));
         when(locations.snapshot(any(),any(),any(),anyLong())).thenAnswer(i->new TerrainSnapshot(i.getArgument(0),event.world,event.x,event.y,event.z,12,WorldEventPersistenceTest.snapshot(event).blocks()));
         var locationField=WorldEventManager.class.getDeclaredField("locations"); locationField.setAccessible(true); locationField.set(manager,locations);
         WorldEventDefinition definition=mock(WorldEventDefinition.class); when(definition.type()).thenReturn("test");
+        when(definition.generatedArena()).thenReturn(arena); when(definition.arenaClearance()).thenReturn(6);
         when(definition.requirements()).thenReturn(new WorldEventDefinition.Requirements(12,4,9,5));
         when(definition.durationMillis()).thenReturn(60_000L); when(definition.cleanupDelayMillis()).thenReturn(1000L);
         when(definition.minimumDamage()).thenReturn(1.0); when(definition.minimumShare()).thenReturn(0.01);
@@ -256,7 +272,12 @@ class WorldEventManagerRecoveryTest {
             for(int i=0;i<8;i++) { int before=writes; tick.run(); assertTrue(writes-before<=1); }
             var live=manager.events().iterator().next(); assertEquals(WorldEventState.ACTIVE,live.state); assertEquals(2,entities.size());
             assertEquals(testMode,live.testMode);
-            if(testMode) {
+            assertEquals(arena,live.generatedArena);
+            if(arena) {
+                verify(locations,times(2)).validateArena(any(),any(),anyCollection(),eq(testMode),eq(6));
+                verify(locations,never()).validateForTesting(any(),any(),anyCollection());
+                verify(locations,never()).validate(any(),any(),anyCollection());
+            } else if(testMode) {
                 verify(locations,times(2)).validateForTesting(any(),any(),anyCollection());
                 verify(locations,never()).validate(any(),any(),anyCollection());
                 verify(mobs,never()).spawnEventMob(anyString(),any(),anyInt(),any());
@@ -281,6 +302,7 @@ class WorldEventManagerRecoveryTest {
         var manager=new WorldEventManager(plugin);
         EventLocationService locations=mock(EventLocationService.class); Location center=new Location(world,event.x,event.y,event.z);
         when(locations.validate(any(),any(),anyCollection())).thenReturn(new EventLocationService.Site(center,Map.of()));
+        when(locations.validateArena(any(),any(),anyCollection(),anyBoolean(),anyInt())).thenReturn(new EventLocationService.Site(center,Map.of()));
         when(locations.snapshot(any(),any(),any(),anyLong())).thenAnswer(i->new TerrainSnapshot(i.getArgument(0),event.world,event.x,event.y,event.z,12,WorldEventPersistenceTest.snapshot(event).blocks()));
         var field=WorldEventManager.class.getDeclaredField("locations"); field.setAccessible(true); field.set(manager,locations);
         var repositoryField=WorldEventManager.class.getDeclaredField("repository"); repositoryField.setAccessible(true);
@@ -300,6 +322,44 @@ class WorldEventManagerRecoveryTest {
         var manager=new WorldEventManager(plugin); Location safe=manager.safeEdge(event,world);
         assertNotNull(safe); assertFalse(event.contains(event.world,safe.getBlockX(),safe.getBlockZ(),1)); manager.shutdown();
     }
+    @Test void evacuationSearchesBeyondTheNearestUnsafeRing() throws Exception {
+        when(plugin.getMobManager().findSafeSpawnLocationExact(any())).thenAnswer(invocation->{
+            Location candidate=invocation.getArgument(0);
+            return candidate.getBlockX()==event.x+event.radius+4+6&&candidate.getBlockZ()==event.z?candidate:null;
+        });
+        var manager=new WorldEventManager(plugin); Location safe=manager.safeEdge(event,world);
+        assertNotNull(safe); assertEquals(event.x+event.radius+10,safe.getBlockX());
+        manager.shutdown();
+    }
+    @Test void evacuationIncludesPlayersOnCliffsAboveTheImpactCenter() throws Exception {
+        var player=mock(org.bukkit.entity.Player.class);
+        when(player.getLocation()).thenReturn(new Location(world,event.x+0.5,event.y+120,event.z+0.5));
+        when(world.getPlayers()).thenReturn(List.of(player));
+        var manager=spy(new WorldEventManager(plugin));
+        Location outside=new Location(world,event.x+event.radius+8,event.y+120,event.z);
+        doReturn(outside).when(manager).safeEdge(event,world);
+        when(player.teleport(outside)).thenReturn(true);
+        var method=WorldEventManager.class.getDeclaredMethod("evacuate",WorldEventInstance.class,World.class);
+        method.setAccessible(true);
+        assertEquals(true,method.invoke(manager,event,world));
+        verify(player).teleport(outside);
+        manager.shutdown();
+    }
+    @Test void evacuationUsesWorldSpawnWhenNoNearbyExitExists() throws Exception {
+        var player=mock(org.bukkit.entity.Player.class);
+        when(player.getLocation()).thenReturn(new Location(world,event.x+0.5,event.y,event.z+0.5));
+        when(world.getPlayers()).thenReturn(List.of(player));
+        Location spawn=new Location(world,event.x+100,event.y,event.z+100);
+        when(world.getSpawnLocation()).thenReturn(spawn);
+        when(player.teleport(spawn)).thenReturn(true);
+        var manager=spy(new WorldEventManager(plugin));
+        doReturn(null).when(manager).safeEdge(event,world);
+        var method=WorldEventManager.class.getDeclaredMethod("evacuate",WorldEventInstance.class,World.class);
+        method.setAccessible(true);
+        assertEquals(true,method.invoke(manager,event,world));
+        verify(player).teleport(spawn);
+        manager.shutdown();
+    }
 
     @Test void invalidConfigurationCannotHideExistingRecoveryAreaOrRewriteManifest() throws Exception {
         seed(WorldEventState.ACTIVE); String original=Files.readString(data.resolve("state.yml"));
@@ -308,5 +368,105 @@ class WorldEventManagerRecoveryTest {
         var manager=new WorldEventManager(plugin); assertNotNull(manager.at(new Location(world,event.x,event.y,event.z)));
         assertTrue(manager.requestStart("meteor",null).contains("disabled")); manager.shutdown();
         assertEquals(original,Files.readString(data.resolve("state.yml"))); assertEquals(0,writes);
+    }
+    @Test void actualMeteorBuildsOnlyAirSpawnsAllNineteenMobsAndStaysActiveUntilStopped() throws Exception {
+        Path config=directory.resolve("config/world_events.yml");
+        Files.writeString(config,Files.readString(config).replace("blocks-per-tick: 1\n","blocks-per-tick: 128\n").replace("      enabled: true","      enabled: false"));
+        when(world.getEnvironment()).thenReturn(World.Environment.NORMAL); when(world.getDifficulty()).thenReturn(Difficulty.NORMAL);
+        when(world.getMinHeight()).thenReturn(-64); when(world.getMaxHeight()).thenReturn(320);
+        when(world.getHighestBlockYAt(anyInt(),anyInt(),eq(HeightMap.WORLD_SURFACE))).thenReturn(140);
+        when(plugin.getSafeZoneManager()).thenReturn(mock(SafeZoneManager.class));
+        when(plugin.getProtectionAreaManager()).thenReturn(mock(ProtectionAreaManager.class));
+        when(plugin.getBossZoneManager()).thenReturn(mock(BossZoneManager.class));
+        var sentinel=new TerrainSnapshot.Position(event.x,140,event.z); blocks.put(sentinel,"minecraft:chest");
+        var mobs=plugin.getMobManager(); when(mobs.getMobData(anyString())).thenReturn(mock(MobManager.MobData.class));
+        when(mobs.findSafeSpawnLocationExact(any())).thenAnswer(i->{
+            Location p=i.getArgument(0); assertEquals(150,p.getBlockY());
+            assertTrue(p.clone().add(0,-1,0).getBlock().isSolid());
+            assertTrue(p.getBlock().isEmpty()); return p;
+        });
+        Map<UUID,org.bukkit.entity.LivingEntity> entities=new LinkedHashMap<>();
+        when(mobs.spawnEventMob(anyString(),any(),anyInt(),any())).thenAnswer(i->{
+            var entity=mock(org.bukkit.entity.LivingEntity.class); UUID id=UUID.randomUUID(); Location p=i.getArgument(1);
+            when(entity.getUniqueId()).thenReturn(id); when(entity.isValid()).thenReturn(true);
+            when(entity.getLocation()).thenReturn(p); when(entity.getWorld()).thenReturn(world);
+            when(entity.getPersistentDataContainer()).thenReturn(mock(org.bukkit.persistence.PersistentDataContainer.class));
+            java.util.function.Consumer<org.bukkit.entity.LivingEntity> initialize=i.getArgument(3); initialize.accept(entity);
+            entities.put(id,entity); return entity;
+        });
+        when(server.getEntity(any(UUID.class))).thenAnswer(i->entities.get(i.getArgument(0)));
+        try(var bukkit=mockStatic(Bukkit.class)) {
+            bukkit.when(()->Bukkit.createBlockData(anyString())).thenAnswer(i->blockData(i.getArgument(0)));
+            var manager=new WorldEventManager(plugin); manager.requestStart("meteor",new Location(world,event.x,141,event.z));
+            Runnable tick=start(manager); for(int i=0;i<75;i++) tick.run();
+            var live=manager.events().iterator().next(); assertEquals(WorldEventState.ACTIVE,live.state);
+            assertTrue(live.generatedArena); assertEquals(19,entities.size());
+            var repo=new WorldEventRepository(data); repo.load(); var snapshot=repo.loadSnapshot(live.id);
+            assertFalse(snapshot.blocks().isEmpty()); assertTrue(snapshot.blocks().stream().allMatch(b->b.before().equals("minecraft:air")&&b.position().y()>140));
+            for(int i=0;i<50;i++) tick.run(); assertEquals(WorldEventState.ACTIVE,live.state);
+            assertEquals("minecraft:chest",blocks.get(sentinel));
+            manager.stop(live.id); for(int i=0;i<40;i++) tick.run();
+            assertEquals(WorldEventState.CLOSED,live.state);
+            snapshot.blocks().forEach(b->assertEquals("minecraft:air",blocks.get(b.position())));
+            assertEquals("minecraft:chest",blocks.get(sentinel)); entities.values().forEach(entity->verify(entity).remove());
+            manager.shutdown();
+        }
+    }
+    @ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(ints={0,-20})
+    void participantReturnIsSavedBeforeEntryAndWorksAfterOfflineArenaRemoval(int fallOffset) throws Exception {
+        when(world.getMinHeight()).thenReturn(-64); when(world.getMaxHeight()).thenReturn(320);
+        var manager=new WorldEventManager(plugin); var repoField=WorldEventManager.class.getDeclaredField("repository"); repoField.setAccessible(true);
+        var repo=(WorldEventRepository)repoField.get(manager); event.generatedArena=true; event.state=WorldEventState.ACTIVE;
+        repo.events.put(event.id,event);
+        var player=mock(org.bukkit.entity.Player.class); UUID id=UUID.randomUUID(); when(player.getUniqueId()).thenReturn(id);
+        Location origin=new Location(world,event.x+100.5,event.y,event.z+0.5,120,-20);
+        blocks.put(new TerrainSnapshot.Position(origin.getBlockX(),origin.getBlockY()-1,origin.getBlockZ()),"minecraft:stone");
+        var position=new java.util.concurrent.atomic.AtomicReference<>(origin);
+        when(player.getLocation()).thenAnswer(i->position.get());
+        when(plugin.getMobManager().findSafeSpawnLocationExact(any())).thenAnswer(i->i.getArgument(0));
+        when(player.teleport(any(Location.class))).thenAnswer(i->{
+            var disk=new WorldEventRepository(data); disk.load(); assertTrue(disk.events.get(event.id).arenaReturns.containsKey(id));
+            position.set(i.getArgument(0)); return true;
+        });
+        assertTrue(manager.joinArena(player,null).contains("已進入")); assertEquals(event.y,position.get().getBlockY());
+        assertEquals(origin.getX(),event.arenaReturns.get(id).x());
+        position.set(position.get().clone().add(0,fallOffset,0));
+        event.state=WorldEventState.CLOSED; repo.save(); // Simulate cleanup while this participant is offline.
+        var restarted=new WorldEventManager(plugin); restarted.recoverArenaPlayer(player,false);
+        assertEquals(origin,position.get()); assertFalse(restarted.find(event.id).arenaReturns.containsKey(id));
+        repo.load(); assertFalse(repo.events.get(event.id).arenaReturns.containsKey(id));
+    }
+    @Test void cancelledParticipantReturnPausesCleanupUntilPlayerCanLeave() throws Exception {
+        when(world.getMinHeight()).thenReturn(-64); when(world.getMaxHeight()).thenReturn(320);
+        event.generatedArena=true; var player=mock(org.bukkit.entity.Player.class); UUID id=UUID.randomUUID(); when(player.getUniqueId()).thenReturn(id);
+        Location origin=new Location(world,event.x+100.5,event.y,event.z+0.5);
+        event.arenaReturns.put(id,new WorldEventInstance.ReturnPoint(event.world,origin.getX(),origin.getY(),origin.getZ(),0,0));
+        blocks.put(new TerrainSnapshot.Position(origin.getBlockX(),origin.getBlockY()-1,origin.getBlockZ()),"minecraft:stone");
+        var position=new java.util.concurrent.atomic.AtomicReference<>(new Location(world,event.x+0.5,event.y,event.z+0.5));
+        when(player.getLocation()).thenAnswer(i->position.get()); when(world.getPlayers()).thenReturn(List.of(player));
+        seed(WorldEventState.CLEANING);
+        try(var bukkit=mockStatic(Bukkit.class)) {
+            bukkit.when(()->Bukkit.createBlockData(anyString())).thenAnswer(i->blockData(i.getArgument(0)));
+            var manager=new WorldEventManager(plugin); Runnable tick=start(manager); tick.run();
+            assertEquals(0,writes); assertEquals(WorldEventState.CLEANING,manager.find(event.id).state);
+            when(player.teleport(any(Location.class))).thenAnswer(i->{position.set(i.getArgument(0));return true;});
+            tick.run(); tick.run(); assertEquals(2,writes); assertEquals(WorldEventState.CLOSED,manager.find(event.id).state);
+            assertEquals(origin,position.get()); assertFalse(manager.find(event.id).arenaReturns.containsKey(id)); manager.shutdown();
+        }
+    }
+    @Test void failedReturnPointSaveOrCancelledEntryNeverLeavesAnUntrackedParticipant() throws Exception {
+        var manager=new WorldEventManager(plugin); var field=WorldEventManager.class.getDeclaredField("repository"); field.setAccessible(true);
+        var repo=spy((WorldEventRepository)field.get(manager)); field.set(manager,repo);
+        event.generatedArena=true; event.state=WorldEventState.ACTIVE; repo.events.put(event.id,event);
+        var player=mock(org.bukkit.entity.Player.class); UUID id=UUID.randomUUID(); when(player.getUniqueId()).thenReturn(id);
+        when(player.getLocation()).thenReturn(new Location(world,event.x+100,event.y,event.z));
+        when(plugin.getMobManager().findSafeSpawnLocationExact(any())).thenAnswer(i->i.getArgument(0));
+        doThrow(new IOException("disk full")).when(repo).save();
+        assertTrue(manager.joinArena(player,null).contains("儲存失敗"));
+        verify(player,never()).teleport(any(Location.class)); assertFalse(event.arenaReturns.containsKey(id));
+        doCallRealMethod().when(repo).save();
+        assertTrue(manager.joinArena(player,null).contains("傳送遭到取消"));
+        assertFalse(event.arenaReturns.containsKey(id));
+        var persisted=new WorldEventRepository(data); persisted.load(); assertTrue(persisted.events.get(event.id).arenaReturns.isEmpty());
     }
 }

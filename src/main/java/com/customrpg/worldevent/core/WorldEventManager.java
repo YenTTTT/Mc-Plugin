@@ -79,10 +79,11 @@ public final class WorldEventManager {
             if(root.getBoolean("meteor.enabled",true)) register(new MeteorImpactEvent(root.getConfigurationSection("meteor")));
             provenance=new NaturalTerrainRegistry(data.resolve("natural-chunks.yml"));
             protection=new ProtectionValidator(plugin);
-            locations=new EventLocationService(provenance,protection,settings.padding());
+            locations=new EventLocationService(protection,settings.padding());
             scheduler=new WorldEventScheduler(settings,random);
             spawner=new EventMobSpawner(plugin,repository); rewards=new EventRewardService(repository,contribution);
             recover();
+            for(WorldEventInstance event:repository.events.values()) if(event.reserved()) protection.reserve(event,settings.padding());
             repository.nextTriggerAt=scheduler.afterRestart(System.currentTimeMillis(),repository.nextTriggerAt);
             repository.save();
             diagnostic="Ready; next event "+new Date(repository.nextTriggerAt);
@@ -181,9 +182,10 @@ public final class WorldEventManager {
                     runtime.animation=null;
                     Location center=new Location(world,e.x,e.y,e.z);
                     var others=repository.events.values().stream().filter(other->!other.id.equals(e.id)).toList();
-                    var site=e.testMode?locations.validateForTesting(center,definition.requirements(),others):locations.validate(center,definition.requirements(),others);
-                    if(site==null) {
-                        fail(e,"Impact revalidation failed: "+locations.lastRejection); return;
+                    var site=e.generatedArena?locations.validateArena(center,definition.requirements(),others,e.testMode,definition.arenaClearance())
+                            :e.testMode?locations.validateForTesting(center,definition.requirements(),others):locations.validate(center,definition.requirements(),others);
+                    if(site==null||e.generatedArena&&site.center().getBlockY()!=e.y) {
+                        fail(e,"Impact revalidation failed: "+(site==null?locations.lastRejection:"Arena airspace changed")); return;
                     }
                     e.transition(WorldEventState.IMPACTING); persist();
                     runtime.batch=new TerrainBatch(runtime.snapshot,false);
@@ -191,13 +193,13 @@ public final class WorldEventManager {
             }
             case IMPACTING -> {
                 if(runtime.batch!=null&&!runtime.batch.done()) {
-                    if(!evacuate(e,world)) return;
+                    if(!evacuate(e,world)||persistenceBlocked) return;
                     applyBatch(e,runtime,world,false);
                 } else {
                     if(e.mobs.isEmpty()) spawner.plan(e,definition);
                     if(!spawner.spawnNext(e,world)) {
                         e.transition(WorldEventState.ACTIVE); persist();
-                        if(!persistenceBlocked) broadcast(e,"隕石撞擊完成！討伐所有守衛以解鎖核心。");
+                        if(!persistenceBlocked) broadcast(e,"隕石撞擊完成！討伐所有守衛以解鎖核心。"+(e.generatedArena?" 使用 /events join 進入隕石島。":""));
                     }
                 }
             }
@@ -210,7 +212,7 @@ public final class WorldEventManager {
             case CLEANING -> {
                 if(!runtime.removedEntities) { removeEntities(e,world); runtime.removedEntities=true; }
                 if(persistenceBlocked) return;
-                if(!evacuate(e,world)) return;
+                if(!evacuate(e,world)||persistenceBlocked) return;
                 if(runtime.batch==null) runtime.batch=new TerrainBatch(runtime.snapshot,true);
                 applyBatch(e,runtime,world,true);
                 if(runtime.batch.done()) {
@@ -271,22 +273,42 @@ public final class WorldEventManager {
             if(count==null) { World world=plugin.getServer().getWorld(key.world); if(world!=null) world.removePluginChunkTicket(key.x,key.z,plugin); }
         }
         running.remove(id);
+        WorldEventInstance event=find(id);
+        if(event!=null&&!event.reserved()&&protection!=null) protection.release(id);
     }
     private boolean evacuate(WorldEventInstance e,World world) {
         Location edge=null;
-        for(Player player:world.getNearbyPlayers(new Location(world,e.x,e.y,e.z),(e.radius+settings.padding())*2)) {
-            if(!e.contains(e.world,player.getLocation().getBlockX(),player.getLocation().getBlockZ(),1)) continue;
-            if(edge==null) edge=safeEdge(e,world);
+        for(Player player:world.getPlayers()) {
+            Location current=player.getLocation();
+            boolean participant=e.generatedArena&&e.arenaReturns.containsKey(player.getUniqueId())
+                    &&e.contains(e.world,current.getBlockX(),current.getBlockZ(),settings.padding());
+            if((!occupies(e,current,1)&&!participant)||player.isDead()) continue;
+            if(participant) {
+                if(!returnFromArena(e,player)) { e.diagnostic="Waiting for participant return"; return false; }
+                continue;
+            }
+            if(edge==null) {
+                edge=safeEdge(e,world);
+                if(edge==null) {
+                    // Last resort: do not strand a player inside a pending restore indefinitely.
+                    Location spawn=world.getSpawnLocation();
+                    if(spawn!=null&&spawn.getWorld()==world
+                            &&!e.contains(e.world,spawn.getBlockX(),spawn.getBlockZ(),settings.padding())
+                            &&world.isChunkLoaded(spawn.getBlockX()>>4,spawn.getBlockZ()>>4)
+                            &&world.getWorldBorder().isInside(spawn)) edge=spawn;
+                }
+            }
             if(edge==null||!player.teleport(edge)) { e.diagnostic="Waiting for safe player evacuation"; return false; }
             player.sendMessage("§e[世界事件] 地形施工／還原中，已移至場地邊緣。");
         }
         return true;
     }
     public Location safeEdge(WorldEventInstance e,World world) {
-        for(int i=0;i<32;i++) {
-            double angle=i*Math.PI/16; int x=e.x+(int)Math.round(Math.cos(angle)*(e.radius+settings.padding())),z=e.z+(int)Math.round(Math.sin(angle)*(e.radius+settings.padding()));
-            if(e.contains(e.world,x,z,1)) continue;
-            if(!world.isChunkLoaded(x>>4,z>>4)) continue;
+        for(int offset:new int[]{2,6,12,20}) for(int i=0;i<32;i++) {
+            double angle=i*Math.PI/16;
+            int radius=e.radius+settings.padding()+offset;
+            int x=e.x+(int)Math.round(Math.cos(angle)*radius),z=e.z+(int)Math.round(Math.sin(angle)*radius);
+            if(e.contains(e.world,x,z,settings.padding())||!world.isChunkLoaded(x>>4,z>>4)) continue;
             Location candidate=new Location(world,x+0.5,world.getHighestBlockYAt(x,z)+1,z+0.5);
             Location safe=e.testMode?plugin.getMobManager().findSafeSpawnLocationExactForTesting(candidate):plugin.getMobManager().findSafeSpawnLocationExact(candidate);
             if(safe!=null) return safe;
@@ -299,7 +321,7 @@ public final class WorldEventManager {
             Entity raw=mob.entity==null?null:plugin.getServer().getEntity(mob.entity);
             if(raw instanceof LivingEntity living&&!living.isDead()) {
                 mob.chunkX=living.getLocation().getBlockX()>>4; mob.chunkZ=living.getLocation().getBlockZ()>>4;
-                if(!e.contains(living.getWorld().getUID(),living.getLocation().getBlockX(),living.getLocation().getBlockZ(),settings.padding()-2)) {
+                if(!occupies(e,living.getLocation(),settings.padding()-2)||e.generatedArena&&living.getLocation().getY()<e.y-0.5) {
                     Location home=spawner.findSpawn(e,world,index);
                     if(home==null||!living.teleport(home)) { fail(e,"Event mob could not return to arena"); return; }
                 }
@@ -359,7 +381,7 @@ public final class WorldEventManager {
         if(search!=null||!capacity()) return "§cEvent/search/recovery capacity is full";
         if(exact==null&&players().size()<settings.minimumPlayers()) return "§cNot enough eligible online players";
         search=new Search(type,exact==null?null:exact.clone(),Objects.requireNonNull(feedback),testMode); searchAttempts=0;
-        if(testMode) return "§e已開始目前位置的事件測試；略過新區塊來源、原版結構區塊、本插件安全區與生態域限制，放寬地形／材質。\n§e這會暫時修改場地並在結束後還原；領地、容器、液體及存檔保護仍保留。\n§e測試期間請勿使用 WorldEdit／FAWE 編輯場地；其編輯追蹤不是指定位置測試的前提。";
+        if(testMode) return "§e已開始目前位置的事件測試；額外略過本插件安全區。\n§e隕石將生成於原地形上方的臨時島嶼，完成後可用 /events join 進入。\n§e測試期間請勿使用 WorldEdit／FAWE 編輯場地；領地與存檔保護仍保留。";
         return "§a已開始安全選址；失敗會取消並延後，不會強制修改地形。";
     }
     private void searchStep() throws Exception {
@@ -374,12 +396,11 @@ public final class WorldEventManager {
             candidate=origin.clone().add(Math.cos(angle)*distance,0,Math.sin(angle)*distance);
         }
         searchAttempts++;
-        EventLocationService.Site site=search.testMode?locations.validateForTesting(candidate,definition.requirements(),repository.events.values())
+        EventLocationService.Site site=definition.generatedArena()?locations.validateArena(candidate,definition.requirements(),repository.events.values(),search.testMode,definition.arenaClearance())
+                :search.testMode?locations.validateForTesting(candidate,definition.requirements(),repository.events.values())
                 :locations.validate(candidate,definition.requirements(),repository.events.values());
         if(site==null) {
-            diagnostic=locations.lastRejection;
-            search.rejections.merge(diagnostic,1,Integer::sum);
-            if(search.exact!=null||searchAttempts>=settings.attempts()) endSearch(diagnostic);
+            rejectCandidate(locations.lastRejection);
             return;
         }
         Location center=site.center(); var zone=plugin.getWorldZoneManager().getZone(center);
@@ -390,15 +411,27 @@ public final class WorldEventManager {
                 plugin.getWorldZoneManager().rollLevel(center),seed,now,now+definition.durationMillis());
         e.rewards.putAll(definition.rewards()); e.minimumDamage=definition.minimumDamage(); e.minimumShare=definition.minimumShare();
         e.testMode=search.testMode;
-        TerrainSnapshot snapshot=locations.snapshot(e.id,definition,site,seed);
+        e.generatedArena=definition.generatedArena(); e.arenaDepth=definition.requirements().depth();
+        TerrainSnapshot snapshot;
+        try { snapshot=locations.snapshot(e.id,definition,site,seed); }
+        catch(IllegalArgumentException unsafe) {
+            rejectCandidate(unsafe.getMessage());
+            return;
+        }
         // Both immutable snapshot and initial event record must be durable before announcement, spawning, or block writes.
         repository.saveSnapshot(snapshot);
         Running runtime=new Running(); runtime.snapshot=snapshot; running.put(e.id,runtime);
         repository.events.put(e.id,e); repository.nextTriggerAt=scheduler.next(now); search=null;
+        protection.reserve(e,settings.padding());
         repository.save();
         e.transition(WorldEventState.ANNOUNCED); repository.save(); search=null;
         diagnostic=(e.testMode?"Admin test event":"Event")+" announced: "+e.id;
         broadcast(e,"一顆神秘隕石即將墜落！");
+    }
+    private void rejectCandidate(String reason) {
+        diagnostic=reason;
+        search.rejections.merge(reason,1,Integer::sum);
+        if(search.exact!=null||searchAttempts>=settings.attempts()) endSearch(reason);
     }
     private void endSearch(String reason) {
         Search ended=search;
@@ -416,22 +449,18 @@ public final class WorldEventManager {
     }
     private static String searchRejectionMessage(String reason) {
         return switch(reason) {
-            case "Unknown or modified chunk; new observed natural terrain required" -> "區塊來源不明或曾被修改；需前往插件啟用後新生成、未被修改的自然地形（舊荒地也不接受）";
-            case "Candidate touches unloaded chunk" -> "場地涵蓋未載入區塊；請靠近已載入的自然地形，或檢查搜尋距離與伺服器視距";
+            case "Candidate touches unloaded chunk" -> "場地涵蓋未載入區塊；請靠近已載入區域，或檢查搜尋距離與伺服器視距";
             case "Overworld in non-peaceful difficulty required" -> "需要主世界且難度不能為和平";
-            case "Height variation / build height unsuitable" -> "地形高低差過大，或超出可施工高度";
-            case "Vanilla structure/village intersects candidate chunks" -> "場地涉及原版結構或村莊所在區塊";
-            case "Water biome" -> "場地位於不接受的水域生態域";
-            case "No stable ground" -> "場地缺少可安全施工的穩定地面";
+            case "Build height unsuitable" -> "超出可施工高度";
+            case "Invalid snapshot size" -> "場地需要修改的方塊過多，已改試其他位置";
             case "Not enough online players" -> "符合資格的主世界生存／冒險玩家人數不足";
             case "Event/search/recovery capacity is full" -> "其他事件或恢復作業已占滿事件名額";
-            default -> reason.startsWith("Unsafe block / block state: ")
-                    ? "場地含不接受的方塊："+reason.substring("Unsafe block / block state: ".length()) : reason;
+            default -> reason;
         };
     }
     private void broadcast(WorldEventInstance e,String message) {
         plugin.getServer().broadcastMessage("§6[World Event] "+(e.testMode?"§e[管理員測試] ":"")+"§f"+message+"\n§e"+e.type+" §7| "+e.worldName+" X: "+e.x+" Y: "+e.y+" Z: "+e.z
-                +"\n§b推薦等級 Lv."+e.minLevel+"～"+e.maxLevel+" §7| /events info");
+                +"\n§b推薦等級 Lv."+e.minLevel+"～"+e.maxLevel+" §7| "+(e.generatedArena&&e.state==WorldEventState.ACTIVE?"/events join":"/events info"));
     }
     private void coreParticles(WorldEventInstance e,World world) {
         Location center=new Location(world,e.x+0.5,e.y+1,e.z+0.5);
@@ -479,7 +508,76 @@ public final class WorldEventManager {
     }
     public WorldEventInstance at(Location location) {
         if(location==null||location.getWorld()==null||repository==null) return null;
-        return repository.events.values().stream().filter(e->e.reserved()&&e.contains(location.getWorld().getUID(),location.getBlockX(),location.getBlockZ(),settings==null?16:settings.padding())).findFirst().orElse(null);
+        return repository.events.values().stream().filter(e->e.reserved()&&occupies(e,location,settings==null?16:settings.padding())).findFirst().orElse(null);
+    }
+    public static boolean occupies(WorldEventInstance e,Location location,int padding) {
+        return location!=null&&location.getWorld()!=null&&e.occupies(location.getWorld().getUID(),location.getBlockX(),location.getY(),location.getBlockZ(),padding);
+    }
+    public String joinArena(Player player,UUID eventId) {
+        if(readOnly||stopping||persistenceBlocked) return "§c事件目前無法進入，請稍後重試。";
+        if(player.isDead()||player.isInsideVehicle()) return "§c請先離開載具並保持存活再進入。";
+        if(events().stream().anyMatch(e->e.arenaReturns.containsKey(player.getUniqueId()))) return "§e你已有事件返回紀錄，請先使用 /events leave。";
+        WorldEventInstance e=events().stream().filter(event->event.generatedArena&&(event.state==WorldEventState.ACTIVE||event.state==WorldEventState.COMPLETED)
+                &&(eventId==null||event.id.equals(eventId))).findFirst().orElse(null);
+        if(e==null) return "§e目前沒有可進入的隕石島；請等待場地與怪物生成完成。";
+        World world=plugin.getServer().getWorld(e.world);
+        if(world==null) return "§c事件世界尚未載入。";
+        Location landing=spawner.findSpawn(e,world,1000);
+        if(landing==null) return "§c暫時找不到可用的入場點，請稍後重試。";
+        Location origin=player.getLocation();
+        if(occupies(e,origin,settings.padding())) return "§e你已在隕石島上。";
+        e.arenaReturns.put(player.getUniqueId(),new WorldEventInstance.ReturnPoint(origin.getWorld().getUID(),origin.getX(),origin.getY(),origin.getZ(),origin.getYaw(),origin.getPitch()));
+        try { repository.save(); }
+        catch(IOException error) { e.arenaReturns.remove(player.getUniqueId()); return "§c返回位置儲存失敗，未傳送。"; }
+        if(!player.teleport(landing)) {
+            e.arenaReturns.remove(player.getUniqueId()); persist(); return "§c傳送遭到取消，未進入事件。";
+        }
+        player.setFallDistance(0);
+        return "§a已進入隕石島；使用 /events leave 可返回原位置。";
+    }
+    public String leaveArena(Player player) {
+        WorldEventInstance e=events().stream().filter(event->event.arenaReturns.containsKey(player.getUniqueId())).findFirst().orElse(null);
+        if(e==null) return "§e沒有待返回的事件位置。";
+        return returnFromArena(e,player)?"§a已離開隕石島。":"§c暫時無法返回，返回紀錄已保留，請稍後再試。";
+    }
+    private Location returnLocation(WorldEventInstance e,Player player) {
+        var saved=e.arenaReturns.get(player.getUniqueId());
+        if(saved!=null) {
+            World world=plugin.getServer().getWorld(saved.world());
+            if(world!=null) {
+                Location target=new Location(world,saved.x(),saved.y(),saved.z(),saved.yaw(),saved.pitch());
+                if(target.getY()>world.getMinHeight()&&target.getY()+2<world.getMaxHeight()&&world.getWorldBorder().isInside(target)
+                        &&!occupies(e,target,settings.padding())&&target.getBlock().isPassable()
+                        &&target.clone().add(0,1,0).getBlock().isPassable()
+                        &&target.clone().add(0,-1,0).getBlock().isSolid()) return target;
+            }
+        }
+        World world=plugin.getServer().getWorld(e.world);
+        if(world==null) return null;
+        Location edge=safeEdge(e,world);
+        if(edge!=null) return edge;
+        Location spawn=world.getSpawnLocation();
+        return spawn!=null&&!occupies(e,spawn,settings.padding())&&world.getWorldBorder().isInside(spawn)?spawn:null;
+    }
+    private boolean returnFromArena(WorldEventInstance e,Player player) {
+        if(player.isDead()) return false;
+        Location target=returnLocation(e,player);
+        if(target==null||!player.teleport(target)) return false;
+        player.setFallDistance(0);
+        e.arenaReturns.remove(player.getUniqueId()); persist();
+        return true;
+    }
+    public void recoverArenaPlayer(Player player,boolean respawn) {
+        if(settings==null||repository==null||player.isDead()) return;
+        for(WorldEventInstance e:events()) if(e.arenaReturns.containsKey(player.getUniqueId())) {
+            Location current=player.getLocation();
+            boolean inside=occupies(e,current,settings.padding());
+            boolean column=e.contains(current.getWorld().getUID(),current.getBlockX(),current.getBlockZ(),settings.padding());
+            boolean open=e.state==WorldEventState.ACTIVE||e.state==WorldEventState.COMPLETED;
+            if(respawn||column&&(!open||!inside)) {
+                if(returnFromArena(e,player)) player.sendMessage("§e[世界事件] 已返回事件前的位置。");
+            } else if(!inside) { e.arenaReturns.remove(player.getUniqueId()); persist(); }
+        }
     }
     public WorldEventInstance find(UUID id) { return id==null||repository==null?null:repository.events.get(id); }
     public Collection<WorldEventInstance> events() { return repository==null?List.of():Collections.unmodifiableCollection(repository.events.values()); }
@@ -509,7 +607,7 @@ public final class WorldEventManager {
     }
     public String debug(WorldEventInstance e) {
         Running runtime=running.get(e.id);
-        return e.id+" "+e.state+"; test-mode="+e.testMode+"; mobs="+e.mobs.values().stream().collect(java.util.stream.Collectors.groupingBy(m->m.state,java.util.stream.Collectors.counting()))
+        return e.id+" "+e.state+"; test-mode="+e.testMode+"; generated-arena="+e.generatedArena+"; mobs="+e.mobs.values().stream().collect(java.util.stream.Collectors.groupingBy(m->m.state,java.util.stream.Collectors.counting()))
                 +"; contributors="+e.contribution.size()+"; claimed="+e.claimed.size()+"; snapshot="+e.id+".yml; cursor="+(runtime==null||runtime.batch==null?0:runtime.batch.cursor())
                 +"; blocked="+(runtime==null?"":runtime.blocked)+"; "+e.diagnostic;
     }
@@ -530,7 +628,7 @@ public final class WorldEventManager {
         persist(); // Never do an unbounded synchronous terrain restore during disable. Next startup resumes CLEANING.
         for(var entry:new ArrayList<>(running.entrySet())) {
             WorldEventInstance e=find(entry.getKey()); World world=plugin.getServer().getWorld(e.world);
-            if(world!=null) removeEntities(e,world);
+            if(world!=null) { if(e.generatedArena) evacuate(e,world); removeEntities(e,world); }
         }
         for(var entry:new ArrayList<>(running.entrySet())) release(entry.getKey(),entry.getValue());
     }

@@ -10,10 +10,8 @@ world-events:
     attempts-per-search: 32
     min-player-distance: 64
     max-player-distance: 256
-    # Only loaded, newly populated chunks observed by this installation are eligible.
-    # Unknown older chunks are never implicitly trusted, including start ... here.
-    # Admin-only /mmorpg event test meteor here explicitly permits old terrain for that event;
-    # it does not add those chunks to the natural terrain registry or relax automatic events.
+    # Temporary meteor islands are built in empty space above the entire footprint.
+    # Existing terrain is untouched; claims, border and build height still apply.
     protection-padding: 4
   terrain:
     blocks-per-tick: 128
@@ -21,9 +19,16 @@ world-events:
     enabled: true
     duration-minutes: 20
     cleanup-delay-seconds: 120
+    arena:
+      radius: 12
+      thickness: 3
+      # Empty blocks between the highest existing terrain/building and the island bottom.
+      clearance: 6
     crater:
+      # Legacy radius fallback for existing installations; digging is no longer used.
       radius: 12
       max-depth: 4
+      # Compatibility setting: height difference no longer rejects a candidate.
       max-height-difference: 5
     core:
       radius: 3

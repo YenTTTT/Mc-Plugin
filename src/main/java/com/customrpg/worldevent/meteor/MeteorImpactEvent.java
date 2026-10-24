@@ -17,9 +17,10 @@ public final class MeteorImpactEvent implements WorldEventDefinition {
     private final Map<String,Long> rewards=new LinkedHashMap<>();
     public MeteorImpactEvent(ConfigurationSection config) {
         this.config=Objects.requireNonNull(config,"meteor configuration");
-        int radius=config.getInt("crater.radius",12),depth=config.getInt("crater.max-depth",4);
+        int radius=config.getInt("arena.radius",config.getInt("crater.radius",12)),depth=config.getInt("arena.thickness",3);
         coreRadius=config.getInt("core.radius",3);
         requirements=new Requirements(radius,depth,coreRadius*2+3,config.getInt("crater.max-height-difference",5));
+        if(arenaClearance()<3||arenaClearance()>32) throw new IllegalArgumentException("Invalid arena clearance");
         if(radius<6||radius>24||depth<1||depth>8||coreRadius<1||coreRadius>radius/2
                 ||requirements.maxSlope()<0||requirements.maxSlope()>8) throw new IllegalArgumentException("Invalid meteor geometry");
         for(Map<?,?> row:config.getMapList("mobs")) {
@@ -42,6 +43,8 @@ public final class MeteorImpactEvent implements WorldEventDefinition {
     }
     @Override public String type() { return "meteor"; }
     @Override public Requirements requirements() { return requirements; }
+    @Override public boolean generatedArena() { return true; }
+    @Override public int arenaClearance() { return config.getInt("arena.clearance",6); }
     @Override public long durationMillis() { return config.getLong("duration-minutes",20)*60_000; }
     @Override public long cleanupDelayMillis() { return config.getLong("cleanup-delay-seconds",120)*1000; }
     @Override public List<MobSpec> mobs() { return List.copyOf(mobs); }
@@ -49,7 +52,7 @@ public final class MeteorImpactEvent implements WorldEventDefinition {
     @Override public double minimumDamage() { return config.getDouble("contribution.minimum-damage",1); }
     @Override public double minimumShare() { return config.getDouble("contribution.minimum-share",0.01); }
     @Override public Map<Position,String> generate(Map<Column,Integer> heights,int x,int y,int z,long seed) {
-        return new MeteorCraterGenerator().generate(heights,x,y,z,requirements.radius(),requirements.depth(),coreRadius,seed);
+        return new MeteorArenaGenerator().generate(x,y,z,requirements.radius(),requirements.depth(),coreRadius,seed);
     }
     @Override public Animation animation(JavaPlugin plugin,WorldEventInstance event,World world,Consumer<Entity> tag) {
         return new MeteorAnimationService(plugin,event,world,config.getInt("animation.falling-duration-ticks",100),config.getInt("animation.starting-height",80),

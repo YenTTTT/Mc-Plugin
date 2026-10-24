@@ -31,6 +31,14 @@ class MeteorTerrainTest {
             assertTrue(restore.done()); snapshot.blocks().forEach(b->assertEquals(b.before(),world.get(b.position())));
         }
     }
+    @Test void cliffUsesLocalSurfaceInsteadOfClearingTheEntireHeightGap() {
+        Map<Column,Integer> heights=new LinkedHashMap<>();
+        for(int x=-12;x<=12;x++) for(int z=-12;z<=12;z++) heights.put(new Column(x,z),x==0&&z==0?240:64);
+        var plan=new MeteorCraterGenerator().generate(heights,0,241,0,12,4,3,42);
+        assertTrue(plan.size()<5000,()->"cliff generated "+plan.size()+" edits");
+        assertFalse(plan.containsKey(new TerrainSnapshot.Position(5,150,0)));
+        assertTrue(plan.keySet().stream().allMatch(position->Math.abs(position.x())<=12&&Math.abs(position.z())<=12));
+    }
     @Test void interruptedRestoreCanRestartFromZeroAndFailedWriteDoesNotAdvanceCursor() {
         var e=WorldEventLifecycleTest.event(); var snapshot=WorldEventPersistenceTest.snapshot(e);
         var restore=new TerrainBatch(snapshot,true);

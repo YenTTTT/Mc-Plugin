@@ -1,6 +1,8 @@
 # 主動技能先攜帶至 1～4，再以機制物品指定按鍵或對應快捷鍵施放。
 # 手持機制物品時蹲下右鍵循環技能；兩種施法方式共用魔力與冷卻。
 # ==================== 烈焰系 (Fire) ====================
+# 傷害公式的魔法／精神採總屬性（投點＋裝備＋種族＋天賦），燃燒為額外效果。
+# 持續傷害按各招節奏獨立命中；烈焰噴射同一脈衝對同一目標最多命中一次。
 # 兩大分支：
 #   爆發流（火焰術士）— 右側  主屬性：Magic
 #   灼燒流（DOT流）  — 左側  主屬性：Magic + Spirit
@@ -260,23 +262,23 @@ fire:
     levels:
       1:
         effect:
-          magicScaling: 5.0
+          magicScaling: 10
           damageType: "MAGIC"
-          radius: 6
+          radius: 10
           fallDelay: 40
           burnDuration: 5
       2:
         effect:
-          magicScaling: 6.5
+          magicScaling: 15
           damageType: "MAGIC"
-          radius: 7
+          radius: 15
           fallDelay: 35
           burnDuration: 6
       3:
         effect:
-          magicScaling: 8.0
+          magicScaling: 25
           damageType: "MAGIC"
-          radius: 8
+          radius: 18
           fallDelay: 30
           burnDuration: 8
 

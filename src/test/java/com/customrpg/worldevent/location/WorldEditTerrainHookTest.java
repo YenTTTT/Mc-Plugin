@@ -83,7 +83,7 @@ class WorldEditTerrainHookTest {
             verify(delegate,never()).setBlock(any(),any(BlockState.class));
         }
     }
-    @Test void standardWorldEditAutomaticallyConnectsWhileFaweStillFailsClosed() {
+    @Test void standardWorldEditAndFaweRegisterTheirOwnGuards() {
         var plugin=mock(CustomRPG.class); Server server=mock(Server.class); var plugins=mock(PluginManager.class);
         when(plugin.getServer()).thenReturn(server); when(server.getPluginManager()).thenReturn(plugins);
         when(plugin.getLogger()).thenReturn(java.util.logging.Logger.getAnonymousLogger());
@@ -100,9 +100,11 @@ class WorldEditTerrainHookTest {
             when(plugins.isPluginEnabled("FastAsyncWorldEdit")).thenReturn(true);
             var fawe=new ProtectionValidator(plugin); fawe.enableIntegrations(terrain,ignored->true);
             var location=new Location(world,32,65,48);
-            assertTrue(fawe.rejection(location).contains("FastAsyncWorldEdit (FAWE) is enabled"));
-            assertTrue(fawe.diagnostic().contains("asynchronous terrain edit tracking is not supported"));
+            assertNull(fawe.rejection(location));
+            assertTrue(fawe.diagnostic().contains("FastAsyncWorldEdit"));
+            verify(bus).register(any(FaweTerrainHook.class));
             assertNull(fawe.rejectionForTesting(location)); fawe.close();
+            verify(bus).unregister(any(FaweTerrainHook.class));
         }
     }
     @Test void failedRegistrationReportsCauseAndVersionWhileAllowingClaimCheckedAdminTest() {

@@ -18,7 +18,9 @@ public final class MeteorCraterGenerator {
             int surface=Objects.requireNonNull(heights.get(new Column(x+dx,z+dz)),"Missing height sample");
             int dig=Math.max(0,(int)Math.round(depth*Math.pow(1-distance/boundary,1.3)+random.nextDouble()*0.7-0.3));
             int bottom=surface-dig;
-            for(int by=bottom+1;by<=Math.max(surface+2,y+coreRadius+2);by++) plan.put(new Position(x+dx,by,z+dz),"minecraft:air");
+            // Each column follows its own surface. Clearing up to the center's height on a cliff
+            // would create thousands of needless air edits and could exceed the snapshot limit.
+            for(int by=bottom+1;by<=surface+2;by++) plan.put(new Position(x+dx,by,z+dz),"minecraft:air");
             plan.put(new Position(x+dx,bottom,z+dz),floor[random.nextInt(floor.length)]);
             if(distance>coreRadius+1 && random.nextDouble()<0.035) plan.put(new Position(x+dx,bottom+1,z+dz),"minecraft:blackstone");
         }

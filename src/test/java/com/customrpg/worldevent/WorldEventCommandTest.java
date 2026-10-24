@@ -10,6 +10,15 @@ import java.util.function.Consumer;
 import static org.mockito.Mockito.*;
 
 class WorldEventCommandTest {
+    @Test void playersCanEnterAndLeaveAnAvailableArenaThroughEventsCommand() {
+        var manager=mock(WorldEventManager.class); var handler=new WorldEventCommand(manager); Command command=mock(Command.class);
+        when(command.getName()).thenReturn("events"); Player player=mock(Player.class);
+        when(manager.joinArena(player,null)).thenReturn("已進入"); when(manager.leaveArena(player)).thenReturn("已離開");
+        handler.onCommand(player,command,"events",new String[]{"join"});
+        handler.onCommand(player,command,"events",new String[]{"leave"});
+        verify(manager).joinArena(player,null); verify(manager).leaveArena(player);
+        verify(player).sendMessage("已進入"); verify(player).sendMessage("已離開");
+    }
     @Test void ordinaryPlayersCannotStartStopOrDebugEvents() {
         var manager=mock(WorldEventManager.class); var handler=new WorldEventCommand(manager); Command command=mock(Command.class);
         when(command.getName()).thenReturn("mmorpg"); Player player=mock(Player.class);

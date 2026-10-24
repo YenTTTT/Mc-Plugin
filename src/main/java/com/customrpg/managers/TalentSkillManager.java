@@ -29,6 +29,7 @@ import org.bukkit.util.Vector;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Bee;
+import com.customrpg.worldevent.meteor.MeteorAnimationService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,6 +61,7 @@ public class TalentSkillManager {
     private final DarkTalentSkills dark;
     private final NecroTalentSkills necro;
     private final ChickenTalentSkills chicken;
+    private final Set<MeteorAnimationService> activeMeteorVisuals = new HashSet<>();
 
     public TalentSkillManager(CustomRPG plugin) {
         this.plugin = plugin;
@@ -2592,6 +2594,12 @@ public class TalentSkillManager {
 
     // ==================== 烈焰系技能實作 ====================
 
+    /** Confirmed fire hits must land even while native burning owns the target's hurt frames. */
+    private void damageFireTalent(Player caster, LivingEntity target, double amount, boolean periodic) {
+        if (!Double.isFinite(amount) || amount <= 0) return;
+        com.customrpg.utils.SkillDamageGuard.damageFollowUp(target, amount, caster, periodic);
+    }
+
     /**
      * 火花 — 發射一顆小型火球
      */
@@ -2599,7 +2607,7 @@ public class TalentSkillManager {
         PlayerStats stats = statsManager.getStats(player);
         double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.2);
         double range = talent.getEffectDouble(level, "range", 15);
-        double damage = stats.getMagic() * magicScaling;
+        double damage = stats.getTotalMagic() * magicScaling;
 
         Location start = player.getEyeLocation().clone();
         Vector dir = start.getDirection().normalize();
@@ -2628,7 +2636,7 @@ public class TalentSkillManager {
 
                     for (org.bukkit.entity.Entity entity : current.getWorld().getNearbyEntities(current, 0.8, 0.8, 0.8)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        damageManager.dealSkillDamage(player, target, damage);
+                        damageFireTalent(player, target, damage, false);
                         plugin.getCombatBalance().ignite(player, target, 40); // 2秒燃燒
                         current.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0);
                         current.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.6f, 1.0f);
@@ -2653,7 +2661,7 @@ public class TalentSkillManager {
         double speed = talent.getEffectDouble(level, "speed", 0.3);
         double radius = talent.getEffectDouble(level, "radius", 2.0);
         int duration = (int) talent.getEffectDouble(level, "duration", 5);
-        double damage = stats.getMagic() * magicScaling;
+        double damage = stats.getTotalMagic() * magicScaling;
 
         Location start = player.getEyeLocation().clone();
         Vector dir = start.getDirection().normalize();
@@ -2704,7 +2712,7 @@ public class TalentSkillManager {
                     if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                     if (hitCooldown.contains(target.getUniqueId())) continue;
                     hitCooldown.add(target.getUniqueId());
-                    com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
+                    damageFireTalent(player, target, damage, true);
                     plugin.getCombatBalance().ignite(player, target, 60);
                     current.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0);
                 }
@@ -2727,7 +2735,7 @@ public class TalentSkillManager {
         double magicScaling = talent.getEffectDouble(level, "magicScaling", 1.2);
         double radius = talent.getEffectDouble(level, "radius", 5);
         int duration = (int) talent.getEffectDouble(level, "duration", 5);
-        double damagePerTick = stats.getMagic() * magicScaling / duration; // 分攤到每秒
+        double damagePerTick = stats.getTotalMagic() * magicScaling / duration; // 分攤到每秒
 
         // 目標位置：玩家看向的方向前方 10 格
         Location target = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(10));
@@ -2765,7 +2773,7 @@ public class TalentSkillManager {
                 if (ticks % 20 == 0) {
                     for (org.bukkit.entity.Entity entity : target.getWorld().getNearbyEntities(target, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity t) || t.isDead()) continue;
-                        com.customrpg.utils.SkillDamageGuard.damage(t, damagePerTick, player);
+                        damageFireTalent(player, t, damagePerTick, true);
                         plugin.getCombatBalance().ignite(player, t, 40);
                     }
                     target.getWorld().playSound(target, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.8f);
@@ -2785,12 +2793,11 @@ public class TalentSkillManager {
         double radius = talent.getEffectDouble(level, "radius", 6);
         int fallDelay = (int) talent.getEffectDouble(level, "fallDelay", 40);
         int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 5);
-        double damage = stats.getMagic() * magicScaling;
+        double damage = stats.getTotalMagic() * magicScaling;
 
         // 落點：玩家前方 15 格
         Location impactLoc = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(15));
         impactLoc.setY(player.getLocation().getY());
-        Location spawnLoc = impactLoc.clone().add(0, 30, 0);
 
         player.sendMessage("§6[隕石術] §f天空出現裂縫...隕石即將墜落！");
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.7f, 2.0f);
@@ -2801,7 +2808,7 @@ public class TalentSkillManager {
 
             @Override
             public void run() {
-                ticks++;
+                ticks += 2;
                 if (ticks >= fallDelay) {
                     cancel();
                     return;
@@ -2822,41 +2829,43 @@ public class TalentSkillManager {
         };
         warningTask.runTaskTimer(plugin, 0L, 2L);
 
-        // 隕石墜落
+        // Keep the original fifteen-tick fall and combat timing; only replace the visual.
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            // 墜落動畫
+            MeteorAnimationService animation = null;
+            try {
+                animation = new MeteorAnimationService(impactLoc.clone().add(0, 1, 0), 15, 30, true, true);
+                activeMeteorVisuals.add(animation);
+            } catch (RuntimeException error) {
+                plugin.getLogger().warning("[Meteor talent] Visual unavailable: " + error.getMessage());
+            }
+            final MeteorAnimationService visual = animation;
             org.bukkit.scheduler.BukkitRunnable fallTask = new org.bukkit.scheduler.BukkitRunnable() {
-                Location current = spawnLoc.clone();
                 int ticks = 0;
+                boolean visualFailed;
 
                 @Override
                 public void run() {
                     ticks++;
-                    current.add(0, -2, 0);
-
-                    // 火焰尾跡
-                    current.getWorld().spawnParticle(Particle.FLAME, current, 20, 1, 1, 1, 0.05);
-                    current.getWorld().spawnParticle(Particle.LAVA, current, 5, 0.5, 0.5, 0.5, 0);
-                    current.getWorld().spawnParticle(Particle.SMOKE, current, 10, 0.8, 0.8, 0.8, 0.02);
-
-                    if (current.getY() <= impactLoc.getY() + 1 || ticks > 30) {
-                        // 撞擊！
-                        impactLoc.getWorld().spawnParticle(Particle.EXPLOSION, impactLoc, 5, 1, 1, 1, 0);
-                        impactLoc.getWorld().spawnParticle(Particle.FLAME, impactLoc, 100, radius, 2, radius, 0.1);
-                        impactLoc.getWorld().spawnParticle(Particle.LAVA, impactLoc, 50, radius, 1, radius, 0);
-                        impactLoc.getWorld().playSound(impactLoc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
-                        impactLoc.getWorld().playSound(impactLoc, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 1.5f, 0.5f);
-
-                        // 造成傷害
-                        for (org.bukkit.entity.Entity e : impactLoc.getWorld().getNearbyEntities(impactLoc, radius, radius, radius)) {
-                            if (e == player || !(e instanceof LivingEntity target) || target.isDead()) continue;
-                            double dist = target.getLocation().distance(impactLoc);
-                            double falloff = Math.max(0.3, 1.0 - (dist / radius) * 0.5);
-                            damageManager.dealSkillDamage(player, target, damage * falloff);
-                            plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
+                    if (visual != null && !visualFailed) try {
+                        visual.tick();
+                    } catch (RuntimeException error) {
+                        visualFailed = true;
+                        releaseMeteorVisual(visual);
+                        plugin.getLogger().warning("[Meteor talent] Visual interrupted: " + error.getMessage());
+                    }
+                    if (ticks >= 15) {
+                        try {
+                            for (org.bukkit.entity.Entity e : impactLoc.getWorld().getNearbyEntities(impactLoc, radius, radius, radius)) {
+                                if (e == player || !(e instanceof LivingEntity target) || target.isDead()) continue;
+                                double dist = target.getLocation().distance(impactLoc);
+                                double falloff = Math.max(0.3, 1.0 - (dist / radius) * 0.5);
+                                damageFireTalent(player, target, damage * falloff, false);
+                                plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
+                            }
+                        } finally {
+                            releaseMeteorVisual(visual);
+                            cancel();
                         }
-
-                        cancel();
                     }
                 }
             };
@@ -2864,6 +2873,19 @@ public class TalentSkillManager {
         }, fallDelay);
 
         return true;
+    }
+    public void shutdownMeteor() {
+        for (MeteorAnimationService visual : new ArrayList<>(activeMeteorVisuals)) releaseMeteorVisual(visual);
+        activeMeteorVisuals.clear();
+    }
+    private void releaseMeteorVisual(MeteorAnimationService visual) {
+        if (visual == null) return;
+        activeMeteorVisuals.remove(visual);
+        try {
+            visual.close();
+        } catch (RuntimeException error) {
+            plugin.getLogger().warning("[Meteor talent] Could not remove visual: " + error.getMessage());
+        }
     }
 
     /**
@@ -2875,7 +2897,7 @@ public class TalentSkillManager {
         double range = talent.getEffectDouble(level, "range", 8);
         int duration = (int) talent.getEffectDouble(level, "duration", 3);
         int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 3);
-        double damagePerHit = stats.getMagic() * magicScaling / (duration * 4); // 每tick/5 一次
+        double damagePerHit = stats.getTotalMagic() * magicScaling / (duration * 4); // 每tick/5 一次
 
         player.sendMessage("§6[烈焰噴射] §f釋放烈焰！");
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.2f);
@@ -2907,11 +2929,13 @@ public class TalentSkillManager {
 
                 // 每5 tick造成傷害
                 if (ticks % 5 == 0) {
+                    Set<UUID> hitThisPulse = new HashSet<>();
                     for (double d = 1; d <= range; d += 1) {
                         Location checkLoc = eyeLoc.clone().add(direction.clone().multiply(d));
                         for (org.bukkit.entity.Entity entity : checkLoc.getWorld().getNearbyEntities(checkLoc, 1, 1, 1)) {
                             if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                            com.customrpg.utils.SkillDamageGuard.damage(target, damagePerHit, player);
+                            if (!hitThisPulse.add(target.getUniqueId())) continue;
+                            damageFireTalent(player, target, damagePerHit, true);
                             plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                         }
                     }
@@ -2936,7 +2960,7 @@ public class TalentSkillManager {
         double range = talent.getEffectDouble(level, "range", 10);
         double width = talent.getEffectDouble(level, "width", 3);
         int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 3);
-        double damage = stats.getMagic() * magicScaling;
+        double damage = stats.getTotalMagic() * magicScaling;
 
         Location start = player.getLocation().add(0, 0.5, 0);
         Vector dir = player.getEyeLocation().getDirection().normalize().setY(0).normalize();
@@ -2972,7 +2996,7 @@ public class TalentSkillManager {
                     if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
                     if (alreadyHit.contains(target.getUniqueId())) continue;
                     alreadyHit.add(target.getUniqueId());
-                    com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
+                    damageFireTalent(player, target, damage, false);
                     plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                     center.getWorld().spawnParticle(Particle.LAVA, target.getLocation().add(0, 1, 0), 8, 0.2, 0.2, 0.2, 0);
                 }
@@ -2991,7 +3015,7 @@ public class TalentSkillManager {
         double radius = talent.getEffectDouble(level, "radius", 5);
         int duration = (int) talent.getEffectDouble(level, "duration", 5);
         int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 3);
-        double damagePerSecond = stats.getMagic() * magicScaling;
+        double damagePerSecond = stats.getTotalMagic() * magicScaling;
 
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.6f);
         player.sendMessage("§6[熾焰之環] §f點燃周圍一切！");
@@ -3030,7 +3054,7 @@ public class TalentSkillManager {
                 if (ticks % 20 == 0) {
                     for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        com.customrpg.utils.SkillDamageGuard.damage(target, damagePerSecond, player);
+                        damageFireTalent(player, target, damagePerSecond, true);
                         plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                     }
                     center.getWorld().playSound(center, Sound.BLOCK_FIRE_AMBIENT, 0.6f, 0.8f);
@@ -3051,7 +3075,7 @@ public class TalentSkillManager {
         double radius = talent.getEffectDouble(level, "radius", 8);
         int duration = (int) talent.getEffectDouble(level, "duration", 8);
         int burnDuration = (int) talent.getEffectDouble(level, "burnDuration", 5);
-        double damagePerTick = stats.getMagic() * magicScaling + stats.getSpirit() * spiritScaling;
+        double damagePerTick = stats.getTotalMagic() * magicScaling + stats.getTotalSpirit() * spiritScaling;
 
         Location center = player.getLocation().clone();
 
@@ -3103,7 +3127,7 @@ public class TalentSkillManager {
                 if (ticks % 10 == 0) {
                     for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
                         if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        com.customrpg.utils.SkillDamageGuard.damage(target, damagePerTick / 2, player); // 每0.5秒造成一半傷害
+                        damageFireTalent(player, target, damagePerTick / 2, true); // 每0.5秒造成一半傷害
                         plugin.getCombatBalance().ignite(player, target, burnDuration * 20);
                         // 緩速效果
                         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 1, false, false));

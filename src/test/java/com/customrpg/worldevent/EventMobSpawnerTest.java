@@ -20,6 +20,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class EventMobSpawnerTest {
+    @org.junit.jupiter.api.Test void generatedArenaUsesItsFloorEvenIfHeightMapPointsSomewhereElse() throws Exception {
+        CustomRPG plugin=mock(CustomRPG.class); MobManager mobs=mock(MobManager.class); when(plugin.getMobManager()).thenReturn(mobs);
+        var e=WorldEventLifecycleTest.event(); e.generatedArena=true;
+        World world=mock(World.class); when(world.isChunkLoaded(anyInt(),anyInt())).thenReturn(true);
+        when(world.getHighestBlockYAt(anyInt(),anyInt(),any(HeightMap.class))).thenReturn(300);
+        when(mobs.findSafeSpawnLocationExact(any())).thenAnswer(i->i.getArgument(0));
+        var spawner=new EventMobSpawner(plugin,new WorldEventRepository(directory));
+        assertEquals(e.y,spawner.findSpawn(e,world,8).getBlockY());
+        verify(world,never()).getHighestBlockYAt(anyInt(),anyInt(),any(HeightMap.class));
+    }
     @TempDir Path directory;
     @Test void defaultPlanHasExactlyNineteenUniqueZoneLevelMobs() throws Exception {
         CustomRPG plugin=mock(CustomRPG.class); MobManager mobs=mock(MobManager.class); when(plugin.getMobManager()).thenReturn(mobs);
@@ -62,5 +72,28 @@ class EventMobSpawnerTest {
         doReturn(new Location(world,1000,65,-1000)).when(spawner).findSpawn(e,world,0);
         assertThrows(IOException.class,()->spawner.spawnNext(e,world));
         verifyNoInteractions(mobs); assertFalse(spawner.spawnNext(e,world));
+    }
+    @Test void wideMobRetriesAnotherLocationAfterTheFirstSpawnIsRejected() throws Exception {
+        CustomRPG plugin=mock(CustomRPG.class); MobManager mobs=mock(MobManager.class); when(plugin.getMobManager()).thenReturn(mobs);
+        var repo=new WorldEventRepository(directory); var e=WorldEventLifecycleTest.event(); e.state=WorldEventState.IMPACTING;
+        var record=new WorldEventInstance.EventMob(UUID.randomUUID(),"astral_crawler","NORMAL",15);
+        e.mobs.put(record.id,record); repo.events.put(e.id,e);
+        World world=mock(World.class); when(world.isChunkLoaded(anyInt(),anyInt())).thenReturn(true);
+        when(world.getHighestBlockYAt(anyInt(),anyInt(),eq(HeightMap.MOTION_BLOCKING_NO_LEAVES))).thenReturn(64);
+        when(mobs.findSafeSpawnLocationExact(any())).thenAnswer(i->i.getArgument(0));
+        var spawner=new EventMobSpawner(plugin,repo);
+        LivingEntity entity=mock(LivingEntity.class); when(entity.getUniqueId()).thenReturn(UUID.randomUUID());
+        when(entity.getPersistentDataContainer()).thenReturn(mock(PersistentDataContainer.class)); when(entity.isValid()).thenReturn(true);
+        int[] attempts={0}; List<Location> positions=new ArrayList<>();
+        when(mobs.spawnEventMob(eq(record.template),any(),eq(15),any())).thenAnswer(invocation->{
+            positions.add(invocation.getArgument(1));
+            if(++attempts[0]==1) return null;
+            Consumer<LivingEntity> initializer=invocation.getArgument(3); initializer.accept(entity);
+            return entity;
+        });
+        assertTrue(spawner.spawnNext(e,world));
+        assertEquals(2,attempts[0]); assertEquals(WorldEventInstance.MobState.ALIVE,record.state);
+        assertEquals(entity.getUniqueId(),record.entity);
+        assertNotEquals(positions.get(0),positions.get(1));
     }
 }

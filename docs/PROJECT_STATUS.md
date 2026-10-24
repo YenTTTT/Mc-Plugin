@@ -234,6 +234,8 @@ mvn verify
 
 ## 7. Dynamic World Events / Meteor Impact（2026-10-18）
 
+**2026-10-24 更新（目前行為）**：新隕石事件改成在原地形上方建立臨時隕石島，提供平坦地板、外牆及核心，不挖原世界。玩家用 `/events join [eventId]` 入場、`/events leave` 返回；返回位置持久保存，清理前先移走玩家，舊坑洞快照繼續相容還原。海洋、陡坡及建築下方不受島嶼施工保護影響。實際版本說明見 [WORLD_EVENTS.md](WORLD_EVENTS.md)；以下為早期開發紀錄，舊選址及 FAWE 未支援等敘述不代表目前限制。仍需 Paper 實服驗收。
+
 本次新需求允許插件程式生成暫時地形，結束必須恢復；Zero Manual Building 不等於禁止 procedural 地形。本輪在 `3b7aeb0` 上新增通用事件 Framework 與第一個 Meteor 事件，未重寫 Race／Skill／Equipment。
 
 - **程式完成＋本機測試**：正式狀態機、持久隨機排程、保守自然選址、不可變快照、批次坑洞／核心、BlockDisplay 動畫、19 隻一次性怪物、貢獻、個人素材錢包、管理指令、清理／重啟還原。

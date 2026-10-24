@@ -4,11 +4,12 @@ import com.customrpg.worldevent.core.*;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.plugin.java.JavaPlugin;
+import java.util.Objects;
 import java.util.function.Consumer;
 
-/** One display per event; the manager's shared tick loop owns its lifetime. Never creates an explosion. */
+/** Reusable visual-only falling meteor for world events and talent casts. */
 public final class MeteorAnimationService implements WorldEventDefinition.Animation {
-    private final WorldEventInstance event;
+    private final Location impact;
     private final World world;
     private final int duration, height;
     private final boolean particles,sounds;
@@ -16,7 +17,16 @@ public final class MeteorAnimationService implements WorldEventDefinition.Animat
     private int age;
     public MeteorAnimationService(JavaPlugin plugin,WorldEventInstance event,World world,int duration,int height,
                                   boolean enabled,boolean particles,boolean sounds,Consumer<Entity> tag) {
-        this.event=event; this.world=world; this.duration=enabled?duration:1; this.height=height; this.particles=particles; this.sounds=sounds;
+        this(new Location(world,event.x+0.5,event.y+1,event.z+0.5),duration,height,enabled,particles,sounds,tag);
+    }
+    /** Visual-only skill animation; no event identity, terrain edits, mobs, or combat logic. */
+    public MeteorAnimationService(Location impact,int duration,int height,boolean particles,boolean sounds) {
+        this(impact,duration,height,true,particles,sounds,entity->{});
+    }
+    private MeteorAnimationService(Location impact,int duration,int height,boolean enabled,boolean particles,
+                                   boolean sounds,Consumer<Entity> tag) {
+        this.impact=impact.clone(); this.world=Objects.requireNonNull(impact.getWorld(),"meteor world");
+        this.duration=enabled?duration:1; this.height=height; this.particles=particles; this.sounds=sounds;
         if(enabled) {
             display=world.spawn(point(0),BlockDisplay.class,entity -> {
                 tag.accept(entity); entity.setPersistent(false); entity.setBlock(Material.MAGMA_BLOCK.createBlockData());
@@ -28,7 +38,8 @@ public final class MeteorAnimationService implements WorldEventDefinition.Animat
         }
     }
     private Location point(double progress) {
-        return new Location(world,event.x+0.5,Math.min(world.getMaxHeight()-3,event.y+height)*(1-progress)+(event.y+1)*progress,event.z+0.5);
+        double start=Math.min(world.getMaxHeight()-3,impact.getY()-1+height);
+        return new Location(world,impact.getX(),start*(1-progress)+impact.getY()*progress,impact.getZ());
     }
     @Override public boolean tick() {
         age++;
@@ -42,16 +53,19 @@ public final class MeteorAnimationService implements WorldEventDefinition.Animat
             player.spawnParticle(Particle.FLAME,point,8,0.5,0.5,0.5,0.01);
             player.spawnParticle(Particle.SMOKE,point,5,0.7,0.7,0.7,0.02);
         }
-        if(sounds && age==Math.max(1,duration-20)) for(Player player:world.getNearbyPlayers(new Location(world,event.x,event.y,event.z),128)) {
+        if(sounds && age==Math.max(1,duration-Math.min(20,Math.max(3,duration/5)))) for(Player player:world.getNearbyPlayers(impact,128)) {
             player.playSound(player.getLocation(),Sound.BLOCK_BEACON_DEACTIVATE,0.6f,0.6f);
         }
         if(progress<1) return false;
         close();
-        impact(world,event,particles,sounds);
+        impact(impact,particles,sounds);
         return true;
     }
     public static void impact(World world,WorldEventInstance event,boolean particles,boolean sounds) {
-        Location center=new Location(world,event.x+0.5,event.y+1,event.z+0.5);
+        impact(new Location(world,event.x+0.5,event.y+1,event.z+0.5),particles,sounds);
+    }
+    public static void impact(Location center,boolean particles,boolean sounds) {
+        World world=Objects.requireNonNull(center.getWorld(),"meteor world");
         for(Player player:world.getNearbyPlayers(center,128)) {
             if(particles) {
                 player.spawnParticle(Particle.EXPLOSION_EMITTER,center,1);

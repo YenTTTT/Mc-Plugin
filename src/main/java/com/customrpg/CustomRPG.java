@@ -166,6 +166,7 @@ public class CustomRPG extends JavaPlugin {
         if (talentMainMenuGUI != null) talentMainMenuGUI.cleanup();
         if (talentTreeGUI != null) talentTreeGUI.cleanup();
         if (activeTalentSkillManager != null) {
+            activeTalentSkillManager.shutdownMeteor();
             activeTalentSkillManager.shutdownAssassin();
             activeTalentSkillManager.getExpansion().shutdown(); activeTalentSkillManager.getHunter().shutdown(); activeTalentSkillManager.getFrost().shutdown(); activeTalentSkillManager.getEarth().shutdown(); activeTalentSkillManager.getDark().shutdown(); if(activeTalentSkillManager.getNecro()!=null)activeTalentSkillManager.getNecro().shutdown();
         if(activeTalentSkillManager.getChicken()!=null)activeTalentSkillManager.getChicken().shutdown();

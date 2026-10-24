@@ -22,6 +22,8 @@ public interface WorldEventDefinition {
     }
     String type();
     Requirements requirements();
+    default boolean generatedArena() { return false; }
+    default int arenaClearance() { return 6; }
     long durationMillis();
     long cleanupDelayMillis();
     Map<Position,String> generate(Map<Column,Integer> heights, int x, int y, int z, long seed);

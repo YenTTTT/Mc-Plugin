@@ -12,6 +12,14 @@ public final class WorldEventCommand implements CommandExecutor,TabCompleter {
         try {
             if(command.getName().equalsIgnoreCase("mmorpg")) return admin(sender,args);
             String action=args.length==0?"info":args[0].toLowerCase(Locale.ROOT);
+            if(action.equals("join")||action.equals("leave")) {
+                if(!(sender instanceof Player player)) { sender.sendMessage("Player only"); return true; }
+                if(action.equals("join")&&args.length<=2)
+                    sender.sendMessage(manager.joinArena(player,args.length==2?UUID.fromString(args[1]):null));
+                else if(action.equals("leave")&&args.length==1) sender.sendMessage(manager.leaveArena(player));
+                else sender.sendMessage("/events join [eventId] 或 /events leave");
+                return true;
+            }
             if(action.equals("wallet")||action.equals("rewards")) {
                 if(!(sender instanceof Player player)) { sender.sendMessage("Player only"); return true; }
                 sender.sendMessage("§6個人事件素材錢包：");
@@ -24,7 +32,7 @@ public final class WorldEventCommand implements CommandExecutor,TabCompleter {
                 if(!(sender instanceof Player player)||args.length!=2) { sender.sendMessage("/events claim <eventId>"); return true; }
                 sender.sendMessage(manager.claim(UUID.fromString(args[1]),player.getUniqueId())); return true;
             }
-            if(!action.equals("info")&&!action.equals("list")) { sender.sendMessage("/events [info|list|wallet|claim <eventId>]"); return true; }
+            if(!action.equals("info")&&!action.equals("list")) { sender.sendMessage("/events [info|list|join [eventId]|leave|wallet|claim <eventId>]"); return true; }
             sender.sendMessage("§6世界事件： §7"+manager.diagnostic());
             List<WorldEventInstance> events=new ArrayList<>(manager.events()); Collections.reverse(events);
             events.stream().limit(10).forEach(e->describe(sender,e));
@@ -71,7 +79,7 @@ public final class WorldEventCommand implements CommandExecutor,TabCompleter {
             if(args.length==2) return List.of("list","info","start","test","stop","cleanup","debug");
             if(args.length==3&&(args[1].equalsIgnoreCase("start")||args[1].equalsIgnoreCase("test"))) return List.of("meteor");
             if(args.length==4&&(args[1].equalsIgnoreCase("start")||args[1].equalsIgnoreCase("test"))) return List.of("here");
-        } else if(args.length==1) return List.of("info","list","wallet","claim");
+        } else if(args.length==1) return List.of("info","list","join","leave","wallet","claim");
         return List.of();
     }
 }

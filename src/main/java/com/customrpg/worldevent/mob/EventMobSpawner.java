@@ -10,6 +10,8 @@ import java.io.*;
 import java.util.*;
 
 public final class EventMobSpawner {
+    private static final int SPAWN_CANDIDATES=64;
+    private static final int SPAWN_ATTEMPTS=32;
     public static final NamespacedKey EVENT_ID=new NamespacedKey("customrpg","event_id");
     public static final NamespacedKey MOB_ID=new NamespacedKey("customrpg","event_mob_id");
     public static final NamespacedKey EVENT_TYPE=new NamespacedKey("customrpg","event_type");
@@ -36,44 +38,58 @@ public final class EventMobSpawner {
         int index=0;
         for(var mob:event.mobs.values()) {
             if(mob.state!=WorldEventInstance.MobState.PLANNED) { index++; continue; }
-            Location spawn=findSpawn(event,world,index);
-            if(spawn==null) throw new IllegalStateException("No safe event mob spawn position");
+            Location first=findSpawn(event,world,index);
+            if(first==null) throw new IllegalStateException("No safe event mob spawn position for "+mob.template);
             if(!mob.beginSpawn()) return false;
             repository.save();
-            java.util.function.Consumer<LivingEntity> beforeSpawn=living -> {
-                tag(living,event); living.getPersistentDataContainer().set(MOB_ID,PersistentDataType.STRING,mob.id.toString());
-                living.getPersistentDataContainer().set(EVENT_RANK,PersistentDataType.STRING,mob.rank);
-                living.setPersistent(true); living.setRemoveWhenFarAway(false);
-                if(living instanceof Mob ai) ai.setCanPickupItems(false);
-                mob.entity=living.getUniqueId();
-                mob.chunkX=spawn.getBlockX()>>4; mob.chunkZ=spawn.getBlockZ()>>4;
-                try { repository.save(); } catch(IOException e) { throw new UncheckedIOException(e); }
-            };
-            LivingEntity entity=event.testMode?plugin.getMobManager().spawnTestEventMob(mob.template,spawn,mob.level,beforeSpawn)
-                    :plugin.getMobManager().spawnEventMob(mob.template,spawn,mob.level,beforeSpawn);
-            if(entity==null||!entity.isValid()||entity.isDead()) throw new IllegalStateException("Event mob spawn cancelled: "+mob.template);
-            plugin.getMobManager().setMobTier(entity,mob.rank.equals("TANK")?"NORMAL":mob.rank);
-            if(mob.rank.equals("ELITE")||mob.rank.equals("BOSS")) entity.setGlowing(true);
-            mob.state=WorldEventInstance.MobState.ALIVE;
-            repository.save();
-            return true;
+            int spawnCalls=0;
+            for(int attempt=-1;attempt<SPAWN_CANDIDATES&&spawnCalls<SPAWN_ATTEMPTS;attempt++) {
+                Location spawn=attempt<0?first:spawnCandidate(event,world,index,attempt);
+                if(spawn==null||attempt>=0&&spawn.equals(first)) continue;
+                spawnCalls++;
+                java.util.function.Consumer<LivingEntity> beforeSpawn=living -> {
+                    tag(living,event); living.getPersistentDataContainer().set(MOB_ID,PersistentDataType.STRING,mob.id.toString());
+                    living.getPersistentDataContainer().set(EVENT_RANK,PersistentDataType.STRING,mob.rank);
+                    living.setPersistent(true); living.setRemoveWhenFarAway(false);
+                    if(living instanceof Mob ai) ai.setCanPickupItems(false);
+                    mob.entity=living.getUniqueId();
+                    mob.chunkX=spawn.getBlockX()>>4; mob.chunkZ=spawn.getBlockZ()>>4;
+                    try { repository.save(); } catch(IOException e) { throw new UncheckedIOException(e); }
+                };
+                LivingEntity entity=event.testMode?plugin.getMobManager().spawnTestEventMob(mob.template,spawn,mob.level,beforeSpawn)
+                        :plugin.getMobManager().spawnEventMob(mob.template,spawn,mob.level,beforeSpawn);
+                if(entity==null||!entity.isValid()||entity.isDead()) {
+                    if(entity!=null) entity.remove();
+                    continue;
+                }
+                plugin.getMobManager().setMobTier(entity,mob.rank.equals("TANK")?"NORMAL":mob.rank);
+                if(mob.rank.equals("ELITE")||mob.rank.equals("BOSS")) entity.setGlowing(true);
+                mob.state=WorldEventInstance.MobState.ALIVE;
+                repository.save();
+                return true;
+            }
+            throw new IllegalStateException("Event mob could not spawn after "+spawnCalls+" attempts: "+mob.template);
         }
         return false;
     }
 
     public Location findSpawn(WorldEventInstance event,World world,int index) {
-        for(int attempt=0;attempt<24;attempt++) {
-            double angle=index*2.3999632297+attempt*0.37;
-            double radius=Math.max(4,event.radius*(0.55+(attempt%3)*0.1));
-            int x=event.x+(int)Math.round(Math.cos(angle)*radius),z=event.z+(int)Math.round(Math.sin(angle)*radius);
-            if(!world.isChunkLoaded(x>>4,z>>4)) continue;
-            int y=world.getHighestBlockYAt(x,z,HeightMap.MOTION_BLOCKING_NO_LEAVES)+1;
-            Location candidate=new Location(world,x+0.5,y,z+0.5);
-            Location safe=event.testMode?plugin.getMobManager().findSafeSpawnLocationExactForTesting(candidate)
-                    :plugin.getMobManager().findSafeSpawnLocationExact(candidate);
+        for(int attempt=0;attempt<SPAWN_CANDIDATES;attempt++) {
+            Location safe=spawnCandidate(event,world,index,attempt);
             if(safe!=null) return safe;
         }
         return null;
+    }
+    private Location spawnCandidate(WorldEventInstance event,World world,int index,int attempt) {
+        int ring=attempt%4,step=attempt/4;
+        double angle=index*2.3999632297+step*2.3999632297+ring*0.31;
+        double radius=Math.min(event.radius-1,Math.max(3,event.radius*(0.45+ring*0.1)));
+        int x=event.x+(int)Math.round(Math.cos(angle)*radius),z=event.z+(int)Math.round(Math.sin(angle)*radius);
+        if(!world.isChunkLoaded(x>>4,z>>4)) return null;
+        int y=event.generatedArena?event.y:world.getHighestBlockYAt(x,z,HeightMap.MOTION_BLOCKING_NO_LEAVES)+1;
+        Location candidate=new Location(world,x+0.5,y,z+0.5);
+        return event.testMode?plugin.getMobManager().findSafeSpawnLocationExactForTesting(candidate)
+                :plugin.getMobManager().findSafeSpawnLocationExact(candidate);
     }
 
     public static void tag(Entity entity,WorldEventInstance event) {

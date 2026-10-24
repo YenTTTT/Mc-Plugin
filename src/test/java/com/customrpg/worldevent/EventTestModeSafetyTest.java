@@ -4,9 +4,11 @@ import com.customrpg.CustomRPG;
 import com.customrpg.managers.*;
 import com.customrpg.worldevent.core.*;
 import com.customrpg.worldevent.location.*;
+import com.customrpg.worldevent.terrain.TerrainSnapshot;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Waterlogged;
+import org.bukkit.entity.Villager;
 import org.bukkit.plugin.PluginManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
@@ -48,31 +50,74 @@ class EventTestModeSafetyTest {
             });
         });
         terrain=new NaturalTerrainRegistry(directory.resolve("chunks.yml")); protection=new ProtectionValidator(plugin);
-        locations=new EventLocationService(terrain,protection,4); center=new Location(world,1000,65,1000);
+        locations=new EventLocationService(protection,4); center=new Location(world,1000,65,1000);
     }
-    @Test void explicitTestAcceptsOldTerrainWithoutGrantingProvenanceToNormalEvents() {
+    @Test void normalAndTestAcceptOldSafeTerrainWithoutChangingProvenance() {
         assertNotNull(locations.validateForTesting(center,requirements,List.of()));
-        assertNull(locations.validate(center,requirements,List.of())); assertTrue(locations.lastRejection.contains("Unknown"));
+        assertNotNull(locations.validate(center,requirements,List.of()));
         assertFalse(terrain.eligible(world.getUID(),62,62));
         verify(world,never()).getChunkAt(anyInt(),anyInt()); // no structure metadata lookup or chunk generation
         verify(world,never()).getBiome(anyInt(),anyInt(),anyInt());
     }
-    @Test void testSupportsCommonBuildingMaterialsTreesAndTallPlants() {
-        for(Material type:List.of(Material.COBBLESTONE,Material.STONE_BRICKS,Material.OAK_PLANKS,Material.OAK_LOG,Material.OAK_LEAVES,Material.TALL_GRASS)) {
-            changed=type; assertNotNull(locations.validateForTesting(center,requirements,List.of()),type.name());
-            assertFalse(TerrainValidator.accepts(type));
+    @Test void normalAndTestSitesDoNotRejectSpecificBlockTypes() {
+        for(Material type:List.of(Material.COPPER_ORE,Material.CHEST,Material.BARREL,Material.WATER,
+                Material.LAVA,Material.OAK_DOOR,Material.NETHER_PORTAL,Material.PISTON)) {
+            changed=type;
+            assertNotNull(locations.validate(center,requirements,List.of()),type.name());
+            assertNotNull(locations.validateForTesting(center,requirements,List.of()),type.name());
         }
     }
-    @Test void testStillRejectsContainersLiquidsGravityAndComplexBlocks() {
-        for(Material type:List.of(Material.CHEST,Material.BARREL,Material.WATER,Material.LAVA,Material.SAND,Material.GRAVEL,
-                Material.SPAWNER,Material.OAK_DOOR,Material.RED_BED,Material.NETHER_PORTAL,Material.PISTON)) {
-            changed=type; assertNull(locations.validateForTesting(center,requirements,List.of()),type.name());
-            assertTrue(locations.lastRejection.contains("Unsafe block"));
-        }
+    @Test void generatedCoreSkipsUnrestorableBlockOutsideLocalSurfaceScan() {
+        var chest=mock(Block.class); when(chest.getType()).thenReturn(Material.CHEST);
+        when(world.getBlockAt(1000,150,1000)).thenReturn(chest);
+        var site=locations.validate(center,requirements,List.of());
+        assertNotNull(site);
+        WorldEventDefinition definition=mock(WorldEventDefinition.class);
+        when(definition.requirements()).thenReturn(requirements);
+        when(definition.generate(anyMap(),anyInt(),anyInt(),anyInt(),anyLong()))
+                .thenReturn(Map.of(new TerrainSnapshot.Position(1000,150,1000),"minecraft:air"));
+        assertTrue(locations.snapshot(UUID.randomUUID(),definition,site,42).blocks().isEmpty());
     }
-    @Test void waterloggedLeavesRemainRejected() {
+    @Test void decorativeBlocksInProtectionPaddingDoNotRejectUntouchedTerrain() {
+        var chest=mock(Block.class); when(chest.getType()).thenReturn(Material.CHEST);
+        when(world.getBlockAt(1016,65,1000)).thenReturn(chest);
+        assertNotNull(locations.validate(center,requirements,List.of()));
+        verify(world,never()).getBlockAt(eq(1016),anyInt(),eq(1000));
+    }
+    @Test void valuableEntitiesHighAboveTheCenterStillRejectACliffSite() {
+        adjacentHeight=150;
+        when(world.getNearbyEntities(any(Location.class),anyDouble(),anyDouble(),anyDouble()))
+                .thenReturn(List.of(mock(Villager.class)));
+        assertNull(locations.validate(center,requirements,List.of()));
+        assertEquals("Player/NPC/decorative entity in footprint",locations.lastRejection);
+        verify(world).getNearbyEntities(any(Location.class),eq(13.0),eq(384.0),eq(13.0));
+    }
+    @Test void chestAndOreAtSameSiteDoNotPreventSafeCraterEdits() {
+        var ore=mock(Block.class); var oreData=mock(org.bukkit.block.data.BlockData.class);
+        when(ore.getType()).thenReturn(Material.COPPER_ORE);
+        when(ore.getBlockData()).thenReturn(oreData); when(oreData.getAsString()).thenReturn("minecraft:copper_ore");
+        when(ore.getState()).thenReturn(mock(org.bukkit.block.BlockState.class));
+        var chest=mock(Block.class); when(chest.getType()).thenReturn(Material.CHEST);
+        when(chest.getState()).thenReturn(mock(org.bukkit.block.TileState.class));
+        when(world.getBlockAt(1000,65,1000)).thenReturn(ore);
+        when(world.getBlockAt(1001,65,1000)).thenReturn(chest);
+        var site=locations.validate(center,requirements,List.of());
+        assertNotNull(site);
+        WorldEventDefinition definition=mock(WorldEventDefinition.class);
+        when(definition.requirements()).thenReturn(requirements);
+        var orePos=new TerrainSnapshot.Position(1000,65,1000);
+        var chestPos=new TerrainSnapshot.Position(1001,65,1000);
+        when(definition.generate(anyMap(),anyInt(),anyInt(),anyInt(),anyLong()))
+                .thenReturn(Map.of(orePos,"minecraft:air",chestPos,"minecraft:air"));
+        var snapshot=locations.snapshot(UUID.randomUUID(),definition,site,42);
+        assertEquals(1,snapshot.blocks().size());
+        assertEquals(orePos,snapshot.blocks().getFirst().position());
+        assertEquals("minecraft:copper_ore",snapshot.blocks().getFirst().before());
+        verify(chest,never()).getBlockData();
+    }
+    @Test void waterloggedLeavesDoNotRejectTheSite() {
         changed=Material.OAK_LEAVES; waterlogged=true;
-        assertNull(locations.validateForTesting(center,requirements,List.of())); assertTrue(locations.lastRejection.contains("waterlogged"));
+        assertNotNull(locations.validate(center,requirements,List.of()));
     }
     @Test void testSkipsSpawnSafeZoneButRetainsCustomClaimsBossAreasAndAdapterFailures() {
         when(plugin.getSafeZoneManager().isInSafeZone(any())).thenReturn(true);
@@ -102,10 +147,11 @@ class EventTestModeSafetyTest {
         assertNull(locations.validateForTesting(new Location(world,event.x,event.y,event.z),requirements,List.of(event)));
         assertTrue(locations.lastRejection.contains("Overlapping"));
     }
-    @Test void testAllowsModerateSlopeButRetainsBoundedHeightAndWorldBorder() {
-        adjacentHeight=72; assertNotNull(locations.validateForTesting(center,requirements,List.of()));
-        adjacentHeight=77; assertNull(locations.validateForTesting(center,requirements,List.of()));
-        assertTrue(locations.lastRejection.contains("Height variation"));
+    @Test void steepSlopeIsAllowedButBuildHeightAndWorldBorderRemainBounded() {
+        adjacentHeight=77; assertNotNull(locations.validateForTesting(center,requirements,List.of()));
+        assertNotNull(locations.validate(center,requirements,List.of()));
+        adjacentHeight=315; assertNull(locations.validate(center,requirements,List.of()));
+        assertTrue(locations.lastRejection.contains("Build height"));
         adjacentHeight=64; when(world.getWorldBorder().isInside(any())).thenReturn(false);
         assertNull(locations.validateForTesting(center,requirements,List.of())); assertEquals("World border",locations.lastRejection);
     }

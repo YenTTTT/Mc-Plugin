@@ -25,6 +25,13 @@ class EventLocationSafetyTest {
         when(server.getPluginManager()).thenReturn(mock(PluginManager.class));
         world=mock(World.class); when(world.getUID()).thenReturn(UUID.randomUUID());
         when(world.getEnvironment()).thenReturn(World.Environment.NORMAL); when(world.getDifficulty()).thenReturn(Difficulty.NORMAL);
+        when(world.getMinHeight()).thenReturn(-64); when(world.getMaxHeight()).thenReturn(320);
+        when(world.getHighestBlockYAt(anyInt(),anyInt(),eq(HeightMap.OCEAN_FLOOR))).thenReturn(64);
+        WorldBorder border=mock(WorldBorder.class); when(border.isInside(any())).thenReturn(true);
+        when(world.getWorldBorder()).thenReturn(border);
+        org.bukkit.block.Block stone=mock(org.bukkit.block.Block.class),air=mock(org.bukkit.block.Block.class);
+        when(stone.getType()).thenReturn(Material.STONE); when(air.getType()).thenReturn(Material.AIR);
+        when(world.getBlockAt(anyInt(),anyInt(),anyInt())).thenAnswer(i->(int)i.getArgument(1)<=64?stone:air);
         terrain=new NaturalTerrainRegistry(directory.resolve("chunks.yml")); protection=new ProtectionValidator(plugin);
     }
     @Test void spawnSafeZoneAndExistingProtectedRegionsDenyCandidate() {
@@ -47,25 +54,24 @@ class EventLocationSafetyTest {
         assertEquals("WorldGuard protection lookup failed",protection.rejection(center));
         protection.register("WorldGuard",location->true); assertNull(protection.rejection(center));
     }
-    @Test void unobservedOrUnloadedChunksNeverCauseChunkLoad() {
-        var service=new EventLocationService(terrain,protection,4); Location center=new Location(world,1000,65,1000);
+    @Test void oldLoadedTerrainCanBeUsedWithoutLoadingChunks() {
+        var service=new EventLocationService(protection,4); Location center=new Location(world,1000,65,1000);
         assertNull(service.validate(center,new WorldEventDefinition.Requirements(12,4,9,5),List.of()));
         assertTrue(service.lastRejection.contains("unloaded"));
         when(world.isChunkLoaded(anyInt(),anyInt())).thenReturn(true);
-        assertNull(service.validate(center,new WorldEventDefinition.Requirements(12,4,9,5),List.of()));
-        assertTrue(service.lastRejection.contains("Unknown"));
+        assertNotNull(service.validate(center,new WorldEventDefinition.Requirements(12,4,9,5),List.of()));
+        assertFalse(terrain.eligible(world.getUID(),62,62));
         verify(world,never()).getChunkAt(anyInt(),anyInt());
         verify(world,never()).loadChunk(anyInt(),anyInt(),anyBoolean());
     }
-    @Test void villageOrAnyVanillaStructureRejectsCandidate() throws Exception {
+    @Test void chunkStructureMetadataDoesNotRejectUntouchedSurface() throws Exception {
         when(world.isChunkLoaded(anyInt(),anyInt())).thenReturn(true);
         for(int x=61;x<=63;x++) for(int z=61;z<=63;z++) terrain.populated(world.getUID(),x,z);
         Chunk chunk=mock(Chunk.class); when(world.getChunkAt(anyInt(),anyInt())).thenReturn(chunk);
         when(chunk.getStructures()).thenReturn(List.of(mock(GeneratedStructure.class)));
-        var service=new EventLocationService(terrain,protection,4);
-        assertNull(service.validate(new Location(world,1000,65,1000),new WorldEventDefinition.Requirements(12,4,9,5),List.of()));
-        assertTrue(service.lastRejection.contains("structure"));
-        verify(world,never()).getBlockAt(anyInt(),anyInt(),anyInt());
+        var service=new EventLocationService(protection,4);
+        assertNotNull(service.validate(new Location(world,1000,65,1000),new WorldEventDefinition.Requirements(12,4,9,5),List.of()));
+        verify(world,never()).getChunkAt(anyInt(),anyInt());
     }
     @Test void observedNewTerrainAndPlayerEditRevocationSurviveRestart() throws Exception {
         UUID id=world.getUID(); assertFalse(terrain.eligible(id,1,2));
@@ -74,16 +80,22 @@ class EventLocationSafetyTest {
         restarted.revoke(id,1,2);
         assertFalse(new NaturalTerrainRegistry(directory.resolve("chunks.yml")).eligible(id,1,2));
     }
-    @Test void whitelistRejectsComplexAndPlayerBuildingMaterials() {
-        for(Material bad:List.of(Material.CHEST,Material.BARREL,Material.SPAWNER,Material.NETHER_PORTAL,Material.SAND,
-                Material.GRAVEL,Material.WATER,Material.LAVA,Material.OAK_LOG,Material.OAK_PLANKS,Material.TALL_GRASS,Material.OAK_SLAB)) {
-            assertFalse(TerrainValidator.accepts(bad),bad.toString());
-        }
-        assertTrue(TerrainValidator.accepts(Material.SHORT_GRASS)); assertFalse(TerrainValidator.stableGround(Material.SHORT_GRASS));
-        assertTrue(TerrainValidator.stableGround(Material.GRASS_BLOCK));
+    @Test void oreCanBeRestoredButTileEntitiesAndFluidsAreNotExcavated() {
+        var ore=mock(org.bukkit.block.Block.class);
+        when(ore.getType()).thenReturn(Material.COPPER_ORE);
+        when(ore.getBlockData()).thenReturn(mock(org.bukkit.block.data.BlockData.class));
+        when(ore.getState()).thenReturn(mock(org.bukkit.block.BlockState.class));
+        assertTrue(TerrainValidator.canTemporarilyReplace(ore));
+        var barrel=mock(org.bukkit.block.Block.class);
+        when(barrel.getType()).thenReturn(Material.BARREL);
+        when(barrel.getState()).thenReturn(mock(org.bukkit.block.TileState.class));
+        assertFalse(TerrainValidator.canTemporarilyReplace(barrel));
+        var water=mock(org.bukkit.block.Block.class);
+        when(water.getType()).thenReturn(Material.WATER);
+        assertFalse(TerrainValidator.canTemporarilyReplace(water));
     }
     @Test void wrongDimensionAndOverlappingEventAreRejectedBeforeWorldAccess() {
-        var service=new EventLocationService(terrain,protection,4); var e=WorldEventLifecycleTest.event();
+        var service=new EventLocationService(protection,4); var e=WorldEventLifecycleTest.event();
         when(world.getEnvironment()).thenReturn(World.Environment.NETHER);
         assertNull(service.validate(new Location(world,1000,65,1000),new WorldEventDefinition.Requirements(12,4,9,5),List.of()));
         when(world.getEnvironment()).thenReturn(World.Environment.NORMAL); when(world.getUID()).thenReturn(e.world);

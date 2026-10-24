@@ -23,6 +23,15 @@ class WorldEventPersistenceTest {
         assertEquals(snapshot,repo.loadSnapshot(event.id));
         assertThrows(IOException.class,()->repo.saveSnapshot(snapshot));
     }
+    @Test void untouchedTerrainSnapshotRoundTripsAndNeedsNoBatchWrites() throws Exception {
+        var repo=new WorldEventRepository(directory); var event=WorldEventLifecycleTest.event();
+        var snapshot=new TerrainSnapshot(event.id,event.world,event.x,event.y,event.z,event.radius,List.of());
+        repo.saveSnapshot(snapshot);
+        assertEquals(snapshot,repo.loadSnapshot(event.id));
+        var edit=new com.customrpg.worldevent.terrain.TerrainBatch(snapshot,false);
+        assertTrue(edit.done());
+        assertEquals(0,edit.step(128,(position,data)->fail("No terrain writes expected")));
+    }
     @Test void testModeMarkerSurvivesRestartAndOldManifestsDefaultToNormalMode() throws Exception {
         var repo=new WorldEventRepository(directory); var event=WorldEventLifecycleTest.event(); event.testMode=true;
         repo.events.put(event.id,event); repo.save(); repo.load(); assertTrue(repo.events.get(event.id).testMode);
@@ -37,6 +46,16 @@ class WorldEventPersistenceTest {
         Path file=directory.resolve("snapshots/"+event.id+".yml");
         Files.writeString(file,Files.readString(file).replace("minecraft:obsidian","minecraft:diamond_block"));
         assertThrows(IOException.class,()->repo.loadSnapshot(event.id));
+    }
+    @Test void arenaAndOfflineReturnPointsSurviveRestartWhileLegacyEventsRemainCraterBased() throws Exception {
+        var repo=new WorldEventRepository(directory); var event=WorldEventLifecycleTest.event();
+        event.generatedArena=true; event.arenaDepth=5; UUID player=UUID.randomUUID();
+        var point=new WorldEventInstance.ReturnPoint(UUID.randomUUID(),12.5,72,-34.5,120,-20);
+        event.arenaReturns.put(player,point); repo.events.put(event.id,event); repo.save(); repo.load();
+        var loaded=repo.events.get(event.id); assertTrue(loaded.generatedArena); assertEquals(5,loaded.arenaDepth);
+        assertEquals(point,loaded.arenaReturns.get(player));
+        Path file=directory.resolve("state.yml"); String text=Files.readString(file);
+        Files.writeString(file,text.replace("  generated-arena: true\n","")); repo.load(); assertFalse(repo.events.get(event.id).generatedArena);
     }
     @Test void scheduleMobDeathsContributionAndClaimsSurviveRestart() throws Exception {
         var repo=new WorldEventRepository(directory); var e=WorldEventLifecycleTest.event();

@@ -132,6 +132,16 @@ public class WorldEventRepository {
         row.put("started-at", e.startedAt); row.put("expires-at", e.expiresAt); row.put("cleanup-at", e.cleanupAt);
         row.put("state", e.state.name()); row.put("successful", e.successful); row.put("diagnostic", e.diagnostic);
         row.put("test-mode",e.testMode);
+        row.put("generated-arena",e.generatedArena);
+        row.put("arena-depth",e.arenaDepth);
+        List<Map<String,Object>> returns=new ArrayList<>();
+        e.arenaReturns.forEach((player,point)->{
+            Map<String,Object> saved=new LinkedHashMap<>();
+            saved.put("player",player.toString()); saved.put("world",point.world().toString());
+            saved.put("x",point.x()); saved.put("y",point.y()); saved.put("z",point.z());
+            saved.put("yaw",point.yaw()); saved.put("pitch",point.pitch()); returns.add(saved);
+        });
+        row.put("arena-returns",returns);
         row.put("minimum-damage", e.minimumDamage); row.put("minimum-share", e.minimumShare);
         row.put("contribution", stringKeys(e.contribution)); row.put("kill-participation", stringKeys(e.killParticipation));
         row.put("claimed", e.claimed.stream().map(UUID::toString).toList()); row.put("rewards", e.rewards);
@@ -159,6 +169,16 @@ public class WorldEventRepository {
         e.state = WorldEventState.valueOf(s(r,"state")); e.successful = Boolean.TRUE.equals(r.get("successful"));
         if(r.containsKey("test-mode")&&!(r.get("test-mode") instanceof Boolean)) throw new IllegalArgumentException("Invalid test-mode flag");
         e.testMode=Boolean.TRUE.equals(r.get("test-mode"));
+        if(r.containsKey("generated-arena")&&!(r.get("generated-arena") instanceof Boolean)) throw new IllegalArgumentException("Invalid arena flag");
+        e.generatedArena=Boolean.TRUE.equals(r.get("generated-arena"));
+        if(r.containsKey("arena-depth")) e.arenaDepth=n(r,"arena-depth").intValue();
+        if(e.arenaDepth<1||e.arenaDepth>8) throw new IllegalArgumentException("Invalid arena depth");
+        if(r.containsKey("arena-returns")) for(Object value:(List<?>)r.get("arena-returns")) {
+            Map<?,?> point=(Map<?,?>)value;
+            var saved=new WorldEventInstance.ReturnPoint(UUID.fromString(s(point,"world")),n(point,"x").doubleValue(),
+                    n(point,"y").doubleValue(),n(point,"z").doubleValue(),n(point,"yaw").floatValue(),n(point,"pitch").floatValue());
+            if(e.arenaReturns.put(UUID.fromString(s(point,"player")),saved)!=null) throw new IllegalArgumentException("Duplicate arena participant");
+        }
         e.cleanupAt = n(r,"cleanup-at").longValue(); e.diagnostic = s(r,"diagnostic");
         e.minimumDamage = n(r,"minimum-damage").doubleValue(); e.minimumShare = n(r,"minimum-share").doubleValue();
         readDoubles(r.get("contribution"), e.contribution);
