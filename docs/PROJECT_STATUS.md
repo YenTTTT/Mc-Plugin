@@ -1,8 +1,50 @@
 # CustomRPG 功能盤點與原版世界改造進度
 
-最後更新：2026-10-18
+> **2026-10-24 養雞移動修正**：雞蛋尾跡改用世界位移及當前速度，修正固定方向；補給雞／鬥雞加入受控落下、一格跳階及水平距離清理，保留牆壁／保護區／未載入區塊檢查，傷害、補給及生命週期不變。測試與部署見 [CHICKEN_RUNTIME.md](CHICKEN_RUNTIME.md)，實服畫面待驗收。 **822項測試全通過；已備份主JAR，新版放plugins/update，完整重啟生效。**
 
-固定耗魔與種族加成調整已完成（COMPLETED）：天賦施放依 YAML `manaCost` 固定扣魔，不再按最大 MP 比例；種族六屬性合計從 Lv.1 的18點成長至 Lv.60 的36點，GUI顯示目前等級額外加成與成長預覽。最新 **mvn verify：441 tests 通過**；Paper實服仍 NEEDS_VERIFICATION，規則見 [RACES.md](RACES.md) 與 [BALANCE_RUNTIME.md](BALANCE_RUNTIME.md)。
+> **2026-10-24 養雞第二版**：取消普通小雞／衝鋒參戰與加傷上限，傷害主吃總精神；雙黃蛋改兩隻真成年補給雞10秒，每隻每秒1HP／2MP；雞神留場30秒、最多15啄。母雞護巢依使用者確認暫放真COMPOSTER，有碰撞及還原日誌；雞蛋生物命中無額外自訂粒子、撒米中心生長綠點。17流派／220天賦不變。當前建置、部署及NEEDS_VERIFICATION以 [CHICKEN_RUNTIME.md](CHICKEN_RUNTIME.md) 為準，下方初版793測試與部署為歷史。 **814項測試全通過；部署時伺服器已停止，主JAR已備份更新，完整開服後生效。**
+
+> **2026-10-24 養雞新增**：第17流派「養雞大師・咕咕霸權」已實裝7普通＋雞神，現220天賦（150主動／66被動／4武器被動）、43 DNA／240盤點。機制物品雞蛋，真實成年鬥雞及SCALE10雞神、30%孵化、單次補給／攔截與幼雞衝鋒。第6招採詳細版鬥雞。八大主題仍撤除，玩家進度保留；驗證／部署以 [CHICKEN_RUNTIME.md](CHICKEN_RUNTIME.md) 本批紀錄為準，以下數量與部署為歷史。Paper實戰、畫面、多人效能仍 **NEEDS_VERIFICATION**。 **最終793項測試全通過；離線伺服器主JAR已備份更新，下一次完整啟動生效。**
+
+> **最新亡者君臨更新（2026-10-23）**：死靈法師新增第16流派、7普通＋冥府開門，合計212天賦；第7招採確認後的葬骨巨衛。骨頭作機制物品，七普通選五（1～4／F）、共用Shift＋F大絕。真戰鬥僕從最多兩欄，支持號令、獻祭、融合與精銳替換；軍團是純粒子。35 DNA／232盤點；八大主題仍撤除。**NEEDS_VERIFICATION**：Paper實戰、真實畫面及多人效能。詳見 [NECROMANCER_RUNTIME.md](NECROMANCER_RUNTIME.md)，以下各批數量及部署均為歷史。 最終 `mvn verify`：745 tests全通過；已備份並更新離線伺服器主JAR，完整啟動後生效。
+
+**最新暗黑更新（2026-10-23，COMPLETED）**：永夜禁術已實裝 7 普通＋黯日、蝕魂烙印、回聲記錄、無實體影獸、裂幕穿越與 8 套獨立 VFX。普通選五（1～4／F），黯日共用 Shift＋F 大絕槽；機制物品凋零玫瑰，新八招只耗魔。12 舊主動合併為 8，原始 rank／投點／快捷槽紀錄保留，以最高 rank 承接，不自動退款；仍是 15 流派／204 天賦、八主題撤除。**NEEDS_VERIFICATION**：Paper 戰鬥、實際畫面及多人實服效能。見 [DARK_RUNTIME.md](DARK_RUNTIME.md)。以下較早 208 天賦／部署紀錄為歷史。
+
+最新驗證與部署：717 tests 通過、0 failures／errors／skipped；`target/dark-verify.log`。單人／32／64 純 Java 動畫檢查守住預算且無殘留，非實服 TPS／FPS。伺服器關閉時更新正式與 update JAR，完整開服後生效；備份 `backups/CustomRPG/dark-redesign-20261023-130937Z/`，SHA256 `ce121ca843337b710e446ccca193146b70cae7a300aad2fbcb7d4bd5f0cb2597`。未開／停服或覆寫現有設定、玩家檔。
+
+**最新大地更新（2026-10-23，COMPLETED）**：山岳誓約已實裝 7 普通＋泰坦鎮界、岩脈韌性、隊友傷害轉移與 8 套獨立 VFX。7 普通中攜帶 5 招（1～4／F），泰坦與零度王權共用單一 Shift＋F 大絕槽；大地維持燧石、冰霜維持木棒。舊 ID／rank／投點保留，當前 15 流派／208 天賦；八大主題維持撤除。**NEEDS_VERIFICATION**：Paper 實戰、原生擊殺／外部保護及實際視覺、多人效能。操作與驗收見 [EARTH_RUNTIME.md](EARTH_RUNTIME.md)。下方較早的 200／204 與部署紀錄為歷史狀態。
+
+最新驗證與部署：683 tests 通過，0 failures／errors／skipped；`target/earth-verify.log`。單人／32／64 純 Java 動畫預算檢查通過，結束無殘留；非 FPS／TPS。伺服器關閉時更新正式與 update 暫存 JAR，完整開服後生效，未從工具開／停服。備份 `backups/CustomRPG/earth-redesign-20261023-122133Z/`，SHA256 `3686fd9a85957bf5e83e0dcc9a2fb92632608b676cf15a29d8fb21e02abc67de`；沒有覆寫現有設定或玩家檔。
+
+**機制物品更新（2026-10-23）**：冰霜 8 招改為木棒（STICK），舊雪球預設於載入時轉換，原設定檔及玩家資料不覆寫。651 項測試通過；伺服器執行中，新 JAR 暫存 `plugins/update/CustomRPG-1.0.jar`，下次完整重啟生效。備份 `backups/CustomRPG/frost-stick-20261023-115046Z/`；詳見 [FROST_RUNTIME.md](FROST_RUNTIME.md)。
+
+**最新狀態（2026-10-23，COMPLETED）**：冰霜依新草案實裝 7 普通＋零度王權，內建寒霜印記、8 套獨立 VFX 與 `/vfx preview frost_crown`。7 普通可學、選 5 攜帶（1～4／F），大絕獨立 Shift＋F；舊冰霜 ID／rank／投點保留。15 流派共 204 天賦，八大主題維持撤除；其他流派、烈焰歸屬與六欄說明保留。`mvn clean verify`：651 tests，0 failures／errors／skipped；單人／32／64 動畫 headless 預算檢查通過、結束無殘留。**NEEDS_VERIFICATION**：Paper 實戰、遊戲內視覺與多人實服效能；沒有開服或宣稱觀看遊戲。操作、數值、修改及量測見 [FROST_RUNTIME.md](FROST_RUNTIME.md)。下方較早的 200 天賦／Shift＋F 交換副手／測試數與部署紀錄是歷史狀態。
+
+最新部署：伺服器關閉時直接更新 `D:\下載\McServer\plugins\CustomRPG-1.0.jar`，下次完整開服生效；前版備份 `backups/CustomRPG/frost-redesign-20261023-112814Z/`。SHA256 `e021bf9e3b1d9dbaec87dd76a4a21220783c0bbbee7c626cffd266c3e4f2b526`。沒有開／停服、覆寫現有設定或批次改寫玩家檔。
+
+**現行修正（2026-10-23，COMPLETED）**：燃燒tick帶上施法玩家的ON_FIRE DamageSource，取消原無主環境tick後只派送一次，保留原傷害預算／減傷／虛擬生命流程；不把燃燒套作普攻快照／背刺／攻擊吸血或跳躍暴擊。200天賦圖示及綁定頁統一只留技能介紹、觸發、冷卻、消耗、機制物品、傷害公式；按目前等級顯示，未學預覽第1級。`mvn clean verify`：621 tests，0 failures／errors／skipped，`target/fire-lore-verify.log`；詳見 [TALENT_DAMAGE_AND_LORE.md](TALENT_DAMAGE_AND_LORE.md)。NEEDS_VERIFICATION：Paper真實擊殺與經驗／任務歸屬及介面；沒有開服或進遊戲測試。八大主題維持撤除，舊15流派／200天賦與獵人分頁保留。
+
+本輪已於伺服器關閉狀態直接安裝 `D:\下載\McServer\plugins\CustomRPG-1.0.jar`；備份 `backups/CustomRPG/fire-attribution-lore-20261023-102607Z/`，SHA256 `6ce6ae97072206046a8fb20f90536749f3d64de6823ac008deafa9a88a2e8f87`，下次開服生效。下方先前plugins/update暫存與舊測試數為歷史部署紀錄。
+
+**現行狀態（2026-10-23，COMPLETED）**：已依使用者要求撤除八大主題及80核心，恢復 `/talent` 直達15流派／200天賦，獵人六角色分頁與所有舊技能保留。核心執行器、被動加成與召喚排程拆除；1～4／F舊技能、5種族保留，Shift＋F交換副手。玩家rank／投點資料保留，未自動退款；VFX三種無傷害預覽與武器等級提示保留，W01不再是實戰天賦。`mvn clean verify`：607 tests，0 failures／errors／skipped，`target/talent-legacy-verify.log`。偵測到開服，JAR暫存plugins/update，完整重啟後生效；未開／停服。NEEDS_VERIFICATION：Paper實際操作。詳見 [TALENT_LEGACY_RUNTIME.md](TALENT_LEGACY_RUNTIME.md)。**以下八主題／280天賦與W01實戰接線等敘述皆為先前版本歷史紀錄。**
+
+最後更新：2026-10-23
+
+技能VFX首版（COMPLETED）：完成300筆定義清單與換皮審計、純數學幾何／時間軸、單一tick Runtime、品質／LOD／取樣與發送上限。W01弧月斬接入立體刃帶、反向第二段與成功命中切口；另有雷霆／虛空獨立純預覽。`/rpgvfx` 管理員預覽／showcase／品質／stop／stats，不耗戰鬥資源。完整 **mvn verify：679 tests，0 failures／errors／skipped**，`target/vfx-verify.log`；單人與32人合成量測見 `target/vfx-load-report.csv`，不代表實服TPS/FPS。NEEDS_VERIFICATION：遊戲畫面與多人負載；暫不批次遷移。見 [VFX_RUNTIME.md](VFX_RUNTIME.md)、[VFX_AUDIT.md](VFX_AUDIT.md)。
+
+自製武器等級提示（COMPLETED）：達到武器需求的 RPG 等級後，自動隱藏「等級需求」文字；低等級玩家取得該武器時重新顯示。補上升級／管理員調級、登入、拾取、背包移動與主副手切換刷新，不改使用門檻。新增9案，最新 **mvn verify：643 tests，0 failures／errors／skipped**，紀錄 `target/weapon-level-lore-verify.log`；Paper實際顯示仍 NEEDS_VERIFICATION。
+
+新技能導覽修正（COMPLETED）：`/talent` 點八主題直接顯示各系十個新版核心，保留路線改由「舊天賦／特色專精」進入。已核對 `D:\下載\McServer` 前版JAR與啟動紀錄，確認280天賦實際載入；問題是新核心入口與同名舊路線混在選擇頁。最新 **mvn verify：634 tests，0 failures／errors／skipped**；紀錄 `target/talent-navigation-verify.log`。下方625項為核心第一版紀錄；重啟後實際介面操作仍 NEEDS_VERIFICATION。
+
+八大主題核心第一版（COMPLETED）：新增80核心，與舊15分支200天賦並存，共280個定義；五普通技能（1～4／F）＋一核心大絕（Shift＋F），種族5保留。主題導覽、40個可施放節點、40個自動節點、受控粒子／護盾／召喚及舊四槽原位讀取已接線，首次寫入舊檔前備份。完整 **mvn verify：625 tests，0 failures／errors／skipped**；紀錄 `target/talent-v3-verify.log`，產物 `target/CustomRPG-1.0.jar`。NOT_STARTED：特色專精全面重調、大絕分類、舊獸群／科技與核心共用名額、批次重配；NEEDS_VERIFICATION：Paper實服。詳見 [TALENT_RUNTIME_V3.md](TALENT_RUNTIME_V3.md)。下方各輪數量與驗證結果保留為歷史紀錄。
+
+獵人角色技能樹擴充已完成（COMPLETED）：由12增至 **36天賦（28主動／8被動）**，全插件15流派、200天賦／130主動。`/talent hunter` 改為角色總覽，小杰7、奇犽7、酷拉皮卡6、西索5、尼特羅6與共通念修行5，各自分頁並由下往上學習。新增連式／硬、雷掌／溜溜球、火紅眼／治癒鎖鏈、撲克牌／反彈、九十九掌／零之掌等；原版粒子呈現拳影、雷電殘影、金色鏈環、粉紅念線／卡牌、多臂觀音與光束，不需資源包。保留原技能ID、投點與既有設定檔，缺少的新招式在記憶體補齊。完整 **mvn verify：534 tests通過，0 failures／errors／skipped**，紀錄 `target/hunter-roles-verify.log`；Paper視覺／音量、反作弊及多人平衡仍 NEEDS_VERIFICATION。詳見 [HUNTER_TALENTS.md](HUNTER_TALENTS.md) 與108列 [數值CSV](data/HUNTER_TALENTS.csv)。
+
+第一輪獵人・念能力天賦已新增（歷史紀錄，COMPLETED）：第15流派、12新天賦（9主動／3被動），全插件176天賦；`/talent hunter`，紫水晶碎片右鍵／蹲下右鍵切換，或1～4快捷施放。涵蓋猜猜拳三式、伸縮自在的愛、神速、落雷、鎖鏈束縛、圓及金色三掌。固定耗魔／冷卻與戰鬥追加額度共用，設定獨立補建不覆寫原檔。該階段 **mvn verify：512 tests 通過**；Paper特效／操作及多人平衡仍 NEEDS_VERIFICATION。見 [HUNTER_TALENTS.md](HUNTER_TALENTS.md)。
+
+生命／魔力藥水已新增（COMPLETED）：粗製／精製／秘製共六種，固定恢復HP40／120／280、MANA30／80／160；工作台無序合成，進階需T3素材、秘製需T5首領核心。共用15秒持久冷卻、上限保護、原版喝藥退瓶、圖鑑 `/rpgcraft potions` 及管理員給予。該階段 **mvn verify：468 tests 通過**；客戶端顏色／堆疊退瓶／領地相容仍 NEEDS_VERIFICATION。見 [POTIONS.md](POTIONS.md)。
+
+固定耗魔與種族加成調整已完成（COMPLETED）：天賦施放依 YAML `manaCost` 固定扣魔，不再按最大 MP 比例；種族六屬性合計從 Lv.1 的18點成長至 Lv.60 的36點，GUI顯示目前等級額外加成與成長預覽。該階段 **mvn verify：441 tests 通過**；Paper實服仍 NEEDS_VERIFICATION，規則見 [RACES.md](RACES.md) 與 [BALANCE_RUNTIME.md](BALANCE_RUNTIME.md)。
 
 天賦機制物品施法已恢復（COMPLETED）：102 招主動天賦具備物品／按鍵設定，主手施放、蹲下右鍵循環、GUI 操作提示；快捷鍵與種族 5 保留，施法共用戰鬥 v2 的魔力／生命消耗／冷卻。舊 HOTKEY 設定只在記憶體轉換，不覆寫原檔。該階段 **mvn verify：433 tests 通過**，實服操作及保護插件相容 NEEDS_VERIFICATION；操作見 [SKILL_SWITCH_SYSTEM.md](../SKILL_SWITCH_SYSTEM.md)。
 
@@ -12,7 +54,7 @@ Lv.1～60 初始數值模型見 [INITIAL_BALANCE_MODEL.md](INITIAL_BALANCE_MODEL
 
 怪物頭頂愛心血條已移除：不再生成／同步血條 ArmorStand，啟動及實體載入時只清理本插件標記的舊血條，並去除舊名稱血量後綴；怪物名稱／等級、玩家 HUD、BossBar 保留。實際 Paper 顯示與舊區塊載入清理仍待伺服器驗證。
 
-自然生怪排查與最新診斷見 [MOB_SPAWNING.md](MOB_SPAWNING.md)。每次重啟後仍需 `/finishrpg`；預設 vanilla 只替換原版自然敵怪。怪物外觀與地形 Boss 見 [MOB_ENCOUNTERS.md](MOB_ENCOUNTERS.md)。新天賦見 [TALENT_EXPANSION.md](TALENT_EXPANSION.md)。工坊／村莊商人見 [CRAFTING_AND_MERCHANTS.md](CRAFTING_AND_MERCHANTS.md)。完整測試最新為 441 項，下方各階段數字保留為歷史紀錄。
+自然生怪排查與最新診斷見 [MOB_SPAWNING.md](MOB_SPAWNING.md)。每次重啟後仍需 `/finishrpg`；預設 vanilla 只替換原版自然敵怪。怪物外觀與地形 Boss 見 [MOB_ENCOUNTERS.md](MOB_ENCOUNTERS.md)。新天賦見 [TALENT_RUNTIME_V3.md](TALENT_RUNTIME_V3.md)。工坊／村莊商人見 [CRAFTING_AND_MERCHANTS.md](CRAFTING_AND_MERCHANTS.md)。完整測試最新為 625 項，下方各階段數字保留為歷史紀錄。
 
 前輪紀錄的設計依據：`PLUGIN_DESIGN_VANILLA_WORLD_ZERO_BUILDING.md`（使用者提供的 143 節設計稿）。該原稿未存於目前 Repository；本輪以實際程式、Git 與使用者要求的原版世界原則核對，不宣稱已重新審閱原稿。
 
@@ -262,3 +304,30 @@ ExpandedTalentSkills 使用共用有界領域 timer，接上射線／碎冰、�
 新設定 config/crafting_progression.yml 自動建立；資料 data/village_merchants.yml，玩家物品及庫存走原版存檔。保留舊裝備 YAML，重新載入舊裝備／武器會接回工坊模板。村莊／工坊不要求 /finishrpg；自然替換依舊需要。人工床鐘村、村莊安全圈、發現紀錄與 Waypoint 尚未加入。
 
 新增七類／73 案，完整 `mvn clean verify` **358 tests／0 failures／0 errors／0 skipped**；159 production Java、50 test 類別、37 YAML，JAR target/CustomRPG-1.0.jar。未啟動 Paper，真實合成／滿包／多人交易／結構載入、外觀／平衡及效能待驗收。操作與完整 CSV 見 [CRAFTING_AND_MERCHANTS.md](CRAFTING_AND_MERCHANTS.md)。
+
+
+## 2026-10-24 刺客命中與整合傷害訊息
+
+**COMPLETED（程式碼／建置／安裝）**：修正要害打擊背刺方向、天賦學習／升級／重置的被動快取即時更新。八個刺客傷害技能採合法 PvP 敵人判定及獨立的技能命中時間，避免普通攻擊與前段受傷幀吞段；保留原生無敵、PvP 開關、隊伍、區域、視線與共用傷害預算。背刺／收割合併最終傷害提示，支援玩家目標；無敵旗標與中斷清理一併修正。沒有改天賦等級存檔、公式、魔力、冷卻或傷害預算。
+
+`mvn verify` **860 tests、0 failures／errors／skipped**；`target/assassin-verify.log`、`target/assassin-artifact.json`、`target/assassin-deployment.json`。2026-10-24 12:09:53 台北時間，伺服器停止時備份並直接更新主 plugins JAR，下次正常啟動載入。SHA-256 `37fb4e47274e8c0294914687ca15fe0eac7f6f269bc68d8f5c1a2419150f53c4`。詳細變更、備份與測試限制見 `docs/ASSASSIN_REPAIRS.md`。
+
+**NEEDS_VERIFICATION**：兩名玩家在 Paper 驗收八招、第三方保護相容性及實際傷害訊息，沒有宣稱遊戲內測試完成。
+
+
+## 2026-10-24 血魔與技能欄 HUD 分區
+
+**COMPLETED（程式碼／建置／安裝）**：`ManaDisplayManager` 的血量／魔力 ActionBar 繼續顯示在畫面底部。`SkillBarListener` 的技能提示改為玩家專屬的短暫 BossBar，位於畫面上方；重複施放重用現有欄，`/skillbar` 關閉、登出、顯示逾時與插件停用都會移除。按鍵綁定、天賦與傷害邏輯未改動。
+
+最終 `mvn verify` **863 tests、0 failures／errors／skipped**；`target/hud-verify.log`、`target/hud-artifact.json`。633 個 class／resource 與 `target/classes` 一致、ZIP CRC 正常；JAR SHA-256 `811ac7bf0423610ad91dfa11d9f4f2878d498d0096094651319f69d5652c0544`。2026-10-24 12:17:14 台北時間在伺服器停止時備份並直接安裝到 `D:/下載/McServer/plugins/CustomRPG-1.0.jar`，來源與安裝 SHA-256 一致；收據 `target/hud-deployment.json`，備份 `D:\下載\McServer\backups\CustomRPG\hud-20261024-041714Z/previous-live.jar`。下次正常啟動載入。
+
+**NEEDS_VERIFICATION**：尚未在實際 Minecraft 客戶端確認不同螢幕寬度及附近同時出現怪物／變身 BossBar 的排版。沒有開服或測量客戶端畫面。
+
+
+## 2026-10-24 技能欄 BossBar 常駐
+
+**COMPLETED（程式碼／建置／安裝）**：依使用者後續要求，`/skillbar` 開啟期間玩家專屬技能 BossBar 常駐上方，不再五秒後消失；技能施放會即時更新同一條，背景定時更新技能與種族顯示。關閉快捷模式、登出或插件停用時會移除 BossBar 與排程。血量／魔力仍在底部 ActionBar。原本五秒顯示的記錄為先前版本。
+
+最終 `mvn verify` **863 tests、0 failures／errors／skipped**，日誌 `target/hud-persistent-verify.log`。JAR CRC 正常、633 個 class／resource 與 `target/classes` 一致；SHA-256 `b1e4d1f35e374367bba25247b245482162c277f8ff94b439f3b08c09115f92a6`。2026-10-24 12:21:30 台北時間，伺服器未執行時備份後直接更新 `D:/下載/McServer/plugins/CustomRPG-1.0.jar`；來源／安裝檔 SHA-256 一致。收據 `target/hud-persistent-deployment.json`；備份 `D:\下載\McServer\backups\CustomRPG\hud-persistent-20261024-042130Z/previous-live.jar`。下次完整啟動後生效。
+
+**NEEDS_VERIFICATION**：Minecraft 客戶端上與其他怪物／變身 BossBar 同時存在時的排版尚未人工驗收；沒有開服或聲稱已看過實際畫面。

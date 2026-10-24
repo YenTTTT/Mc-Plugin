@@ -66,8 +66,14 @@ class CombatBalanceTest {
         balance.afterAccepted(event,action); balance.runAccepted(event,true); balance.runAccepted(event,true); verify(action,times(1)).run();
     }
     @Test void reloggingCannotRefillExtraDamageBudget() {
-        UUID target=UUID.randomUUID(); balance.extras().reserve(player.getUniqueId(),target,200,100).finish(true);
+        UUID target=UUID.randomUUID();long started=System.currentTimeMillis();
+        balance.extras().reserve(player.getUniqueId(),target,200,100).finish(true);
         balance.detach(player.getUniqueId());
-        assertEquals(0,balance.extras().reserve(player.getUniqueId(),target,200,100).damage(100));
+        double allowance=balance.extras().reserve(player.getUniqueId(),target,200,100).damage(100);
+        // Real-clock budget refills 15 damage per second at 100 baseline DPS; detach must not reset its burst.
+        double naturalRefill=Math.max(0,System.currentTimeMillis()-started)*.015;
+        assertTrue(allowance<=naturalRefill+1e-9,"Logout may retain natural refill, but must not reset the 200-damage burst");
     }
+    @Test void chickenAllowanceUsesTotalSpiritAndIgnoresStrengthMagicAndAgility(){double initial=balance.spiritSkillDps(player);stats.setSpirit(100);stats.setEquipmentSpirit(20);stats.setRaceSpirit(10);stats.setTalentSpirit(5);double spirit=balance.spiritSkillDps(player);assertTrue(spirit>initial);stats.setStrength(10000);stats.setMagic(10000);stats.setAgility(10000);assertEquals(spirit,balance.spiritSkillDps(player));}
+
 }

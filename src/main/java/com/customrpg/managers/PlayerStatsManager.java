@@ -218,6 +218,7 @@ public class PlayerStatsManager {
         // 總 Vitality 包含基礎體力 + 裝備體力（包含從 MAX_HEALTH 轉換的體力）
         double newMaxHealth = com.customrpg.balance.BalancePlayerRules.maxHealth(stats);
 
+
         // 使用 Attribute API 設定最大血量
         AttributeInstance maxHealthAttr = player.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealthAttr != null) {
@@ -263,6 +264,10 @@ public class PlayerStatsManager {
 
         // 立即儲存
         saveStats(uuid);
+        if ((statName.equalsIgnoreCase("level") || statName.equalsIgnoreCase("lvl")) && plugin.getWeaponManager()!=null) {
+            Player player = plugin.getServer().getPlayer(uuid);
+            if (player != null) plugin.getWeaponManager().refreshRequiredLevelLore(player, stats.getLevel());
+        }
     }
 
     /**
@@ -350,6 +355,9 @@ public class PlayerStatsManager {
         com.customrpg.equipment.EquipmentManager equipmentManager = plugin.getEquipmentManager();
         if (equipmentManager != null) {
             equipmentManager.refreshRequiredLevelLore(player, stats.getLevel());
+        }
+        if (plugin.getWeaponManager() != null) {
+            plugin.getWeaponManager().refreshRequiredLevelLore(player, stats.getLevel());
         }
 
         saveStats(player);

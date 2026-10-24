@@ -20,6 +20,7 @@ public final class CraftingLootListener implements Listener {
     }
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDeath(EntityDeathEvent event) {
+        if(com.customrpg.utils.ControlledSummons.is(event.getEntity()))return;
         if (!catalog.enabled("drops.enabled")) return;
         var entity = event.getEntity(); if (entity instanceof Player || entity instanceof Tameable pet && pet.isTamed()) return;
         String key = plugin.getMobManager().getCustomMobKey(entity);

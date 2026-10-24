@@ -276,6 +276,7 @@ public class BowTalentListener implements Listener {
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
+        if(com.customrpg.utils.ControlledSummons.is(event.getEntity()))return;
         // 如果死亡的實體被某個玩家標記，清除標記
         UUID deadId = event.getEntity().getUniqueId();
         for (Player p : Bukkit.getOnlinePlayers()) {

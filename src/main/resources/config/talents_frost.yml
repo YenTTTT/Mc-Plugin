@@ -1,0 +1,234 @@
+# Frost redesign. Four original IDs retain learned ranks; native-health base damage is converted by existing combat balance.
+frost:
+  frost_shard:
+    name: "極冰穿心"
+    description: "凝聚冰槍高速穿刺14格內敵人，減速20%兩秒並附加1層寒霜印記。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 木棒
+    manaCost: 10
+    cooldown: 6
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 37
+      icon: BLUE_ICE
+    prerequisite:
+      skill: frost_attunement
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 7.0
+          range: 14
+      2:
+        effect:
+          baseDamage: 7.7
+          range: 14
+      3:
+        effect:
+          baseDamage: 8.4
+          range: 14
+  frost_nova:
+    name: "寒棘追獵"
+    description: "沿前方8格地表逐段長出冰棘，每名敵人只命中一次，附加1層寒霜印記。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 木棒
+    manaCost: 18
+    cooldown: 12
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 39
+      icon: BLUE_ICE
+    prerequisite:
+      skill: frost_shard
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 8.0
+          range: 8
+      2:
+        effect:
+          baseDamage: 8.8
+          range: 8
+      3:
+        effect:
+          baseDamage: 9.6
+          range: 8
+  frost_step:
+    name: "霜影瞬步"
+    description: "向移動方向安全滑行最多5格；留下兩秒霜痕，首次踏入者減速25%一點五秒。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 木棒
+    manaCost: 16
+    cooldown: 14
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 41
+      icon: BLUE_ICE
+    prerequisite:
+      skill: frost_shard
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 5
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 5
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 5
+  frost_mirror:
+    name: "凝晶護鏡"
+    description: "五秒內減傷25%；首次受到有效敵方直接攻擊時反射碎晶，附加1層寒霜印記。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 木棒
+    manaCost: 20
+    cooldown: 24
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 28
+      icon: BLUE_ICE
+    prerequisite:
+      skill: frost_step
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 3.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 3.3
+          range: 12
+      3:
+        effect:
+          baseDamage: 3.6
+          range: 12
+  frost_lance:
+    name: "冰縛十字"
+    description: "以交錯冰晶鎖住10格內可見敵人，減速50%兩秒並附加1層寒霜印記。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 木棒
+    manaCost: 18
+    cooldown: 18
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 30
+      icon: BLUE_ICE
+    prerequisite:
+      skill: frost_nova
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 10
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 10
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 10
+  frost_blizzard:
+    name: "寒潮霧域"
+    description: "12格內生成半徑3.5格霧域六秒；減速25%，每兩秒侵蝕一次，單次施放每名敵人最多1層印記。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 木棒
+    manaCost: 26
+    cooldown: 26
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 32
+      icon: BLUE_ICE
+    prerequisite:
+      skill: frost_lance
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 2.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 2.2
+          range: 12
+      3:
+        effect:
+          baseDamage: 2.4
+          range: 12
+  frost_prism:
+    name: "冰棱折光"
+    description: "冰棱射向12格內敵人，最多再跳兩名5格內敵人，不重複命中，各附加1層印記。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 木棒
+    manaCost: 22
+    cooldown: 17
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 19
+      icon: BLUE_ICE
+    prerequisite:
+      skill: frost_mirror
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 6.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 6.6
+          range: 12
+      3:
+        effect:
+          baseDamage: 7.2
+          range: 12
+  frost_crown:
+    name: "零度王權"
+    description: "1.5秒前搖後冰晶王冠崩裂，半徑6格爆發並定身一般敵人1.5秒；Boss僅減速20%兩秒，留下四秒寒霜殘域。"
+    type: ACTIVE
+    max-level: 1
+    points-per-level: 1
+    mechanism: 木棒
+    manaCost: 65
+    cooldown: 100
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 4
+      icon: NETHER_STAR
+    prerequisite:
+      skill: frost_blizzard
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 16.0
+          range: 12

@@ -45,7 +45,7 @@ public class SkillBarCommand implements CommandExecutor, TabCompleter {
         if (nowEnabled) {
             player.sendMessage(ChatColor.GREEN + "╔═══════════════════════════╗");
             player.sendMessage(ChatColor.GREEN + "  ⚡ 快捷技能列 §l已開啟§r§a！");
-            player.sendMessage(ChatColor.YELLOW + "  §l1～4§r§e 天賦技能，§l5§r§e 種族技能；武器放 6～9");
+            player.sendMessage(ChatColor.YELLOW + "  §l1～4／F§r§e 天賦技能，§l5§r§e 種族；武器6～9；已攜帶大絕用Shift＋F，否則交換副手");
             player.sendMessage(ChatColor.GRAY  + "  (使用 /skillbar 可再次關閉)");
             player.sendMessage(ChatColor.GREEN + "╚═══════════════════════════╝");
             player.playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 0.7f, 1.4f);
@@ -53,6 +53,7 @@ public class SkillBarCommand implements CommandExecutor, TabCompleter {
             // 立即顯示一次 HUD
             skillBarListener.showSkillBarHud(player, -1);
         } else {
+            skillBarListener.hideSkillBarHud(player);
             player.sendMessage(ChatColor.RED + "⚡ 快捷技能列 §l已關閉§r§c。");
             player.sendMessage(ChatColor.GRAY + "  已恢復物品欄 1～9；再次 /skillbar 可開啟技能快捷鍵。");
             player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 0.7f, 1.0f);

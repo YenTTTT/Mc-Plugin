@@ -258,6 +258,7 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         // Update max health
         statsManager.updateMaxHealth(target);
         statsManager.saveStats(target);
+        if (plugin.getWeaponManager()!=null) plugin.getWeaponManager().refreshRequiredLevelLore(target, stats.getLevel());
 
         sender.sendMessage(ChatColor.GREEN + "✓ 已將 " + target.getName() + " 的等級設定為 " + level);
         target.sendMessage(ChatColor.GREEN + "你的等級已被設定為 " + level);

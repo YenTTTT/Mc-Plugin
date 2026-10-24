@@ -17,14 +17,15 @@ public class PlayerTalents {
     private final Map<String, Integer> talentLevels;     // 天賦ID -> 等級
     private final Map<TalentBranch, Integer> branchPoints; // 分支 -> 投入點數
     private int totalPointsSpent;                   // 總消耗點數
-    private final String[] selectedSkills;          // 選取的 4 個技能插槽 (天賦ID)
+    private final String[] selectedSkills;          // Five ordinary talents; legacy four slots keep their positions.
+    private String ultimateSkill;
 
     public PlayerTalents() {
         this.availablePoints = 0;
         this.talentLevels = new HashMap<>();
         this.branchPoints = new HashMap<>();
         this.totalPointsSpent = 0;
-        this.selectedSkills = new String[4];
+        this.selectedSkills = new String[5];
 
         // 初始化分支點數
         for (TalentBranch branch : TalentBranch.values()) {
@@ -60,9 +61,13 @@ public class PlayerTalents {
     }
 
     public int getTalentLevel(String talentId) {
-        return talentLevels.getOrDefault(talentId, 0);
+        String canonical=com.customrpg.talents.DarkSkill.canonical(talentId);
+        return com.customrpg.talents.DarkSkill.handles(canonical)?com.customrpg.talents.DarkSkill.rank(talentLevels,canonical):talentLevels.getOrDefault(talentId,0);
     }
 
+    public Map<String,Integer> effectiveLevels(){
+        var levels=new HashMap<>(talentLevels);for(var s:com.customrpg.talents.DarkSkill.values())levels.put(s.id,getTalentLevel(s.id));return levels;
+    }
     public void setTalentLevel(String talentId, int level) {
         if (level <= 0) {
             talentLevels.remove(talentId);
@@ -144,6 +149,8 @@ public class PlayerTalents {
         }
 
         totalPointsSpent = 0;
+        java.util.Arrays.fill(selectedSkills, null);
+        ultimateSkill = null;
     }
 
     /**
@@ -174,12 +181,31 @@ public class PlayerTalents {
     }
 
     public String[] getSelectedSkills() {
-        return selectedSkills;
+        var result=selectedSkills.clone();var seen=new java.util.HashSet<String>();
+        for(int i=0;i<result.length;i++){result[i]=com.customrpg.talents.DarkSkill.canonical(result[i]);if(com.customrpg.talents.DarkSkill.ultimate(result[i])||com.customrpg.talents.DarkSkill.handles(result[i])&&!seen.add(result[i]))result[i]=null;}
+        return result;
     }
+    public String[] storedSelectedSkills(){return selectedSkills.clone();}
+    public void loadSelectedSkill(int slot,String id){if(slot>=0&&slot<selectedSkills.length)selectedSkills[slot]=id;}
+    public String storedUltimateSkill(){return ultimateSkill;}
 
     public void setSelectedSkill(int slot, String talentId) {
-        if (slot >= 0 && slot < 4) {
+        if (slot >= 0 && slot < selectedSkills.length) {
+            if (talentId != null) for (int i=0; i<selectedSkills.length; i++)
+                if (i!=slot && com.customrpg.talents.DarkSkill.canonical(talentId).equals(com.customrpg.talents.DarkSkill.canonical(selectedSkills[i]))) selectedSkills[i]=null;
             selectedSkills[slot] = talentId;
         }
+    }
+    // Old v3 IDs remain persisted but inert; only supported redesigned ultimates are castable here.
+    public String getUltimateSkill() {
+        if(ultimateSkill!=null)return com.customrpg.talents.DarkSkill.canonical(ultimateSkill);
+        for(String id:selectedSkills){String mapped=com.customrpg.talents.DarkSkill.canonical(id);if(com.customrpg.talents.DarkSkill.ultimate(mapped))return mapped;}
+        return null;
+    }
+    public void setUltimateSkill(String id) { ultimateSkill=id; }
+    public java.util.List<String> equippedSkills() {
+        var result=new java.util.ArrayList<String>(java.util.Arrays.asList(getSelectedSkills()));
+        String ultimate=getUltimateSkill();if(com.customrpg.talents.TalentLoadout.ultimate(ultimate))result.add(ultimate);
+        return result;
     }
 }

@@ -1,14 +1,13 @@
 package com.customrpg.gui;
 
 import com.customrpg.CustomRPG;
-import com.customrpg.managers.PlayerStatsManager;
 import com.customrpg.managers.TalentManager;
-import com.customrpg.players.PlayerStats;
 import com.customrpg.players.PlayerTalents;
 import com.customrpg.talents.Talent;
 import com.customrpg.talents.TalentBranch;
 import com.customrpg.talents.TalentTree;
 import com.customrpg.talents.TalentType;
+import com.customrpg.talents.HunterPath;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -16,8 +15,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -37,6 +38,8 @@ public class TalentTreeGUI implements Listener {
     private final CustomRPG plugin;
     private final TalentManager talentManager;
     private final Map<UUID, TalentBranch> playerCurrentBranch = new HashMap<>();
+    private final Map<UUID, HunterPath> hunterPages = new HashMap<>();
+    private final Map<UUID, Inventory> openViews = new HashMap<>();
 
     private static final String GUI_TITLE_PREFIX = "§6§l天賦樹 - ";
     private static final int GUI_SIZE = 54;
@@ -49,15 +52,40 @@ public class TalentTreeGUI implements Listener {
 
     public void open(Player player, TalentBranch branch) {
         playerCurrentBranch.put(player.getUniqueId(), branch);
+        hunterPages.remove(player.getUniqueId());
         Inventory gui = createGUI(player, branch);
+        openViews.put(player.getUniqueId(), gui);
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
     }
 
     private Inventory createGUI(Player player, TalentBranch branch) {
+        if (branch == TalentBranch.HUNTER && !hunterPages.containsKey(player.getUniqueId())) return hunterOverview(player);
         String title = GUI_TITLE_PREFIX + branch.getDisplayName();
+        if (branch == TalentBranch.HUNTER) title = GUI_TITLE_PREFIX + hunterPages.get(player.getUniqueId()).title;
         Inventory gui = Bukkit.createInventory(null, GUI_SIZE, title);
+        if (branch == TalentBranch.HUNTER) {
+            var path = hunterPages.get(player.getUniqueId());
+            gui.setItem(4, navigation(path.icon, "§e§l" + path.title, "§7由下往上學習；鎖定圖示表示前置尚未達成", "§7滑鼠指向已學技能按1～4攜帶"));
+            gui.setItem(45, navigation(Material.ARROW, "§e返回角色路線", "§7選擇小杰、奇犽、酷拉皮卡、西索、尼特羅或共通念修行"));
+            if (path != HunterPath.COMMON) gui.setItem(46, navigation(Material.AMETHYST_SHARD, "§d共通念修行", "§7學習纏、練、凝等前置"));
+        }
 
+        if(branch==TalentBranch.FROST)gui.setItem(13,navigation(Material.SNOWBALL,"§b寒霜印記・自動機制",
+                "§7冰霜命中疊1層，最多3層／持續6秒", "§7滿3層消耗印記，一般敵人定身0.8秒", "§7同敵8秒內最多一次；Boss改減速",
+                "§7寒霧每名敵人每次施放只疊1層", "§7普通技能攜帶五招；零度王權獨立Shift＋F"));
+        if(branch==TalentBranch.EARTH)gui.setItem(13,navigation(Material.STONE,"§6岩脈韌性・自動機制",
+                "§7敵方直接受擊／替隊友承傷獲得岩脈", "§7每2秒最多1層；最多3層，持續8秒",
+                "§7滿3層後施放防禦技能，獲4點吸收盾5秒", "§7普通技能選五招；泰坦鎮界獨立Shift＋F"));
+        if(branch==TalentBranch.DARK)gui.setItem(13,navigation(Material.WITHER_ROSE,"§5蝕魂烙印・自動機制",
+                "§7同次施放每敵最多1層，3層持續7秒", "§7滿層後下一次直接傷害爆發3傷害",
+                "§7並降低治療15%四秒；同敵10秒冷卻", "§7七普通選五招；黯日使用Shift＋F"));
+        if(branch==TalentBranch.NECROMANCER)gui.setItem(13,navigation(Material.BONE,"§7亡骸統御・自動機制",
+                "§7最多兩個召喚欄位，無印記或屍體需求", "§7號令集火；普通戰士可獻祭或兩名融合",
+                "§7巨衛佔兩欄，大絕精銳取代現有隊伍", "§7七普通選五招；冥府開門使用Shift＋F"));
+        if(branch==TalentBranch.CHICKEN)gui.setItem(13,navigation(Material.EGG,"§e小雞隊伍・自動機制",
+                "§7技能雞蛋撞擊30%孵化，數量無上限、12秒", "§7衝鋒所有普通小雞參戰，每隻加1傷害",
+                "§7傷害主吃總精神；雞神真實體留場30秒", "§7七普通選五招；雞神使用Shift＋F"));
         // 添加技能圖標
         addTalentIcons(gui, player, branch);
 
@@ -66,6 +94,32 @@ public class TalentTreeGUI implements Listener {
 
         return gui;
     }
+    private ItemStack navigation(Material material, String name, String... lore) {
+        var item = new ItemStack(material); var meta = item.getItemMeta();
+        meta.setDisplayName(name); meta.setLore(List.of(lore)); item.setItemMeta(meta); return item;
+    }
+    private Inventory hunterOverview(Player player) {
+        Inventory gui = Bukkit.createInventory(null, GUI_SIZE, GUI_TITLE_PREFIX + "獵人・角色路線");
+        var tree = talentManager.getTalentTree(TalentBranch.HUNTER);
+        for (HunterPath path : HunterPath.values()) {
+            var names = tree == null ? List.<String>of() : hunterTalents(tree, path).stream().map(t -> "§7" + t.getName()).toList();
+            List<String> lore = new ArrayList<>(); lore.add("§e獨立技能頁・由下往上學習"); lore.addAll(names);
+            lore.add("§a點擊進入此路線"); gui.setItem(path.menuSlot, navigation(path.icon, "§e§l" + path.title, lore.toArray(String[]::new)));
+        }
+        gui.setItem(4, navigation(Material.BOOK, "§6獵人・角色路線", "§7小杰在左側，其他角色各有獨立技能樹", "§7所有角色可混搭1～4／F技能槽，5是種族能力"));
+        addPlayerInfo(gui, player); return gui;
+    }
+    public void openHunterPath(Player player, HunterPath path) {
+        playerCurrentBranch.put(player.getUniqueId(), TalentBranch.HUNTER); hunterPages.put(player.getUniqueId(), path);
+        refreshGUI(player, TalentBranch.HUNTER);
+    }
+    static List<Talent> hunterTalents(TalentTree tree, HunterPath path) {
+        return tree.getAllTalents().values().stream().filter(t -> HunterPath.of(t.getId()) == path)
+                .sorted(java.util.Comparator.comparingInt(Talent::getGuiSlot).reversed()).toList();
+    }
+    private List<Talent> visibleTalents(Player player, TalentTree tree, TalentBranch branch) {
+        return branch == TalentBranch.HUNTER ? hunterTalents(tree, hunterPages.get(player.getUniqueId())) : List.copyOf(tree.getAllTalents().values());
+    }
 
     private void addTalentIcons(Inventory gui, Player player, TalentBranch branch) {
         TalentTree tree = talentManager.getTalentTree(branch);
@@ -73,7 +127,7 @@ public class TalentTreeGUI implements Listener {
 
         if (tree == null) return;
 
-        for (Talent talent : tree.getAllTalents().values()) {
+        for (Talent talent : visibleTalents(player, tree, branch)) {
             int slot = talent.getGuiSlot();
             if (slot >= 0 && slot < GUI_SIZE) {
                 gui.setItem(slot, createTalentIcon(talent, playerTalents));
@@ -83,8 +137,7 @@ public class TalentTreeGUI implements Listener {
 
     private ItemStack createTalentIcon(Talent talent, PlayerTalents playerTalents) {
         int level = playerTalents.getTalentLevel(talent.getId());
-        boolean canLearn = talent.canLearn(playerTalents.getTalentLevels(), level + 1);
-        boolean isMax = level >= talent.getMaxLevel();
+        boolean canLearn = talent.canLearn(playerTalents.effectiveLevels(), level + 1);
 
         Material material;
         String statusPrefix;
@@ -113,261 +166,10 @@ public class TalentTreeGUI implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(statusPrefix + "§f" + talent.getName() + " §7(Lv" + level + "/" + talent.getMaxLevel() + ")");
-            List<String> lore = new ArrayList<>();
-            
-            lore.add("§8" + talent.getId());
-            lore.add("");
-            lore.add("§f" + talent.getDescription());
-            lore.add("");
-
-            // 顯示按鍵觸發方式
-            String triggerDisplay = getTriggerDisplayName(talent);
-            if (triggerDisplay != null) {
-                lore.add("§7觸發方式: " + triggerDisplay);
-            }
-
-            // 主動技能才顯示冷卻、消耗與快捷鍵
-            if (talent.getType() == TalentType.ACTIVE) {
-                lore.add("§7冷卻: §f" + talent.getCooldown() + "秒");
-                if (talent.getManaCost() > 0) {
-                    lore.add("§7消耗: §b" + talent.getManaCost() + " MANA");
-                }
-                if (talent.getHpCost() > 0) {
-                    lore.add("§7消耗: §c" + (int)(talent.getHpCost() * 100) + "% 生命值");
-                }
-                lore.add("§7機制物品: §f" + talent.getMechanism());
-                lore.add("§7蹲下右鍵切換同物品技能；快捷鍵 1～4 亦可施放");
-            }
-
-            // 前置要求
-            if (!talent.getPrerequisites().isEmpty()) {
-                lore.add("");
-                lore.add("§7前置:");
-                for (Talent.Prerequisite pre : talent.getPrerequisites()) {
-                    Talent preTalent = talentManager.findTalent(pre.talentId);
-                    String preName = preTalent != null ? preTalent.getName() : pre.talentId;
-                    boolean met = playerTalents.getTalentLevel(pre.talentId) >= pre.requiredLevel;
-                    lore.add((met ? " §a✔ " : " §c✘ ") + "§7" + preName + " (Lv" + pre.requiredLevel + ")");
-                }
-            }
-
-            // 等級效果
-            if (level > 0) {
-                lore.add("");
-                lore.add("§6當前效果:");
-                addLevelLore(lore, talent, level);
-            }
-            
-            if (!isMax) {
-                lore.add("");
-                lore.add("§a下級效果:");
-                addLevelLore(lore, talent, level + 1);
-                lore.add("");
-                lore.add("§e▶ 點擊消耗 " + talent.getPointsPerLevel() + " 點學習");
-            } else {
-                lore.add("");
-                lore.add("§7已達最大等級");
-            }
-
-            meta.setLore(lore);
+            meta.setLore(TalentLore.describe(talent, level));
             item.setItemMeta(meta);
         }
         return item;
-    }
-
-    private void addLevelLore(List<String> lore, Talent talent, int level) {
-        Talent.TalentLevelData data = talent.getLevelData(level);
-        if (data == null) return;
-
-        // 收集傷害公式的元素
-        List<String> formulaParts = new ArrayList<>();
-        boolean hasFormula = false;
-
-        for (Map.Entry<String, Double> entry : data.effects.entrySet()) {
-            String key = entry.getKey();
-            double val = entry.getValue();
-            String translated = translateEffectKey(key);
-
-            // 傷害公式相關的 scaling 值
-            if (key.equals("magicScaling")) {
-                formulaParts.add("§d魔力§7×§f" + formatNum(val));
-                hasFormula = true;
-                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "倍");
-            } else if (key.equals("strengthScaling")) {
-                formulaParts.add("§c力量§7×§f" + formatNum(val));
-                hasFormula = true;
-                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "倍");
-            } else if (key.equals("agilityScaling")) {
-                formulaParts.add("§a敏捷§7×§f" + formatNum(val));
-                hasFormula = true;
-                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "倍");
-            } else if (key.equals("baseDamage")) {
-                formulaParts.add(0, "§f" + (int)val);
-                hasFormula = true;
-                lore.add(" §7- " + translated + ": §f" + (int)val);
-            } else if (key.equals("damageMultiplier")) {
-                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "倍");
-                hasFormula = true;
-            } else if (key.endsWith("Percent") || key.endsWith("percent") || key.equals("lifeStealPercent")
-                    || key.equals("leechPercent") || key.equals("bonusDamagePercent")
-                    || key.equals("shieldPercent") || key.equals("hpCostReduction")
-                    || key.equals("reduction") || key.equals("chilledBonus") || key.equals("undeadBonus")
-                    || key.equals("executeThreshold")) {
-                lore.add(" §7- " + translated + ": §f" + (int)(val * 100) + "%");
-            } else if (key.startsWith("statBonus_")) {
-                String stat = key.substring("statBonus_".length());
-                lore.add(" §7- " + translateStatName(stat) + ": §a+" + (int)val);
-            } else if (key.equals("duration") || key.equals("burnDuration") || key.equals("delay") || key.equals("slowDuration")) {
-                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "秒");
-            } else if (key.equals("radius") || key.equals("range") || key.equals("distance") || key.equals("chainRange")) {
-                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "格");
-            } else if (key.equals("cooldownReduction")) {
-                lore.add(" §7- " + translated + ": §f" + formatNum(val) + "秒");
-            } else {
-                lore.add(" §7- " + translated + ": §f" + formatNum(val));
-            }
-        }
-        for (Map.Entry<String, Double> entry : data.scaling.entrySet()) {
-            String stat = translateStatName(entry.getKey());
-            lore.add(" §7- " + stat + "加乘: §f自身" + stat + " × " + formatNum(entry.getValue()));
-            formulaParts.add(stat + "§7×§f" + formatNum(entry.getValue()));
-            hasFormula = true;
-        }
-
-        // 傷害公式行
-        if (hasFormula && !formulaParts.isEmpty()) {
-            lore.add(" §e⚔ 傷害公式: §f" + String.join(" §7+ ", formulaParts));
-        }
-    }
-
-    /**
-     * 格式化數字：整數不帶小數，否則保留一位
-     */
-    private String formatNum(double val) {
-        if (val == (int)val) return String.valueOf((int)val);
-        return String.format("%.1f", val);
-    }
-
-    /**
-     * 翻譯效果鍵名為中文
-     */
-    private String translateEffectKey(String key) {
-        return switch (key) {
-            // ===== 傷害/倍率 =====
-            case "magicScaling" -> "魔力倍率";
-            case "strengthScaling" -> "力量倍率";
-            case "agilityScaling" -> "敏捷倍率";
-            case "baseDamage" -> "基礎傷害";
-            case "baseHeal" -> "基礎治療";
-            case "spiritScaling" -> "精神倍率";
-            case "reduction" -> "減傷比例";
-            case "chilledBonus" -> "緩速目標加傷比例";
-            case "undeadBonus" -> "不死生物加傷比例";
-            case "distance" -> "位移距離";
-            case "chainCount" -> "連鎖目標上限";
-            case "chainRange" -> "連鎖跳躍距離";
-            case "slowAmplifier" -> "緩速等級（0 為 I）";
-            case "damageMultiplier" -> "傷害倍率";
-            case "damageType" -> "傷害類型";
-            case "bonusDamagePercent" -> "額外傷害";
-            case "executeDamageBonus" -> "處決加傷";
-            case "executeThreshold" -> "處決門檻(血量%)";
-
-            // ===== 範圍/距離 =====
-            case "range" -> "射程";
-            case "radius" -> "範圍半徑";
-            case "speed" -> "飛行速度";
-            case "waveCount" -> "波數";
-            case "waveInterval" -> "波間隔(tick)";
-
-            // ===== 持續/時間 =====
-            case "duration" -> "持續時間";
-            case "burnDuration" -> "燃燒時間";
-            case "delay" -> "延遲引爆";
-            case "cooldownReduction" -> "冷卻縮減";
-
-            // ===== 回復/吸血 =====
-            case "leechPercent" -> "吸血比例";
-            case "lifeStealPercent" -> "生命偷取";
-            case "healingPerSecond" -> "每秒回復";
-            case "shieldPercent" -> "護盾比例(最大HP)";
-
-            // ===== 屬性加成 =====
-            case "manaBonus" -> "魔力值加成";
-            case "hpBonus" -> "生命值加成";
-            case "hpCostReduction" -> "HP消耗減免";
-
-            // ===== 增減益 =====
-            case "weaknessLevel" -> "虛弱等級";
-            case "slownessLevel" -> "緩速等級";
-            case "damageBoost" -> "攻擊提升等級";
-            case "speedBoost" -> "速度提升等級";
-            case "stealthSpeedBoost" -> "隱身移速加成";
-
-            // ===== 暴擊 =====
-            case "critChanceBonus" -> "暴擊率加成";
-            case "critDamageBonus" -> "暴擊傷害加成";
-
-            // ===== 被動 =====
-            case "backstabBonus" -> "背刺加傷";
-            case "backstabExtraBonus" -> "背刺額外加傷";
-            case "damage-bonus" -> "傷害加成(%)";
-            case "crit-chance" -> "暴擊率(%)";
-            case "crit-damage" -> "暴擊傷害(%)";
-            case "berserker-bonus" -> "狂戰士加成";
-            case "defense-bonus" -> "防禦加成(%)";
-            case "dodge-chance" -> "閃避率(%)";
-
-            // ===== 其他 =====
-            case "particle" -> "粒子效果";
-            case "projectileCount" -> "投射物數量";
-            case "spread" -> "擴散角度";
-            case "bounceCount" -> "彈跳次數";
-            case "bounceRange" -> "彈跳範圍";
-            case "knockback" -> "擊退距離";
-            case "pullStrength" -> "拉力強度";
-            case "slowDuration" -> "緩速時間";
-
-            default -> {
-                // statBonus_xxx 已經在上面處理了
-                if (key.startsWith("statBonus_")) yield translateStatName(key.substring("statBonus_".length()));
-                if (key.startsWith("selfEffect_")) yield "自身效果-" + key.substring("selfEffect_".length());
-                if (key.startsWith("healingPerSecond_")) yield "每秒回復-" + key.substring("healingPerSecond_".length());
-                if (key.startsWith("damagePerSecond_")) yield "每秒傷害-" + key.substring("damagePerSecond_".length());
-                yield key;
-            }
-        };
-    }
-
-    /**
-     * 翻譯屬性名稱
-     */
-    private String translateStatName(String stat) {
-        return switch (stat.toUpperCase()) {
-            case "STRENGTH", "strength" -> "力量";
-            case "AGILITY", "agility" -> "敏捷";
-            case "MAGIC", "magic" -> "魔力";
-            case "SPIRIT", "spirit" -> "精神";
-            case "WISDOM", "wisdom" -> "智慧";
-            case "DEFENSE", "defense" -> "防禦";
-            case "LUCK", "luck" -> "幸運";
-            case "VITALITY", "vitality" -> "體力";
-            default -> stat;
-        };
-    }
-
-    /**
-     * 根據天賦的觸發類型返回中文顯示名稱
-     * 被動與屬性類型返回 null（不顯示按鍵觸發）
-     */
-    private String getTriggerDisplayName(Talent talent) {
-        // 被動 / 屬性加成不需要顯示觸發方式
-        if (talent.getType() == TalentType.PASSIVE || talent.getType() == TalentType.ATTRIBUTE
-                || talent.getType() == TalentType.WEAPON_PASSIVE) {
-            return "§d被動效果（自動觸發）";
-        }
-
-        return "§e" + com.customrpg.talents.TalentItemBinding.triggerName(talent.getTriggerType());
     }
 
     private void addPlayerInfo(Inventory gui, Player player) {
@@ -382,18 +184,19 @@ public class TalentTreeGUI implements Listener {
             lore.add("");
             lore.add("§f剩餘點數: §e" + playerTalents.getAvailablePoints());
             lore.add("");
-            lore.add("§f已選取的技能天賦 [快捷鍵 1～4]: ");
+            lore.add("§f已選取的技能天賦 [快捷鍵 1～4／F]: ");
             lore.add("§7滑鼠指向已學主動技能，按 1～4 綁定");
             lore.add("§d5：種族技能 §7（關閉介面後施放）");
             
             String[] selected = playerTalents.getSelectedSkills();
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 5; i++) {
                 String label;
                 switch (i) {
                     case 0: label = "第一格: "; break;
                     case 1: label = "第二格: "; break;
                     case 2: label = "第三格: "; break;
                     case 3: label = "第四格: "; break;
+                    case 4: label = "第五格（F）: "; break;
                     default: label = "";
                 }
                 
@@ -424,8 +227,7 @@ public class TalentTreeGUI implements Listener {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
         
-        String title = event.getView().getTitle();
-        if (!title.startsWith(GUI_TITLE_PREFIX)) return;
+        if (openViews.get(player.getUniqueId()) != event.getView().getTopInventory()) return;
         
         event.setCancelled(true);
         
@@ -434,6 +236,15 @@ public class TalentTreeGUI implements Listener {
 
         TalentBranch branch = playerCurrentBranch.get(player.getUniqueId());
         if (branch == null) return;
+        if (branch == TalentBranch.HUNTER) {
+            if (!hunterPages.containsKey(player.getUniqueId())) {
+                if (slot == PLAYER_INFO_SLOT) plugin.getTalentMainMenuGUI().open(player);
+                else for (HunterPath path : HunterPath.values()) if (path.menuSlot == slot) { openHunterPath(player, path); break; }
+                return;
+            }
+            if (slot == 45) { open(player, branch); return; }
+            if (slot == 46) { openHunterPath(player, HunterPath.COMMON); return; }
+        }
 
         if (slot == PLAYER_INFO_SLOT) {
             plugin.getTalentMainMenuGUI().open(player);
@@ -447,13 +258,12 @@ public class TalentTreeGUI implements Listener {
         if (event.getClick() == ClickType.NUMBER_KEY) {
             int hotbarSlot = event.getHotbarButton(); // 0-8
             if (hotbarSlot >= 0 && hotbarSlot < 4) {
-                for (Talent talent : tree.getAllTalents().values()) {
+                for (Talent talent : visibleTalents(player, tree, branch)) {
                     if (talent.getGuiSlot() == slot) {
                         PlayerTalents playerTalents = talentManager.getPlayerTalents(player);
                         // 必須已經學習過該天賦，且天賦類型是主動技能
                         if (playerTalents.getTalentLevel(talent.getId()) > 0 && talent.getType() == TalentType.ACTIVE) {
-                            playerTalents.setSelectedSkill(hotbarSlot, talent.getId());
-                            talentManager.savePlayerTalents(player.getUniqueId(), playerTalents);
+                            if (!talentManager.bindSkill(player, talent.getId(), hotbarSlot, false)) return;
                             player.sendMessage("§a[天賦] 已將 §e" + talent.getName() + " §a設定到第 " + (hotbarSlot + 1) + " 格！");
                             refreshGUI(player, branch);
                         } else if (talent.getType() != TalentType.ACTIVE) {
@@ -468,8 +278,11 @@ public class TalentTreeGUI implements Listener {
             return;
         }
 
-        for (Talent talent : tree.getAllTalents().values()) {
+        for (Talent talent : visibleTalents(player, tree, branch)) {
             if (talent.getGuiSlot() == slot) {
+                if (event.isRightClick() && talent.getType() == TalentType.ACTIVE) {
+                    plugin.getTalentMainMenuGUI().openBindings(player, talent.getId()); return;
+                }
                 if (talentManager.upgradeTalent(player, talent.getId())) {
                     refreshGUI(player, branch);
                 }
@@ -478,8 +291,22 @@ public class TalentTreeGUI implements Listener {
         }
     }
 
-    private void refreshGUI(Player player, TalentBranch branch) {
+    void refreshGUI(Player player, TalentBranch branch) {
         Inventory gui = createGUI(player, branch);
+        openViews.put(player.getUniqueId(), gui);
         player.openInventory(gui);
+    }
+    @EventHandler public void onDrag(InventoryDragEvent event) {
+        if (openViews.get(event.getWhoClicked().getUniqueId()) == event.getView().getTopInventory()) event.setCancelled(true);
+    }
+    @EventHandler public void onClose(InventoryCloseEvent event) {
+        if (openViews.remove(event.getPlayer().getUniqueId(), event.getInventory())) forget(event.getPlayer().getUniqueId());
+    }
+    @EventHandler public void onQuit(PlayerQuitEvent event) { openViews.remove(event.getPlayer().getUniqueId()); forget(event.getPlayer().getUniqueId()); }
+    private void forget(UUID player) { hunterPages.remove(player); playerCurrentBranch.remove(player); }
+    public void cleanup() {
+        for (Player player : plugin.getServer().getOnlinePlayers())
+            if (openViews.get(player.getUniqueId()) == player.getOpenInventory().getTopInventory()) player.closeInventory();
+        openViews.clear(); hunterPages.clear(); playerCurrentBranch.clear();
     }
 }

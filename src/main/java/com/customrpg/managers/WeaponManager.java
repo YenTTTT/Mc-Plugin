@@ -139,6 +139,9 @@ public class WeaponManager {
     private final NamespacedKey weaponKeyData;
     private final NamespacedKey attackSpeedModifierKey;
     private final NamespacedKey knockbackModifierKey;
+    private static final java.util.regex.Pattern LEVEL_REQUIREMENT_LINE = java.util.regex.Pattern.compile(
+            "^[\\s\\p{Z}🔒▸•]*(?:等級需求|需求等級)\\s*[:：]\\s*(?:Lv\\.?\\s*)?\\d+\\s*$",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
 
     /**
      * Constructor for WeaponManager
@@ -503,6 +506,50 @@ public class WeaponManager {
         }
 
         return weapon;
+    }
+
+    /** Create a weapon for a known recipient; shared recipe/shop templates keep their requirement. */
+    public ItemStack createWeapon(String weaponKey, int playerLevel) {
+        ItemStack weapon = createWeapon(weaponKey);
+        refreshRequiredLevelLore(weapon, playerLevel);
+        return weapon;
+    }
+
+    /** Update only the requirement line; the weapon's identity, enchantments and other metadata stay intact. */
+    public boolean refreshRequiredLevelLore(ItemStack item, int playerLevel) {
+        if (playerLevel < 0) return false;
+        String key = getWeaponKey(item);
+        WeaponData data = key == null ? null : getWeaponData(key);
+        if (data == null) return false;
+        ItemMeta meta = item.getItemMeta();
+        List<String> lore = meta.getLore() == null ? new ArrayList<>() : new ArrayList<>(meta.getLore());
+        boolean changed;
+        if (playerLevel >= data.getMinLevel()) {
+            changed = lore.removeIf(WeaponManager::isLevelRequirementLine);
+        } else {
+            if (lore.stream().anyMatch(WeaponManager::isLevelRequirementLine)) return false;
+            int position = lore.size();
+            if (position > 0 && ChatColor.stripColor(lore.get(position - 1)).trim().matches("[━─═]+")) position--;
+            lore.add(position, "§8🔒 等級需求: §c" + data.getMinLevel());
+            changed = true;
+        }
+        if (changed) {
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+        return changed;
+    }
+
+    private static boolean isLevelRequirementLine(String line) {
+        return line != null && LEVEL_REQUIREMENT_LINE.matcher(
+                ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', line))).matches();
+    }
+
+    public void refreshRequiredLevelLore(org.bukkit.entity.Player player, int playerLevel) {
+        boolean changed = false;
+        for (ItemStack item : player.getInventory().getContents()) changed |= refreshRequiredLevelLore(item, playerLevel);
+        changed |= refreshRequiredLevelLore(player.getItemOnCursor(), playerLevel);
+        if (changed) player.updateInventory();
     }
 
     /**

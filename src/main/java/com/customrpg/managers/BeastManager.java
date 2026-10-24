@@ -494,7 +494,7 @@ public class BeastManager implements Listener {
         if (!(event.getEntity() instanceof LivingEntity target)) return;
         if (target instanceof Player) return; // 不協助攻擊玩家
         // 忽略攻擊到自己的野獸（避免讓野獸互打）
-        if (target.hasMetadata("beast_owner")) return;
+        if (target.hasMetadata("beast_owner") || com.customrpg.utils.ControlledSummons.is(target)) return;
 
         UUID pid = player.getUniqueId();
         List<UUID> beasts = playerBeasts.get(pid);

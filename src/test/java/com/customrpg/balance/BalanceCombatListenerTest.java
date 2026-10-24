@@ -55,6 +55,14 @@ class BalanceCombatListenerTest {
         assertEquals(66.8,event.getFinalDamage(),1e-8);
         assertEquals(200,balance.extras().reserve(player.getUniqueId(),mob.getUniqueId(),200,100).damage(100),1e-8);
     }
+    @Test void guardedStaffBasicDamageStillKeepsItsNormalAttackSnapshot() {
+        var attack=balance.calculate(player,item,1,1);
+        var event=BalanceTestFixtures.damage(player,mob,attack.damage());
+        doAnswer(i->{listener.startDamage(event);return null;}).when(mob).damage(attack.damage(),player);
+        balance.basicDamage(mob,player,attack);
+        assertNotNull(balance.pending(event));
+        assertEquals(attack.damage(),balance.pending(event).damage());
+    }
     @Test void legacyMultiHitSkillsAreBoundedAndProtectionRefundsTheirBudget() {
         var rejected=BalanceTestFixtures.damage(player,mob,99999); listener.onDamage(rejected);
         assertEquals(balance.skillDps(player)*2,rejected.getFinalDamage(),1e-8);
@@ -111,5 +119,21 @@ class BalanceCombatListenerTest {
         listener.onDamage(event); assertEquals(737.0/6-50,event.getFinalDamage(),1e-8);
         assertEquals(-50,event.getDamage(EntityDamageEvent.DamageModifier.ABSORPTION));
     }
+
+    @Test void earthDefenseRunsAfterNativeArmorResolutionAndBeforeTransfer(){
+        var earth=mock(EarthTalentSkills.class);var talents=mock(TalentSkillManager.class);when(plugin.getTalentSkillManager()).thenReturn(talents);when(talents.getEarth()).thenReturn(earth);
+        var event=BalanceTestFixtures.damage(mob,player,10);
+        doAnswer(i->{assertEquals(737.0/6,event.getFinalDamage(),1e-8);assertTrue((double)i.getArgument(1)>event.getFinalDamage());return null;}).when(earth).mitigate(eq(event),anyDouble());
+        listener.onDamage(event);var order=inOrder(earth);order.verify(earth).mitigate(eq(event),anyDouble());order.verify(earth).share(event);
+    }
+    @Test void lethalHitCancellationPreventsAnyOathTransfer(){
+        var earth=mock(EarthTalentSkills.class);var talents=mock(TalentSkillManager.class);when(plugin.getTalentSkillManager()).thenReturn(talents);when(talents.getEarth()).thenReturn(earth);
+        when(player.getHealth()).thenReturn(1.0);var protectedBalance=spy(balance);doReturn(true).when(protectedBalance).secondWind(player);
+        var finalListener=new BalanceCombatListener(plugin,protectedBalance);var event=BalanceTestFixtures.damage(mob,player,10);finalListener.onDamage(event);
+        assertTrue(event.isCancelled());verify(earth).mitigate(eq(event),anyDouble());verify(earth,never()).share(any());
+    }
+
+    @Test void darkOutgoingWeaknessIsAppliedToTheNormalizedMobHit(){var skills=mock(TalentSkillManager.class);var dark=mock(DarkTalentSkills.class);when(plugin.getTalentSkillManager()).thenReturn(skills);when(skills.getDark()).thenReturn(dark);when(dark.outgoingMultiplier(mob)).thenReturn(.85);var event=BalanceTestFixtures.damage(mob,player,10);listener.onDamage(event);assertEquals(737.0/6*.85,event.getFinalDamage(),1e-8);verify(dark).mitigate(event);}
+    @Test void healingCursesApplyAfterCapsAndAlsoAffectFixedPotionsAndNonPlayerHealing(){var skills=mock(TalentSkillManager.class);var dark=mock(DarkTalentSkills.class);when(plugin.getTalentSkillManager()).thenReturn(skills);when(skills.getDark()).thenReturn(dark);doAnswer(i->{EntityRegainHealthEvent e=i.getArgument(0);e.setAmount(e.getAmount()*.8);return null;}).when(dark).weakenHealing(any());var normal=new EntityRegainHealthEvent(player,10,EntityRegainHealthEvent.RegainReason.CUSTOM);listener.onHeal(normal);assertEquals(8,normal.getAmount(),1e-8);var spyBalance=spy(balance);doReturn(true).when(spyBalance).isPotionHeal(any());var potion=new EntityRegainHealthEvent(player,300,EntityRegainHealthEvent.RegainReason.CUSTOM);new BalanceCombatListener(plugin,spyBalance).onHeal(potion);assertEquals(240,potion.getAmount(),1e-8);var monster=new EntityRegainHealthEvent(mob,10,EntityRegainHealthEvent.RegainReason.REGEN);listener.onHeal(monster);assertEquals(8,monster.getAmount(),1e-8);}
 
 }

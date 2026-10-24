@@ -1,0 +1,7 @@
+﻿id,name,resource,restore,cooldown_seconds,ingredients
+health_crude,粗製生命藥水,HEALTH,40,15,GLASS_BOTTLE + WHEAT + SWEET_BERRIES + custom:monster_binding_t1
+mana_crude,粗製魔力藥水,MANA,30,15,GLASS_BOTTLE + SUGAR + LAPIS_LAZULI + custom:monster_binding_t1
+health_refined,精製生命藥水,HEALTH,120,15,GLASS_BOTTLE + NETHER_WART + GLISTERING_MELON_SLICE + custom:monster_binding_t3 + custom:swamp_essence_t3
+mana_refined,精製魔力藥水,MANA,80,15,GLASS_BOTTLE + NETHER_WART + LAPIS_BLOCK + custom:monster_binding_t3 + custom:cave_essence_t3
+health_elixir,秘製生命靈藥,HEALTH,280,15,GLASS_BOTTLE + GHAST_TEAR + GLISTERING_MELON_SLICE + GOLDEN_APPLE + custom:boss_core_t5 + custom:swamp_essence_t5
+mana_elixir,秘製魔力靈藥,MANA,160,15,GLASS_BOTTLE + GHAST_TEAR + AMETHYST_BLOCK + ENDER_PEARL + custom:boss_core_t5 + custom:cave_essence_t5

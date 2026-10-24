@@ -1,0 +1,15 @@
+package com.customrpg.vfx;
+
+import com.customrpg.talents.NecroSkill;
+import com.customrpg.vfx.VfxRuntime.*;
+import com.customrpg.vfx.VfxMath.V;
+import org.junit.jupiter.api.Test;
+import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+class NecroVfxTest {
+    @Test void eightDifferentStoryboardsRenderForEveryFacingWithinSampleLimits(){var classes=new HashSet<Class<?>>();for(var s:NecroSkill.values())for(V d:List.of(V.FORWARD,new V(1,0,0),V.UP,new V(0,-1,0))){var scene=new VfxRuntimeTest.Scene();var r=new VfxRuntime(scene,Limits.defaults(),()->0);var effect=NecroVfx.preview(s.id,42);classes.add(effect.getClass());assertNotNull(r.play(s.id,new Pose(VfxRuntimeTest.OWNER,VfxRuntimeTest.WORLD,V.ZERO,d,1,null),Mode.PREVIEW,effect,42,false,0,10));for(int i=0;i<=effect.duration();i++){r.tick();assertEquals(0,r.stats().rejectedSamples(),s.id+" tick "+i);}assertFalse(scene.particles.isEmpty());assertEquals(0,scene.failures);assertEquals(0,r.stats().active());assertEquals(s.id,VfxEffects.resolve(s.id));}assertEquals(8,classes.size());for(var list:List.of(NecroVfx.designs().stream().map(VfxEffects.Dna::silhouette).toList(),NecroVfx.designs().stream().map(VfxEffects.Dna::motion).toList(),NecroVfx.designs().stream().map(VfxEffects.Dna::signature).toList()))assertEquals(8,new HashSet<>(list).size());}
+    @Test void gateLowQualityKeepsRectangularWarningAndSevenBlockArch(){var scene=new VfxRuntimeTest.Scene();scene.audience=List.of(new Viewer(VfxRuntimeTest.VIEWER,VfxRuntimeTest.WORLD,V.ZERO,Quality.LOW));var r=new VfxRuntime(scene,Limits.defaults(),()->0);r.play("necro_gate",VfxRuntimeTest.pose(),Mode.PREVIEW,NecroVfx.preview("necro_gate",42),42,false,0,100);for(int i=0;i<31;i++)r.tick();assertTrue(scene.particles.stream().anyMatch(p->p.at().y()<.1&&p.at().length()>10));assertTrue(scene.particles.stream().anyMatch(p->p.at().y()>6));}
+    @Test void sixtyFourNecroAnimationsRespectGlobalLimitsAndFinishWithoutInstances(){var scene=new VfxRuntimeTest.Scene();var r=new VfxRuntime(scene,Limits.defaults(),()->0);for(int i=0;i<64;i++){var s=NecroSkill.values()[i%8];assertNotNull(r.play(s.id,new Pose(UUID.randomUUID(),VfxRuntimeTest.WORLD,V.ZERO,V.FORWARD,0,null),Mode.COMBAT,NecroVfx.preview(s.id,i),i,false,0,s==NecroSkill.GATE?100:40));}for(int t=0;t<240;t++){r.tick();assertTrue(r.stats().sampled()<=8192);assertTrue(r.stats().sent()<=4000);assertTrue(r.stats().deliveryChecks()<=16000);scene.particles.clear();}assertEquals(0,r.stats().active());}
+    @Test void movingGateWarningUsesItsLiveDirectionAndTranslation(){var scene=new VfxRuntimeTest.Scene();var a=new NecroVfx.Anchor();var r=new VfxRuntime(scene,Limits.defaults(),()->0);r.play("necro_gate",VfxRuntimeTest.pose(),Mode.PREVIEW,new NecroVfx.Gate(a),42,false,0,100);r.tick();assertTrue(scene.particles.stream().anyMatch(p->p.at().z()>13));scene.particles.clear();a.direction=new V(1,0,0);a.offset=new V(2,0,0);r.tick();assertTrue(scene.particles.stream().anyMatch(p->p.at().x()>15));assertTrue(scene.particles.stream().allMatch(p->Math.abs(p.at().z())<5));}
+}

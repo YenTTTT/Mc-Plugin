@@ -181,13 +181,13 @@ public final class ExpandedTalentSkills implements Listener {
         player.getWorld().playSound(player.getLocation(), "block.amethyst_block.chime", .6f, 1.2f);
         return true;
     }
-    private boolean valid(Player player) {
+    boolean valid(Player player) {
         return player.isOnline() && !player.isDead() && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE);
     }
     private boolean learned(Player source, Talent talent) {
         return valid(source) && plugin.getTalentManager().getPlayerTalents(source).getTalentLevel(talent.getId()) > 0;
     }
-    private boolean protectedAt(Location at) {
+    boolean protectedAt(Location at) {
         return plugin.getSafeZoneManager() != null && plugin.getSafeZoneManager().isInSafeZone(at)
                 || plugin.getProtectionAreaManager() != null && plugin.getProtectionAreaManager().isInProtectedArea2D(at);
     }
@@ -195,24 +195,28 @@ public final class ExpandedTalentSkills implements Listener {
         var board = source.getScoreboard(); if (board == null) return false;
         var team = board.getEntryTeam(source.getName()); return team != null && team.hasEntry(other.getName());
     }
-    private boolean ally(Player source, Player other) {
+    boolean ally(Player source, Player other) {
         return valid(other) && source.getWorld().equals(other.getWorld())
                 && (source.equals(other) || sameTeam(source, other) && source.hasLineOfSight(other));
     }
-    private boolean enemy(Player source, LivingEntity target) {
-        if (source.equals(target) || target.isDead() || !target.isValid() || target.isInvulnerable() || target instanceof ArmorStand
+    boolean enemy(Player source, LivingEntity target) {
+        if (com.customrpg.utils.ControlledUndead.is(target) || target.hasMetadata("beast_owner") || source.equals(target) || target.isDead() || !target.isValid() || target.isInvulnerable() || target instanceof ArmorStand
                 || !source.getWorld().equals(target.getWorld()) || protectedAt(source.getLocation()) || protectedAt(target.getLocation())
                 || !source.hasLineOfSight(target)) return false;
+        if(com.customrpg.utils.ControlledChicken.is(target)){
+            var id=com.customrpg.utils.ControlledChicken.owner(target);var owner=id==null?null:plugin.getServer().getPlayer(id);
+            return owner!=null&&!source.equals(owner)&&valid(owner)&&source.getWorld().getPVP()&&!sameTeam(source,owner)&&!com.customrpg.utils.ControlledChicken.preview(target);
+        }
         if (target instanceof Player other) return valid(other) && source.getWorld().getPVP() && !sameTeam(source, other);
         if (target instanceof Tameable pet && pet.isTamed()) return false;
         return target instanceof Enemy || plugin.getMobManager() != null && plugin.getMobManager().getCustomMobKey(target) != null;
     }
-    private LivingEntity aim(Player source, double range) {
+    LivingEntity aim(Player source, double range) {
         var ray = source.getWorld().rayTrace(source.getEyeLocation(), source.getEyeLocation().getDirection(), range,
                 FluidCollisionMode.NEVER, true, .35, e -> e instanceof LivingEntity target && enemy(source, target));
         return ray != null && ray.getHitEntity() instanceof LivingEntity target ? target : null;
     }
-    private List<LivingEntity> enemies(Player source, Location center, double radius) {
+    List<LivingEntity> enemies(Player source, Location center, double radius) {
         List<LivingEntity> result = new ArrayList<>();
         for (Entity entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
             if (entity instanceof LivingEntity target && target.getLocation().distanceSquared(center) <= radius * radius
@@ -226,7 +230,7 @@ public final class ExpandedTalentSkills implements Listener {
         Vector direction = end.toVector().subtract(start.toVector()); double length = direction.length();
         return length < .01 || start.getWorld().rayTraceBlocks(start, direction.normalize(), length, FluidCollisionMode.NEVER, true) == null;
     }
-    private double damage(Player source, Talent talent, int level) {
+    double damage(Player source, Talent talent, int level) {
         var stats = plugin.getPlayerStatsManager().getStats(source);
         return Math.min(200, value(talent, level, "baseDamage", 0) + stats.getTotalMagic() * value(talent, level, "magicScaling", 0)
                 + stats.getTotalStrength() * value(talent, level, "strengthScaling", 0));
@@ -234,7 +238,7 @@ public final class ExpandedTalentSkills implements Listener {
     private double healing(Player source, Talent talent, int level) {
         return Math.min(100, value(talent, level, "baseHeal", 0) + plugin.getPlayerStatsManager().getStats(source).getTotalSpirit() * value(talent, level, "spiritScaling", 0));
     }
-    private double hit(Player source, LivingEntity target, double damage) {
+    double hit(Player source, LivingEntity target, double damage) {
         if (!enemy(source, target)) return 0;
         boolean virtual = MobManager.hasVirtualHP(target);
         double before = virtual ? MobManager.getVirtualCurrentHP(target) : target.getHealth() + target.getAbsorptionAmount();
@@ -249,14 +253,14 @@ public final class ExpandedTalentSkills implements Listener {
         if (event.isCancelled() || !Double.isFinite(event.getAmount()) || event.getAmount() <= 0 || !valid(target)) return false;
         target.setHealth(Math.min(target.getMaxHealth(), target.getHealth() + event.getAmount())); return true;
     }
-    private void slow(LivingEntity target, Talent talent, int level) {
+    void slow(LivingEntity target, Talent talent, int level) {
         if (target.isDead()) return;
         double duration = value(talent, level, "slowDuration", 2);
         var data = plugin.getMobManager() == null ? null : plugin.getMobManager().getMobData(plugin.getMobManager().getCustomMobKey(target));
         if (data != null && data.isBoss()) duration *= .5;
         status.slow(target, (int)(duration * 20), (int)value(talent, level, "slowAmplifier", 0));
     }
-    private void push(Player source, LivingEntity target, double strength) {
+    void push(Player source, LivingEntity target, double strength) {
         if (target.isDead()) return;
         Vector away = target.getLocation().toVector().subtract(source.getLocation().toVector()).setY(0);
         if (away.lengthSquared() > .001) target.setVelocity(away.normalize().multiply(strength).setY(.2));
@@ -273,7 +277,7 @@ public final class ExpandedTalentSkills implements Listener {
                     .min(Comparator.comparingDouble(e -> e.getLocation().distanceSquared(last.getLocation()))).orElse(null);
         }
     }
-    private boolean dash(Player player, double distance) {
+    boolean dash(Player player, double distance) {
         if (protectedAt(player.getLocation())) return false;
         Vector forward = player.getEyeLocation().getDirection().setY(0);
         if (forward.lengthSquared() < .001) return false;
@@ -297,13 +301,13 @@ public final class ExpandedTalentSkills implements Listener {
     private int color(Talent talent) {
         return switch (talent.getBranch()) { case FROST -> 0x72DDF7; case STORM -> 0xFFDC55; case EARTH -> 0xB89968; default -> 0xFFF3B0; };
     }
-    private void ring(Location center, double radius, int color) {
+    void ring(Location center, double radius, int color) {
         var dust = new Particle.DustOptions(Color.fromRGB(color), 1);
         for (int i = 0; i < 20; i++) { double angle = Math.PI * i / 10;
             center.getWorld().spawnParticle(Particle.DUST, center.clone().add(Math.cos(angle) * radius, .15, Math.sin(angle) * radius), 1, 0, 0, 0, 0, dust);
         }
     }
-    private void beam(Location start, Location end, int color) {
+    void beam(Location start, Location end, int color) {
         Vector delta = end.toVector().subtract(start.toVector()); double length = delta.length();
         if (length < .01) return; delta.normalize();
         for (double d = 0; d <= Math.min(24, length); d += .6)
@@ -335,6 +339,7 @@ public final class ExpandedTalentSkills implements Listener {
     }
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDamage(EntityDamageEvent event) {
+        if (SkillDamageGuard.isTransfer(event.getEntity())) return;
         if (!(event.getEntity() instanceof Player player) || !valid(player)
                 || event.getCause() == EntityDamageEvent.DamageCause.VOID || event.getCause() == EntityDamageEvent.DamageCause.KILL
                 || event.getCause() == EntityDamageEvent.DamageCause.SUICIDE) return;

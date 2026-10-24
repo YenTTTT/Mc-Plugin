@@ -6,7 +6,8 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
-import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.*;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -44,6 +45,12 @@ public final class BalanceItemRefresh implements Listener {
         item.setItemMeta(meta);
     }
 
+    public void refresh(ItemStack item, int playerLevel) {
+        refresh(item);
+        // This must run even when the item already has the current balance version.
+        plugin.getWeaponManager().refreshRequiredLevelLore(item, playerLevel);
+    }
+
     public void updateSpeed(Player player) {
         var attribute=player.getAttribute(Attribute.ATTACK_SPEED);
         if (attribute==null) return;
@@ -69,13 +76,27 @@ public final class BalanceItemRefresh implements Listener {
     private void later(Player player) {
         plugin.getServer().getScheduler().runTask(plugin,()->{
             if (!player.isOnline()) return;
-            for (ItemStack item:player.getInventory().getContents()) refresh(item);
+            int level=plugin.getPlayerStatsManager().getStats(player).getLevel();
+            for (ItemStack item:player.getInventory().getContents()) refresh(item,level);
+            refresh(player.getItemOnCursor(),level);
             updateSpeed(player);
         });
     }
     @EventHandler(priority=EventPriority.MONITOR) public void join(PlayerJoinEvent event) { later(event.getPlayer()); }
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void held(PlayerItemHeldEvent event) { later(event.getPlayer()); }
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void swap(PlayerSwapHandItemsEvent event) { later(event.getPlayer()); }
+    @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void pickup(EntityPickupItemEvent event) {
+        if (event.getEntity() instanceof Player player) later(player);
+    }
+    @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void click(InventoryClickEvent event) {
+        if (event.getWhoClicked() instanceof Player player) later(player);
+    }
+    @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void drag(InventoryDragEvent event) {
+        if (event.getWhoClicked() instanceof Player player) later(player);
+    }
+    @EventHandler(priority=EventPriority.MONITOR) public void close(InventoryCloseEvent event) {
+        if (event.getPlayer() instanceof Player player) later(player);
+    }
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void open(InventoryOpenEvent event) {
         // Crafting/merchant UI outputs have transaction-sensitive identity: refresh on receipt/use instead.
         if (event.getInventory().getType()==org.bukkit.event.inventory.InventoryType.MERCHANT

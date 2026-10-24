@@ -15,20 +15,30 @@ import static org.mockito.Mockito.*;
 
 class TalentMainMenuGUITest {
     TalentMainMenuGUI menu; TalentTreeGUI trees; Player player; Inventory top; InventoryView view;
-    Map<UUID,Inventory> owned;
+    Map<UUID,Object> owned;
+    Object current;
     @BeforeEach @SuppressWarnings("unchecked") void setup() throws Exception {
-        trees = mock(TalentTreeGUI.class); menu = new TalentMainMenuGUI(mock(CustomRPG.class), mock(TalentManager.class), trees);
+        trees = mock(TalentTreeGUI.class); menu = spy(new TalentMainMenuGUI(mock(CustomRPG.class), mock(TalentManager.class), trees));
         player = mock(Player.class); when(player.getUniqueId()).thenReturn(UUID.randomUUID()); top = mock(Inventory.class); view = mock(InventoryView.class);
         when(view.getTopInventory()).thenReturn(top);
-        var field = TalentMainMenuGUI.class.getDeclaredField("openViews"); field.setAccessible(true); owned = (Map<UUID,Inventory>)field.get(menu);
-        owned.put(player.getUniqueId(), top);
+        var field = TalentMainMenuGUI.class.getDeclaredField("views"); field.setAccessible(true); owned = (Map<UUID,Object>)field.get(menu);
+        own(null);
+    }
+    void own(String binding) throws Exception {
+        var type=Arrays.stream(TalentMainMenuGUI.class.getDeclaredClasses()).filter(c->c.getSimpleName().equals("View")).findFirst().orElseThrow();
+        var constructor=type.getDeclaredConstructors()[0];constructor.setAccessible(true);
+        current=constructor.newInstance(top,binding);owned.put(player.getUniqueId(),current);
     }
     InventoryClickEvent click(int slot) {
         var event = mock(InventoryClickEvent.class); when(event.getWhoClicked()).thenReturn(player); when(event.getView()).thenReturn(view); when(event.getRawSlot()).thenReturn(slot); return event;
     }
-    @ParameterizedTest @CsvSource({"22,FROST", "23,STORM", "24,EARTH", "25,LIGHT"})
-    void newBranchButtonsOpenTheCorrectTree(int slot, TalentBranch branch) {
-        var click = click(slot); menu.onInventoryClick(click); verify(click).setCancelled(true); verify(trees).open(player, branch);
+    @ParameterizedTest @CsvSource({"10,FIRE", "11,DARK", "12,WEAPON", "13,TECH", "14,NATURE", "15,SUKUNA", "16,BLOOD", "19,ASSASSIN", "20,BEAST", "21,BOW", "22,FROST", "23,STORM", "24,EARTH", "25,LIGHT", "28,HUNTER", "29,NECROMANCER", "30,CHICKEN"})
+    void allSeventeenBranchesOpenDirectly(int slot, TalentBranch branch) {
+        var click = click(slot); menu.onInventoryClick(click);
+        verify(click).setCancelled(true); verify(trees).open(player, branch);
+    }
+    @Test void removedUltimateButtonCannotBindOrOpenABranch() throws Exception {
+        own("nen_rock"); menu.onInventoryClick(click(52)); verifyNoInteractions(trees);
     }
     @Test void inventoryFromAnotherPluginCannotOpenBranchesByMatchingTitle() {
         when(view.getTopInventory()).thenReturn(mock(Inventory.class)); menu.onInventoryClick(click(22)); verifyNoInteractions(trees);
@@ -40,7 +50,7 @@ class TalentMainMenuGUITest {
     }
     @Test void closingAnOlderViewDoesNotClearANewerMenu() {
         var event = mock(InventoryCloseEvent.class); when(event.getPlayer()).thenReturn(player); when(event.getInventory()).thenReturn(mock(Inventory.class));
-        menu.onClose(event); assertEquals(top, owned.get(player.getUniqueId()));
+        menu.onClose(event); assertSame(current, owned.get(player.getUniqueId()));
         when(event.getInventory()).thenReturn(top); menu.onClose(event); assertTrue(owned.isEmpty());
     }
 }

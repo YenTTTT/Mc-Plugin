@@ -13,9 +13,14 @@ softdepend:
   - BeautyQuests
 
 commands:
+  rpgvfx:
+    aliases: [vfx]
+    description: Preview bounded skill visual effects without combat or resource costs
+    usage: /rpgvfx <preview skillId|showcase|stop|quality low/medium/high|stats>
+    permission: customrpg.vfx.admin
   rpgcraft:
     description: Browse custom crafting recipes, materials and village merchant status
-    usage: /rpgcraft [recipes [theme] [tier] [page]|recipe <id>|materials [page]|status|give <player> <material> [amount]]
+    usage: /rpgcraft [recipes [theme] [tier] [page]|recipe <id>|materials [page]|potions|status|give <player> <material-or-potion> [amount]]
     permission: customrpg.crafting
   events:
     description: View world events, claim personal rewards and inspect material wallet
@@ -164,8 +169,12 @@ permissions:
       customrpg.quest: true
       customrpg.quest.admin: true
       customrpg.skillbar: true
+      customrpg.vfx.admin: true
   customrpg.weapon:
     description: Allows using the /weapon command for yourself
+    default: op
+  customrpg.vfx.admin:
+    description: Preview skill visual effects and inspect VFX runtime budgets
     default: op
   customrpg.weapon.others:
     description: Allows giving weapons to other players

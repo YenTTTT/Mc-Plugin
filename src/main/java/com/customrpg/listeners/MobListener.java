@@ -206,6 +206,7 @@ public class MobListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onMobDeath(EntityDeathEvent event) {
+        if(com.customrpg.utils.ControlledSummons.is(event.getEntity()))return;
         // 排除玩家死亡
         if (event.getEntity() instanceof Player) {
             return;

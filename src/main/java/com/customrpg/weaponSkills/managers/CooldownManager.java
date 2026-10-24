@@ -70,6 +70,8 @@ public class CooldownManager {
         });
     }
 
+    public void clearCooldown(Player p,String key){if(p==null)return;var timers=cooldownUntil.get(p.getUniqueId());if(timers!=null)timers.remove(norm(key));}
+
     public long getRemainingCooldown(Player player, String key) {
         if (player == null) {
             return 0L;

@@ -54,6 +54,12 @@ public class TalentSkillManager {
     private final ParticleUtil particleUtil;
     private final SoundUtil soundUtil;
     private final ExpandedTalentSkills expansion;
+    private final HunterTalentSkills hunter;
+    private final FrostTalentSkills frost;
+    private final EarthTalentSkills earth;
+    private final DarkTalentSkills dark;
+    private final NecroTalentSkills necro;
+    private final ChickenTalentSkills chicken;
 
     public TalentSkillManager(CustomRPG plugin) {
         this.plugin = plugin;
@@ -71,12 +77,26 @@ public class TalentSkillManager {
         this.particleUtil = new ParticleUtil();
         this.soundUtil = new SoundUtil();
         this.expansion = new ExpandedTalentSkills(plugin);
+        this.hunter = new HunterTalentSkills(plugin, expansion);
+        this.frost = new FrostTalentSkills(plugin, expansion);
+        this.earth = new EarthTalentSkills(plugin, expansion);
+        this.dark = new DarkTalentSkills(plugin, expansion);
+        this.necro = new NecroTalentSkills(plugin, expansion);
+        this.chicken = new ChickenTalentSkills(plugin, expansion);
     }
 
     public ExpandedTalentSkills getExpansion() { return expansion; }
+    public FrostTalentSkills getFrost() { return frost; }
+    public EarthTalentSkills getEarth() { return earth; }
+    public ChickenTalentSkills getChicken() { return chicken; }
+    public void refundFailedChickenGod(Player p){manaManager.restoreMana(p,75);cooldownManager.clearCooldown(p,"talent:chicken_god:"+p.getUniqueId());}
+    public NecroTalentSkills getNecro() { return necro; }
+    public DarkTalentSkills getDark() { return dark; }
+    public HunterTalentSkills getHunter() { return hunter; }
 
     /** Cast a learned, equipped ACTIVE talent. Held equipment only supplies optional damage scaling. */
     public boolean castSkillDirectly(Player player, String talentId, ItemStack item) {
+        talentId=com.customrpg.talents.DarkSkill.canonical(talentId);
         PlayerTalents pt = talentManager.getPlayerTalents(player);
         Talent talent = talentManager.findTalent(talentId);
         if (talent == null) {
@@ -89,8 +109,9 @@ public class TalentSkillManager {
             return false;
         }
         if (!player.isOnline() || player.isDead() || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) return false;
-        if (talent.getType() != TalentType.ACTIVE || !java.util.Arrays.asList(pt.getSelectedSkills()).contains(talentId)) {
-            player.sendMessage("§c請先將已學習的主動技能攜帶至快捷槽 1～4。");
+        boolean equipped = com.customrpg.talents.TalentLoadout.ultimate(talentId) ? talentId.equals(pt.getUltimateSkill()) : java.util.Arrays.asList(pt.getSelectedSkills()).contains(talentId);
+        if (talent.getType() != TalentType.ACTIVE || !equipped) {
+            player.sendMessage("§c請先將技能攜帶至技能槽 1～4／F。");
             return false;
         }
         return castSkill(player, talent, level, item == null ? new ItemStack(Material.AIR) : item.clone());
@@ -106,7 +127,7 @@ public class TalentSkillManager {
             return false;
         }
 
-        double manaCost = talent.getManaCost();
+        double manaCost = com.customrpg.talents.TalentLoadout.mana(talent,level);
         // 2. 檢查 Mana
         if (!manaManager.hasMana(player, manaCost)) {
             player.sendMessage("§c魔力不足！需要 " + manaCost + " MANA");
@@ -137,7 +158,10 @@ public class TalentSkillManager {
 
         // 3. 執行具體技能邏輯
         boolean success = false;
-        switch (talent.getId()) {
+        if(com.customrpg.talents.ChickenSkill.handles(talent.getId()))success=chicken.cast(player,talent,level);
+        else if(com.customrpg.talents.NecroSkill.handles(talent.getId()))success=necro.cast(player,talent,level);
+        else if(com.customrpg.talents.DarkSkill.handles(talent.getId()))success=dark.cast(player,talent,level);
+        else switch (talent.getId()) {
             case "earth_shatter":
                 success = executeEarthShatter(player, talent, level, item);
                 break;
@@ -410,6 +434,12 @@ public class TalentSkillManager {
                 success = executeWindTrap(player, talent, level, item);
                 break;
             default:
+                if (com.customrpg.talents.EarthSkill.handles(talent.getId())) { success=earth.cast(player,talent,level); break; }
+                if (com.customrpg.talents.FrostSkill.handles(talent.getId())) { success=frost.cast(player,talent,level); break; }
+                if (HunterTalentSkills.handles(talent.getId())) {
+                    success = hunter.cast(player, talent, level);
+                    break;
+                }
                 if (ExpandedTalentSkills.handles(talent.getId())) {
                     success = expansion.cast(player, talent, level);
                     break;
@@ -3126,10 +3156,43 @@ public class TalentSkillManager {
         return true;
     }
 
-    /**
-     * 影襲 — 瞬移到敵人背後並背刺
-     */
+    // Assassin skills have independent hit timing; native melee hurt frames cannot swallow their strikes.
+    private boolean assassinReady(Player player, org.bukkit.World world) {
+        return player.isOnline() && !player.isDead() && player.getGameMode() != org.bukkit.GameMode.SPECTATOR
+                && player.getWorld().equals(world) && !expansion.protectedAt(player.getLocation());
+    }
+
+    private static Vector assassinForward(Location location) {
+        Location flat = location.clone();
+        flat.setPitch(0);
+        return flat.getDirection();
+    }
+
+    private double assassinHit(Player player, LivingEntity target, double damage) {
+        if (!expansion.enemy(player, target) || damage <= 0) return 0;
+        double before = assassinHealth(target);
+        // Restore hurt frames in finally. All damage events, cancellations and the shared damage budget still apply.
+        com.customrpg.utils.SkillDamageGuard.damageFollowUp(target, damage, player, false);
+        return Math.max(0, before - assassinHealth(target));
+    }
+
+    private static double assassinHealth(LivingEntity target) {
+        return (MobManager.hasVirtualHP(target) ? MobManager.getVirtualCurrentHP(target) : target.getHealth())
+                + target.getAbsorptionAmount();
+    }
+
+    private final Map<Player, Boolean> assassinInvulnerability = new HashMap<>();
+    private void restoreAssassinInvulnerability(Player player) {
+        Boolean previous = assassinInvulnerability.remove(player);
+        if (previous != null) player.setInvulnerable(previous);
+    }
+    public void shutdownAssassin() {
+        for (Player player : new ArrayList<>(assassinInvulnerability.keySet())) restoreAssassinInvulnerability(player);
+    }
+
+    /** 影襲 — 瞬移到敵人背後並背刺。 */
     private boolean executeShadowAssault(Player player, Talent talent, int level, ItemStack item) {
+        if (!assassinReady(player, player.getWorld())) return false;
         PlayerStats stats = statsManager.getStats(player);
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 1.5);
         double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 1.0);
@@ -3142,7 +3205,7 @@ public class TalentSkillManager {
         LivingEntity target = null;
         double closestDist = range;
         for (org.bukkit.entity.Entity entity : player.getNearbyEntities(range, range, range)) {
-            if (entity == player || !(entity instanceof LivingEntity le) || le.isDead()) continue;
+            if (!(entity instanceof LivingEntity le) || !expansion.enemy(player, le)) continue;
             double dist = entity.getLocation().distance(player.getLocation());
             if (dist < closestDist) {
                 closestDist = dist;
@@ -3157,7 +3220,7 @@ public class TalentSkillManager {
 
         // 瞬移到目標背後
         Location targetLoc = target.getLocation();
-        Vector behindDir = targetLoc.getDirection().normalize().multiply(-1.5);
+        Vector behindDir = assassinForward(targetLoc).multiply(-1.5);
         Location teleportLoc = targetLoc.clone().add(behindDir);
         teleportLoc.setY(targetLoc.getY());
         teleportLoc.setYaw(targetLoc.getYaw()); // 面對目標的方向
@@ -3167,17 +3230,16 @@ public class TalentSkillManager {
         player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0.05);
 
         // 瞬移
-        player.teleport(teleportLoc);
+        if (expansion.protectedAt(teleportLoc) || !player.teleport(teleportLoc)) return false;
 
         // 到達粒子
         player.getWorld().spawnParticle(Particle.SMOKE, teleportLoc.clone().add(0, 1, 0), 15, 0.2, 0.3, 0.2, 0.03);
         player.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 20, 0.3, 0.3, 0.3, 0.3);
         player.getWorld().spawnParticle(Particle.SWEEP_ATTACK, target.getLocation().add(0, 1, 0), 3, 0.2, 0.2, 0.2, 0);
-        player.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f);
+        player.getWorld().playSound(target.getLocation(), "entity.player.attack.sweep", 1.0f, 1.5f);
 
         // 造成傷害
-        com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
-        player.sendMessage("§8[影襲] §7背刺！造成 §c" + String.format("%.0f", damage) + " §7傷害");
+        assassinHit(player, target, damage);
 
         // 解除隱身
         player.removePotionEffect(PotionEffectType.INVISIBILITY);
@@ -3189,6 +3251,7 @@ public class TalentSkillManager {
      * 鬼哭神嚎 — 連續背刺多名敵人
      */
     private boolean executePhantomMassacre(Player player, Talent talent, int level, ItemStack item) {
+        if (!assassinReady(player, player.getWorld())) return false;
         PlayerStats stats = statsManager.getStats(player);
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.9);
         double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 0.9);
@@ -3202,7 +3265,7 @@ public class TalentSkillManager {
         // 收集附近目標
         java.util.List<LivingEntity> targets = new java.util.ArrayList<>();
         for (org.bukkit.entity.Entity entity : player.getNearbyEntities(searchRadius, searchRadius, searchRadius)) {
-            if (entity == player || !(entity instanceof LivingEntity le) || le.isDead()) continue;
+            if (!(entity instanceof LivingEntity le) || !expansion.enemy(player, le)) continue;
             targets.add(le);
         }
 
@@ -3212,21 +3275,24 @@ public class TalentSkillManager {
         }
 
         player.sendMessage("§4[鬼哭神嚎] §c開始連續背刺！");
-        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SHOOT, 0.6f, 2.0f);
+        player.getWorld().playSound(player.getLocation(), "entity.wither.shoot", 0.6f, 2.0f);
 
         // 讓玩家無敵
+        assassinInvulnerability.putIfAbsent(player, player.isInvulnerable());
         player.setInvulnerable(true);
 
         final int[] strikeIndex = {0};
+        final org.bukkit.World castWorld = player.getWorld();
         org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
             @Override
             public void run() {
-                if (strikeIndex[0] >= strikeCount || !player.isOnline()) {
+                if (strikeIndex[0] >= strikeCount || !assassinReady(player, castWorld)) {
                     // 結束後進入隱身
-                    player.setInvulnerable(false);
+                    restoreAssassinInvulnerability(player);
+                    if (!assassinReady(player, castWorld)) { cancel(); return; }
                     player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, (int)(stealthAfter * 20), 0, false, false));
                     player.sendMessage("§8[鬼哭神嚎] §7結束！進入隱身 " + stealthAfter + " 秒");
-                    player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 0.8f, 1.0f);
+                    player.getWorld().playSound(player.getLocation(), "entity.illusioner.mirror_move", 0.8f, 1.0f);
                     cancel();
                     return;
                 }
@@ -3235,7 +3301,7 @@ public class TalentSkillManager {
                 // 重新掃描存活目標
                 java.util.List<LivingEntity> aliveTargets = new java.util.ArrayList<>();
                 for (org.bukkit.entity.Entity entity : player.getNearbyEntities(searchRadius, searchRadius, searchRadius)) {
-                    if (entity == player || !(entity instanceof LivingEntity le) || le.isDead()) continue;
+                    if (!(entity instanceof LivingEntity le) || !expansion.enemy(player, le)) continue;
                     aliveTargets.add(le);
                 }
                 if (aliveTargets.isEmpty()) {
@@ -3249,20 +3315,20 @@ public class TalentSkillManager {
 
                 // 瞬移到目標背後
                 Location targetLoc = target.getLocation();
-                Vector behindDir = targetLoc.getDirection().normalize().multiply(-1.5);
+                Vector behindDir = assassinForward(targetLoc).multiply(-1.5);
                 Location teleportLoc = targetLoc.clone().add(behindDir);
                 teleportLoc.setY(targetLoc.getY());
                 teleportLoc.setYaw(targetLoc.getYaw());
-                player.teleport(teleportLoc);
+                if (expansion.protectedAt(teleportLoc) || !player.teleport(teleportLoc)) { strikeIndex[0]++; return; }
 
                 // 攻擊
-                com.customrpg.utils.SkillDamageGuard.damage(target, damagePerStrike, player);
+                assassinHit(player, target, damagePerStrike);
 
                 // 效果
                 player.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.3);
                 player.getWorld().spawnParticle(Particle.SWEEP_ATTACK, target.getLocation().add(0, 1, 0), 2, 0.2, 0.2, 0.2, 0);
                 player.getWorld().spawnParticle(Particle.SMOKE, target.getLocation().add(0, 1, 0), 10, 0.2, 0.2, 0.2, 0.03);
-                player.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.8f, 1.5f);
+                player.getWorld().playSound(target.getLocation(), "entity.player.attack.crit", 0.8f, 1.5f);
 
                 strikeIndex[0]++;
             }
@@ -3276,6 +3342,7 @@ public class TalentSkillManager {
      * 快速斬擊 — 瞬間連續斬擊
      */
     private boolean executeRapidSlash(Player player, Talent talent, int level, ItemStack item) {
+        if (!assassinReady(player, player.getWorld())) return false;
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.5);
         int hitCount = (int) talent.getEffectDouble(level, "hitCount", 3);
         double range = talent.getEffectDouble(level, "range", 4);
@@ -3284,36 +3351,37 @@ public class TalentSkillManager {
         double damagePerHit = weaponDamage * weaponScaling;
 
         Location origin = player.getLocation();
-        Vector dir = origin.getDirection().setY(0).normalize();
+        Vector dir = assassinForward(origin);
 
         player.sendMessage("§c[快速斬擊] §f連續斬擊！");
 
         final int[] hitIndex = {0};
+        final org.bukkit.World castWorld = player.getWorld();
         org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
             @Override
             public void run() {
-                if (hitIndex[0] >= hitCount || !player.isOnline()) {
+                if (hitIndex[0] >= hitCount || !assassinReady(player, castWorld)) {
                     cancel();
                     return;
                 }
 
                 Location currentLoc = player.getLocation();
-                Vector currentDir = currentLoc.getDirection().setY(0).normalize();
+                Vector currentDir = assassinForward(currentLoc);
 
                 // 扇形檢測
                 for (org.bukkit.entity.Entity entity : currentLoc.getWorld().getNearbyEntities(currentLoc, range, 2, range)) {
-                    if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                    Vector toEntity = target.getLocation().toVector().subtract(currentLoc.toVector()).normalize();
+                    if (!(entity instanceof LivingEntity target) || !expansion.enemy(player, target)) continue;
+                    Vector toEntity = target.getLocation().toVector().subtract(currentLoc.toVector()).setY(0).normalize();
                     double dot = currentDir.dot(toEntity);
                     if (dot > 0.3) { // 前方約120度
-                        com.customrpg.utils.SkillDamageGuard.damage(target, damagePerHit, player);
+                        assassinHit(player, target, damagePerHit);
                     }
                 }
 
                 // 粒子與音效
                 currentLoc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, currentLoc.clone().add(currentDir.clone().multiply(2)).add(0, 1, 0), 3, 0.5, 0.3, 0.5, 0);
                 currentLoc.getWorld().spawnParticle(Particle.CRIT, currentLoc.clone().add(currentDir.clone().multiply(2)).add(0, 1, 0), 8, 0.5, 0.3, 0.5, 0.2);
-                currentLoc.getWorld().playSound(currentLoc, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.8f, 1.2f + (hitIndex[0] * 0.15f));
+                currentLoc.getWorld().playSound(currentLoc, "entity.player.attack.sweep", 0.8f, 1.2f + (hitIndex[0] * 0.15f));
 
                 hitIndex[0]++;
             }
@@ -3327,6 +3395,7 @@ public class TalentSkillManager {
      * 十字刃 — 發射十字形斬擊波
      */
     private boolean executeCrossBlade(Player player, Talent talent, int level, ItemStack item) {
+        if (!assassinReady(player, player.getWorld())) return false;
         PlayerStats stats = statsManager.getStats(player);
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 1.2);
         double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 0.8);
@@ -3337,22 +3406,23 @@ public class TalentSkillManager {
         double baseDamage = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling;
 
         Location start = player.getEyeLocation().clone();
-        Vector dir = start.getDirection().normalize().setY(0).normalize();
+        Vector dir = assassinForward(start);
         Vector perpendicular = new Vector(-dir.getZ(), 0, dir.getX()).normalize();
 
-        player.getWorld().playSound(start, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f);
+        player.getWorld().playSound(start, "entity.player.attack.sweep", 1.0f, 1.5f);
         player.sendMessage("§c[十字刃] §f發射十字斬擊！");
 
         java.util.Set<java.util.UUID> hitEntities = java.util.concurrent.ConcurrentHashMap.newKeySet();
         final int[] hitCount = {0};
 
+        final org.bukkit.World castWorld = player.getWorld();
         org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
             double traveled = 0;
 
             @Override
             public void run() {
                 traveled += 1.0;
-                if (traveled > range) {
+                if (traveled > range || !assassinReady(player, castWorld)) {
                     cancel();
                     return;
                 }
@@ -3375,14 +3445,14 @@ public class TalentSkillManager {
 
                 // 碰撞：橫向3格
                 for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, 2.5, 2, 2.5)) {
-                    if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+                    if (!(entity instanceof LivingEntity target) || !expansion.enemy(player, target)) continue;
                     if (hitEntities.contains(target.getUniqueId())) continue;
                     hitEntities.add(target.getUniqueId());
                     hitCount[0]++;
                     double finalDamage = baseDamage * (1.0 + (hitCount[0] - 1) * multiHitBonus);
-                    com.customrpg.utils.SkillDamageGuard.damage(target, finalDamage, player);
+                    assassinHit(player, target, finalDamage);
                     target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0.2);
-                    target.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.6f, 1.3f);
+                    target.getWorld().playSound(target.getLocation(), "entity.player.attack.crit", 0.6f, 1.3f);
                 }
             }
         };
@@ -3395,6 +3465,7 @@ public class TalentSkillManager {
      * 幻影連斬 — 快速斬擊周圍敵人
      */
     private boolean executePhantomFlurry(Player player, Talent talent, int level, ItemStack item) {
+        if (!assassinReady(player, player.getWorld())) return false;
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.6);
         int hitCount = (int) talent.getEffectDouble(level, "hitCount", 10);
         double radius = talent.getEffectDouble(level, "radius", 5);
@@ -3404,7 +3475,7 @@ public class TalentSkillManager {
         double damagePerHit = weaponDamage * weaponScaling;
 
         player.sendMessage("§5[幻影連斬] §d化為幻影！");
-        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SHOOT, 0.5f, 2.0f);
+        player.getWorld().playSound(player.getLocation(), "entity.wither.shoot", 0.5f, 2.0f);
 
         // 給予速度加成
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration * 20, 2, false, false));
@@ -3414,13 +3485,14 @@ public class TalentSkillManager {
 
         final int[] hitIndex = {0};
         final int finalTicksPerHit = ticksPerHit;
+        final org.bukkit.World castWorld = player.getWorld();
         org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
             int ticks = 0;
 
             @Override
             public void run() {
                 ticks++;
-                if (hitIndex[0] >= hitCount || !player.isOnline()) {
+                if (hitIndex[0] >= hitCount || !assassinReady(player, castWorld)) {
                     player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0.05);
                     cancel();
                     return;
@@ -3438,11 +3510,11 @@ public class TalentSkillManager {
 
                     // 對範圍內敵人造成傷害
                     for (org.bukkit.entity.Entity entity : loc.getWorld().getNearbyEntities(loc, radius, 3, radius)) {
-                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        com.customrpg.utils.SkillDamageGuard.damage(target, damagePerHit, player);
+                        if (!(entity instanceof LivingEntity target) || !expansion.enemy(player, target)) continue;
+                        assassinHit(player, target, damagePerHit);
                     }
 
-                    loc.getWorld().playSound(loc, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.6f, 1.0f + (float)(Math.random() * 0.5));
+                    loc.getWorld().playSound(loc, "entity.player.attack.sweep", 0.6f, 1.0f + (float)(Math.random() * 0.5));
                     hitIndex[0]++;
                 }
 
@@ -3463,6 +3535,7 @@ public class TalentSkillManager {
      * 弧形斬 — 前方扇形範圍攻擊
      */
     private boolean executeArcSlash(Player player, Talent talent, int level, ItemStack item) {
+        if (!assassinReady(player, player.getWorld())) return false;
         PlayerStats stats = statsManager.getStats(player);
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 1.0);
         double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 0.5);
@@ -3473,7 +3546,7 @@ public class TalentSkillManager {
         double damage = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling;
 
         Location origin = player.getLocation();
-        Vector dir = origin.getDirection().setY(0).normalize();
+        Vector dir = assassinForward(origin);
         double halfAngle = Math.toRadians(arcAngle / 2);
 
         // 扇形粒子
@@ -3486,15 +3559,15 @@ public class TalentSkillManager {
                 pLoc.getWorld().spawnParticle(Particle.CRIT, pLoc, 1, 0.1, 0.1, 0.1, 0.05);
             }
         }
-        origin.getWorld().playSound(origin, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.8f);
+        origin.getWorld().playSound(origin, "entity.player.attack.sweep", 1.0f, 0.8f);
 
         // 扇形內敵人受傷
         for (org.bukkit.entity.Entity entity : origin.getWorld().getNearbyEntities(origin, radius, 2, radius)) {
-            if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+            if (!(entity instanceof LivingEntity target) || !expansion.enemy(player, target)) continue;
             Vector toEntity = target.getLocation().toVector().subtract(origin.toVector()).setY(0).normalize();
             double angle = Math.acos(Math.max(-1, Math.min(1, dir.dot(toEntity))));
             if (angle <= halfAngle) {
-                com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
+                assassinHit(player, target, damage);
                 target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 8, 0.2, 0.2, 0.2, 0.2);
             }
         }
@@ -3505,6 +3578,7 @@ public class TalentSkillManager {
      * 次月影 — 月牙形範圍斬擊
      */
     private boolean executeCrescentShadow(Player player, Talent talent, int level, ItemStack item) {
+        if (!assassinReady(player, player.getWorld())) return false;
         PlayerStats stats = statsManager.getStats(player);
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 1.3);
         double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 1.0);
@@ -3514,7 +3588,7 @@ public class TalentSkillManager {
         double damage = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling;
 
         Location center = player.getLocation();
-        Vector dir = center.getDirection().setY(0).normalize();
+        Vector dir = assassinForward(center);
 
         // 月牙形粒子（前方半圓）
         for (double a = -Math.PI / 2; a <= Math.PI / 2; a += 0.1) {
@@ -3535,15 +3609,15 @@ public class TalentSkillManager {
             fillLoc.getWorld().spawnParticle(Particle.SMOKE, fillLoc, 1, 0.1, 0.1, 0.1, 0.02);
         }
 
-        center.getWorld().playSound(center, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.5f);
-        center.getWorld().playSound(center, Sound.ENTITY_WITHER_SHOOT, 0.4f, 2.0f);
+        center.getWorld().playSound(center, "entity.player.attack.sweep", 1.0f, 0.5f);
+        center.getWorld().playSound(center, "entity.wither.shoot", 0.4f, 2.0f);
 
         // 傷害前方半球內敵人
         for (org.bukkit.entity.Entity entity : center.getWorld().getNearbyEntities(center, radius, 3, radius)) {
-            if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
+            if (!(entity instanceof LivingEntity target) || !expansion.enemy(player, target)) continue;
             Vector toEntity = target.getLocation().toVector().subtract(center.toVector()).setY(0).normalize();
             if (dir.dot(toEntity) > 0) { // 前方
-                com.customrpg.utils.SkillDamageGuard.damage(target, damage, player);
+                assassinHit(player, target, damage);
                 target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.3);
                 target.getWorld().spawnParticle(Particle.EXPLOSION, target.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
             }
@@ -3555,6 +3629,7 @@ public class TalentSkillManager {
      * 死神降臨 — 大範圍旋轉攻擊 + 吸血
      */
     private boolean executeDeathGod(Player player, Talent talent, int level, ItemStack item) {
+        if (!assassinReady(player, player.getWorld())) return false;
         PlayerStats stats = statsManager.getStats(player);
         double weaponScaling = talent.getEffectDouble(level, "weaponScaling", 0.8);
         double agilityScaling = talent.getEffectDouble(level, "agilityScaling", 0.6);
@@ -3567,8 +3642,8 @@ public class TalentSkillManager {
         double damagePerTick = weaponDamage * weaponScaling + stats.getAgility() * agilityScaling + stats.getSpirit() * spiritScaling;
 
         player.sendMessage("§4[死神降臨] §8死神的鐮刀降臨！");
-        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.6f, 0.5f);
-        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.5f);
+        player.getWorld().playSound(player.getLocation(), "entity.wither.spawn", 0.6f, 0.5f);
+        player.getWorld().playSound(player.getLocation(), "entity.ender_dragon.growl", 0.5f, 1.5f);
 
         // 開場黑暗粒子
         Location startLoc = player.getLocation();
@@ -3578,6 +3653,7 @@ public class TalentSkillManager {
             startLoc.getWorld().spawnParticle(Particle.SMOKE, startLoc.clone().add(Math.cos(angle) * r, Math.random() * 2, Math.sin(angle) * r), 1, 0, 0.5, 0, 0.05);
         }
 
+        final org.bukkit.World castWorld = player.getWorld();
         org.bukkit.scheduler.BukkitRunnable task = new org.bukkit.scheduler.BukkitRunnable() {
             int ticks = 0;
             final int maxTicks = duration * 20;
@@ -3585,7 +3661,7 @@ public class TalentSkillManager {
             @Override
             public void run() {
                 ticks++;
-                if (ticks > maxTicks || player.isDead()) {
+                if (ticks > maxTicks || !assassinReady(player, castWorld)) {
                     cancel();
                     return;
                 }
@@ -3612,8 +3688,8 @@ public class TalentSkillManager {
                 if (ticks % 20 == 0) {
                     double totalDamageDealt = 0;
                     for (org.bukkit.entity.Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, 3, radius)) {
-                        if (entity == player || !(entity instanceof LivingEntity target) || target.isDead()) continue;
-                        double dealt=damageManager.dealSkillDamage(player, target, damagePerTick);
+                        if (!(entity instanceof LivingEntity target) || !expansion.enemy(player, target)) continue;
+                        double dealt=assassinHit(player, target, damagePerTick);
                         double heal = dealt * lifestealPercent;
                         totalDamageDealt += heal;
                         // 汲取視覺效果
@@ -3629,7 +3705,7 @@ public class TalentSkillManager {
 
                 // 暗影環境音效
                 if (ticks % 40 == 0) {
-                    player.getWorld().playSound(player.getLocation(), Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.3f, 0.5f);
+                    player.getWorld().playSound(player.getLocation(), "ambient.soul_sand_valley.mood", 0.3f, 0.5f);
                 }
             }
         };

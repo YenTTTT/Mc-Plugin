@@ -1,0 +1,261 @@
+# 咕咕霸權：7普通選5，機制物品雞蛋；大絕一階獨立Shift+F。第6招採詳細設計鬥雞突襲。
+chicken:
+  chicken_egg:
+    name: "丟雞蛋"
+    description: "投出12格內雞蛋，命中依總精神造成物理傷害，擊中生物不加自訂命中粒子；撞擊30%孵出跟隨主人12秒的小雞，數量無上限，可參與衝鋒。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 雞蛋
+    manaCost: 3
+    cooldown: 1.5
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 37
+      icon: EGG
+    levels:
+      1:
+        effect:
+          baseDamage: 2.0
+          spiritScaling: 0.12
+          range: 12
+      2:
+        effect:
+          baseDamage: 2.2
+          spiritScaling: 0.132
+          range: 12
+      3:
+        effect:
+          baseDamage: 2.4
+          spiritScaling: 0.144
+          range: 12
+  chicken_feed:
+    name: "撒米開飯"
+    description: "10格內地面半徑3格飼料區持續4秒，中心顯示生長綠點；一般敵對怪最多引誘2秒，Boss免疫，敵方玩家首次進入減速15%持續1.5秒。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 雞蛋
+    manaCost: 15
+    cooldown: 18
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 39
+      icon: WHEAT_SEEDS
+    prerequisite:
+      skill: chicken_egg
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 10
+      2:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 10
+      3:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 10
+  chicken_supply:
+    name: "營養雙黃蛋"
+    description: "召喚兩隻真正成年補給雞，在主人身後跟隨10秒並發出愛心；每隻每秒為主人與附近3格同隊玩家恢復1生命與2魔力，不攻擊、不參加衝鋒。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 雞蛋
+    manaCost: 20
+    cooldown: 22
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 41
+      icon: GOLD_NUGGET
+    prerequisite:
+      skill: chicken_egg
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 10
+      2:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 10
+      3:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 10
+  chicken_dawn:
+    name: "破曉雞鳴"
+    description: "雞鳴影響自身半徑6格；中斷允許中斷的一般怪引導，自己與同隊解除一種一般減速，不解除定身；Boss免打斷，改受依總精神成長的魔法傷害。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 雞蛋
+    manaCost: 22
+    cooldown: 24
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 28
+      icon: FEATHER
+    prerequisite:
+      skill: chicken_feed
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 2.0
+          spiritScaling: 0.15
+          range: 6
+      2:
+        effect:
+          baseDamage: 2.2
+          spiritScaling: 0.165
+          range: 6
+      3:
+        effect:
+          baseDamage: 2.4
+          spiritScaling: 0.18
+          range: 6
+  chicken_nest:
+    name: "母雞護巢"
+    description: "8格內安全空地暫放真正堆肥桶，半徑3格攔截首枚敵方普通箭、光靈箭、雪球或雞蛋，最多6秒；攔截或結束即還原，不產生掉落。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 雞蛋
+    manaCost: 24
+    cooldown: 28
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 30
+      icon: HAY_BLOCK
+    prerequisite:
+      skill: chicken_supply
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 8
+      2:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 8
+      3:
+        effect:
+          baseDamage: 0.0
+          spiritScaling: 0
+          range: 8
+  chicken_rooster:
+    name: "鬥雞突襲"
+    description: "鎖定10格內可見敵人，真實成年鬥雞最多三啄，每啄依總精神成長，間隔0.5秒；第三次成功命中減速20%持續1.5秒，最多存在4秒。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 雞蛋
+    manaCost: 18
+    cooldown: 16
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 32
+      icon: RED_DYE
+    prerequisite:
+      skill: chicken_egg
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 2.0
+          spiritScaling: 0.08
+          range: 10
+      2:
+        effect:
+          baseDamage: 2.2
+          spiritScaling: 0.088
+          range: 10
+      3:
+        effect:
+          baseDamage: 2.4
+          spiritScaling: 0.096
+          range: 10
+  chicken_stampede:
+    name: "雞群衝鋒"
+    description: "前方10×5格雞群衝鋒，每敵一次物理傷害，依總精神及全部參戰普通小雞數成長，數量與小雞加傷無上限；Boss免擊退，參戰小雞結束消失。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 雞蛋
+    manaCost: 28
+    cooldown: 25
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 19
+      icon: CHICKEN
+    prerequisite:
+      skill: chicken_feed
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 6.0
+          spiritScaling: 0.25
+          range: 10
+      2:
+        effect:
+          baseDamage: 6.6
+          spiritScaling: 0.275
+          range: 10
+      3:
+        effect:
+          baseDamage: 7.2
+          spiritScaling: 0.3
+          range: 10
+  chicken_god:
+    name: "雞神降世・神雞天墜"
+    description: "12格內安全地面，1.5秒前搖後真正巨大雞神落下，半徑7格依總精神造成物理傷害；40生命，留場30秒，每2秒一次精神加成啄擊、最多15次；正常離場補3隻小雞，提前被殺無賜福。"
+    type: ACTIVE
+    max-level: 1
+    points-per-level: 1
+    mechanism: 雞蛋
+    manaCost: 75
+    cooldown: 120
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 4
+      icon: GOLD_BLOCK
+    prerequisite:
+      skill: chicken_stampede
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 16.0
+          spiritScaling: 0.6
+          range: 12

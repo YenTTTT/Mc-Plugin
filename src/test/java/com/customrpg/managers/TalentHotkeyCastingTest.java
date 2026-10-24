@@ -100,4 +100,42 @@ class TalentHotkeyCastingTest {
         assertTrue(skills.castSkillDirectly(player, "star_shatter", air));
         verify(mana).hasMana(player, 0.0); verify(mana).consumeMana(player, 0.0);
     }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = GameMode.class, names = {"SURVIVAL", "ADVENTURE", "CREATIVE"})
+    void hunterMovesUseTheExistingFixedManaAndCooldownGateThroughBothEntrypoints(GameMode mode) {
+        when(player.getGameMode()).thenReturn(mode);
+        when(talent.getId()).thenReturn("nen_en"); when(talent.getBranch()).thenReturn(TalentBranch.HUNTER);
+        when(talent.getMechanism()).thenReturn("紫水晶碎片"); when(talent.getTriggerType()).thenReturn("RIGHT_CLICK");
+        when(talent.getEffectDouble(anyInt(), anyString(), anyDouble())).thenAnswer(i -> i.getArgument(2));
+        var location = new Location(player.getWorld(), 0, 64, 0); when(player.getLocation()).thenReturn(location);
+        when(plugin.getTalentManager().findTalent("nen_en")).thenReturn(talent);
+        selection.setTalentLevel("nen_en", 1); selection.setSelectedSkill(0, "nen_en");
+        var crystal = mock(ItemStack.class); when(crystal.getType()).thenReturn(Material.AMETHYST_SHARD); when(crystal.clone()).thenReturn(crystal);
+        var event = new org.bukkit.event.player.PlayerInteractEvent(player, org.bukkit.event.block.Action.RIGHT_CLICK_AIR,
+                crystal, null, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
+        new com.customrpg.listeners.TalentItemListener(plugin.getTalentManager(), skills).onInteract(event);
+        assertEquals(org.bukkit.event.Event.Result.DENY, event.useItemInHand());
+        assertFalse(skills.castSkillDirectly(player, "nen_en", air)); verify(mana).consumeMana(player, 20.0);
+    }
+    @Test void hunterTargetFailureAndInsufficientManaDoNotStartEffectsOrConsumeResources() {
+        when(talent.getId()).thenReturn("nen_lightning"); when(talent.getBranch()).thenReturn(TalentBranch.HUNTER);
+        when(talent.getEffectDouble(anyInt(), anyString(), anyDouble())).thenAnswer(i -> i.getArgument(2));
+        var location = new Location(player.getWorld(), 0, 64, 0); when(player.getLocation()).thenReturn(location);
+        when(plugin.getTalentManager().findTalent("nen_lightning")).thenReturn(talent);
+        selection.setTalentLevel("nen_lightning", 1); selection.setSelectedSkill(0, "nen_lightning");
+        assertFalse(skills.castSkillDirectly(player, "nen_lightning", air));
+        when(mana.hasMana(player, 20.0)).thenReturn(false);
+        assertFalse(skills.castSkillDirectly(player, "nen_lightning", air)); verify(mana, never()).consumeMana(any(), anyDouble());
+    }
+    @Test void chickenEggUsesThreeManaAndTheFullFractionalCooldown()throws Exception{
+        when(talent.getId()).thenReturn("chicken_egg");when(talent.getManaCost()).thenReturn(3.0);when(talent.getCooldown()).thenReturn(1.5);when(plugin.getTalentManager().findTalent("chicken_egg")).thenReturn(talent);when(player.getLocation()).thenAnswer(i->new Location(player.getWorld(),0,64,0));
+        var egg=mock(org.bukkit.entity.Egg.class);when(egg.isValid()).thenReturn(true);when(egg.getUniqueId()).thenReturn(java.util.UUID.randomUUID());var origin=player.getEyeLocation();when(egg.getLocation()).thenReturn(origin);when(egg.getVelocity()).thenReturn(new org.bukkit.util.Vector(0,.14,1.05));when(player.launchProjectile(eq(org.bukkit.entity.Egg.class),any(org.bukkit.util.Vector.class),any())).thenReturn(egg);
+        selection.setTalentLevel("chicken_egg",1);selection.setSelectedSkill(0,"chicken_egg");assertTrue(skills.castSkillDirectly(player,"chicken_egg",air));assertFalse(skills.castSkillDirectly(player,"chicken_egg",air));verify(mana).consumeMana(player,3.0);
+        var field=TalentSkillManager.class.getDeclaredField("cooldownManager");field.setAccessible(true);var cooldowns=(com.customrpg.weaponSkills.managers.CooldownManager)field.get(skills);long remaining=cooldowns.getRemainingCooldown(player,"talent:chicken_egg:"+player.getUniqueId());assertTrue(remaining>1000&&remaining<=1500);
+    }
+    @Test void failedGodRefundClearsOnlyItsOwnCooldown()throws Exception{
+        var field=TalentSkillManager.class.getDeclaredField("cooldownManager");field.setAccessible(true);var cooldowns=(com.customrpg.weaponSkills.managers.CooldownManager)field.get(skills);String god="talent:chicken_god:"+player.getUniqueId(),other="talent:necro_gate:"+player.getUniqueId();cooldowns.applyCooldown(player,god,120000);cooldowns.applyCooldown(player,other,120000);
+        skills.refundFailedChickenGod(player);assertTrue(cooldowns.canCast(player,god));assertFalse(cooldowns.canCast(player,other));verify(mana).restoreMana(player,75);
+    }
+
 }

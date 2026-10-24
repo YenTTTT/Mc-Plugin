@@ -63,7 +63,7 @@ public final class CraftingItems {
     public boolean custom(ItemStack stack) {
         if (empty(stack) || !stack.hasItemMeta()) return false;
         var data = stack.getItemMeta().getPersistentDataContainer();
-        return data.has(MATERIAL) || data.has(PRODUCT) || data.has(WEAPON) || data.has(EquipmentData.PDC_EQUIPMENT_ID);
+        return data.has(MATERIAL) || data.has(PRODUCT) || data.has(WEAPON) || data.has(EquipmentData.PDC_EQUIPMENT_ID) || data.has(PotionItems.ID);
     }
     public boolean isMaterial(ItemStack stack) {
         return stack != null && stack.hasItemMeta() && stack.getItemMeta().getPersistentDataContainer().has(MATERIAL);

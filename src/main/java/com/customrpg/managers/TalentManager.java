@@ -55,7 +55,7 @@ public class TalentManager {
             plugin.getLogger().info("TalentManager 初始化完成，載入了 " + getTotalTalentCount() + " 個天賦");
         } catch (Exception e) {
             plugin.getLogger().severe("TalentManager 初始化失敗: " + e.getMessage());
-            e.printStackTrace();
+            throw new IllegalStateException("Talent definitions are invalid; startup stopped before player talents can be applied", e);
         }
     }
 
@@ -91,8 +91,79 @@ public class TalentManager {
         if (!additionalFile.exists()) plugin.saveResource("config/talents_additional.yml", false);
         YamlConfiguration additional = new YamlConfiguration();
         additional.load(additionalFile);
+        File hunterFile = new File(plugin.getDataFolder(), "config/talents_hunter.yml");
+        if (!hunterFile.exists()) plugin.saveResource("config/talents_hunter.yml", false);
+        YamlConfiguration hunter = new YamlConfiguration(); hunter.load(hunterFile);
+        completeHunterDefinitions(hunter);
+        var frost = new YamlConfiguration();
+        File frostFile=new File(plugin.getDataFolder(),"config/talents_frost.yml");
+        if(!frostFile.exists()) plugin.saveResource("config/talents_frost.yml",false);
+        if(frostFile.exists()) frost.load(frostFile);
+        else try(var stream=TalentManager.class.getClassLoader().getResourceAsStream("config/talents_frost.yml")) {
+            if(stream==null) throw new IOException("Missing Frost defaults");
+            frost.load(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));
+        }
+        var necro=new YamlConfiguration();File necroFile=new File(plugin.getDataFolder(),"config/talents_necro.yml");
+        if(!necroFile.exists())plugin.saveResource("config/talents_necro.yml",false);
+        if(necroFile.exists())necro.load(necroFile);
+        else try(var stream=TalentManager.class.getClassLoader().getResourceAsStream("config/talents_necro.yml")){if(stream==null)throw new IOException("Missing Necromancer defaults");necro.load(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));}
+        var necroRoot=necro.getConfigurationSection("necromancer");
+        if(necroRoot==null||!necroRoot.getKeys(false).equals(Arrays.stream(NecroSkill.values()).map(v->v.id).collect(java.util.stream.Collectors.toSet())))throw new IllegalArgumentException("talents_necro.yml must contain eight Necromancer skills");
+        var chicken=new YamlConfiguration();File chickenFile=new File(plugin.getDataFolder(),"config/talents_chicken.yml");
+        if(!chickenFile.exists())plugin.saveResource("config/talents_chicken.yml",false);
+        if(chickenFile.exists())chicken.load(chickenFile);
+        else try(var stream=TalentManager.class.getClassLoader().getResourceAsStream("config/talents_chicken.yml")){if(stream==null)throw new IOException("Missing Chicken defaults");chicken.load(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));}
+        // Upgrade the prior eight-skill file in memory; never overwrite deployed settings or player records.
+        try(var defaultsStream=TalentManager.class.getClassLoader().getResourceAsStream("config/talents_chicken.yml")){var defaults=new YamlConfiguration();defaults.load(new java.io.InputStreamReader(defaultsStream,java.nio.charset.StandardCharsets.UTF_8));for(var skill:ChickenSkill.values()){String root="chicken."+skill.id;chicken.set(root+".description",defaults.getString(root+".description"));for(int rank=1;rank<=(skill==ChickenSkill.GOD?1:3);rank++){String field=root+".levels."+rank+".effect.spiritScaling";if(!chicken.contains(field))chicken.set(field,defaults.getDouble(field));}}}
+        var chickenRoot=chicken.getConfigurationSection("chicken");
+        if(chickenRoot==null||!chickenRoot.getKeys(false).equals(Arrays.stream(ChickenSkill.values()).map(v->v.id).collect(java.util.stream.Collectors.toSet())))throw new IllegalArgumentException("talents_chicken.yml must contain eight Chicken skills");
+        var dark=new YamlConfiguration();File darkFile=new File(plugin.getDataFolder(),"config/talents_dark.yml");
+        if(!darkFile.exists())plugin.saveResource("config/talents_dark.yml",false);
+        if(darkFile.exists())dark.load(darkFile);
+        else try(var stream=TalentManager.class.getClassLoader().getResourceAsStream("config/talents_dark.yml")){
+            if(stream==null)throw new IOException("Missing Dark defaults");dark.load(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));
+        }
+        var darkRoot=dark.getConfigurationSection("dark");if(darkRoot==null||!darkRoot.getKeys(false).equals(Arrays.stream(DarkSkill.values()).map(v->v.id).collect(java.util.stream.Collectors.toSet())))throw new IllegalArgumentException("talents_dark.yml must contain eight supported Dark skills");
+        for(String id:DarkSkill.legacy().keySet()){config.set("dark."+id,null);additional.set("dark."+id,null);}
+        for(var skill:DarkSkill.values()){config.set("dark."+skill.id,null);additional.set("dark."+skill.id,null);}
+        for(var source:List.of(config,additional)){
+            for(var entry:Map.of("dark_affinity",49,"dark_resilience",47,"life_leech",51).entrySet())if(source.contains("dark."+entry.getKey())){
+                String path="dark."+entry.getKey();source.set(path+".gui.slot",entry.getValue());String pre=source.getString(path+".prerequisite.skill");if(pre!=null)source.set(path+".prerequisite.skill",DarkSkill.canonical(pre));
+            }
+        }
+        var earth = new YamlConfiguration();
+        File earthFile=new File(plugin.getDataFolder(),"config/talents_earth.yml");
+        if(!earthFile.exists())plugin.saveResource("config/talents_earth.yml",false);
+        if(earthFile.exists())earth.load(earthFile);
+        else try(var stream=TalentManager.class.getClassLoader().getResourceAsStream("config/talents_earth.yml")){
+            if(stream==null)throw new IOException("Missing Earth defaults");
+            earth.load(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));
+        }
+        var earthRoot=earth.getConfigurationSection("earth");
+        if(earthRoot==null||!earthRoot.getKeys(false).equals(Arrays.stream(EarthSkill.values()).map(v->v.id).collect(java.util.stream.Collectors.toSet())))throw new IllegalArgumentException("talents_earth.yml must contain exactly eight supported Earth skills");
+        for(var skill:EarthSkill.values()){config.set("earth."+skill.id,null);additional.set("earth."+skill.id,null);}
+        additional.set("earth.earth_endurance.gui.slot",49);additional.set("earth.earth_training.gui.slot",47);
+        // Explicit frost redesign overlay. Original IDs/ranks stay intact; deployed files are never overwritten.
+        var frostRoot=frost.getConfigurationSection("frost");
+        if(frostRoot==null||!frostRoot.getKeys(false).equals(Arrays.stream(FrostSkill.values()).map(s->s.id).collect(java.util.stream.Collectors.toSet())))
+            throw new IllegalArgumentException("talents_frost.yml must contain exactly the eight supported frost skills");
+        for(var skill:FrostSkill.values()) {
+            config.set("frost."+skill.id,null);additional.set("frost."+skill.id,null);
+            // Upgrade the previous Frost default in memory; preserve administrator bindings and files.
+            String path="frost."+skill.id+".mechanism";
+            String mechanism=frost.getString(path,"");
+            if(mechanism.equals("雪球")||mechanism.equalsIgnoreCase("SNOWBALL")) frost.set(path,"木棒");
+        }
+        additional.set("frost.frost_attunement.gui.slot",49);
+        additional.set("frost.frost_resolve.gui.slot",47);
         restoreItemBindings(config);
         restoreItemBindings(additional);
+        restoreItemBindings(hunter);
+        restoreItemBindings(frost);
+        restoreItemBindings(earth);
+        restoreItemBindings(dark);
+        restoreItemBindings(necro);
+        restoreItemBindings(chicken);
         plugin.getLogger().info("配置檔案載入完成，根節點數量: " + config.getKeys(false).size());
 
         // 如果配置檔案是空的，先跳過載入天賦
@@ -110,23 +181,36 @@ public class TalentManager {
             TalentTree tree = new TalentTree(branch, branch.getDisplayName(), branch.getDescription());
             loadBranchTalents(config, branch, tree);
             loadBranchTalents(additional, branch, tree);
-            Set<Integer> slots = new HashSet<>();
+            loadBranchTalents(hunter, branch, tree);
+            loadBranchTalents(frost, branch, tree);
+            loadBranchTalents(earth, branch, tree);
+            loadBranchTalents(dark, branch, tree);
+            loadBranchTalents(necro, branch, tree);
+            loadBranchTalents(chicken, branch, tree);
+            Set<String> slots = new HashSet<>();
             for (Talent talent : tree.getAllTalents().values()) {
                 if (!ids.add(talent.getId())) throw new IllegalArgumentException("Duplicate talent ID: " + talent.getId());
-                if (ExpandedTalentSkills.isExpansionBranch(branch)) {
-                    ExpandedTalentSkills.validate(talent);
-                    if (!slots.add(talent.getGuiSlot())) throw new IllegalArgumentException("Duplicate GUI slot in " + branch);
+                if (checkedBranch(branch)) {
+                    if (branch == TalentBranch.HUNTER) HunterTalentSkills.validate(talent);
+                    else if(branch==TalentBranch.CHICKEN) ChickenTalentSkills.validate(talent);
+                    else if(branch==TalentBranch.NECROMANCER) NecroTalentSkills.validate(talent);
+                    else if(branch==TalentBranch.DARK) DarkTalentSkills.validate(talent);
+                    else if(EarthSkill.handles(talent.getId())) EarthTalentSkills.validate(talent);
+                    else if(FrostSkill.handles(talent.getId())) FrostTalentSkills.validate(talent);
+                    else ExpandedTalentSkills.validate(talent);
+                    String page = branch == TalentBranch.HUNTER ? HunterPath.of(talent.getId()).name() : branch.name();
+                    if (!slots.add(page + ":" + talent.getGuiSlot())) throw new IllegalArgumentException("Duplicate GUI slot in " + page);
                 }
             }
             next.put(branch, tree);
         }
         for (TalentTree tree : next.values()) for (Talent talent : tree.getAllTalents().values())
             for (Talent.Prerequisite pre : talent.getPrerequisites())
-                if (ExpandedTalentSkills.isExpansionBranch(talent.getBranch())
+                if (checkedBranch(talent.getBranch())
                         && (tree.getTalent(pre.talentId) == null || pre.requiredLevel < 1
                         || pre.requiredLevel > tree.getTalent(pre.talentId).getMaxLevel()))
                     throw new IllegalArgumentException("Invalid prerequisite for " + talent.getId());
-        for (TalentTree tree : next.values()) if (ExpandedTalentSkills.isExpansionBranch(tree.getBranch()))
+        for (TalentTree tree : next.values()) if (checkedBranch(tree.getBranch()))
             for (String id : tree.getAllTalents().keySet()) validatePath(tree, id, new HashSet<>());
         talentTrees.clear();
         talentTrees.putAll(next);
@@ -137,10 +221,39 @@ public class TalentManager {
         for (Talent.Prerequisite pre : tree.getTalent(id).getPrerequisites()) validatePath(tree, pre.talentId, path);
         path.remove(id);
     }
+    private static boolean checkedBranch(TalentBranch branch) {
+        return branch == TalentBranch.CHICKEN || branch == TalentBranch.NECROMANCER || branch == TalentBranch.DARK || branch == TalentBranch.HUNTER || ExpandedTalentSkills.isExpansionBranch(branch);
+    }
+    /** Append new built-ins in memory. Existing ranks and custom configuration bytes stay intact. */
+    private void completeHunterDefinitions(YamlConfiguration hunter) throws IOException {
+        try (var stream = TalentManager.class.getClassLoader().getResourceAsStream("config/talents_hunter.yml")) {
+            if (stream == null) throw new IOException("Missing Hunter defaults");
+            var defaults = YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(stream, java.nio.charset.StandardCharsets.UTF_8));
+            var root = defaults.getConfigurationSection("hunter");
+            for (String id : root.getKeys(false)) {
+                String path = "hunter." + id;
+                if (!hunter.contains(path)) hunter.set(path, root.getConfigurationSection(id));
+            }
+            // Only known original prerequisite links are updated for the character routes.
+            Map<String,String> previous = Map.of("nen_rock", "nen_ren", "nen_scissors", "nen_ren", "nen_paper", "nen_ren",
+                    "nen_lightning", "nen_gyo", "nen_chain", "nen_gyo", "nen_bungee", "nen_gyo", "nen_bodhisattva", "nen_rock");
+            previous.forEach((id, old) -> {
+                String path = "hunter." + id + ".prerequisite.skill";
+                if (old.equals(hunter.getString(path))) hunter.set(path, defaults.getString(path));
+            });
+            Map<String,Integer> oldSlots = Map.ofEntries(Map.entry("nen_ten", 49), Map.entry("nen_ren", 40), Map.entry("nen_gyo", 42),
+                    Map.entry("nen_rock", 31), Map.entry("nen_scissors", 29), Map.entry("nen_paper", 33), Map.entry("nen_lightning", 20),
+                    Map.entry("nen_chain", 22), Map.entry("nen_bungee", 24), Map.entry("nen_godspeed", 11), Map.entry("nen_en", 13), Map.entry("nen_bodhisattva", 15));
+            oldSlots.forEach((id, old) -> {
+                String path = "hunter." + id + ".gui.slot";
+                if (hunter.getInt(path, -1) == old) hunter.set(path, defaults.getInt(path));
+            });
+        }
+    }
 
     /** Upgrade hotkey-only bindings in memory, without replacing deployed balance or player files. */
     private void restoreItemBindings(YamlConfiguration config) throws IOException {
-        for (String resource : List.of("config/talents.yml", "config/talents_additional.yml")) {
+        for (String resource : List.of("config/talents.yml", "config/talents_additional.yml", "config/talents_hunter.yml")) {
             try (var stream = TalentManager.class.getClassLoader().getResourceAsStream(resource)) {
                 if (stream == null) throw new IOException("Missing bundled talent bindings: " + resource);
                 var defaults = YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(
@@ -219,7 +332,7 @@ public class TalentManager {
      * 從配置段載入單個天賦
      */
     private Talent loadTalentFromConfig(String talentId, ConfigurationSection section, TalentBranch branch) {
-        if (ExpandedTalentSkills.isExpansionBranch(branch)) {
+        if (checkedBranch(branch)) {
             for (String key : List.of("max-level", "points-per-level", "gui.slot", "cooldown", "manaCost", "hpCost"))
                 if (section.contains(key) && !(section.get(key) instanceof Number))
                     throw new IllegalArgumentException("Expected a number at " + talentId + "." + key);
@@ -448,6 +561,8 @@ public class TalentManager {
             YamlConfiguration config = new YamlConfiguration();
             try {
                 config.load(playerFile);
+                if (config.getInt("loadout-version", 0) > 3)
+                    throw new IOException("Unknown newer talent loadout version");
                 talentLoadFailed.remove(uuid);
             } catch (IOException | org.bukkit.configuration.InvalidConfigurationException e) {
                 // 讀取失敗時不可用空白天賦覆寫原檔
@@ -497,10 +612,11 @@ public class TalentManager {
             }
 
             // 載入選取的技能
-            List<String> selected = config.getStringList("selected-skills");
-            for (int i = 0; i < Math.min(selected.size(), 4); i++) {
-                talents.setSelectedSkill(i, selected.get(i));
+            List<?> selected = config.getList("selected-skills", List.of());
+            for (int i = 0; i < Math.min(selected.size(), 5); i++) {
+                talents.loadSelectedSkill(i,selected.get(i) instanceof String id && !id.isBlank() ? id : null);
             }
+            talents.setUltimateSkill(config.getString("ultimate-skill"));
 
             // 已套用到 PlayerStats 的天賦屬性加成；用於下次重新計算時先扣除，避免每次重啟重複疊加
             ConfigurationSection appliedSection = config.getConfigurationSection("applied-stat-bonus");
@@ -538,10 +654,14 @@ public class TalentManager {
             YamlConfiguration config = new YamlConfiguration();
             if (playerFile.exists()) {
                 var previous=new YamlConfiguration(); previous.load(playerFile);
+                if (previous.getInt("loadout-version",0)>3) throw new IOException("Refusing to replace newer loadout");
+                if (previous.getInt("loadout-version",0)<3) com.customrpg.balance.BalanceMigration.backup(playerFile.toPath(),
+                        plugin.getDataFolder().toPath().resolve("data/talent-backups/v3"));
                 if (previous.getInt("balance-version",0)<2) com.customrpg.balance.BalanceMigration.backup(playerFile.toPath(),
                         plugin.getDataFolder().toPath().resolve("data/balance-backups/v2/talents"));
             }
             config.set("balance-version",2);
+            config.set("loadout-version",3);
             config.set("available-points", talents.getAvailablePoints());
             config.set("total-points-spent", talents.getTotalPointsSpent());
 
@@ -556,7 +676,8 @@ public class TalentManager {
             }
 
             // 儲存選取的技能
-            config.set("selected-skills", Arrays.asList(talents.getSelectedSkills()));
+            config.set("selected-skills", Arrays.asList(talents.storedSelectedSkills()));
+            config.set("ultimate-skill", talents.storedUltimateSkill());
 
             Map<String, Integer> applied = talentBonusCache.get(uuid);
             if (applied != null) {
@@ -590,6 +711,7 @@ public class TalentManager {
      * @return 升級是否成功
      */
     public boolean upgradeTalent(Player player, String talentId) {
+        talentId=DarkSkill.canonical(talentId);
         PlayerTalents playerTalents = getPlayerTalents(player);
         Talent talent = findTalent(talentId);
 
@@ -600,7 +722,9 @@ public class TalentManager {
 
         int currentLevel = playerTalents.getTalentLevel(talentId);
         int targetLevel = currentLevel + 1;
-
+        if (talentLoadFailed.contains(player.getUniqueId())) {
+            player.sendMessage("§c天賦存檔讀取失敗，已停止學習以保護原始資料。"); return false;
+        }
         // 檢查等級上限
         if (targetLevel > talent.getMaxLevel()) {
             player.sendMessage(ChatColor.RED + "天賦已達最大等級！");
@@ -608,9 +732,9 @@ public class TalentManager {
         }
 
         // 檢查前置條件
-        if (!talent.canLearn(playerTalents.getTalentLevels(), targetLevel)) {
+        if (!talent.canLearn(playerTalents.effectiveLevels(), targetLevel)) {
             TalentTree tree = talentTrees.get(talent.getBranch());
-            String status = tree.getPrerequisiteStatus(talentId, playerTalents.getTalentLevels());
+            String status = tree.getPrerequisiteStatus(talentId, playerTalents.effectiveLevels());
             player.sendMessage(ChatColor.RED + "無法升級天賦：" + status);
             return false;
         }
@@ -636,11 +760,13 @@ public class TalentManager {
         // 發送成功訊息
         player.sendMessage(ChatColor.GREEN + "成功升級 " + ChatColor.YELLOW + talent.getName() +
                           ChatColor.GREEN + " 到等級 " + ChatColor.GOLD + newLevel + ChatColor.GREEN + "！");
-        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.2f);
+        player.playSound(player.getLocation(), "entity.player.levelup", 1.0f, 1.2f);
 
         // 應用天賦效果（如果需要即時應用）
         applyTalentEffects(player);
 
+        if (talent.getBranch() == TalentBranch.HUNTER && plugin.getTalentSkillManager() != null)
+            plugin.getTalentSkillManager().getHunter().training(player, talent);
         return true;
     }
 
@@ -663,6 +789,13 @@ public class TalentManager {
         // 執行重置
         playerTalents.resetAllTalents();
         if (plugin.getTalentSkillManager() != null) plugin.getTalentSkillManager().getExpansion().cancel(player);
+        if (plugin.getTalentSkillManager() != null) {
+            plugin.getTalentSkillManager().getHunter().cancel(player);
+            plugin.getTalentSkillManager().getFrost().cancel(player);
+            if(plugin.getTalentSkillManager().getEarth()!=null)plugin.getTalentSkillManager().getEarth().cancel(player);
+            if(plugin.getTalentSkillManager().getDark()!=null)plugin.getTalentSkillManager().getDark().cancel(player);if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getNecro()!=null)plugin.getTalentSkillManager().getNecro().cancel(player);
+        if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getChicken()!=null)plugin.getTalentSkillManager().getChicken().cancel(player);
+        }
 
         // 同步返還 PlayerStats 中的天賦點數
         PlayerStatsManager statsManager = plugin.getPlayerStatsManager();
@@ -674,7 +807,7 @@ public class TalentManager {
         applyTalentEffects(player);
 
         player.sendMessage(ChatColor.GREEN + "成功重置所有天賦！返還 " + ChatColor.GOLD + refundedPoints + ChatColor.GREEN + " 點天賦點數");
-        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 0.8f);
+        player.playSound(player.getLocation(), "ui.button.click", 1.0f, 0.8f);
 
         return true;
     }
@@ -703,6 +836,8 @@ public class TalentManager {
      * @return 天賦物件
      */
     public Talent findTalent(String talentId) {
+        talentId=DarkSkill.canonical(talentId);
+        if (talentId == null) return null;
         for (TalentTree tree : talentTrees.values()) {
             Talent talent = tree.getTalent(talentId);
             if (talent != null) return talent;
@@ -740,6 +875,29 @@ public class TalentManager {
     public int getTotalTalentCount() {
         return talentTrees.values().stream().mapToInt(TalentTree::getTalentCount).sum();
     }
+    public boolean bindSkill(Player player, String id, int slot, boolean ultimate) {
+        id=DarkSkill.canonical(id);
+        var investment = getPlayerTalents(player);
+        if (talentLoadFailed.contains(player.getUniqueId())) return false;
+        if (plugin.getCombatBalance() != null && plugin.getCombatBalance().inCombat(player)) {
+            player.sendMessage("§c請脫戰八秒後再更換技能配置。"); return false;
+        }
+        Talent talent = findTalent(id);
+        if (talent == null || investment.getTalentLevel(id) <= 0 || talent.getType() != TalentType.ACTIVE) {
+            player.sendMessage("§c請選擇已學習的主動技能。"); return false;
+        }
+        if (ultimate != TalentLoadout.ultimate(id) || !ultimate && (slot < 0 || slot >= 5)) {
+            player.sendMessage("§c普通技能使用1～4／F；大絕請放入Shift＋F大絕槽。"); return false;
+        }
+        if(ultimate) investment.setUltimateSkill(id);else investment.setSelectedSkill(slot, id);
+        if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getFrost()!=null)plugin.getTalentSkillManager().getFrost().cancel(player);
+        if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getEarth()!=null)plugin.getTalentSkillManager().getEarth().cancel(player);
+        if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getDark()!=null)plugin.getTalentSkillManager().getDark().cancel(player);if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getNecro()!=null)plugin.getTalentSkillManager().getNecro().cancel(player);
+        if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getChicken()!=null)plugin.getTalentSkillManager().getChicken().cancel(player);
+        savePlayerTalents(player.getUniqueId(), investment);
+        player.sendMessage("§a已攜帶 " + talent.getName() + (ultimate ? "（大絕 Shift＋F）" : "（技能槽 " + (slot+1) + "）"));
+        return true;
+    }
 
     /**
      * 獲取插件實例
@@ -753,6 +911,7 @@ public class TalentManager {
      * @param player 玩家
      */
     public void applyTalentEffects(Player player) {
+        if (talentLoadFailed.contains(player.getUniqueId())) return;
         try {
             PlayerTalents playerTalents = getPlayerTalents(player);
             PlayerStatsManager statsManager = plugin.getPlayerStatsManager();
@@ -786,6 +945,10 @@ public class TalentManager {
             // 快取天賦加成值以便下次使用，並與天賦存檔一起持久化
             cacheTalentBonuses(player, totalStrengthBonus, totalMagicBonus, totalAgilityBonus, totalVitalityBonus, totalDefenseBonus, totalSpiritBonus);
             savePlayerTalents(player.getUniqueId(), playerTalents);
+
+            // Learning, upgrading, resetting and reapplying talents must refresh combat passives immediately.
+            if (plugin.getTalentPassiveEffectManager() != null)
+                plugin.getTalentPassiveEffectManager().refreshPlayerEffects(player);
 
             player.sendMessage("§a天賦效果已應用！");
             player.sendMessage("§7力量: +" + totalStrengthBonus + ", 智慧: +" + totalMagicBonus +

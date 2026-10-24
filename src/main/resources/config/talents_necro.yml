@@ -1,0 +1,239 @@
+# 亡者君臨：七普通可學三階、選五攜帶；大絕一階獨立 Shift+F。
+necromancer:
+  necro_lance:
+    name: "骨脊裂矛"
+    description: "14格骨矛穿透最多兩名敵人；依先後造成兩段魔法基礎傷害，每敵一次，不能穿牆。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 骨頭
+    manaCost: 12
+    cooldown: 7
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 37
+      icon: BONE
+    levels:
+      1:
+        effect:
+          baseDamage: 8.0
+          range: 14
+      2:
+        effect:
+          baseDamage: 8.8
+          range: 14
+      3:
+        effect:
+          baseDamage: 9.6
+          range: 14
+  necro_summon:
+    name: "墓土喚骸"
+    description: "召喚兩名10生命戰士12秒；每2秒2點物理基礎傷害，每名最多4次，活動距主人12格內；重召取代舊隊伍，巨衛存在時不能使用。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 骨頭
+    manaCost: 26
+    cooldown: 28
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 39
+      icon: SKELETON_SKULL
+    prerequisite:
+      skill: necro_lance
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 12
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 12
+  necro_command:
+    name: "喪鐘號令"
+    description: "指定12格內可見敵人造成魔法傷害；僕從集火6秒、追擊加速20%，每名接下來最多兩次攻擊各加1；無僕從仍能施放。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 骨頭
+    manaCost: 13
+    cooldown: 13
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 41
+      icon: BELL
+    prerequisite:
+      skill: necro_summon
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 3.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 3.3
+          range: 12
+      3:
+        effect:
+          baseDamage: 3.6
+          range: 12
+  necro_prison:
+    name: "骨棺禁錮"
+    description: "10格內可見敵人受到魔法傷害，一般敵人定身1.2秒後減速25%兩秒；Boss只減速25%兩秒，不生成真實方塊。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 骨頭
+    manaCost: 20
+    cooldown: 20
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 28
+      icon: BONE_BLOCK
+    prerequisite:
+      skill: necro_lance
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 4.0
+          range: 10
+      2:
+        effect:
+          baseDamage: 4.4
+          range: 10
+      3:
+        effect:
+          baseDamage: 4.8
+          range: 10
+  necro_lantern:
+    name: "冥燈庇魂"
+    description: "獲5點吸收盾5秒，期間自己的亡靈僕從減傷40%；不復活、不無限疊盾，沒有僕從仍可施放。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 骨頭
+    manaCost: 21
+    cooldown: 24
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 30
+      icon: SOUL_LANTERN
+    prerequisite:
+      skill: necro_summon
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 12
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 12
+  necro_sacrifice:
+    name: "亡骸祭爆"
+    description: "選擇10格內自己可見且最接近準星的普通戰士，立即消耗；11Tick後原處半徑3造成魔法傷害並減速25%兩秒；無戰士不扣魔力冷卻，精銳及巨衛不可獻祭。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 骨頭
+    manaCost: 18
+    cooldown: 22
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 32
+      icon: BONE_MEAL
+    prerequisite:
+      skill: necro_command
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 9.0
+          range: 10
+      2:
+        effect:
+          baseDamage: 9.9
+          range: 10
+      3:
+        effect:
+          baseDamage: 10.8
+          range: 10
+  necro_colossus:
+    name: "骸骨縫合・葬骨巨衛"
+    description: "消耗兩名普通戰士融合20生命巨衛8秒；每2秒3點物理基礎傷害最多4次，普通怪嘲諷2秒；主人4格內可承傷最多6點一次，佔兩欄，不可獻祭。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 骨頭
+    manaCost: 22
+    cooldown: 26
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 19
+      icon: SHIELD
+    prerequisite:
+      skill: necro_summon
+      level: 2
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 12
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 12
+  necro_gate:
+    name: "冥府開門・百骸行軍"
+    description: "前搖1.5秒可慢移並鎖方向；前方14乘9格矩形三波4／4／6魔法基礎傷害，第二波減速20%兩秒；之後兩名14生命精銳8秒取代整隊，每名每2秒2傷害最多2次。"
+    type: ACTIVE
+    max-level: 1
+    points-per-level: 1
+    mechanism: 骨頭
+    manaCost: 75
+    cooldown: 120
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 4
+      icon: WITHER_SKELETON_SKULL
+    prerequisite:
+      skill: necro_colossus
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 4.0
+          range: 14

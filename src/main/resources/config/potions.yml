@@ -1,0 +1,39 @@
+# Workbench alchemy; quantities are one item per listed grid slot.
+cooldown-seconds: 15
+potions:
+  health_crude:
+    name: 粗製生命藥水
+    resource: HEALTH
+    restore: 40
+    color: '#C85A63'
+    ingredients: [GLASS_BOTTLE, WHEAT, SWEET_BERRIES, 'custom:monster_binding_t1']
+  mana_crude:
+    name: 粗製魔力藥水
+    resource: MANA
+    restore: 30
+    color: '#6096D4'
+    ingredients: [GLASS_BOTTLE, SUGAR, LAPIS_LAZULI, 'custom:monster_binding_t1']
+  health_refined:
+    name: 精製生命藥水
+    resource: HEALTH
+    restore: 120
+    color: '#E42D4A'
+    ingredients: [GLASS_BOTTLE, NETHER_WART, GLISTERING_MELON_SLICE, 'custom:monster_binding_t3', 'custom:swamp_essence_t3']
+  mana_refined:
+    name: 精製魔力藥水
+    resource: MANA
+    restore: 80
+    color: '#2464E8'
+    ingredients: [GLASS_BOTTLE, NETHER_WART, LAPIS_BLOCK, 'custom:monster_binding_t3', 'custom:cave_essence_t3']
+  health_elixir:
+    name: 秘製生命靈藥
+    resource: HEALTH
+    restore: 280
+    color: '#FF1557'
+    ingredients: [GLASS_BOTTLE, GHAST_TEAR, GLISTERING_MELON_SLICE, GOLDEN_APPLE, 'custom:boss_core_t5', 'custom:swamp_essence_t5']
+  mana_elixir:
+    name: 秘製魔力靈藥
+    resource: MANA
+    restore: 160
+    color: '#7D3CFF'
+    ingredients: [GLASS_BOTTLE, GHAST_TEAR, AMETHYST_BLOCK, ENDER_PEARL, 'custom:boss_core_t5', 'custom:cave_essence_t5']

@@ -88,7 +88,7 @@ public class WeaponCommand implements CommandExecutor, TabCompleter {
             targetPlayer = (Player) sender;
         }
 
-        ItemStack weapon = weaponManager.createWeapon(weaponKey);
+        ItemStack weapon = weaponManager.createWeapon(weaponKey, plugin.getPlayerStatsManager().getStats(targetPlayer).getLevel());
         if (weapon == null) {
             sender.sendMessage(ChatColor.RED + "Unknown weapon: " + weaponKey);
             sender.sendMessage(ChatColor.YELLOW + "Use /weapon list to see all available weapons");

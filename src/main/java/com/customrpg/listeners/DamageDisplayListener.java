@@ -17,36 +17,39 @@ import org.bukkit.projectiles.ProjectileSource;
 public class DamageDisplayListener implements Listener {
 
     private final DamageDisplayManager damageDisplayManager;
+    private final com.customrpg.CustomRPG plugin;
 
     /**
      * Constructor for DamageDisplayListener
      * @param damageDisplayManager DamageDisplayManager instance
      */
-    public DamageDisplayListener(DamageDisplayManager damageDisplayManager) {
+    public DamageDisplayListener(com.customrpg.CustomRPG plugin, DamageDisplayManager damageDisplayManager) {
+        this.plugin = plugin;
         this.damageDisplayManager = damageDisplayManager;
     }
 
     /**
      * 監聽玩家攻擊事件，顯示傷害訊息
      */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerAttack(EntityDamageByEntityEvent event) {
+        var passives = plugin.getTalentPassiveEffectManager();
+        var bonuses = passives == null ? com.customrpg.managers.TalentPassiveEffectManager.AttackBonuses.NONE
+                : passives.takeAttackBonuses(event);
+        if (event.isCancelled()) return;
         // 取得攻擊者（可能是玩家直接攻擊，或是玩家發射的彈射物）
         Player attacker = getAttacker(event.getDamager());
         if (attacker == null) {
             return;
         }
 
-        // 檢查被攻擊者是否為生物（不是玩家）
-        if (!(event.getEntity() instanceof LivingEntity) || event.getEntity() instanceof Player) {
+        // 玩家與怪物共用實際傷害提示。
+        if (!(event.getEntity() instanceof LivingEntity)) {
             return;
         }
 
         LivingEntity target = (LivingEntity) event.getEntity();
-        double finalDamage = event.getFinalDamage();
-        if (com.customrpg.managers.MobManager.hasVirtualHP(target)) {
-            finalDamage *= com.customrpg.managers.MobManager.getVirtualMaxHP(target) / target.getMaxHealth();
-        }
+        double finalDamage = com.customrpg.balance.CombatBalance.rpgFinalDamage(event);
 
         // 確保傷害值有效
         if (finalDamage <= 0) {
@@ -56,7 +59,7 @@ public class DamageDisplayListener implements Listener {
         // 檢查是否為暴擊（可以通過多種方式判斷）
         // 這裡使用簡單的判斷：玩家在空中攻擊 = 暴擊（僅限近戰）
         boolean isCritical = false;
-        if (event.getDamager() instanceof Player) {
+        if (event.getDamager() instanceof Player && !com.customrpg.utils.SkillDamageGuard.isFireTick(attacker)) {
             isCritical = !attacker.isOnGround() && attacker.getFallDistance() > 0.0F;
         }
 
@@ -67,11 +70,10 @@ public class DamageDisplayListener implements Listener {
         final boolean displayCritical = isCritical;
 
         // 延遲 1 tick 顯示傷害，確保傷害已經計算完成
-        org.bukkit.Bukkit.getScheduler().runTaskLater(
-            org.bukkit.Bukkit.getPluginManager().getPlugin("CustomRPG"),
-            () -> damageDisplayManager.showDamage(finalAttacker, finalTarget, displayDamage, displayCritical),
-            1L
-        );
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!event.isCancelled() && finalAttacker.isOnline())
+                damageDisplayManager.showDamage(finalAttacker, finalTarget, displayDamage, displayCritical, bonuses);
+        }, 1L);
     }
 
     /**

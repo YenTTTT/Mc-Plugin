@@ -33,15 +33,20 @@ public class DamageDisplayManager {
      * @param isCritical 是否為暴擊
      */
     public void showDamage(Player player, LivingEntity target, double damage, boolean isCritical) {
+        showDamage(player, target, damage, isCritical, TalentPassiveEffectManager.AttackBonuses.NONE);
+    }
+
+    public void showDamage(Player player, LivingEntity target, double damage, boolean isCritical,
+                           TalentPassiveEffectManager.AttackBonuses bonuses) {
         // 獲取怪物名稱
         String mobName = target.getCustomName() != null ? target.getCustomName() : target.getName();
 
         // 獲取怪物剩餘血量和最大血量
-        double currentHealth = target.getHealth();
-        double maxHealth = target.getMaxHealth();
+        double currentHealth = MobManager.getVirtualCurrentHP(target);
+        double maxHealth = MobManager.getVirtualMaxHP(target);
 
         // 構建訊息
-        String message = formatDamageMessage(player.getName(), mobName, damage, isCritical, currentHealth, maxHealth);
+        String message = formatDamageMessage(player.getName(), mobName, damage, isCritical, currentHealth, maxHealth, bonuses);
 
         // 只發送給玩家自己
         player.sendMessage(message);
@@ -58,16 +63,22 @@ public class DamageDisplayManager {
      * @param maxHealth 怪物最大血量
      * @return 格式化後的訊息
      */
-    private String formatDamageMessage(String playerName, String mobName, double damage,
-                                      boolean isCritical, double currentHealth, double maxHealth) {
+    static String formatDamageMessage(String playerName, String mobName, double damage,
+                                      boolean isCritical, double currentHealth, double maxHealth,
+                                      TalentPassiveEffectManager.AttackBonuses bonuses) {
         String critText = isCritical ? ChatColor.RED + " (暴擊)" : "";
 
-        return String.format(
-            "%s%s %s對 %s %s造成了 %s%.1f%s 傷害%s %s剩餘血量 %s%.1f%s/%s%.0f HP",
+        String bonusText = "";
+        if (bonuses.backstab() > 0) bonusText += String.format(java.util.Locale.ROOT, " §8+ 背刺§7(+%.0f%%)", bonuses.backstab() * 100);
+        if (bonuses.execute() > 0) bonusText += String.format(java.util.Locale.ROOT, " §4+ 收割§7(+%.0f%%)", bonuses.execute() * 100);
+        if (!bonusText.isEmpty()) bonusText += "§7（加成已計入）";
+
+        return String.format(java.util.Locale.ROOT,
+            "%s%s %s對 %s %s造成了 %s%.1f%s 傷害%s%s %s剩餘血量 %s%.1f%s/%s%.0f HP",
             ChatColor.YELLOW, playerName,
             ChatColor.GRAY, ChatColor.stripColor(mobName),
             ChatColor.GRAY, ChatColor.RED, damage, ChatColor.GRAY,
-            critText,
+            critText, bonusText,
             ChatColor.stripColor(mobName),
             ChatColor.GREEN, currentHealth,
             ChatColor.GRAY, ChatColor.GREEN, maxHealth

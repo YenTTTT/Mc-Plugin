@@ -23,6 +23,8 @@ public final class TalentItemBinding {
         if (mechanism.contains("鐮刀")) return name.endsWith("_HOE");
         if (mechanism.contains("匕首")) return name.endsWith("_SWORD");
         return switch (material) {
+            case EGG -> mechanism.contains("雞蛋");
+            case SNOWBALL -> mechanism.contains("雪球");
             case GOLD_NUGGET -> mechanism.contains("金粒");
             case BONE -> mechanism.contains("骨頭");
             case STICK -> mechanism.contains("木棒");
@@ -36,6 +38,7 @@ public final class TalentItemBinding {
             case BLAZE_POWDER -> mechanism.contains("烈焰粉");
             case FLINT -> mechanism.contains("燧石");
             case GLOWSTONE_DUST -> mechanism.contains("螢石粉");
+            case AMETHYST_SHARD -> mechanism.contains("紫水晶碎片");
             case BOW -> mechanism.contains("弓");
             default -> false;
         };

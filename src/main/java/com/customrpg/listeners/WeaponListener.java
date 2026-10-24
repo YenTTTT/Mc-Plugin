@@ -184,7 +184,8 @@ public class WeaponListener implements Listener {
             return;
         }
 
-        var balancedAttack = plugin.getCombatBalance().calculate(player, weapon, player.getAttackCooldown(), 1);
+        var balancedAttack = plugin.getCombatBalance().calculate(player, weapon, player.getAttackCooldown(), 1,
+                event.getEntity() instanceof LivingEntity target ? target : null);
         if (playerStats.getLevel() < balancedAttack.requiredLevel()) { event.setCancelled(true); return; }
         event.setDamage(handleAttackPassiveTalents(player, balancedAttack.damage(), event));
         plugin.getCombatBalance().record(event, player, balancedAttack);
@@ -713,6 +714,7 @@ public class WeaponListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
+        if(com.customrpg.utils.ControlledSummons.is(event.getEntity()))return;
         Player killer = event.getEntity().getKiller();
         if (killer == null) {
             return;

@@ -21,13 +21,13 @@ class TalentCommandTest {
         when(plugin.getTalentTreeGUI()).thenReturn(trees); player = mock(Player.class);
         command = new TalentCommand(plugin, talents, mock(TalentMainMenuGUI.class));
     }
-    @ParameterizedTest @CsvSource({"frost,FROST", "storm,STORM", "earth,EARTH", "light,LIGHT", "warrior,WEAPON", "mage,FIRE", "nature,NATURE"})
+    @ParameterizedTest @CsvSource({"frost,FROST", "storm,STORM", "earth,EARTH", "light,LIGHT", "warrior,WEAPON", "mage,FIRE", "nature,NATURE", "hunter,HUNTER"})
     void branchCommandsAndLegacyAliasesOpenRealTrees(String argument, TalentBranch branch) {
         assertTrue(command.onCommand(player, mock(Command.class), "talent", new String[]{argument})); verify(trees).open(player, branch);
     }
     @Test void tabCompletionIncludesAllFourNewTrees() {
         var result = command.onTabComplete(player, mock(Command.class), "talent", new String[]{""});
-        assertTrue(result.containsAll(List.of("frost", "storm", "earth", "light"))); assertFalse(result.contains("reload"));
+        assertTrue(result.containsAll(List.of("frost", "storm", "earth", "light", "hunter"))); assertFalse(result.contains("reload")); assertFalse(result.contains("core"));
     }
     @Test void failedReloadRetainsRunningSessionsAndReportsFailure() {
         when(player.hasPermission("customrpg.talent.admin")).thenReturn(true);
@@ -38,9 +38,10 @@ class TalentCommandTest {
     @Test void successfulReloadClearsSessionsAndActuallyReloadsDefinitions() {
         when(player.hasPermission("customrpg.talent.admin")).thenReturn(true); when(talents.reloadConfigurations()).thenReturn(true);
         var skills = mock(TalentSkillManager.class); var expansion = mock(ExpandedTalentSkills.class); when(skills.getExpansion()).thenReturn(expansion); when(plugin.getTalentSkillManager()).thenReturn(skills);
+        var hunter = mock(HunterTalentSkills.class); when(skills.getHunter()).thenReturn(hunter);
         var server = mock(Server.class); when(plugin.getServer()).thenReturn(server); doReturn(List.of()).when(server).getOnlinePlayers();
         command.onCommand(player, mock(Command.class), "talent", new String[]{"reload"});
-        verify(talents).reloadConfigurations(); verify(expansion).clear();
+        verify(talents).reloadConfigurations(); verify(expansion).clear(); verify(hunter).clear();
     }
     @Test void nonAdminCannotReloadDefinitions() {
         command.onCommand(player, mock(Command.class), "talent", new String[]{"reload"}); verifyNoInteractions(talents);

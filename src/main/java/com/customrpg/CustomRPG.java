@@ -54,6 +54,8 @@ public class CustomRPG extends JavaPlugin {
     private com.customrpg.balance.CombatBalance combatBalance;
     private com.customrpg.balance.BalanceCombatListener balanceCombatListener;
     private com.customrpg.balance.BalanceItemRefresh balanceItemRefresh;
+    private com.customrpg.vfx.BukkitVfxService vfxService;
+    public com.customrpg.vfx.BukkitVfxService getVfxService() { return vfxService; }
     public com.customrpg.balance.CombatBalance getCombatBalance() { return combatBalance; }
 
     private HealthDisplayManager healthDisplayManager;
@@ -157,11 +159,17 @@ public class CustomRPG extends JavaPlugin {
      */
     @Override
     public void onDisable() {
+        if (vfxService != null) vfxService.shutdown();
         if (balanceCombatListener != null) balanceCombatListener.shutdown();
         if (balanceItemRefresh != null) for (var player:getServer().getOnlinePlayers()) balanceItemRefresh.removeSpeed(player);
         if (craftingModule != null) craftingModule.shutdown();
         if (talentMainMenuGUI != null) talentMainMenuGUI.cleanup();
-        if (activeTalentSkillManager != null) activeTalentSkillManager.getExpansion().shutdown();
+        if (talentTreeGUI != null) talentTreeGUI.cleanup();
+        if (activeTalentSkillManager != null) {
+            activeTalentSkillManager.shutdownAssassin();
+            activeTalentSkillManager.getExpansion().shutdown(); activeTalentSkillManager.getHunter().shutdown(); activeTalentSkillManager.getFrost().shutdown(); activeTalentSkillManager.getEarth().shutdown(); activeTalentSkillManager.getDark().shutdown(); if(activeTalentSkillManager.getNecro()!=null)activeTalentSkillManager.getNecro().shutdown();
+        if(activeTalentSkillManager.getChicken()!=null)activeTalentSkillManager.getChicken().shutdown();
+        }
         if (mobEncounterManager != null) mobEncounterManager.shutdown();
         if (racialSkillManager != null) racialSkillManager.shutdown();
         if (worldEventManager != null) {
@@ -383,6 +391,12 @@ public class CustomRPG extends JavaPlugin {
 
         activeTalentSkillManager = new com.customrpg.managers.TalentSkillManager(this);
         activeTalentSkillManager.getExpansion().start();
+        activeTalentSkillManager.getHunter().start();
+        activeTalentSkillManager.getFrost().start();
+        activeTalentSkillManager.getEarth().start();
+        activeTalentSkillManager.getDark().start();
+        if(activeTalentSkillManager.getNecro()!=null)activeTalentSkillManager.getNecro().start();
+        if(activeTalentSkillManager.getChicken()!=null)activeTalentSkillManager.getChicken().start();
         beastManager = new com.customrpg.managers.BeastManager(this);
         focusManager = new com.customrpg.managers.FocusManager(this);
         getLogger().info("- TalentSkillManager initialized");
@@ -413,6 +427,9 @@ public class CustomRPG extends JavaPlugin {
         newSkillManager.registerSkillsFromConfig(configManager.getAllWeaponSkills());
 
         getLogger().info("- New SkillManager initialized with " + newSkillManager.getRegisteredSkillIds().size() + " skills");
+        vfxService = new com.customrpg.vfx.BukkitVfxService(this);
+        vfxService.start();
+        getLogger().info("- VFX runtime initialized (one tick task, bounded particles and previews)");
 
         // Initialize HealthDisplayManager
         healthDisplayManager = new HealthDisplayManager(this, mobManager);
@@ -487,6 +504,12 @@ public class CustomRPG extends JavaPlugin {
         // After weapon/stats calculation, before MobListener's virtual-HP conversion.
         getServer().getPluginManager().registerEvents(racialSkillManager, this);
         getServer().getPluginManager().registerEvents(activeTalentSkillManager.getExpansion(), this);
+        getServer().getPluginManager().registerEvents(activeTalentSkillManager.getHunter(), this);
+        getServer().getPluginManager().registerEvents(activeTalentSkillManager.getFrost(), this);
+        getServer().getPluginManager().registerEvents(activeTalentSkillManager.getEarth(), this);
+        getServer().getPluginManager().registerEvents(activeTalentSkillManager.getDark(), this);
+        getServer().getPluginManager().registerEvents(activeTalentSkillManager.getNecro(), this);
+        getServer().getPluginManager().registerEvents(activeTalentSkillManager.getChicken(), this);
         getServer().getPluginManager().registerEvents(mobEncounterManager, this);
         getServer().getPluginManager().registerEvents(distanceSpawnManager.getWildernessBosses(), this);
 
@@ -522,7 +545,7 @@ public class CustomRPG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new HealthDisplayListener(healthDisplayManager), this);
         getLogger().info("- HealthDisplayListener registered");
 
-        getServer().getPluginManager().registerEvents(new DamageDisplayListener(damageDisplayManager), this);
+        getServer().getPluginManager().registerEvents(new DamageDisplayListener(this, damageDisplayManager), this);
         getLogger().info("- DamageDisplayListener registered");
 
         getServer().getPluginManager().registerEvents(new com.customrpg.listeners.ManaListener(), this);
@@ -576,6 +599,7 @@ public class CustomRPG extends JavaPlugin {
         // Final RPG damage resolution must follow every talent/race/weapon listener.
         balanceCombatListener = new com.customrpg.balance.BalanceCombatListener(this, combatBalance);
         getServer().getPluginManager().registerEvents(balanceCombatListener, this);
+        getServer().getPluginManager().registerEvents(vfxService, this);
         balanceCombatListener.start();
         balanceItemRefresh = new com.customrpg.balance.BalanceItemRefresh(this);
         getServer().getPluginManager().registerEvents(balanceItemRefresh, this);
@@ -591,6 +615,12 @@ public class CustomRPG extends JavaPlugin {
      */
     private void registerCommands() {
         getLogger().info("Registering commands...");
+        var vfxCommand = getCommand("rpgvfx");
+        if (vfxCommand != null) {
+            var executor = new com.customrpg.vfx.VfxCommand(vfxService);
+            vfxCommand.setExecutor(executor);
+            vfxCommand.setTabCompleter(executor);
+        }
 
         org.bukkit.command.PluginCommand weaponCommand = getCommand("weapon");
         if (weaponCommand != null) {

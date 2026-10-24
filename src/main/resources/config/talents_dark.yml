@@ -1,0 +1,250 @@
+# Eternal Night: eight active definitions; legacy ranks resolve in memory without rewriting player records.
+dark:
+  dark_rend:
+    name: "裂影裁決"
+    description: "12格內可見敵人受到兩道交錯影刃，兩段相隔0.2秒；每次施放每敵最多1烙印。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 凋零玫瑰
+    manaCost: 12
+    cooldown: 7
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 37
+      icon: IRON_SWORD
+    prerequisite:
+      skill: dark_affinity
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 3.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 3.3
+          range: 12
+      3:
+        effect:
+          baseDamage: 3.6
+          range: 12
+  dark_stitch:
+    name: "縫魂咒紋"
+    description: "對11格內可見敵人造成魔法傷害，減速25%與造成傷害降低15%持續4秒；附1烙印，不沉默技能。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 凋零玫瑰
+    manaCost: 16
+    cooldown: 17
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 39
+      icon: ENCHANTED_BOOK
+    prerequisite:
+      skill: dark_rend
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 2.0
+          range: 11
+      2:
+        effect:
+          baseDamage: 2.2
+          range: 11
+      3:
+        effect:
+          baseDamage: 2.4
+          range: 11
+  dark_step:
+    name: "換影步"
+    description: "短暫施法後置換至準星方向6格內安全位置；不可穿牆，沒有傷害或無敵。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 凋零玫瑰
+    manaCost: 17
+    cooldown: 16
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 41
+      icon: ENDER_PEARL
+    prerequisite:
+      skill: dark_rend
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 6
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 6
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 6
+  dark_curtain:
+    name: "斷夜帷幕"
+    description: "前方5格展開寬6高3的裂幕5秒；敵人首次穿越受到魔法傷害、減速25%兩秒與1烙印，不阻擋實體。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 凋零玫瑰
+    manaCost: 25
+    cooldown: 24
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 28
+      icon: BLACK_BANNER
+    prerequisite:
+      skill: dark_stitch
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 4.0
+          range: 5
+      2:
+        effect:
+          baseDamage: 4.4
+          range: 5
+      3:
+        effect:
+          baseDamage: 4.8
+          range: 5
+  dark_echo:
+    name: "孽影回聲"
+    description: "標記10格內可見敵人4秒，記錄自身暗黑直接實際傷害最多14；結束釋放35%、上限5，不能記錄自己。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 凋零玫瑰
+    manaCost: 21
+    cooldown: 22
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 30
+      icon: ECHO_SHARD
+    prerequisite:
+      skill: dark_stitch
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 10
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 10
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 10
+  dark_servant:
+    name: "烏影僕從"
+    description: "召喚無碰撞影爪獸6秒，每1.2秒攻擊6格內可見敵人，最多4次魔法爪擊；每敵整次最多1烙印。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 凋零玫瑰
+    manaCost: 27
+    cooldown: 28
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 32
+      icon: WITHER_SKELETON_SKULL
+    prerequisite:
+      skill: dark_step
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 2.0
+          range: 6
+      2:
+        effect:
+          baseDamage: 2.2
+          range: 6
+      3:
+        effect:
+          baseDamage: 2.4
+          range: 6
+  dark_fracture:
+    name: "深淵折盾"
+    description: "4秒內下一次敵方直接攻擊減傷40%、最多8；成功吞噬後使8格內攻擊者傷害降低10%兩秒，只觸發一次。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 凋零玫瑰
+    manaCost: 20
+    cooldown: 25
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 19
+      icon: CRYING_OBSIDIAN
+    prerequisite:
+      skill: dark_curtain
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 8
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 8
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 8
+  dark_eclipse:
+    name: "黯日墜界・永夜裁決"
+    description: "12格內半徑7格預警1.25秒，爆發魔法傷害並降低治療20%四秒；5秒殘域最多三次侵蝕傷害，整次每敵最多1烙印。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 凋零玫瑰
+    manaCost: 70
+    cooldown: 110
+    hpCost: 0
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 4
+      icon: NETHER_STAR
+    prerequisite:
+      skill: dark_echo
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 13.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 14.3
+          range: 12
+      3:
+        effect:
+          baseDamage: 15.6
+          range: 12

@@ -1,0 +1,234 @@
+# Earth redesign; original four active IDs and both passives retain their ranks.
+earth:
+  earth_shockwave:
+    name: "斷岩重擊"
+    description: "重擊前方4格扇面，傷害6並擊退約0.8格；每敵只命中一次。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 燧石
+    manaCost: 12
+    cooldown: 9
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 37
+      icon: IRON_SHOVEL
+    prerequisite:
+      skill: earth_endurance
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 6.0
+          range: 4
+      2:
+        effect:
+          baseDamage: 6.6
+          range: 4
+      3:
+        effect:
+          baseDamage: 7.2
+          range: 4
+  earth_guard:
+    name: "山紋壁盾"
+    description: "4秒內正面120度減傷40%，其他方向15%；自身移速降低10%。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 燧石
+    manaCost: 22
+    cooldown: 22
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 39
+      icon: SHIELD
+    prerequisite:
+      skill: earth_endurance
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 0
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 0
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 0
+  earth_grasp:
+    name: "地脈牽引"
+    description: "牽引7格內指定地面周圍2.5格敵人，最多1.5格並減速20%兩秒；Boss只減速。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 燧石
+    manaCost: 18
+    cooldown: 17
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 41
+      icon: POINTED_DRIPSTONE
+    prerequisite:
+      skill: earth_shockwave
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 7
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 7
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 7
+  earth_bastion:
+    name: "沉岩陷域"
+    description: "12格內半徑3.5格陷域持續5秒，減速30%；首次3傷害，之後每2秒2傷害，單敵最多7。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 燧石
+    manaCost: 26
+    cooldown: 24
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 28
+      icon: LODESTONE
+    prerequisite:
+      skill: earth_guard
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 3.0
+          range: 12
+      2:
+        effect:
+          baseDamage: 3.3
+          range: 12
+      3:
+        effect:
+          baseDamage: 3.6
+          range: 12
+  earth_oath:
+    name: "守護岩契"
+    description: "連結6格內同隊玩家6秒，分擔其敵方直接攻擊最終傷害25%，每次最多5；距離超過9格解除。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 燧石
+    manaCost: 24
+    cooldown: 30
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 30
+      icon: GOLD_NUGGET
+    prerequisite:
+      skill: earth_guard
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 6
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 6
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 6
+  earth_rush:
+    name: "震步援護"
+    description: "朝9格內可見隊友安全位移最多7格；抵達給隊友4點、自身2點吸收盾4秒。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 燧石
+    manaCost: 18
+    cooldown: 20
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 32
+      icon: IRON_BOOTS
+    prerequisite:
+      skill: earth_grasp
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 0.0
+          range: 9
+      2:
+        effect:
+          baseDamage: 0.0
+          range: 9
+      3:
+        effect:
+          baseDamage: 0.0
+          range: 9
+  earth_reprisal:
+    name: "岩心反震"
+    description: "5秒內首次敵方直接攻擊減傷45%，向5格內攻擊者反擊5傷害並輕微擊退。"
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 燧石
+    manaCost: 23
+    cooldown: 26
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 19
+      icon: CHISELED_STONE_BRICKS
+    prerequisite:
+      skill: earth_bastion
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 5.0
+          range: 5
+      2:
+        effect:
+          baseDamage: 5.5
+          range: 5
+      3:
+        effect:
+          baseDamage: 6.0
+          range: 5
+  earth_titan:
+    name: "泰坦鎮界・萬岳降臨"
+    description: "前搖1.25秒震擊半徑7格，傷害10並擊退最多1.5格；8秒領域同隊減傷25%、敵人減速20%，Boss不擊退。"
+    type: ACTIVE
+    max-level: 1
+    points-per-level: 1
+    mechanism: 燧石
+    manaCost: 70
+    cooldown: 110
+    trigger:
+      type: RIGHT_CLICK
+    gui:
+      slot: 4
+      icon: BEACON
+    prerequisite:
+      skill: earth_reprisal
+      level: 1
+    levels:
+      1:
+        effect:
+          baseDamage: 10.0
+          range: 7

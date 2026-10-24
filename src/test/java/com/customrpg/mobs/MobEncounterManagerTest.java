@@ -135,4 +135,11 @@ class MobEncounterManagerTest {
         var prime = mock(ExplosionPrimeEvent.class); when(prime.getEntity()).thenReturn(mob); manager.onPrime(prime); verify(prime).setCancelled(true);
         var change = mock(EntityChangeBlockEvent.class); when(change.getEntity()).thenReturn(mob); manager.onBlockChange(change); verify(change).setCancelled(true);
     }
+    @Test void ordinaryWindupCanBeInterruptedWithoutResolvingOrRefundingTheCooldown(){
+        start(MobAbility.STOMP);allowDamage();windup();assertTrue(manager.interrupt(mob));assertFalse(manager.interrupt(mob));resolve();assertEquals(20,playerHp);verify(player,never()).damage(anyDouble(),any(Entity.class));
+    }
+    @Test void bossWindupsIgnoreForcedInterrupts(){
+        start(MobAbility.STOMP);allowDamage();windup();when(mobs.getMobData("test").isBoss()).thenReturn(true);assertFalse(manager.interrupt(mob));resolve();assertEquals(14,playerHp);
+    }
+
 }

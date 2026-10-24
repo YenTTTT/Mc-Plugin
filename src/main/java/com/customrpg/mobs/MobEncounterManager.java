@@ -71,6 +71,8 @@ public final class MobEncounterManager implements Listener {
         for (World world : plugin.getServer().getWorlds()) for (LivingEntity mob : world.getLivingEntities()) track(mob);
         task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 5L, 5L);
     }
+    /** Ordinary encounter windups are interruptible; bosses, rushes and instantaneous actions are excluded. */
+    public boolean interrupt(LivingEntity target){var state=states.get(target.getUniqueId());if(state==null||state.cast==null||isBoss(target))return false;state.cast=null;return true;}
     public boolean usesNewBehavior(String id) {
         var profile = registry.get(id); return profile != null && !profile.legacyBehavior();
     }

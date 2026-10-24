@@ -247,9 +247,14 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (plugin.getTalentSkillManager() != null) plugin.getTalentSkillManager().getExpansion().clear();
+        if (plugin.getTalentSkillManager() != null && plugin.getTalentSkillManager().getFrost() != null) plugin.getTalentSkillManager().getFrost().clear();
+        if (plugin.getTalentSkillManager() != null && plugin.getTalentSkillManager().getEarth() != null) plugin.getTalentSkillManager().getEarth().clear();
+        if (plugin.getTalentSkillManager() != null && plugin.getTalentSkillManager().getDark() != null) plugin.getTalentSkillManager().getDark().clear(); if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getNecro()!=null)plugin.getTalentSkillManager().getNecro().clear();
+        if(plugin.getTalentSkillManager()!=null&&plugin.getTalentSkillManager().getChicken()!=null)plugin.getTalentSkillManager().getChicken().clear();
+        if (plugin.getTalentSkillManager() != null && plugin.getTalentSkillManager().getHunter() != null)
+            plugin.getTalentSkillManager().getHunter().clear();
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             talentManager.applyTalentEffects(player);
-            if (plugin.getTalentPassiveEffectManager() != null) plugin.getTalentPassiveEffectManager().refreshPlayerEffects(player);
             if (player.getOpenInventory().getTitle().startsWith("§6§l天賦樹 - ")
                     || player.getOpenInventory().getTitle().equals("§6§l選擇天賦流派")) player.closeInventory();
         }
@@ -266,7 +271,7 @@ public class TalentCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§6§l天賦系統指令幫助");
         sender.sendMessage("");
         sender.sendMessage("§e/talent §7- 開啟天賦GUI");
-        sender.sendMessage("§e/talent <分支> §7- 開啟指定分支 (frost/storm/earth/light 等，Tab 查看全部)");
+        sender.sendMessage("§e/talent <舊分支> §7- 開啟保留的原技能／角色頁");
 
         if (sender.hasPermission("customrpg.talent.admin")) {
             sender.sendMessage("");

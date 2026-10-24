@@ -39,6 +39,15 @@ public class TalentPassiveEffectManager implements Listener {
     // 快取玩家的天賦加成效果
     private final Map<UUID, Map<String, Double>> playerBonusCache;
     private final Map<UUID, BukkitTask> healthRegenTasks = new HashMap<>();
+    public record AttackBonuses(double backstab, double execute) {
+        public static final AttackBonuses NONE = new AttackBonuses(0, 0);
+    }
+    // Event-scoped: simultaneous hits cannot borrow another hit's feedback. Cancelled events may be collected.
+    private final Map<EntityDamageByEntityEvent, AttackBonuses> attackFeedback = new java.util.WeakHashMap<>();
+    public AttackBonuses takeAttackBonuses(EntityDamageByEntityEvent event) {
+        AttackBonuses bonuses = attackFeedback.remove(event);
+        return bonuses == null ? AttackBonuses.NONE : bonuses;
+    }
 
     public TalentPassiveEffectManager(CustomRPG plugin, TalentManager talentManager, PlayerStatsManager statsManager) {
         this.plugin = plugin;
@@ -66,9 +75,12 @@ public class TalentPassiveEffectManager implements Listener {
      */
     @EventHandler(priority=org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        if(com.customrpg.utils.SkillDamageGuard.isTransfer(event.getEntity()))return;
         if (!(event.getDamager() instanceof Player)) return;
 
         Player attacker = (Player) event.getDamager();
+        // Burning remains damage over time; do not turn it into backstabs or on-hit life leech.
+        if (com.customrpg.utils.SkillDamageGuard.isFireTick(attacker)) return;
         PlayerTalents playerTalents = talentManager.getPlayerTalents(attacker);
 
         // 應用攻擊相關的天賦效果
@@ -80,6 +92,7 @@ public class TalentPassiveEffectManager implements Listener {
      */
     @EventHandler(priority=org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
+        if(com.customrpg.utils.SkillDamageGuard.isTransfer(event.getEntity()))return;
         if (!(event.getEntity() instanceof Player)) return;
 
         Player player = (Player) event.getEntity();
@@ -184,6 +197,7 @@ public class TalentPassiveEffectManager implements Listener {
 
         double originalDamage = event.getDamage();
         double finalDamage = originalDamage;
+        double appliedBackstab = 0, appliedExecute = 0;
 
         // 傷害加成
         // Permanent damage bonus is included once by CombatBalance.
@@ -192,14 +206,15 @@ public class TalentPassiveEffectManager implements Listener {
         double backstabBonus = bonuses.getOrDefault("backstabBonus", 0.0);
         double backstabExtraBonus = bonuses.getOrDefault("backstabExtraBonus", 0.0);
         if ((backstabBonus > 0 || backstabExtraBonus > 0) && event.getEntity() instanceof LivingEntity target) {
-            // 判斷是否為背刺（攻擊者在目標背後）
-            org.bukkit.util.Vector targetDir = target.getLocation().getDirection().normalize();
-            org.bukkit.util.Vector attackerDir = attacker.getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
-            double dot = targetDir.dot(attackerDir);
-            if (dot > 0.5) { // 攻擊者在目標背後（面朝同方向）
+            // Project onto the ground plane: looking up/down must not change the rear attack cone.
+            org.bukkit.Location facing = target.getLocation().clone();
+            facing.setPitch(0);
+            org.bukkit.util.Vector attackerDir = attacker.getLocation().toVector()
+                    .subtract(target.getLocation().toVector()).setY(0);
+            if (attackerDir.lengthSquared() > 1.0e-8 && facing.getDirection().dot(attackerDir.normalize()) < -0.5) {
                 double totalBackstab = backstabBonus + backstabExtraBonus;
                 finalDamage *= (1.0 + totalBackstab);
-                attacker.sendMessage("§8§l背刺！ §7(+" + String.format("%.0f", totalBackstab * 100) + "% 傷害)");
+                appliedBackstab = totalBackstab;
                 target.getWorld().spawnParticle(org.bukkit.Particle.CRIT, target.getLocation().add(0, 1.5, 0), 10, 0.2, 0.2, 0.2, 0.3);
             }
         }
@@ -208,10 +223,10 @@ public class TalentPassiveEffectManager implements Listener {
         double executeDamageBonus = bonuses.getOrDefault("executeDamageBonus", 0.0);
         double executeThreshold = bonuses.getOrDefault("executeThreshold", 0.30);
         if (executeDamageBonus > 0 && event.getEntity() instanceof LivingEntity target) {
-            double healthPercent = target.getHealth() / target.getMaxHealth();
+            double healthPercent = MobManager.getVirtualCurrentHP(target) / Math.max(.01, MobManager.getVirtualMaxHP(target));
             if (healthPercent <= executeThreshold) {
                 finalDamage *= (1.0 + executeDamageBonus);
-                attacker.sendMessage("§4收割！ §c(+" + String.format("%.0f", executeDamageBonus * 100) + "% 傷害)");
+                appliedExecute = executeDamageBonus;
             }
         }
 
@@ -219,6 +234,8 @@ public class TalentPassiveEffectManager implements Listener {
 
         // 應用最終傷害
         event.setDamage(finalDamage);
+        if (appliedBackstab > 0 || appliedExecute > 0)
+            attackFeedback.put(event, new AttackBonuses(appliedBackstab, appliedExecute));
 
         // ===== 暗黑系：生命虹吸（攻擊吸血）=====
         int lifeLeechLevel = playerTalents.getTalentLevel("life_leech");
@@ -264,7 +281,7 @@ public class TalentPassiveEffectManager implements Listener {
         double damageReduction = bonuses.getOrDefault("damage-reduction", 0.0);
         if (damageReduction > 0) {
             double multiplier = 1.0 - Math.min(.15, Math.max(0,damageReduction / 100.0));
-            event.setDamage(event.getDamage() * multiplier);
+            com.customrpg.utils.TalentMitigation.reduce(event,1-multiplier);
         }
 
         // 格擋機率
@@ -272,7 +289,7 @@ public class TalentPassiveEffectManager implements Listener {
         if (blockChance > 0 && Math.random() * 100 < blockChance) {
             double blockReduction = bonuses.getOrDefault("block-reduction", 50.0);
             double multiplier = 1.0 - Math.min(.35, Math.max(0,blockReduction / 100.0));
-            event.setDamage(event.getDamage() * multiplier);
+            com.customrpg.utils.TalentMitigation.reduce(event,1-multiplier);
 
             player.sendMessage("§9§l格擋成功！");
         }
@@ -286,6 +303,7 @@ public class TalentPassiveEffectManager implements Listener {
      */
     @EventHandler
     public void onEntityDeath(org.bukkit.event.entity.EntityDeathEvent event) {
+        if(com.customrpg.utils.ControlledSummons.is(event.getEntity()))return;
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
 
@@ -377,5 +395,6 @@ public class TalentPassiveEffectManager implements Listener {
         }
         healthRegenTasks.clear();
         playerBonusCache.clear();
+        attackFeedback.clear();
     }
 }

@@ -16,12 +16,17 @@ public final class CraftingRecipes implements Listener {
     private final CustomRPG plugin; private final CraftingCatalog catalog; private final CraftingItems items;
     interface Choices { RecipeChoice custom(ItemStack item); RecipeChoice iron(); }
     private final Choices choices;
+    private final PotionManager potions;
     private final Map<NamespacedKey,CraftingCatalog.Gear> recipes = new LinkedHashMap<>();
     private final Map<NamespacedKey,CraftingCatalog.Tier> refinements = new LinkedHashMap<>();
     public CraftingRecipes(CustomRPG plugin, CraftingCatalog catalog, CraftingItems items) {
-        this(plugin, catalog, items, null);
+        this(plugin, catalog, items, null, null);
     }
     CraftingRecipes(CustomRPG plugin, CraftingCatalog catalog, CraftingItems items, Choices choices) {
+        this(plugin, catalog, items, choices, null);
+    }
+    CraftingRecipes(CustomRPG plugin, CraftingCatalog catalog, CraftingItems items, Choices choices, PotionManager potions) {
+        this.potions = potions;
         this.plugin = plugin; this.catalog = catalog; this.items = items;
         this.choices = choices == null ? new Choices() {
             public RecipeChoice custom(ItemStack item) { return new RecipeChoice.ExactChoice(item); }
@@ -75,6 +80,8 @@ public final class CraftingRecipes implements Listener {
         return false;
     }
     private boolean safe(Recipe recipe, ItemStack[] matrix) {
+        var potion = potions == null ? null : potions.definition(recipe);
+        if (potion != null) return potions.matches(potion, matrix);
         var refinement = recipe instanceof Keyed key ? refinements.get(key.getKey()) : null;
         if (refinement != null) return matrix.length == 9 && Arrays.stream(matrix).filter(s -> !CraftingItems.empty(s)).count() == 1
                 && Arrays.stream(matrix).anyMatch(s -> ("boss_core_t" + refinement.id()).equals(items.materialId(s)));
@@ -87,6 +94,11 @@ public final class CraftingRecipes implements Listener {
     }
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCraft(CraftItemEvent event) {
+        var potion = potions == null ? null : potions.definition(event.getRecipe());
+        if (potion != null) {
+            if (!potions.matches(potion, event.getInventory().getMatrix()) || !potions.validOutput(potion, event.getCurrentItem())) event.setCancelled(true);
+            return;
+        }
         var gear = definition(event.getRecipe());
         var refinement = event.getRecipe() instanceof Keyed key ? refinements.get(key.getKey()) : null;
         if (!safe(event.getRecipe(), event.getInventory().getMatrix())

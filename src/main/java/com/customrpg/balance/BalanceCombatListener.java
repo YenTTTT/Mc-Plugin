@@ -21,6 +21,7 @@ public final class BalanceCombatListener implements Listener {
     private static final NamespacedKey GROUP = new NamespacedKey("customrpg","balance_group_size");
     private final CustomRPG plugin;
     private final CombatBalance balance;
+    private final java.util.function.LongSupplier fireClock;
     private final Map<EntityDamageEvent,ExtraDamageBudget.Reservation> reservations = new IdentityHashMap<>();
     private final Map<EntityDamageEvent,Double> appliedRaw = new IdentityHashMap<>();
     private final ExtraDamageBudget healing=new ExtraDamageBudget(System::currentTimeMillis,.35,.04);
@@ -33,7 +34,10 @@ public final class BalanceCombatListener implements Listener {
     private final Map<UUID,FireOwner> fires=new HashMap<>();
     private BukkitTask cleanup;
 
-    public BalanceCombatListener(CustomRPG plugin, CombatBalance balance) { this.plugin=plugin; this.balance=balance; }
+    public BalanceCombatListener(CustomRPG plugin, CombatBalance balance) { this(plugin,balance,System::currentTimeMillis); }
+    BalanceCombatListener(CustomRPG plugin, CombatBalance balance, java.util.function.LongSupplier fireClock) {
+        this.plugin=plugin; this.balance=balance; this.fireClock=fireClock;
+    }
     public void start() {
         for (Player player:plugin.getServer().getOnlinePlayers()) if (!plugin.getPlayerStatsManager().isDataAvailable(player))
             player.kickPlayer("角色資料遷移失敗；原始檔案保留，請通知管理員。");
@@ -41,12 +45,12 @@ public final class BalanceCombatListener implements Listener {
         cleanup=plugin.getServer().getScheduler().runTaskTimer(plugin,()->{
             balance.cleanup(); healing.prune(); monsterSkills.prune();
             long now=System.currentTimeMillis(); nextMobAttack.values().removeIf(until->until<now);
-            fires.values().removeIf(fire->fire.expires<now);
+            fires.values().removeIf(fire->fire.expires<fireClock.getAsLong());
         },200L,200L);
     }
     public void shutdown() { if (cleanup!=null) cleanup.cancel(); reservations.clear(); appliedRaw.clear(); healReservations.clear(); healing.clear(); monsterSkills.clear(); monsterReservations.clear(); mobAttacks.clear(); nextMobAttack.clear(); fires.clear(); balance.shutdown(); }
 
-    public static boolean hostile(Entity entity) { return entity instanceof Enemy; }
+    public static boolean hostile(Entity entity) { return entity instanceof Enemy && !com.customrpg.utils.ControlledSummons.is(entity); }
     public int level(LivingEntity entity) {
         if (plugin.getMobManager().getCustomMobKey(entity)!=null) return BalanceMigration.level(plugin.getMobManager().getMobLevel(entity));
         return BalanceMigration.level(entity.getPersistentDataContainer().getOrDefault(VANILLA_LEVEL,PersistentDataType.INTEGER,1));
@@ -103,10 +107,11 @@ public final class BalanceCombatListener implements Listener {
 
     @EventHandler(priority=EventPriority.LOWEST,ignoreCancelled=true)
     public void startDamage(EntityDamageByEntityEvent event) {
+        if(SkillDamageGuard.isTransfer(event.getEntity()))return;
         Player source=CombatBalance.playerSource(event.getDamager());
         if (source==null) return;
         var direct=balance.directBasic(source);
-        if (direct!=null) { event.setDamage(direct.damage()); balance.record(event,source,direct); return; }
+        if (direct!=null && !SkillDamageGuard.isFireTick(source)) { event.setDamage(direct.damage()); balance.record(event,source,direct); return; }
         if (event.getDamager() instanceof Projectile shot && !SkillDamageGuard.isSkillDamage(source)) {
             Double raw=shot.getPersistentDataContainer().get(CombatBalance.SHOT_DAMAGE,PersistentDataType.DOUBLE);
             Double dps=shot.getPersistentDataContainer().get(CombatBalance.SHOT_DPS,PersistentDataType.DOUBLE);
@@ -132,6 +137,10 @@ public final class BalanceCombatListener implements Listener {
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void onDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity target)) return;
+        if(SkillDamageGuard.isTransfer(target)){
+            if(target instanceof Player p&&!plugin.getPlayerStatsManager().isDataAvailable(p)){event.setCancelled(true);return;}
+            removeNativeArmor(event);return;
+        }
         boolean custom=plugin.getMobManager().getCustomMobKey(target)!=null;
         if (custom||hostile(target)) migrateMob(target);
         Player source=null;
@@ -167,8 +176,9 @@ public final class BalanceCombatListener implements Listener {
                         reservations.put(event,permit); event.setDamage(Math.min(requested,pending.damage()+permit.damage(pending.baselineDps())));
                     }
                 } else {
-                    double baseline=balance.skillDps(source);
-                    double requested=event.getDamage()*Math.sqrt(InitialBalanceModel.referenceDps(plugin.getPlayerStatsManager().getStats(source).getLevel())/InitialBalanceModel.referenceDps(1));
+                    double baseline=SkillDamageGuard.isSpiritSkill(source)?balance.spiritSkillDps(source):balance.skillDps(source);
+                    double requested=event.getDamage()*(SkillDamageGuard.isNormalized(source)?1:
+                            Math.sqrt(InitialBalanceModel.referenceDps(plugin.getPlayerStatsManager().getStats(source).getLevel())/InitialBalanceModel.referenceDps(1)));
                     var permit=balance.extras().reserve(source.getUniqueId(),target.getUniqueId(),requested,baseline);
                     reservations.put(event,permit); event.setDamage(permit.damage(baseline));
                 }
@@ -194,14 +204,6 @@ public final class BalanceCombatListener implements Listener {
         } else if ((target instanceof Player || custom || hostile(target)) && environment(event.getCause())) {
             double environmentalHp=target instanceof Player?target.getMaxHealth():InitialBalanceModel.mobHealth(level(target),InitialBalanceModel.Role.NORMAL,1);
             event.setDamage(event.getDamage()*environmentalHp/20);
-            FireOwner fire=fires.get(target.getUniqueId());
-            if (event.getCause()==EntityDamageEvent.DamageCause.FIRE_TICK&&fire!=null&&fire.expires>System.currentTimeMillis()) {
-                source=plugin.getServer().getPlayer(fire.source);
-                if (source==null) { event.setCancelled(true); return; }
-                double dps=balance.skillDps(source);
-                var permit=balance.extras().reserve(source.getUniqueId(),target.getUniqueId(),event.getDamage(),dps);
-                reservations.put(event,permit); event.setDamage(permit.damage(dps));
-            }
         }
         if (target instanceof Player player && !plugin.getPlayerStatsManager().isDataAvailable(player)) { event.setCancelled(true); return; }
         double reduction=0;
@@ -217,9 +219,15 @@ public final class BalanceCombatListener implements Listener {
             minimum=InitialBalanceModel.mobRawDamage(level(mobSource),role(mobSource))*.25;
         event.setDamage(Math.max(minimum,raw*(1-reduction)));
         if (event instanceof EntityDamageByEntityEvent || source!=null || custom || hostile(target)) removeNativeArmor(event);
+        var talentSkills=plugin.getTalentSkillManager();
+        double defenseBaseline=com.customrpg.utils.TalentMitigation.baseline(event,raw);
+        if(talentSkills!=null&&talentSkills.getDark()!=null){double outgoing=talentSkills.getDark().outgoingMultiplier(mobSource);event.setDamage(event.getDamage()*outgoing);defenseBaseline*=outgoing;talentSkills.getDark().mitigate(event);}
+        if(talentSkills!=null&&talentSkills.getEarth()!=null)talentSkills.getEarth().mitigate(event,defenseBaseline);
         if (target instanceof Player player && event.getFinalDamage()>=player.getHealth() && balance.secondWind(player)) {
             event.setCancelled(true); return;
         }
+        if(talentSkills!=null&&talentSkills.getEarth()!=null)talentSkills.getEarth().share(event);
+        if(talentSkills!=null&&talentSkills.getNecro()!=null)talentSkills.getNecro().mitigate(event);
         appliedRaw.put(event,event.getFinalDamage());
     }
 
@@ -243,6 +251,7 @@ public final class BalanceCombatListener implements Listener {
 
     @EventHandler(priority=EventPriority.MONITOR)
     public void afterDamage(EntityDamageEvent event) {
+        com.customrpg.utils.TalentMitigation.finish(event);
         boolean accepted=!event.isCancelled()&&event.getFinalDamage()>0;
         var permit=reservations.remove(event); if (permit!=null) permit.finish(accepted);
         var monster=monsterReservations.remove(event); if (monster!=null) monster.finish(accepted);
@@ -263,7 +272,8 @@ public final class BalanceCombatListener implements Listener {
 
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void onHeal(EntityRegainHealthEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
+        if (!(event.getEntity() instanceof Player player)) { darkHealing(event);return; }
+        if (balance.isPotionHeal(event)) {darkHealing(event);return;} // Fixed consumable amount, separate shared potion cooldown.
         if (event.getRegainReason()==EntityRegainHealthEvent.RegainReason.SATIATED) {
             event.setCancelled(true); // One out-of-combat recovery timer owns passive healing.
         } else if (event.getRegainReason()==EntityRegainHealthEvent.RegainReason.MAGIC
@@ -274,7 +284,9 @@ public final class BalanceCombatListener implements Listener {
             var permit=healing.reserve(player.getUniqueId(),player.getUniqueId(),event.getAmount(),player.getMaxHealth());
             event.setAmount(permit.damage(player.getMaxHealth())); healReservations.put(event,permit);
         }
+        darkHealing(event);
     }
+    private void darkHealing(EntityRegainHealthEvent event){var skills=plugin.getTalentSkillManager();if(skills!=null&&skills.getDark()!=null)skills.getDark().weakenHealing(event);}
     @EventHandler(priority=EventPriority.MONITOR)
     public void afterHeal(EntityRegainHealthEvent event) {
         var permit=healReservations.remove(event); if (permit!=null) permit.finish(!event.isCancelled()&&event.getAmount()>0);
@@ -294,10 +306,34 @@ public final class BalanceCombatListener implements Listener {
         UUID id=event.getEntity().getUniqueId(); nextMobAttack.remove(id); fires.remove(id);
         balance.extras().removeTarget(id); monsterSkills.removeTarget(id);
     }
+    @EventHandler(priority=EventPriority.LOWEST,ignoreCancelled=true)
+    public void attributeFireTick(EntityDamageEvent event) {
+        if (event.isCancelled() || event instanceof EntityDamageByEntityEvent
+                || event.getCause()!=EntityDamageEvent.DamageCause.FIRE_TICK
+                || !(event.getEntity() instanceof LivingEntity target)) return;
+        FireOwner fire=fires.get(target.getUniqueId());
+        if (fire==null) return;
+        if (fire.expires<=fireClock.getAsLong()) { fires.remove(target.getUniqueId()); return; }
+        Player source=plugin.getServer().getPlayer(fire.source);
+        // The nested hit carries the player in the actual DamageSource, not just a reward metadata tag.
+        event.setCancelled(true);
+        if (source==null || !source.isOnline() || source.isDead() || !source.getWorld().equals(target.getWorld())
+                || target.isDead()) return;
+        double amount=event.getDamage();
+        if (target instanceof Player || hostile(target) || plugin.getMobManager().getCustomMobKey(target)!=null) {
+            double hp=target instanceof Player?target.getMaxHealth():InitialBalanceModel.mobHealth(level(target),InitialBalanceModel.Role.NORMAL,1);
+            amount*=hp/20;
+        }
+        if (Double.isFinite(amount) && amount>0) SkillDamageGuard.damageFireTick(target,amount,source);
+    }
+
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true)
-    public void onIgnite(EntityCombustByEntityEvent event) {
-        Player source=CombatBalance.playerSource(event.getCombuster());
-        if (source!=null&&fires.size()<4096) fires.put(event.getEntity().getUniqueId(),
-                new FireOwner(source.getUniqueId(),System.currentTimeMillis()+(long)(Math.min(10,event.getDuration())*1000)+1000));
+    public void onIgnite(EntityCombustEvent event) {
+        if (event.isCancelled() || !Float.isFinite(event.getDuration()) || event.getDuration()<=0) return;
+        Player source=event instanceof EntityCombustByEntityEvent ignition?CombatBalance.playerSource(ignition.getCombuster()):null;
+        UUID id=event.getEntity().getUniqueId();
+        if (source==null) { fires.remove(id); return; }
+        if (fires.containsKey(id) || fires.size()<4096) fires.put(id,
+                new FireOwner(source.getUniqueId(),fireClock.getAsLong()+(long)(Math.min(10,event.getDuration())*1000)+1000));
     }
 }

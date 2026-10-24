@@ -1,0 +1,1248 @@
+# Hunter character routes; missing built-ins are appended in memory on upgrade.
+hunter:
+  nen_ten:
+    name: 纏・念之防護
+    description: 以念包覆身體，提升體力與防禦權重；受天賦總加成上限限制。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 49
+      icon: AMETHYST_SHARD
+    levels:
+      1:
+        effect:
+          statBonus:
+            vitality: 2
+            defense: 1
+      2:
+        effect:
+          statBonus:
+            vitality: 4
+            defense: 2
+      3:
+        effect:
+          statBonus:
+            vitality: 6
+            defense: 3
+  nen_ren:
+    name: 練・氣量增幅
+    description: 鍛鍊念的輸出，提升力量與魔法權重；受天賦總加成上限限制。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 38
+      icon: AMETHYST_SHARD
+    prerequisite:
+      skill: nen_ten
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            strength: 2
+            magic: 2
+      2:
+        effect:
+          statBonus:
+            strength: 4
+            magic: 4
+      3:
+        effect:
+          statBonus:
+            strength: 6
+            magic: 6
+  nen_gyo:
+    name: 凝・洞察之眼
+    description: 集中念與感知，提升敏捷與精神權重，解鎖變化與操作招式。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 42
+      icon: AMETHYST_SHARD
+    prerequisite:
+      skill: nen_ten
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            agility: 1
+            spirit: 2
+      2:
+        effect:
+          statBonus:
+            agility: 2
+            spirit: 4
+      3:
+        effect:
+          statBonus:
+            agility: 3
+            spirit: 6
+  nen_rock:
+    name: 猜猜拳・石頭
+    description: 原地蓄力2秒後，以當時準星重擊近距離敵人。移動超過1格、受傷或傳送會中斷；不退還耗魔與冷卻。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 40
+      icon: IRON_INGOT
+    prerequisite:
+      skill: nen_gon_instinct
+      level: 1
+    cooldown: 12
+    manaCost: 24
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 18
+          strengthScaling: 0.7
+          range: 3.5
+          charge: 2
+          duration: 3
+      2:
+        effect:
+          baseDamage: 24
+          strengthScaling: 0.85
+          range: 3.5
+          charge: 2
+          duration: 3
+      3:
+        effect:
+          baseDamage: 30
+          strengthScaling: 1.0
+          range: 3.5
+          charge: 2
+          duration: 3
+  nen_scissors:
+    name: 猜猜拳・剪刀
+    description: 以念化成鋒刃，斬擊前方狹扇形內可見敵人，最多12個，不穿牆。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 38
+      icon: SHEARS
+    prerequisite:
+      skill: nen_gon_instinct
+      level: 1
+    cooldown: 8
+    manaCost: 18
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 8
+          strengthScaling: 0.35
+          range: 4
+      2:
+        effect:
+          baseDamage: 11
+          strengthScaling: 0.45
+          range: 4.5
+      3:
+        effect:
+          baseDamage: 14
+          strengthScaling: 0.55
+          range: 5
+  nen_paper:
+    name: 猜猜拳・布
+    description: 射出向前飛行的念彈，命中第一個敵人或方塊後消失；粒子飛彈不破壞地形。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 42
+      icon: PAPER
+    prerequisite:
+      skill: nen_gon_instinct
+      level: 1
+    cooldown: 6
+    manaCost: 14
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 7
+          magicScaling: 0.4
+          range: 16
+          duration: 3
+      2:
+        effect:
+          baseDamage: 10
+          magicScaling: 0.5
+          range: 18
+          duration: 3
+      3:
+        effect:
+          baseDamage: 13
+          magicScaling: 0.6
+          range: 20
+          duration: 3
+  nen_lightning:
+    name: 落雷
+    description: 以電流擊中準星敵人，成功造成傷害後短暫減速；自製Boss控制時間減半。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 31
+      icon: LIGHTNING_ROD
+    prerequisite:
+      skill: nen_killua_reflex
+      level: 1
+    cooldown: 9
+    manaCost: 20
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.4
+          range: 12
+          slowDuration: 1
+          slowAmplifier: 1
+      2:
+        effect:
+          baseDamage: 11
+          magicScaling: 0.5
+          range: 14
+          slowDuration: 1.5
+          slowAmplifier: 1
+      3:
+        effect:
+          baseDamage: 14
+          magicScaling: 0.6
+          range: 16
+          slowDuration: 2
+          slowAmplifier: 1
+  nen_chain:
+    name: 鎖鏈束縛
+    description: 射出念鎖打擊敵人，成功命中後大幅減速；自製Boss控制時間減半。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 40
+      icon: IRON_CHAIN
+    prerequisite:
+      skill: nen_kurapika_vow
+      level: 1
+    cooldown: 16
+    manaCost: 26
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 5
+          magicScaling: 0.25
+          range: 10
+          slowDuration: 2
+          slowAmplifier: 3
+      2:
+        effect:
+          baseDamage: 7
+          magicScaling: 0.25
+          range: 12
+          slowDuration: 2.5
+          slowAmplifier: 3
+      3:
+        effect:
+          baseDamage: 9
+          magicScaling: 0.25
+          range: 14
+          slowDuration: 3
+          slowAmplifier: 3
+  nen_bungee:
+    name: 伸縮自在的愛
+    description: 以念線纏住成功受傷的目標，持續將距離超過2格的敵人緩拉向自己；斷線、遮擋或安全區會終止，Boss不受牽引。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 40
+      icon: SLIME_BALL
+    prerequisite:
+      skill: nen_hisoka_misdirection
+      level: 1
+    cooldown: 15
+    manaCost: 22
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 4
+          magicScaling: 0.2
+          range: 10
+          duration: 3
+      2:
+        effect:
+          baseDamage: 6
+          magicScaling: 0.2
+          range: 12
+          duration: 4
+      3:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.2
+          range: 14
+          duration: 5
+  nen_godspeed:
+    name: 神速・疾風迅雷
+    description: 短暫提升移速；成功近戰普攻每秒最多追加一次電擊與短暫減速，技能傷害不會遞迴觸發。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 22
+      icon: SUGAR
+    prerequisite:
+      skill: nen_lightning
+      level: 1
+    cooldown: 24
+    manaCost: 36
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 3
+          magicScaling: 0.15
+          duration: 4
+          moveSpeed: 0.2
+          slowDuration: 0.5
+          slowAmplifier: 0
+      2:
+        effect:
+          baseDamage: 4
+          magicScaling: 0.15
+          duration: 5
+          moveSpeed: 0.25
+          slowDuration: 0.5
+          slowAmplifier: 0
+      3:
+        effect:
+          baseDamage: 5
+          magicScaling: 0.15
+          duration: 6
+          moveSpeed: 0.3
+          slowDuration: 0.5
+          slowAmplifier: 0
+  nen_en:
+    name: 圓・念域感知
+    description: 展開念域，以只有自己看見的粒子標記附近可見敵人，最多12個；不透牆、不揭露隊友或安全區目標。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 24
+      icon: ENDER_EYE
+    prerequisite:
+      skill: nen_gyo
+      level: 1
+    cooldown: 20
+    manaCost: 14
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          radius: 4
+          duration: 4
+      2:
+        effect:
+          radius: 5
+          duration: 5
+      3:
+        effect:
+          radius: 6
+          duration: 6
+  nen_bodhisattva:
+    name: 百式觀音・三掌
+    description: 以金色念掌連擊前方敵人三次；末掌較強並擊退非Boss。所有命中共用既有技能追加傷害額度。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 31
+      icon: GOLD_INGOT
+    prerequisite:
+      skill: nen_netero_prayer
+      level: 1
+    cooldown: 40
+    manaCost: 60
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 10
+          strengthScaling: 0.3
+          magicScaling: 0.25
+          radius: 4
+          duration: 2
+      2:
+        effect:
+          baseDamage: 13
+          strengthScaling: 0.4
+          magicScaling: 0.25
+          radius: 5
+          duration: 2
+      3:
+        effect:
+          baseDamage: 16
+          strengthScaling: 0.5
+          magicScaling: 0.25
+          radius: 6
+          duration: 2
+  nen_gon_instinct:
+    name: 小杰・野性直覺
+    description: 小杰路線入門；提升敏捷與體力權重，學習時顯現橙色氣場。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 49
+      icon: AMETHYST_SHARD
+    prerequisite:
+      skill: nen_ren
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            agility: 1
+            vitality: 2
+      2:
+        effect:
+          statBonus:
+            agility: 2
+            vitality: 4
+      3:
+        effect:
+          statBonus:
+            agility: 3
+            vitality: 6
+  nen_killua_reflex:
+    name: 奇犽・暗殺者步法
+    description: 奇犽路線入門；提升敏捷與防禦權重，學習時顯現藍白電光。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 49
+      icon: AMETHYST_SHARD
+    prerequisite:
+      skill: nen_gyo
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            agility: 2
+            defense: 1
+      2:
+        effect:
+          statBonus:
+            agility: 4
+            defense: 2
+      3:
+        effect:
+          statBonus:
+            agility: 6
+            defense: 3
+  nen_kurapika_vow:
+    name: 酷拉皮卡・鎖鏈使的誓約
+    description: 酷拉皮卡路線入門；提升防禦與精神權重，學習時顯現金色念鎖。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 49
+      icon: AMETHYST_SHARD
+    prerequisite:
+      skill: nen_gyo
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            defense: 1
+            spirit: 2
+      2:
+        effect:
+          statBonus:
+            defense: 2
+            spirit: 4
+      3:
+        effect:
+          statBonus:
+            defense: 3
+            spirit: 6
+  nen_hisoka_misdirection:
+    name: 西索・魔術師的戲法
+    description: 西索路線入門；提升敏捷與魔法權重，學習時顯現粉紅念絲。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 49
+      icon: AMETHYST_SHARD
+    prerequisite:
+      skill: nen_gyo
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            agility: 1
+            magic: 2
+      2:
+        effect:
+          statBonus:
+            agility: 2
+            magic: 4
+      3:
+        effect:
+          statBonus:
+            agility: 3
+            magic: 6
+  nen_netero_discipline:
+    name: 尼特羅・心源流修行
+    description: 尼特羅路線入門；提升力量與防禦權重，學習時顯現多臂金色構像。
+    type: PASSIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 被動
+    gui:
+      slot: 49
+      icon: AMETHYST_SHARD
+    prerequisite:
+      skill: nen_ren
+      level: 1
+    levels:
+      1:
+        effect:
+          statBonus:
+            strength: 2
+            defense: 1
+      2:
+        effect:
+          statBonus:
+            strength: 4
+            defense: 2
+      3:
+        effect:
+          statBonus:
+            strength: 6
+            defense: 3
+  nen_gon_combo:
+    name: 猜猜拳・連攜
+    description: 小杰先後施出近身拳、念刃與遠程念氣，三段各自判定視線與命中。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 31
+      icon: FIREWORK_STAR
+    prerequisite:
+      skill: nen_rock
+      level: 1
+    cooldown: 16
+    manaCost: 32
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 6
+          strengthScaling: 0.3
+          magicScaling: 0.15
+          range: 14
+          duration: 2.5
+      2:
+        effect:
+          baseDamage: 8
+          strengthScaling: 0.3
+          magicScaling: 0.15
+          range: 14
+          duration: 2.5
+      3:
+        effect:
+          baseDamage: 10
+          strengthScaling: 0.3
+          magicScaling: 0.15
+          range: 14
+          duration: 2.5
+  nen_gon_ko:
+    name: 硬・全力一擊
+    description: 將橙色念集中於拳頭，下一次成功近戰追加重擊；集中期間受到傷害增加15%。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 29
+      icon: IRON_INGOT
+    prerequisite:
+      skill: nen_rock
+      level: 1
+    cooldown: 18
+    manaCost: 24
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 12
+          strengthScaling: 0.45
+          duration: 5
+      2:
+        effect:
+          baseDamage: 16
+          strengthScaling: 0.45
+          duration: 5
+      3:
+        effect:
+          baseDamage: 20
+          strengthScaling: 0.45
+          duration: 5
+  nen_gon_rush:
+    name: 野性突進・追擊拳
+    description: 沿安全路徑突進，留下氣流殘影，落點前方3格內的可見敵人受到拳擊。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 33
+      icon: RABBIT_FOOT
+    prerequisite:
+      skill: nen_gon_instinct
+      level: 1
+    cooldown: 12
+    manaCost: 20
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 8
+          strengthScaling: 0.3
+          distance: 3
+      2:
+        effect:
+          baseDamage: 10
+          strengthScaling: 0.3
+          distance: 4
+      3:
+        effect:
+          baseDamage: 12
+          strengthScaling: 0.3
+          distance: 5
+  nen_killua_palm:
+    name: 雷掌
+    description: 近距離電擊敵人，命中後短暫減速；藍白閃電沿手臂與目標交錯。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 38
+      icon: LIGHTNING_ROD
+    prerequisite:
+      skill: nen_killua_reflex
+      level: 1
+    cooldown: 8
+    manaCost: 16
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 6
+          magicScaling: 0.35
+          range: 3.5
+          slowDuration: 1
+          slowAmplifier: 1
+      2:
+        effect:
+          baseDamage: 9
+          magicScaling: 0.35
+          range: 3.5
+          slowDuration: 1.25
+          slowAmplifier: 1
+      3:
+        effect:
+          baseDamage: 12
+          magicScaling: 0.35
+          range: 3.5
+          slowDuration: 1.5
+          slowAmplifier: 1
+  nen_killua_step:
+    name: 神速・電光石火
+    description: 沿安全路徑高速移動，起點與落點留下雷電人形殘影；不穿牆或載入新區塊。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 40
+      icon: SUGAR
+    prerequisite:
+      skill: nen_killua_reflex
+      level: 1
+    cooldown: 10
+    manaCost: 18
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          distance: 4
+      2:
+        effect:
+          distance: 5
+      3:
+        effect:
+          distance: 6
+  nen_killua_yoyo:
+    name: 念線悠悠球・雙輪
+    description: 銀色雙輪隨念線往返，在兩次出擊時打擊前方敵人，最多12個目標。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 42
+      icon: IRON_NUGGET
+    prerequisite:
+      skill: nen_killua_reflex
+      level: 1
+    cooldown: 14
+    manaCost: 28
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 8
+          strengthScaling: 0.2
+          magicScaling: 0.2
+          radius: 4
+          duration: 3
+      2:
+        effect:
+          baseDamage: 10
+          strengthScaling: 0.2
+          magicScaling: 0.2
+          radius: 5
+          duration: 3
+      3:
+        effect:
+          baseDamage: 12
+          strengthScaling: 0.2
+          magicScaling: 0.2
+          radius: 6
+          duration: 3
+  nen_killua_whirlwind:
+    name: 疾風迅雷・反射雷擊
+    description: 準備一次自動反射：降低下次有效近身敵襲傷害，並在命中成立後還以電擊。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 13
+      icon: BREEZE_ROD
+    prerequisite:
+      skill: nen_godspeed
+      level: 1
+    cooldown: 24
+    manaCost: 30
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 6
+          magicScaling: 0.25
+          duration: 4
+          reduction: 0.2
+          slowDuration: 0.75
+          slowAmplifier: 1
+      2:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.25
+          duration: 5
+          reduction: 0.25
+          slowDuration: 0.75
+          slowAmplifier: 1
+      3:
+        effect:
+          baseDamage: 10
+          magicScaling: 0.25
+          duration: 6
+          reduction: 0.3
+          slowDuration: 0.75
+          slowAmplifier: 1
+  nen_kurapika_dowsing:
+    name: 導向鎖鏈・追跡
+    description: 念鎖命中敵人後，維持可見鎖鏈追跡；目標被遮擋、離開射程或進入安全區即解除。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 38
+      icon: IRON_CHAIN
+    prerequisite:
+      skill: nen_kurapika_vow
+      level: 1
+    cooldown: 10
+    manaCost: 16
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 4
+          magicScaling: 0.2
+          range: 12
+          duration: 4
+      2:
+        effect:
+          baseDamage: 6
+          magicScaling: 0.2
+          range: 14
+          duration: 5
+      3:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.2
+          range: 16
+          duration: 6
+  nen_kurapika_heal:
+    name: 治癒拇指鏈
+    description: 以綠金交織的十字念鎖恢復生命，遵循既有技能治療上限與可取消事件。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 42
+      icon: GHAST_TEAR
+    prerequisite:
+      skill: nen_kurapika_vow
+      level: 1
+    cooldown: 16
+    manaCost: 22
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseHeal: 30
+          spiritScaling: 0.6
+      2:
+        effect:
+          baseHeal: 45
+          spiritScaling: 0.6
+      3:
+        effect:
+          baseHeal: 60
+          spiritScaling: 0.6
+  nen_kurapika_judgment:
+    name: 審判小指鏈
+    description: 成功命中後放置誓約印；目標移動超過3格或3秒到期時，判定一次追加傷害。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 31
+      icon: IRON_CHAIN
+    prerequisite:
+      skill: nen_chain
+      level: 1
+    cooldown: 22
+    manaCost: 32
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 10
+          magicScaling: 0.35
+          range: 10
+          duration: 3
+      2:
+        effect:
+          baseDamage: 13
+          magicScaling: 0.35
+          range: 12
+          duration: 3
+      3:
+        effect:
+          baseDamage: 16
+          magicScaling: 0.35
+          range: 14
+          duration: 3
+  nen_kurapika_emperor:
+    name: 絕對時間・緋紅之眼
+    description: 緋紅眼光與念環持續6秒，最多三次成功近戰追加念鎖傷害；間隔至少0.5秒。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 22
+      icon: RED_DYE
+    prerequisite:
+      skill: nen_chain
+      level: 1
+    cooldown: 40
+    manaCost: 48
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 6
+          magicScaling: 0.2
+          duration: 6
+          charges: 3
+      2:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.2
+          duration: 6
+          charges: 3
+      3:
+        effect:
+          baseDamage: 10
+          magicScaling: 0.2
+          duration: 6
+          charges: 3
+  nen_hisoka_cards:
+    name: 撲克牌・四連射
+    description: 向前方扇形發出四張念牌；碰牆即停，一次牌陣同一敵人最多受一張牌命中。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 38
+      icon: PAPER
+    prerequisite:
+      skill: nen_hisoka_misdirection
+      level: 1
+    cooldown: 10
+    manaCost: 20
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 5
+          magicScaling: 0.25
+          range: 14
+          duration: 3
+      2:
+        effect:
+          baseDamage: 7
+          magicScaling: 0.25
+          range: 17
+          duration: 3
+      3:
+        effect:
+          baseDamage: 9
+          magicScaling: 0.25
+          range: 20
+          duration: 3
+  nen_hisoka_rebound:
+    name: 伸縮自在的愛・反彈
+    description: 粉紅念絲包裹身體，降低下一次有效近身敵襲傷害，並將念力反彈回攻擊者。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 31
+      icon: SLIME_BALL
+    prerequisite:
+      skill: nen_bungee
+      level: 1
+    cooldown: 20
+    manaCost: 24
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 6
+          magicScaling: 0.3
+          duration: 5
+          reduction: 0.2
+          slowDuration: 0.5
+          slowAmplifier: 0
+      2:
+        effect:
+          baseDamage: 8
+          magicScaling: 0.3
+          duration: 5
+          reduction: 0.25
+          slowDuration: 0.5
+          slowAmplifier: 0
+      3:
+        effect:
+          baseDamage: 10
+          magicScaling: 0.3
+          duration: 5
+          reduction: 0.3
+          slowDuration: 0.5
+          slowAmplifier: 0
+  nen_hisoka_snare:
+    name: 伸縮自在的愛・黏著結界
+    description: 在原地留下粉紅念網，短暫打擊並黏滯進入範圍的可見敵人；不改變地形。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 22
+      icon: STRING
+    prerequisite:
+      skill: nen_bungee
+      level: 1
+    cooldown: 22
+    manaCost: 28
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 2
+          magicScaling: 0.1
+          radius: 2
+          duration: 4
+          slowDuration: 0.75
+          slowAmplifier: 2
+      2:
+        effect:
+          baseDamage: 3
+          magicScaling: 0.1
+          radius: 2.5
+          duration: 5
+          slowDuration: 0.75
+          slowAmplifier: 2
+      3:
+        effect:
+          baseDamage: 4
+          magicScaling: 0.1
+          radius: 3
+          duration: 6
+          slowDuration: 0.75
+          slowAmplifier: 2
+  nen_netero_prayer:
+    name: 合掌・念之構像
+    description: 合掌後以多臂金色構像護身，短暫降低所受傷害。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 40
+      icon: GOLD_NUGGET
+    prerequisite:
+      skill: nen_netero_discipline
+      level: 1
+    cooldown: 20
+    manaCost: 24
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          duration: 4
+          reduction: 0.15
+      2:
+        effect:
+          duration: 5
+          reduction: 0.2
+      3:
+        effect:
+          duration: 6
+          reduction: 0.25
+  nen_netero_first:
+    name: 百式觀音・壹之掌
+    description: 金色掌影沿念氣劈向準星敵人；成功命中後擊退非Boss。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 38
+      icon: GOLD_INGOT
+    prerequisite:
+      skill: nen_netero_discipline
+      level: 1
+    cooldown: 12
+    manaCost: 28
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 12
+          strengthScaling: 0.35
+          magicScaling: 0.2
+          range: 8
+      2:
+        effect:
+          baseDamage: 15
+          strengthScaling: 0.35
+          magicScaling: 0.2
+          range: 10
+      3:
+        effect:
+          baseDamage: 18
+          strengthScaling: 0.35
+          magicScaling: 0.2
+          range: 12
+  nen_netero_ninetynine:
+    name: 百式觀音・九十九掌
+    description: 以五波密集掌影呈現高速連掌；每波打擊前方可見敵人，不補打延遲積欠波次。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 22
+      icon: GOLD_BLOCK
+    prerequisite:
+      skill: nen_bodhisattva
+      level: 1
+    cooldown: 40
+    manaCost: 60
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 5
+          strengthScaling: 0.2
+          magicScaling: 0.15
+          radius: 4
+          duration: 3
+      2:
+        effect:
+          baseDamage: 7
+          strengthScaling: 0.2
+          magicScaling: 0.15
+          radius: 5
+          duration: 3
+      3:
+        effect:
+          baseDamage: 9
+          strengthScaling: 0.2
+          magicScaling: 0.15
+          radius: 6
+          duration: 3
+  nen_netero_zero:
+    name: 百式觀音・零之掌
+    description: 原地合掌蓄力1.5秒，以金白念流轟擊準星目標周圍2格；移動、受傷或傳送中斷。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 13
+      icon: NETHER_STAR
+    prerequisite:
+      skill: nen_netero_ninetynine
+      level: 1
+    cooldown: 60
+    manaCost: 80
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          baseDamage: 30
+          strengthScaling: 0.5
+          magicScaling: 0.4
+          range: 14
+          charge: 1.5
+          duration: 3
+      2:
+        effect:
+          baseDamage: 40
+          strengthScaling: 0.5
+          magicScaling: 0.4
+          range: 17
+          charge: 1.5
+          duration: 3
+      3:
+        effect:
+          baseDamage: 50
+          strengthScaling: 0.5
+          magicScaling: 0.4
+          range: 20
+          charge: 1.5
+          duration: 3
+  nen_zetsu:
+    name: 絕・氣息遮斷
+    description: 短暫壓低念與敵對生物仇恨；受到傷害、攻擊或施放其他念招會解除。玩家仍能看見你。
+    type: ACTIVE
+    max-level: 3
+    points-per-level: 1
+    mechanism: 紫水晶碎片
+    gui:
+      slot: 31
+      icon: GRAY_DYE
+    prerequisite:
+      skill: nen_ten
+      level: 1
+    cooldown: 18
+    manaCost: 12
+    trigger:
+      type: RIGHT_CLICK
+    levels:
+      1:
+        effect:
+          duration: 3
+      2:
+        effect:
+          duration: 4
+      3:
+        effect:
+          duration: 5

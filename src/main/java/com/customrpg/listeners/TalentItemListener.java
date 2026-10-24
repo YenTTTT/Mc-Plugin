@@ -74,7 +74,7 @@ public final class TalentItemListener implements Listener {
     private List<Talent> available(Player player, Material material) {
         var investment = talents.getPlayerTalents(player);
         Map<String, Talent> result = new LinkedHashMap<>();
-        for (String id : investment.getSelectedSkills()) {
+        for (String id : investment.equippedSkills()) {
             if (id == null || investment.getTalentLevel(id) <= 0) continue;
             Talent talent = talents.findTalent(id);
             if (talent != null && talent.getType() == TalentType.ACTIVE

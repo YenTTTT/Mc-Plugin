@@ -52,6 +52,9 @@ public final class CombatBalance {
     }
 
     public Attack calculate(Player player, ItemStack item, double cooldown, double force) {
+        return calculate(player,item,cooldown,force,null);
+    }
+    public Attack calculate(Player player, ItemStack item, double cooldown, double force, LivingEntity target) {
         var stats = plugin.getPlayerStatsManager().getStats(player);
         String key = item == null ? null : plugin.getWeaponManager().getWeaponKey(item);
         var data = key == null ? null : plugin.getWeaponManager().getWeaponData(key);
@@ -136,6 +139,7 @@ public final class CombatBalance {
         return InitialBalanceModel.expectedDps(stats.getLevel(),InitialBalanceModel.Weapon.SWORD,primary,
                 stats.getAgility()+stats.getEquipmentAgility(),InitialBalanceModel.ACCURACY);
     }
+    public double spiritSkillDps(Player player){var s=plugin.getPlayerStatsManager().getStats(player);return InitialBalanceModel.expectedDps(s.getLevel(),InitialBalanceModel.Weapon.SWORD,Math.max(0,s.getTotalSpirit()),0,InitialBalanceModel.ACCURACY);}
     public void finish(EntityDamageEvent event) { attacks.remove(event); }
     public void snapshot(Projectile shot, Attack attack) {
         shot.getPersistentDataContainer().set(SHOT_DAMAGE,PersistentDataType.DOUBLE,attack.damage);
@@ -148,10 +152,19 @@ public final class CombatBalance {
     }
     public boolean inCombat(Player player) { return combat.getOrDefault(player.getUniqueId(),0L)>System.currentTimeMillis(); }
     public double heal(LivingEntity target, double amount) {
+        return heal(target, amount, false);
+    }
+    private final Set<org.bukkit.event.entity.EntityRegainHealthEvent> potionHeals = Collections.newSetFromMap(new IdentityHashMap<>());
+    public boolean isPotionHeal(org.bukkit.event.entity.EntityRegainHealthEvent event) { return potionHeals.contains(event); }
+    /** Consumables have their own persistent cooldown; never spend the skill healing pool as well. */
+    public double healPotion(Player player, double amount) { return heal(player, amount, true); }
+    private double heal(LivingEntity target, double amount, boolean potion) {
         if (!Double.isFinite(amount)||amount<=0||target.isDead()) return 0;
         var event=new org.bukkit.event.entity.EntityRegainHealthEvent(target,amount,
                 org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.CUSTOM);
-        plugin.getServer().getPluginManager().callEvent(event);
+        if (potion) potionHeals.add(event);
+        try { plugin.getServer().getPluginManager().callEvent(event); }
+        finally { potionHeals.remove(event); }
         if (!event.isCancelled()&&Double.isFinite(event.getAmount())&&event.getAmount()>0&&!target.isDead()) {
             double before=target.getHealth();
             target.setHealth(Math.min(target.getMaxHealth(),before+event.getAmount()));
